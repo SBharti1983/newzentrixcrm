@@ -85,8 +85,12 @@ router.post('/login', async (req, res) => {
             },
         });
     } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Login failed. Please try again.' });
+        console.error('[AUTH] Login error:', err);
+        res.status(500).json({ 
+            error: 'Login failed on server side', 
+            details: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
+        });
     }
 });
 
