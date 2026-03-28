@@ -8,13 +8,19 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
+const poolConfig = process.env.DATABASE_URL 
+    ? { connectionString: process.env.DATABASE_URL }
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT) || 5432,
+        database: process.env.DB_NAME || 'zentrixcrm',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+    };
+
 const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 5432,
-    database: process.env.DB_NAME || 'zentrixcrm',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ...poolConfig,
+    ssl: { rejectUnauthorized: false }
 });
 
 const DEMO_LEADS = [
@@ -31,8 +37,9 @@ const DEMO_LEADS = [
 ];
 
 async function seed() {
-    const client = await pool.connect();
+    let client;
     try {
+        client = await pool.connect();
         console.log('🌱 Starting production seed...\n');
         await client.query('BEGIN');
 
@@ -129,13 +136,15 @@ async function seed() {
         console.log(`\n  ${leadsCreated} demo leads ready for testing.\n`);
 
     } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('❌ Seed failed:', err);
+        if (client) await client.query('ROLLBACK');
+        console.error('❌ Seed failed:', err.message);
         throw err;
     } finally {
-        client.release();
+        if (client) client.release();
         await pool.end();
     }
 }
 
-seed().catch(() => process.exit(1));
+seed().catch(err => {
+    process.exit(1);
+});

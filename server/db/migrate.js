@@ -9,13 +9,22 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 5432,
-    database: process.env.DB_NAME || 'zentrixcrm',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD,
-});
+const isProduction = process.env.NODE_ENV === 'production';
+
+const poolConfig = process.env.DATABASE_URL 
+    ? { 
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      }
+    : {
+        host: process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.DB_PORT) || 5432,
+        database: process.env.DB_NAME || 'zentrixcrm',
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+    };
+
+const pool = new Pool(poolConfig);
 
 const SCHEMA = `
 
@@ -108,6 +117,7 @@ CREATE TABLE IF NOT EXISTS inventory (
     area_sqft       DECIMAL(10,2),
     property_type   VARCHAR(50),     -- 1BHK | 2BHK | 3BHK | Villa | etc.
     facing          VARCHAR(50),
+    parking         VARCHAR(50),     -- MISSING PREVIOUSLY
     base_price      DECIMAL(15,2),
     status          VARCHAR(50) DEFAULT 'Available',  -- Available | Booked | Sold | Blocked
     booking_id      UUID,            -- set when booked
@@ -123,6 +133,7 @@ CREATE TABLE IF NOT EXISTS leads (
     id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
     assigned_to     UUID REFERENCES users(id) ON DELETE SET NULL,
+    channel_partner_id UUID REFERENCES channel_partners(id) ON DELETE SET NULL, -- MISSING PREVIOUSLY
     name            VARCHAR(200) NOT NULL,
     email           VARCHAR(255),
     phone           VARCHAR(20),
@@ -162,6 +173,9 @@ CREATE TABLE IF NOT EXISTS customers (
     pan_number      VARCHAR(20),
     aadhar_number   VARCHAR(20),
     dob             DATE,
+    segment         VARCHAR(50) DEFAULT 'Standard',
+    status          VARCHAR(50) DEFAULT 'Active',
+    join_date       DATE DEFAULT CURRENT_DATE,
     notes           TEXT,
     created_at      TIMESTAMPTZ DEFAULT NOW(),
     updated_at      TIMESTAMPTZ DEFAULT NOW()
@@ -313,6 +327,24 @@ CREATE TABLE IF NOT EXISTS documents (
     updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS interactions (
+    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id   UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id     UUID REFERENCES leads(id) ON DELETE CASCADE,
+    customer_id UUID REFERENCES customers(id) ON DELETE CASCADE,
+    user_id     UUID REFERENCES users(id) ON DELETE SET NULL,
+    type        VARCHAR(50) DEFAULT 'Note',   -- Note | Call | Email | Meeting | Webhook | AI
+    date        TIMESTAMPTZ DEFAULT NOW(),
+    duration    INT,                          -- seconds
+    note        TEXT,
+    outcome     TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_interactions_lead    ON interactions(lead_id);
+CREATE INDEX IF NOT EXISTS idx_interactions_tenant  ON interactions(tenant_id);
+
 -- ═══════════════════════════════════════════════════════════════════
 --  NOTIFICATIONS LOG
 -- ═══════════════════════════════════════════════════════════════════
@@ -327,7 +359,8 @@ CREATE TABLE IF NOT EXISTS notifications (
     body        TEXT NOT NULL,
     status      VARCHAR(30) DEFAULT 'Sent',   -- Sent | Delivered | Failed | Read
     sent_at     TIMESTAMPTZ DEFAULT NOW(),
-    created_at  TIMESTAMPTZ DEFAULT NOW()
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ═══════════════════════════════════════════════════════════════════
@@ -411,6 +444,119 @@ CREATE INDEX IF NOT EXISTS idx_commissions_entity ON commissions(entity_id);
 CREATE INDEX IF NOT EXISTS idx_commissions_booking ON commissions(booking_id);
 
 -- ═══════════════════════════════════════════════════════════════════
+--  AUTOMATION WORKFLOWS
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS workflows (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name            VARCHAR(255) NOT NULL,
+    trigger_type    VARCHAR(100) NOT NULL, -- lead_created | stage_changed | inquiry | site_visit
+    trigger_config  JSONB DEFAULT '{}',
+    action_type     VARCHAR(100) NOT NULL, -- assign_agent | send_email | send_whatsapp | alert
+    action_config   JSONB DEFAULT '{}',
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS automation_logs (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    workflow_id     UUID NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+    lead_id         UUID REFERENCES leads(id) ON DELETE SET NULL,
+    status          VARCHAR(50) DEFAULT 'success', -- success | failed
+    details         JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_workflows_tenant ON workflows(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_automation_logs_tenant ON automation_logs(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_automation_logs_wf ON automation_logs(workflow_id);
+
+-- ═══════════════════════════════════════════════════════════════════
+--  DRIP MARKETING
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS drip_campaigns (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name            VARCHAR(255) NOT NULL,
+    description     TEXT,
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS drip_steps (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id     UUID NOT NULL REFERENCES drip_campaigns(id) ON DELETE CASCADE,
+    step_order      INT NOT NULL,
+    delay_days      INT DEFAULT 0,
+    delay_hours     INT DEFAULT 0,
+    channel         VARCHAR(50) NOT NULL, -- Email | WhatsApp | SMS
+    subject         VARCHAR(255),
+    body            TEXT NOT NULL,
+    is_ab_test      BOOLEAN DEFAULT FALSE,
+    subject_b       VARCHAR(255),
+    body_b          TEXT,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS drip_enrollments (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    campaign_id     UUID NOT NULL REFERENCES drip_campaigns(id) ON DELETE CASCADE,
+    lead_id         UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    status          VARCHAR(50) DEFAULT 'Active', -- Active | Paused | Completed | Cancelled
+    current_step    INT DEFAULT 1,
+    next_run_at     TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(campaign_id, lead_id)
+);
+
+CREATE TABLE IF NOT EXISTS drip_events (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    campaign_id     UUID NOT NULL REFERENCES drip_campaigns(id) ON DELETE CASCADE,
+    lead_id         UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+    step_id         UUID REFERENCES drip_steps(id) ON DELETE SET NULL,
+    event_type      VARCHAR(50) NOT NULL, -- sent | opened | clicked | bounced
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ═══════════════════════════════════════════════════════════════════
+--  INTEGRATIONS (external ecosystem connections)
+-- ═══════════════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS integrations (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider        VARCHAR(50) NOT NULL, -- WhatsApp | MetaAds | GoogleAds | Zapier | Webhook
+    is_active       BOOLEAN DEFAULT TRUE,
+    api_key         TEXT,
+    webhook_url_key VARCHAR(100) UNIQUE,
+    config          JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(tenant_id, provider)
+);
+
+CREATE TABLE IF NOT EXISTS incoming_leads_log (
+    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id       UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    lead_id         UUID REFERENCES leads(id) ON DELETE SET NULL,
+    provider        VARCHAR(50),
+    source_data     JSONB DEFAULT '{}',
+    status          VARCHAR(30) DEFAULT 'success',
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_integrations_tenant ON integrations(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_incoming_leads_tenant ON incoming_leads_log(tenant_id);
+
+-- ═══════════════════════════════════════════════════════════════════
 --  UPDATED_AT triggers
 -- ═══════════════════════════════════════════════════════════════════
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -427,7 +573,9 @@ DECLARE
 BEGIN
   FOREACH t IN ARRAY ARRAY['tenants','users','projects','inventory','leads',
     'customers','bookings','installments','payment_plans','followups',
-    'site_visits','channel_partners','documents','subscriptions', 'commissions']
+    'site_visits','channel_partners','documents','subscriptions', 'commissions',
+    'interactions', 'notifications', 'workflows', 'automation_logs',
+    'drip_campaigns', 'drip_steps', 'drip_enrollments', 'integrations']
   LOOP
     EXECUTE format(
       'DROP TRIGGER IF EXISTS set_updated_at ON %I;
@@ -436,11 +584,26 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+-- ═══════════════════════════════════════════════════════════════════
+--  PATCH: Ensure missing columns exist in existing tables
+-- ═══════════════════════════════════════════════════════════════════
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS channel_partner_id UUID REFERENCES channel_partners(id) ON DELETE SET NULL;
+ALTER TABLE inventory ADD COLUMN IF NOT EXISTS parking VARCHAR(50);
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS alt_phone VARCHAR(20);
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS segment VARCHAR(50) DEFAULT 'Standard';
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS join_date DATE DEFAULT CURRENT_DATE;
+ALTER TABLE interactions ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES customers(id) ON DELETE CASCADE;
+ALTER TABLE interactions ALTER COLUMN lead_id DROP NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_interactions_cust ON interactions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_leads_channel_partner ON leads(channel_partner_id);
 `;
 
 async function migrate() {
-    const client = await pool.connect();
+    let client;
     try {
+        client = await pool.connect();
         console.log('🔄 Running migrations...');
         await client.query(SCHEMA);
         console.log('✅ All tables created successfully!');
@@ -456,9 +619,12 @@ async function migrate() {
         console.error('❌ Migration failed:', err.message);
         throw err;
     } finally {
-        client.release();
+        if (client) client.release();
         await pool.end();
     }
 }
 
-migrate().catch(process.exit);
+migrate().catch(err => {
+    // console.error already log the error in the try/catch inside migrate
+    process.exit(1);
+});

@@ -69,12 +69,12 @@ router.get('/:id', async (req, res) => {
 // POST /api/customers
 router.post('/', async (req, res) => {
     try {
-        const { lead_id, name, email, phone, city, address, pan_number, aadhar_number, dob, notes } = req.body;
+        const { lead_id, name, email, phone, alt_phone, city, address, pan_number, aadhar_number, dob, segment, status, join_date, notes } = req.body;
         if (!name) return res.status(400).json({ error: 'Customer name is required' });
         const { rows } = await pool.query(
-            `INSERT INTO customers(tenant_id, lead_id, name, email, phone, city, address, pan_number, aadhar_number, dob, notes)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING * `,
-            [req.tenantId, lead_id || null, name, email || null, phone || null, city || null, address || null, pan_number || null, aadhar_number || null, dob || null, notes || null]
+            `INSERT INTO customers(tenant_id, lead_id, name, email, phone, alt_phone, city, address, pan_number, aadhar_number, dob, segment, status, join_date, notes)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * `,
+            [req.tenantId, lead_id || null, name, email || null, phone || null, alt_phone || null, city || null, address || null, pan_number || null, aadhar_number || null, dob || null, segment || 'Standard', status || 'Active', join_date || new Date(), notes || null]
         );
         res.status(201).json(rows[0]);
     } catch (err) {
@@ -86,7 +86,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/customers/:id
 router.patch('/:id', async (req, res) => {
     try {
-        const allowed = ['name', 'email', 'phone', 'alt_phone', 'city', 'address', 'pan_number', 'aadhar_number', 'dob', 'notes'];
+        const allowed = ['name', 'email', 'phone', 'alt_phone', 'city', 'address', 'pan_number', 'aadhar_number', 'dob', 'segment', 'status', 'join_date', 'notes'];
         const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
         if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields' });
         const set = Object.keys(updates).map((k, i) => `${k}=$${i + 3} `).join(',');
