@@ -235,6 +235,13 @@ router.post('/bulk-delete', async (req, res) => {
 // POST /api/leads
 router.post('/', validateLead, async (req, res) => {
     try {
+        // Plan limit enforcement
+        const { rows: [tenant] } = await pool.query(`SELECT max_leads FROM tenants WHERE id=$1`, [req.tenantId]);
+        const { rows: [leadCount] } = await pool.query(`SELECT COUNT(*) FROM leads WHERE tenant_id=$1`, [req.tenantId]);
+        if (parseInt(leadCount.count) >= tenant.max_leads) {
+            return res.status(403).json({ error: `Lead limit reached (${tenant.max_leads}). Please upgrade your plan.` });
+        }
+
         const {
             name, phone, email, city, source, stage, priority, score,
             property_type, project_id, budget, assigned_to, notes, channel_partner_id
@@ -448,14 +455,19 @@ router.post('/:id/ai-score', async (req, res) => {
     }
 });
 
-const multer = require('multer');
 const xlsx = require('xlsx');
-const upload = multer({ dest: 'uploads/' });
+const secureUpload = require('../middleware/upload');
 
-// POST /api/leads/import -> Excel/CSV import
-router.post('/import', upload.single('file'), async (req, res) => {
+// POST /api/leads/import -> Excel/CSV import (uses tenant-isolated upload middleware)
+router.post('/import', secureUpload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        // Plan limit enforcement for bulk imports
+        const { rows: [tenant] } = await pool.query(`SELECT max_leads FROM tenants WHERE id=$1`, [req.tenantId]);
+        const { rows: [leadCount] } = await pool.query(`SELECT COUNT(*) FROM leads WHERE tenant_id=$1`, [req.tenantId]);
+        const currentCount = parseInt(leadCount.count);
+        const remaining = tenant.max_leads - currentCount;
 
         const workbook = xlsx.readFile(req.file.path);
         const sheetName = workbook.SheetNames[0];
@@ -467,6 +479,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
 
         let importedCount = 0;
         let duplicateCount = 0;
+        let skippedLimit = 0;
 
         for (const row of rows) {
             const name = row['Name'] || row['name'];
@@ -476,6 +489,11 @@ router.post('/import', upload.single('file'), async (req, res) => {
             const source = row['Source'] || row['source'] || 'Import';
 
             if (!name || !phone) continue;
+
+            if (importedCount >= remaining) {
+                skippedLimit++;
+                continue;
+            }
 
             const dup = await pool.query(`SELECT id FROM leads WHERE tenant_id=$1 AND phone=$2`, [req.tenantId, phone]);
             if (dup.rows.length) {
@@ -491,7 +509,12 @@ router.post('/import', upload.single('file'), async (req, res) => {
             importedCount++;
         }
 
-        res.json({ message: 'Import complete', imported: importedCount, duplicates: duplicateCount });
+        res.json({
+            message: 'Import complete',
+            imported: importedCount,
+            duplicates: duplicateCount,
+            ...(skippedLimit > 0 ? { skipped_plan_limit: skippedLimit, warning: `${skippedLimit} leads skipped due to plan limit (${tenant.max_leads} max).` } : {})
+        });
     } catch (err) {
         console.error('Import Error:', err);
         res.status(500).json({ error: 'Failed to import leads' });

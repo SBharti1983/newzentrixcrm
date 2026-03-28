@@ -9,6 +9,7 @@
     "dev": "nodemon index.js",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
+    "db:seed-prod": "node db/seed-production.js",
     "db:reset": "node db/migrate.js && node db/seed.js"
   },
   "keywords": [],

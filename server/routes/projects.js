@@ -44,6 +44,14 @@ router.post('/', async (req, res) => {
     try {
         if (!['admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
+
+        // Plan limit enforcement
+        const { rows: [tenant] } = await pool.query(`SELECT max_projects FROM tenants WHERE id=$1`, [req.tenantId]);
+        const { rows: [count] } = await pool.query(`SELECT COUNT(*) FROM projects WHERE tenant_id=$1`, [req.tenantId]);
+        if (parseInt(count.count) >= tenant.max_projects) {
+            return res.status(403).json({ error: `Project limit reached (${tenant.max_projects}). Please upgrade your plan.` });
+        }
+
         const { name, location, description, status, total_units, available_units, price_range, possession_date, rera_number, amenities } = req.body;
         if (!name) return res.status(400).json({ error: 'Project name is required' });
         const { rows } = await pool.query(

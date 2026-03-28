@@ -21,7 +21,6 @@ function signTokens(user) {
 
 // ── POST /api/auth/login ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
-    console.log('[DEBUG] Login Request Body:', JSON.stringify(req.body));
     const { email, password } = req.body;
     if (!email || !password)
         return res.status(400).json({ error: 'Email and password are required' });
@@ -34,9 +33,6 @@ router.post('/login', async (req, res) => {
         const user = rows[0];
         
         if (!user) {
-            console.log(`[AUTH] Login failed: User NOT FOUND for email ${email}`);
-            const { rows: allUsers } = await pool.query('SELECT email FROM users LIMIT 10');
-            console.log('[AUTH] Available users in DB:', allUsers.map(u => u.email));
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
@@ -58,16 +54,9 @@ router.post('/login', async (req, res) => {
              return res.status(401).json({ error: 'Account disabled.' });
         }
 
-        let valid = await bcrypt.compare(password, user.password_hash);
-        
-        // Debug fallback
-        if (!valid && password === 'Admin@123') {
-            console.log('[LOGIN] Bcrypt failed but plain-text Admin@123 matched!');
-            valid = true;
-        }
+        const valid = await bcrypt.compare(password, user.password_hash);
 
         if (!valid) {
-            console.log(`[LOGIN] Password mismatch for: ${email}`);
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
@@ -113,7 +102,32 @@ router.post('/refresh', async (req, res) => {
         const user = rows[0];
         if (!user) return res.status(401).json({ error: 'User not found' });
 
+        // Validate refresh token exists in DB
+        const { rows: tokenRows } = await pool.query(
+            `SELECT * FROM refresh_tokens WHERE user_id = $1 AND expires_at > NOW()`, [payload.id]
+        );
+        let tokenValid = false;
+        for (const row of tokenRows) {
+            if (await bcrypt.compare(refreshToken, row.token_hash)) {
+                tokenValid = true;
+                // Delete the used token (rotation)
+                await pool.query(`DELETE FROM refresh_tokens WHERE id = $1`, [row.id]);
+                break;
+            }
+        }
+        if (!tokenValid) return res.status(401).json({ error: 'Refresh token revoked or expired' });
+
         const { accessToken, refreshToken: newRefresh } = signTokens(user);
+
+        // Store new refresh token
+        const refreshHash = await bcrypt.hash(newRefresh, 8);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        await pool.query(
+            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
+            [user.id, refreshHash, expiresAt]
+        );
+
         res.json({ accessToken, refreshToken: newRefresh });
     } catch {
         res.status(401).json({ error: 'Invalid refresh token' });
@@ -122,7 +136,15 @@ router.post('/refresh', async (req, res) => {
 
 // ── POST /api/auth/logout ─────────────────────────────────────────
 router.post('/logout', async (req, res) => {
-    // In production: blacklist the refresh token
+    try {
+        const { refreshToken } = req.body;
+        if (refreshToken) {
+            // Verify and find the token owner
+            const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+            // Delete all refresh tokens for this user (force re-login everywhere)
+            await pool.query(`DELETE FROM refresh_tokens WHERE user_id = $1`, [payload.id]);
+        }
+    } catch { /* token may be expired, still proceed with logout */ }
     res.json({ message: 'Logged out successfully' });
 });
 

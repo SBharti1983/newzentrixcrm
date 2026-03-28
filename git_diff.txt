@@ -1,0 +1,377 @@
+diff --git a/server/db/pool.js b/server/db/pool.js
+index a4d986a..b18106f 100644
+--- a/server/db/pool.js
++++ b/server/db/pool.js
+@@ -2,6 +2,8 @@ const { Pool } = require('pg');
+ const path = require('path');
+ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+ 
++const isProduction = process.env.NODE_ENV === 'production';
++
+ const pool = new Pool({
+     host: process.env.DB_HOST || 'localhost',
+     port: parseInt(process.env.DB_PORT) || 5432,
+@@ -11,6 +13,7 @@ const pool = new Pool({
+     max: 20,
+     idleTimeoutMillis: 30000,
+     connectionTimeoutMillis: 10000,
++    ssl: isProduction ? { rejectUnauthorized: false } : false,
+ });
+ 
+ // Test connection on startup
+diff --git a/server/index.js b/server/index.js
+index 2120350..1a0db5d 100644
+--- a/server/index.js
++++ b/server/index.js
+@@ -4,7 +4,7 @@ const express = require('express');
+ const cors = require('cors');
+ const helmet = require('helmet');
+ const morgan = require('morgan');
+-// const rateLimit = require('express-rate-limit');
++const rateLimit = require('express-rate-limit');
+ const automationService = require('./services/automationService');
+ 
+ const app = express();
+@@ -41,7 +41,12 @@ io.use((socket, next) => {
+     const token = socket.handshake.auth.token;
+     if (!token) return next(new Error('Authentication error'));
+ 
+-    jwt.verify(token, process.env.JWT_SECRET || 'ZentrixSecretSuperDificultOhoh', (err, decoded) => {
++    if (!process.env.JWT_SECRET) {
++        console.error('FATAL: JWT_SECRET environment variable is not set!');
++        return next(new Error('Server misconfiguration'));
++    }
++
++    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+         if (err) return next(new Error('Authentication error'));
+         socket.user = decoded;
+         next();
+@@ -60,22 +65,24 @@ io.on('connection', (socket) => {
+     // Join tenant room
+     socket.join(`tenant_${tenantId}`);
+     
+-    // Store user presence
++    // Store user presence with tenantId for proper isolation
+     presence.users.set(user_id, { 
+         socketId: socket.id, 
+         user: { id: user_id, name, avatar },
++        tenantId: tenantId,
+         currentPath: null 
+     });
+ 
+     const broadcastPresence = () => {
++        // SECURITY: Only show users from the SAME tenant
+         const tenantUsers = Array.from(presence.users.values())
+-            .filter(u => socket.user.tenantId === socket.user.tenantId) // Basic filter for simplicity
++            .filter(u => u.tenantId === tenantId)
+             .map(u => u.user);
+ 
+-        // Simple viewers map for this tenant
++        // Viewers map filtered by tenant
+         const viewers = {};
+         presence.users.forEach((data, uid) => {
+-            if (data.currentPath) {
++            if (data.currentPath && data.tenantId === tenantId) {
+                 if (!viewers[data.currentPath]) viewers[data.currentPath] = [];
+                 viewers[data.currentPath].push(data.user);
+             }
+@@ -115,28 +122,29 @@ app.use(cors({
+     credentials: true,
+ }));
+ app.use(express.json({ limit: '10mb' }));
+-app.use(morgan('dev'));
++app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+ 
+ // Serve uploaded files
+ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+ 
+-// // Rate limiter — 100 requests per 15 min per IP
+-// const limiter = rateLimit({
+-//     windowMs: 15 * 60 * 1000,
+-//     max: 100,
+-//     standardHeaders: true,
+-//     legacyHeaders: false,
+-//     message: { error: 'Too many requests, please try again later.' },
+-// });
+-// app.use('/api/', limiter);
+-
+-// // Auth routes get a stricter limiter
+-// const authLimiter = rateLimit({
+-//     windowMs: 15 * 60 * 1000,
+-//     max: 10,
+-//     message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+-// });
+-// app.use('/api/auth/login', authLimiter);
++// Rate limiter — 100 requests per 15 min per IP
++const limiter = rateLimit({
++    windowMs: 15 * 60 * 1000,
++    max: 100,
++    standardHeaders: true,
++    legacyHeaders: false,
++    message: { error: 'Too many requests, please try again later.' },
++});
++app.use('/api/', limiter);
++
++// Auth routes get a stricter limiter
++const authLimiter = rateLimit({
++    windowMs: 15 * 60 * 1000,
++    max: 10,
++    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
++});
++app.use('/api/auth/login', authLimiter);
++app.use('/api/auth/register', authLimiter);
+ 
+ // ─── Routes ──────────────────────────────────────────────────────
+ app.use('/api/auth', require('./routes/auth'));
+@@ -213,4 +221,19 @@ server.listen(PORT, () => {
+     // Start background automation workers
+     automationService.startBackgroundWorker(io);
+ });
+-// Trigger restart 
++
++// ─── Graceful shutdown ────────────────────────────────────────────
++const shutdown = (signal) => {
++    console.log(`\n${signal} received. Shutting down gracefully...`);
++    server.close(() => {
++        console.log('HTTP server closed.');
++        const pool = require('./db/pool');
++        pool.end().then(() => {
++            console.log('DB pool closed.');
++            process.exit(0);
++        });
++    });
++    setTimeout(() => process.exit(1), 10000); // Force exit after 10s
++};
++process.on('SIGTERM', () => shutdown('SIGTERM'));
++process.on('SIGINT', () => shutdown('SIGINT'));
+diff --git a/server/routes/auth.js b/server/routes/auth.js
+index f1616f0..6c08881 100644
+--- a/server/routes/auth.js
++++ b/server/routes/auth.js
+@@ -21,7 +21,6 @@ function signTokens(user) {
+ 
+ // ── POST /api/auth/login ──────────────────────────────────────────
+ router.post('/login', async (req, res) => {
+-    console.log('[DEBUG] Login Request Body:', JSON.stringify(req.body));
+     const { email, password } = req.body;
+     if (!email || !password)
+         return res.status(400).json({ error: 'Email and password are required' });
+@@ -34,9 +33,6 @@ router.post('/login', async (req, res) => {
+         const user = rows[0];
+         
+         if (!user) {
+-            console.log(`[AUTH] Login failed: User NOT FOUND for email ${email}`);
+-            const { rows: allUsers } = await pool.query('SELECT email FROM users LIMIT 10');
+-            console.log('[AUTH] Available users in DB:', allUsers.map(u => u.email));
+             return res.status(401).json({ error: 'Invalid email or password' });
+         }
+ 
+@@ -58,16 +54,9 @@ router.post('/login', async (req, res) => {
+              return res.status(401).json({ error: 'Account disabled.' });
+         }
+ 
+-        let valid = await bcrypt.compare(password, user.password_hash);
+-        
+-        // Debug fallback
+-        if (!valid && password === 'Admin@123') {
+-            console.log('[LOGIN] Bcrypt failed but plain-text Admin@123 matched!');
+-            valid = true;
+-        }
++        const valid = await bcrypt.compare(password, user.password_hash);
+ 
+         if (!valid) {
+-            console.log(`[LOGIN] Password mismatch for: ${email}`);
+             return res.status(401).json({ error: 'Invalid email or password' });
+         }
+ 
+@@ -113,7 +102,32 @@ router.post('/refresh', async (req, res) => {
+         const user = rows[0];
+         if (!user) return res.status(401).json({ error: 'User not found' });
+ 
++        // Validate refresh token exists in DB
++        const { rows: tokenRows } = await pool.query(
++            `SELECT * FROM refresh_tokens WHERE user_id = $1 AND expires_at > NOW()`, [payload.id]
++        );
++        let tokenValid = false;
++        for (const row of tokenRows) {
++            if (await bcrypt.compare(refreshToken, row.token_hash)) {
++                tokenValid = true;
++                // Delete the used token (rotation)
++                await pool.query(`DELETE FROM refresh_tokens WHERE id = $1`, [row.id]);
++                break;
++            }
++        }
++        if (!tokenValid) return res.status(401).json({ error: 'Refresh token revoked or expired' });
++
+         const { accessToken, refreshToken: newRefresh } = signTokens(user);
++
++        // Store new refresh token
++        const refreshHash = await bcrypt.hash(newRefresh, 8);
++        const expiresAt = new Date();
++        expiresAt.setDate(expiresAt.getDate() + 30);
++        await pool.query(
++            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
++            [user.id, refreshHash, expiresAt]
++        );
++
+         res.json({ accessToken, refreshToken: newRefresh });
+     } catch {
+         res.status(401).json({ error: 'Invalid refresh token' });
+@@ -122,7 +136,15 @@ router.post('/refresh', async (req, res) => {
+ 
+ // ── POST /api/auth/logout ─────────────────────────────────────────
+ router.post('/logout', async (req, res) => {
+-    // In production: blacklist the refresh token
++    try {
++        const { refreshToken } = req.body;
++        if (refreshToken) {
++            // Verify and find the token owner
++            const payload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
++            // Delete all refresh tokens for this user (force re-login everywhere)
++            await pool.query(`DELETE FROM refresh_tokens WHERE user_id = $1`, [payload.id]);
++        }
++    } catch { /* token may be expired, still proceed with logout */ }
+     res.json({ message: 'Logged out successfully' });
+ });
+ 
+diff --git a/server/routes/superadmin.js b/server/routes/superadmin.js
+index 1a61cc3..57faf4b 100644
+--- a/server/routes/superadmin.js
++++ b/server/routes/superadmin.js
+@@ -1,9 +1,19 @@
+ const express = require('express');
+ const pool = require('../db/pool');
++const auth = require('../middleware/auth');
+ 
+ const router = express.Router();
+ 
+-// Get all tenants (Super Admin only - in a real app, protect this route!)
++// Protect ALL superadmin routes — require auth + superadmin role
++router.use(auth);
++router.use((req, res, next) => {
++    if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
++        return res.status(403).json({ error: 'Superadmin access required' });
++    }
++    next();
++});
++
++// Get all tenants
+ router.get('/tenants', async (req, res) => {
+     try {
+         const { rows } = await pool.query(`
+diff --git a/server/routes/zapier.js b/server/routes/zapier.js
+index bba5971..ce95c95 100644
+--- a/server/routes/zapier.js
++++ b/server/routes/zapier.js
+@@ -256,8 +256,33 @@ router.post('/webhook', async (req, res) => {
+     const { url, data } = req.body;
+     if (!url) return res.status(400).json({ error: 'Webhook URL is required' });
+ 
++    // SSRF Protection: Block internal/private IP ranges
++    try {
++        const parsed = new URL(url);
++        const hostname = parsed.hostname.toLowerCase();
++        const blockedPatterns = [
++            /^localhost$/i,
++            /^127\./,
++            /^10\./,
++            /^172\.(1[6-9]|2\d|3[01])\./,
++            /^192\.168\./,
++            /^0\./,
++            /^169\.254\./,       // AWS metadata
++            /^fc00:/i,           // IPv6 private
++            /^fe80:/i,           // IPv6 link-local
++            /^\[::1\]$/,         // IPv6 loopback
++        ];
++        if (blockedPatterns.some(p => p.test(hostname))) {
++            return res.status(400).json({ error: 'Webhook URL cannot target internal addresses' });
++        }
++        if (parsed.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
++            return res.status(400).json({ error: 'Webhook URL must use HTTPS' });
++        }
++    } catch {
++        return res.status(400).json({ error: 'Invalid webhook URL' });
++    }
++
+     try {
+-        // Use global fetch (available in Node 18+)
+         const response = await fetch(url, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+@@ -266,12 +291,13 @@ router.post('/webhook', async (req, res) => {
+                 tenant_id: req.tenantId,
+                 sent_at: new Date().toISOString(),
+                 triggered_by: req.user.name
+-            })
++            }),
++            signal: AbortSignal.timeout(10000), // 10s timeout
+         });
+ 
+         res.json({ success: true, status: response.status });
+     } catch (err) {
+-        console.error('[Zapier Webhook] Failed:', err);
++        console.error('[Zapier Webhook] Failed:', err.message);
+         res.status(500).json({ error: 'Failed to trigger webhook' });
+     }
+ });
+diff --git a/server/services/automationService.js b/server/services/automationService.js
+index a8c8466..eedd738 100644
+--- a/server/services/automationService.js
++++ b/server/services/automationService.js
+@@ -279,7 +279,7 @@ class AutomationService {
+ 
+     async checkIdleLeads(wf, io) {
+         const { tenant_id, trigger_config } = wf;
+-        const hours = trigger_config.hours || 24;
++        const hours = parseInt(trigger_config.hours) || 24;
+ 
+         // Find leads that are 'New', older than threshold, and haven't triggered this workflow yet
+         const { rows: idleLeads } = await pool.query(
+@@ -287,9 +287,9 @@ class AutomationService {
+              LEFT JOIN automation_logs al ON al.lead_id = l.id AND al.workflow_id = $1
+              WHERE l.tenant_id = $2 
+                AND l.stage = 'New'
+-               AND l.created_at < NOW() - INTERVAL '${hours} hours'
++               AND l.created_at < NOW() - make_interval(hours => $3)
+                AND al.id IS NULL`,
+-            [wf.id, tenant_id]
++            [wf.id, tenant_id, hours]
+         );
+ 
+         for (const lead of idleLeads) {
+diff --git a/src/api/client.js b/src/api/client.js
+index 0beba4e..d1c9b69 100644
+--- a/src/api/client.js
++++ b/src/api/client.js
+@@ -3,9 +3,7 @@
+  * Centralized HTTP layer — all API calls go through here
+  */
+ 
+-const BASE_URL = 'http://localhost:5050/api';
+-console.log('--- Zentrix CRM Client Booted ---');
+-console.log('API Endpoint:', BASE_URL);
++const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+ 
+ // ─── Token helpers ────────────────────────────────────────────────
+ export function getToken() {
+@@ -30,7 +28,6 @@ async function api(path, options = {}) {
+     };
+ 
+     const fullUrl = `${BASE_URL}${path}`;
+-    console.log(`[BROWSER FETCH] Attempting: ${fullUrl}`);
+     const res = await fetch(fullUrl, {
+         ...options,
+         headers,
+@@ -90,8 +87,10 @@ export const authApi = {
+         api('/auth/login', { method: 'POST', body: { email, password } }),
+     register: (data) =>
+         api('/auth/register', { method: 'POST', body: data }),
+-    logout: () =>
+-        api('/auth/logout', { method: 'POST' }),
++    logout: () => {
++        const refreshToken = sessionStorage.getItem('zentrix_refresh_token');
++        return api('/auth/logout', { method: 'POST', body: { refreshToken } });
++    },
+     me: () =>
+         api('/auth/me'),
+ };

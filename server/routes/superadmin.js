@@ -1,9 +1,19 @@
 const express = require('express');
 const pool = require('../db/pool');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all tenants (Super Admin only - in a real app, protect this route!)
+// Protect ALL superadmin routes — require auth + superadmin role
+router.use(auth);
+router.use((req, res, next) => {
+    if (req.user.role !== 'superadmin' && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Superadmin access required' });
+    }
+    next();
+});
+
+// Get all tenants
 router.get('/tenants', async (req, res) => {
     try {
         const { rows } = await pool.query(`

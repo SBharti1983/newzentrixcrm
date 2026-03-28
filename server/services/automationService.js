@@ -279,7 +279,7 @@ class AutomationService {
 
     async checkIdleLeads(wf, io) {
         const { tenant_id, trigger_config } = wf;
-        const hours = trigger_config.hours || 24;
+        const hours = parseInt(trigger_config.hours) || 24;
 
         // Find leads that are 'New', older than threshold, and haven't triggered this workflow yet
         const { rows: idleLeads } = await pool.query(
@@ -287,9 +287,9 @@ class AutomationService {
              LEFT JOIN automation_logs al ON al.lead_id = l.id AND al.workflow_id = $1
              WHERE l.tenant_id = $2 
                AND l.stage = 'New'
-               AND l.created_at < NOW() - INTERVAL '${hours} hours'
+               AND l.created_at < NOW() - make_interval(hours => $3)
                AND al.id IS NULL`,
-            [wf.id, tenant_id]
+            [wf.id, tenant_id, hours]
         );
 
         for (const lead of idleLeads) {

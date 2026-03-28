@@ -415,36 +415,74 @@ export default function CallRecords() {
                                             <Mic size={16} color="var(--accent-violet)" /> Autonomous Transcription
                                         </h4>
                                         <div style={{ height: 260, overflowY: 'auto', paddingRight: 16 }}>
-                                            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                    AGt
-                                                </div>
-                                                <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                    Hi {qaCall.lead_name}, this is {qaCall.agent_name} from Zentrix Properties. I saw you were looking at our new prime inventory layout. Do you have a quick 2 minutes?
-                                                </div>
-                                            </div>
-                                            <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexDirection: 'row-reverse' }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-violet)', color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                    CLI
-                                                </div>
-                                                <div style={{ background: 'white', border: '1px solid var(--border-light)', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                    Yes, I am interested, but I am currently comparing it with another property across the street. What are the ROI margins looking like?
-                                                </div>
-                                            </div>
-                                            <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                    AGt
-                                                </div>
-                                                <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                    Great question. Our historical appreciation in that specific block is hovering around 14.5% year-over-year. Let me schedule a site visit and we can walk through the exact financial models.
-                                                </div>
-                                            </div>
-                                            
-                                            <div style={{ borderTop: '1px dashed var(--border-light)', margin: '24px 0', position: 'relative' }}>
-                                                <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 12px', color: 'var(--accent-emerald)', fontSize: '10px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                    <ShieldAlert size={12} /> SENTIMENT ANALYSIS: POSITIVE
-                                                </div>
-                                            </div>
+                                            {qaCall.note && qaCall.note.includes('[Automated AI Transcript') ? (() => {
+                                                const lines = qaCall.note.split('\n');
+                                                const transcriptLines = lines.slice(2).filter(l => l.trim().length > 0);
+                                                const sentimentMatch = lines[0].match(/Sentiment: (.*?)]/);
+                                                const sentiment = sentimentMatch ? sentimentMatch[1] : 'Unknown';
+
+                                                return (
+                                                    <>
+                                                        {transcriptLines.map((line, i) => {
+                                                            const isAgent = line.startsWith('Agent:');
+                                                            const text = line.replace(/^(Agent|Client):\s*/, '');
+                                                            return (
+                                                                <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 20, flexDirection: isAgent ? 'row' : 'row-reverse' }}>
+                                                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: isAgent ? 'var(--navy-100)' : 'var(--accent-violet)', color: isAgent ? 'var(--navy-900)' : 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
+                                                                        {isAgent ? 'AGt' : 'CLI'}
+                                                                    </div>
+                                                                    <div style={{ 
+                                                                        background: isAgent ? 'var(--slate-50)' : 'white', 
+                                                                        border: isAgent ? 'none' : '1px solid var(--border-light)',
+                                                                        padding: '12px 16px', borderRadius: isAgent ? '0 16px 16px 16px' : '16px 0 16px 16px', 
+                                                                        fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 
+                                                                    }}>
+                                                                        {text}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        <div style={{ borderTop: '1px dashed var(--border-light)', margin: '24px 0', position: 'relative' }}>
+                                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 12px', color: sentiment === 'Positive' ? 'var(--accent-emerald)' : '#64748b', fontSize: '10px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                <ShieldAlert size={12} /> SENTIMENT ANALYSIS: {sentiment.toUpperCase()}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                );
+                                            })() : (
+                                                <>
+                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
+                                                            AGt
+                                                        </div>
+                                                        <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                                                            Hi {qaCall.lead_name}, this is {qaCall.agent_name} from Zentrix Properties. I saw you were looking at our new prime inventory layout. Do you have a quick 2 minutes?
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexDirection: 'row-reverse' }}>
+                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-violet)', color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
+                                                            CLI
+                                                        </div>
+                                                        <div style={{ background: 'white', border: '1px solid var(--border-light)', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                                                            Yes, I am interested, but I am currently comparing it with another property across the street. What are the ROI margins looking like?
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
+                                                            AGt
+                                                        </div>
+                                                        <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                                                            Great question. Our historical appreciation in that specific block is hovering around 14.5% year-over-year. Let me schedule a site visit and we can walk through the exact financial models.
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style={{ borderTop: '1px dashed var(--border-light)', margin: '24px 0', position: 'relative' }}>
+                                                        <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 12px', color: 'var(--accent-emerald)', fontSize: '10px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <ShieldAlert size={12} /> SENTIMENT ANALYSIS: POSITIVE (MOCK)
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </>

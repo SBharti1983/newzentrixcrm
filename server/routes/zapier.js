@@ -256,8 +256,33 @@ router.post('/webhook', async (req, res) => {
     const { url, data } = req.body;
     if (!url) return res.status(400).json({ error: 'Webhook URL is required' });
 
+    // SSRF Protection: Block internal/private IP ranges
     try {
-        // Use global fetch (available in Node 18+)
+        const parsed = new URL(url);
+        const hostname = parsed.hostname.toLowerCase();
+        const blockedPatterns = [
+            /^localhost$/i,
+            /^127\./,
+            /^10\./,
+            /^172\.(1[6-9]|2\d|3[01])\./,
+            /^192\.168\./,
+            /^0\./,
+            /^169\.254\./,       // AWS metadata
+            /^fc00:/i,           // IPv6 private
+            /^fe80:/i,           // IPv6 link-local
+            /^\[::1\]$/,         // IPv6 loopback
+        ];
+        if (blockedPatterns.some(p => p.test(hostname))) {
+            return res.status(400).json({ error: 'Webhook URL cannot target internal addresses' });
+        }
+        if (parsed.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
+            return res.status(400).json({ error: 'Webhook URL must use HTTPS' });
+        }
+    } catch {
+        return res.status(400).json({ error: 'Invalid webhook URL' });
+    }
+
+    try {
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -266,12 +291,13 @@ router.post('/webhook', async (req, res) => {
                 tenant_id: req.tenantId,
                 sent_at: new Date().toISOString(),
                 triggered_by: req.user.name
-            })
+            }),
+            signal: AbortSignal.timeout(10000), // 10s timeout
         });
 
         res.json({ success: true, status: response.status });
     } catch (err) {
-        console.error('[Zapier Webhook] Failed:', err);
+        console.error('[Zapier Webhook] Failed:', err.message);
         res.status(500).json({ error: 'Failed to trigger webhook' });
     }
 });

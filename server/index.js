@@ -4,12 +4,15 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
-// const rateLimit = require('express-rate-limit');
+const rateLimit = require('express-rate-limit');
 const automationService = require('./services/automationService');
 
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
+
+// Essential for Rate Limiting behind proxies (Railway, Heroku, etc)
+app.set('trust proxy', 1);
 
 // Global request logger — THE FIRST MIDDLEWARE
 app.use((req, res, next) => {
@@ -41,7 +44,12 @@ io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error('Authentication error'));
 
-    jwt.verify(token, process.env.JWT_SECRET || 'ZentrixSecretSuperDificultOhoh', (err, decoded) => {
+    if (!process.env.JWT_SECRET) {
+        console.error('FATAL: JWT_SECRET environment variable is not set!');
+        return next(new Error('Server misconfiguration'));
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
         if (err) return next(new Error('Authentication error'));
         socket.user = decoded;
         next();
@@ -60,22 +68,24 @@ io.on('connection', (socket) => {
     // Join tenant room
     socket.join(`tenant_${tenantId}`);
     
-    // Store user presence
+    // Store user presence with tenantId for proper isolation
     presence.users.set(user_id, { 
         socketId: socket.id, 
         user: { id: user_id, name, avatar },
+        tenantId: tenantId,
         currentPath: null 
     });
 
     const broadcastPresence = () => {
+        // SECURITY: Only show users from the SAME tenant
         const tenantUsers = Array.from(presence.users.values())
-            .filter(u => socket.user.tenantId === socket.user.tenantId) // Basic filter for simplicity
+            .filter(u => u.tenantId === tenantId)
             .map(u => u.user);
 
-        // Simple viewers map for this tenant
+        // Viewers map filtered by tenant
         const viewers = {};
         presence.users.forEach((data, uid) => {
-            if (data.currentPath) {
+            if (data.currentPath && data.tenantId === tenantId) {
                 if (!viewers[data.currentPath]) viewers[data.currentPath] = [];
                 viewers[data.currentPath].push(data.user);
             }
@@ -115,28 +125,29 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
-app.use(morgan('dev'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// // Rate limiter — 100 requests per 15 min per IP
-// const limiter = rateLimit({
-//     windowMs: 15 * 60 * 1000,
-//     max: 100,
-//     standardHeaders: true,
-//     legacyHeaders: false,
-//     message: { error: 'Too many requests, please try again later.' },
-// });
-// app.use('/api/', limiter);
+// Rate limiter — 100 requests per 15 min per IP
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+});
+app.use('/api/', limiter);
 
-// // Auth routes get a stricter limiter
-// const authLimiter = rateLimit({
-//     windowMs: 15 * 60 * 1000,
-//     max: 10,
-//     message: { error: 'Too many login attempts. Try again in 15 minutes.' },
-// });
-// app.use('/api/auth/login', authLimiter);
+// Auth routes get a stricter limiter
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'Too many login attempts. Try again in 15 minutes.' },
+});
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
 
 // ─── Routes ──────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
@@ -213,4 +224,19 @@ server.listen(PORT, () => {
     // Start background automation workers
     automationService.startBackgroundWorker(io);
 });
-// Trigger restart 
+
+// ─── Graceful shutdown ────────────────────────────────────────────
+const shutdown = (signal) => {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+        console.log('HTTP server closed.');
+        const pool = require('./db/pool');
+        pool.end().then(() => {
+            console.log('DB pool closed.');
+            process.exit(0);
+        });
+    });
+    setTimeout(() => process.exit(1), 10000); // Force exit after 10s
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -3,9 +3,7 @@
  * Centralized HTTP layer — all API calls go through here
  */
 
-const BASE_URL = 'http://localhost:5050/api';
-console.log('--- Zentrix CRM Client Booted ---');
-console.log('API Endpoint:', BASE_URL);
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
 
 // ─── Token helpers ────────────────────────────────────────────────
 export function getToken() {
@@ -24,17 +22,16 @@ export function clearTokens() {
 async function api(path, options = {}) {
     const token = getToken();
     const headers = {
-        'Content-Type': 'application/json',
+        ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
     };
 
     const fullUrl = `${BASE_URL}${path}`;
-    console.log(`[BROWSER FETCH] Attempting: ${fullUrl}`);
     const res = await fetch(fullUrl, {
         ...options,
         headers,
-        body: options.body ? JSON.stringify(options.body) : undefined,
+        body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
     });
 
     // Handle 401 — token expired → try to refresh (except for login/register)
@@ -90,8 +87,10 @@ export const authApi = {
         api('/auth/login', { method: 'POST', body: { email, password } }),
     register: (data) =>
         api('/auth/register', { method: 'POST', body: data }),
-    logout: () =>
-        api('/auth/logout', { method: 'POST' }),
+    logout: () => {
+        const refreshToken = sessionStorage.getItem('zentrix_refresh_token');
+        return api('/auth/logout', { method: 'POST', body: { refreshToken } });
+    },
     me: () =>
         api('/auth/me'),
 };
@@ -186,6 +185,7 @@ export const zapierApi = {
     enrichLead: (id) => api(`/zapier/enrich-lead/${id}`, { method: 'POST' }),
     generateContent: (data) => api('/zapier/generate-content', { method: 'POST', body: data }),
     summarizeCall: (data) => api('/zapier/summarize-call', { method: 'POST', body: data }),
+    transcribeCall: (formData) => api('/zapier/transcribe-call', { method: 'POST', body: formData }),
     getRecommendations: () => api('/zapier/smart-recommendations'),
     sendWebhook: (data) => api('/zapier/webhook', { method: 'POST', body: data }),
 };

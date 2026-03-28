@@ -113,21 +113,9 @@ export default function ContactDetails() {
         formData.append('leadId', id); // send lead ID to tie transcript chronologically
 
         try {
-            const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:4000/api/zapier/transcribe-call', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.error || 'Failed to transcribe');
-            
+            const data = await zapierApi.transcribeCall(formData);
             showToast(`Transcription complete! Sentiment: ${data.sentiment}`, 'success');
-            
-            // Reload timeline to show the newly inserted audio log
             loadData();
-            
         } catch (error) {
             console.error('Transcription Error:', error);
             showToast(error.message || 'Failed to process audio', 'error');
