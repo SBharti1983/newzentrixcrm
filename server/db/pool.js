@@ -25,8 +25,8 @@ const pool = new Pool({
 // Test connection on startup
 pool.connect((err, client, release) => {
     if (err) {
-        console.error('❌ Database connection failed:', err.message);
-        console.error('   Check your .env DB_PASSWORD and make sure PostgreSQL is running.');
+        console.error('❌ Database connection failed:', err);
+        console.error('   Config used:', process.env.DATABASE_URL ? 'DATABASE_URL' : `Host: ${process.env.DB_HOST}`);
     } else {
         console.log('✅ Database connected — PostgreSQL', process.env.DB_NAME);
         release();

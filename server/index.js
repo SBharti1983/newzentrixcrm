@@ -181,6 +181,15 @@ app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 
+// ─── Welcome Message ──────────────────────────────────────────────
+app.get('/', (req, res) => {
+    res.json({ 
+        message: 'ZentrixCRM API — All Systems Operational', 
+        health: '/api/health',
+        uptime: process.uptime()
+    });
+});
+
 // ─── Health check ─────────────────────────────────────────────────
 console.log('--- SERVER STATE VERIFIED ---');
 app.get('/api/health', async (req, res) => {
