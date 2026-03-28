@@ -1,0 +1,242 @@
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+    LayoutDashboard, Users, Building2, UserCheck, Calendar,
+    MapPin, BookOpen, BarChart3, Settings, ChevronLeft,
+    ChevronRight, LogOut, Bell, Handshake, CreditCard,
+    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles
+} from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { ROLE_ACCESS } from '../constants/access';
+
+const NAV_SECTIONS = [
+    {
+        label: 'Overview',
+        items: [
+            { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+            { path: '/command-center', label: 'Command Center', icon: Sparkles },
+            { path: '/calendar', label: 'Calendar', icon: CalendarDays },
+        ],
+    },
+    {
+        label: 'Sales',
+        items: [
+            { path: '/leads', label: 'Leads', icon: Users, badge: '10' },
+            { path: '/pipeline', label: 'Pipeline', icon: BarChart3 },
+            { path: '/lead-scoring', label: 'Lead Scoring', icon: Target },
+            { path: '/call-records', label: 'Call Log', icon: History },
+            { path: '/automation-distribution', label: 'Auto-Distribute', icon: Zap },
+        ],
+    },
+    {
+        label: 'Properties',
+        items: [
+            { path: '/projects', label: 'Projects', icon: Building2 },
+            { path: '/inventory', label: 'Inventory', icon: BookOpen },
+        ],
+    },
+    {
+        label: 'Customers',
+        items: [
+            { path: '/customers', label: 'Customers', icon: UserCheck },
+            { path: '/bookings', label: 'Bookings', icon: BookOpen, badge: '3' },
+            { path: '/payment-tracker', label: 'Payment Tracker', icon: CreditCard },
+            { path: '/agreements', label: 'Agreements & Docs', icon: FileCheck },
+            { path: '/customer-portal', label: 'Customer Portal', icon: ExternalLink },
+        ],
+    },
+    {
+        label: 'Partners',
+        items: [
+            { path: '/channel-partners', label: 'Channel Partners', icon: Handshake },
+        ],
+    },
+    {
+        label: 'Planning',
+        items: [
+            { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: '5' },
+            { path: '/site-visits', label: 'Site Visits', icon: MapPin },
+        ],
+    },
+    {
+        label: 'Communications',
+        items: [
+            { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: '3' },
+            { path: '/marketing', label: 'Marketing Hub', icon: Target },
+            { path: '/notifications', label: 'Notifications', icon: Bell },
+        ],
+    },
+    {
+        label: 'Analytics',
+        items: [
+            { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+            { path: '/reports', label: 'Custom Reports', icon: FileCheck },
+        ],
+    },
+    {
+        label: 'Admin',
+        items: [
+            { path: '/automations', label: 'Automations', icon: Zap },
+            { path: '/integrations', label: 'Integrations', icon: ExternalLink },
+            { path: '/commissions', label: 'Commissions', icon: IndianRupee },
+            { path: '/admin', label: 'Admin Panel', icon: Settings },
+            { path: '/billing', label: 'Billing & Plan', icon: CreditCard },
+        ],
+    },
+    {
+        label: 'System',
+        items: [
+            { path: '/superadmin', label: 'Super Admin', icon: LayoutDashboard },
+        ],
+    },
+];
+
+const ROLE_LABELS = {
+    superadmin: 'Super Admin',
+    admin: 'Administrator',
+    sales_manager: 'Sales Manager',
+    agent: 'Sales Agent',
+    customer: 'Customer',
+};
+
+const ROLE_COLORS = {
+    superadmin: { color: '#f43f5e', bg: 'rgba(244,63,94,0.15)' },
+    admin: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
+    sales_manager: { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)' },
+    agent: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+    customer: { color: '#64748b', bg: 'rgba(100,116,139,0.15)' },
+};
+
+export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onLogout, onNavigate }) {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { user, canAccess } = useAuth();
+    const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
+
+    const filteredSections = NAV_SECTIONS.map(section => ({
+        ...section,
+        items: section.items.filter(item => canAccess(item.path)),
+    })).filter(section => section.items.length > 0);
+
+    const handleNav = (path) => {
+        navigate(path);
+        if (onNavigate) onNavigate(); // close sidebar on mobile
+    };
+
+    // On mobile: show/hide via class; on desktop: normal collapsed logic
+    const sidebarClass = [
+        'sidebar',
+        collapsed && !isMobile ? 'collapsed' : '',
+        isMobile ? 'mobile-sidebar' : '',
+        isMobile && mobileOpen ? 'mobile-open' : '',
+    ].filter(Boolean).join(' ');
+
+    return (
+        <nav className={sidebarClass}>
+            {/* Logo + mobile close button */}
+            <div className="sidebar-logo">
+                <div className="sidebar-logo-icon">Z</div>
+                <span className="sidebar-logo-text">ZentrixCRM</span>
+                {isMobile && (
+                    <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu">
+                        <X size={20} />
+                    </button>
+                )}
+            </div>
+
+            {/* Role badge (when expanded) */}
+            {!collapsed && user && (
+                <div style={{
+                    margin: '0 12px 12px', padding: '6px 10px',
+                    borderRadius: 'var(--border-radius-sm)',
+                    background: roleColors.bg, border: `1px solid ${roleColors.color}30`,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                }}>
+                    <div style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: roleColors.color, flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: roleColors.color, letterSpacing: '0.04em' }}>
+                        {ROLE_LABELS[user.role]}
+                    </span>
+                </div>
+            )}
+
+            {/* Navigation */}
+            <div className="sidebar-nav">
+                {filteredSections.map(section => (
+                    <div key={section.label}>
+                        <div className="nav-section-label">{section.label}</div>
+                        {section.items.map(({ path, label, icon: Icon, badge }) => (
+                            <button
+                                key={path}
+                                className={`nav-item${location.pathname === path ? ' active' : ''}`}
+                                onClick={() => handleNav(path)}
+                                data-tooltip={collapsed ? label : undefined}
+                            >
+                                <Icon className="nav-item-icon" size={18} />
+                                <span className="nav-item-text">{label}</span>
+                                {badge && <span className="nav-badge">{badge}</span>}
+                            </button>
+                        ))}
+                    </div>
+                ))}
+
+                {/* Public Enquiry Form link */}
+                {!collapsed && (
+                    <div style={{ padding: '8px 12px 0' }}>
+                        <div className="nav-section-label">Public</div>
+                        <button
+                            className="nav-item"
+                            onClick={() => window.open('/enquiry', '_blank')}
+                            style={{ color: 'var(--text-muted)' }}
+                        >
+                            <ExternalLink className="nav-item-icon" size={18} />
+                            <span className="nav-item-text">Enquiry Form ↗</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div className="sidebar-footer">
+                <div className="sidebar-user" onClick={() => handleNav('/admin')}>
+                    <div className="sidebar-avatar">{user?.avatar || '??'}</div>
+                    <div className="sidebar-user-info">
+                        <div className="sidebar-user-name">{user?.name || 'User'}</div>
+                        <div className="sidebar-user-role">{ROLE_LABELS[user?.role] || '—'}</div>
+                    </div>
+                </div>
+                {/* Logout */}
+                {!collapsed && (
+                    <button onClick={onLogout} style={{
+                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                        padding: '8px 12px', border: 'none', background: 'transparent',
+                        cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem',
+                        fontWeight: 600, borderRadius: 'var(--border-radius-sm)',
+                        transition: 'all 0.15s', marginTop: 4,
+                    }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; e.currentTarget.style.color = 'var(--accent-rose)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                    >
+                        <LogOut size={15} /> Sign Out
+                    </button>
+                )}
+            </div>
+
+            {/* Collapse toggle — desktop only */}
+            {!isMobile && (
+                <button onClick={onToggle} style={{
+                    position: 'absolute', right: '-14px', top: '78px',
+                    width: 28, height: 28, background: 'white',
+                    border: '1px solid var(--border-light)', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', boxShadow: 'var(--shadow-sm)',
+                    color: 'var(--text-secondary)', zIndex: 101,
+                    transition: 'all var(--transition-fast)',
+                }}>
+                    {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                </button>
+            )}
+        </nav>
+    );
+}

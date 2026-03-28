@@ -1,0 +1,65 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const pool = require('../db/pool');
+const auth = require('../middleware/auth');
+const router = express.Router();
+router.use(auth);
+
+// GET /api/users — list team members (admin/manager only)
+router.get('/', async (req, res) => {
+    if (!['admin', 'sales_manager'].includes(req.user.role))
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    const { rows } = await pool.query(
+        `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at
+         FROM users WHERE tenant_id=$1 ORDER BY role, name`, [req.tenantId]
+    );
+    res.json(rows);
+});
+
+// POST /api/users — add new team member (admin only)
+router.post('/', async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    const { name, email, password, role, phone, department } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'name, email, password required' });
+
+    // Check plan limits
+    const { rows: [count] } = await pool.query(
+        `SELECT COUNT(*) FROM users WHERE tenant_id=$1 AND is_active=TRUE`, [req.tenantId]
+    );
+    const { rows: [tenant] } = await pool.query(`SELECT max_users FROM tenants WHERE id=$1`, [req.tenantId]);
+    if (parseInt(count.count) >= tenant.max_users)
+        return res.status(403).json({ error: `User limit reached (${tenant.max_users}). Please upgrade your plan.` });
+
+    const hash = await bcrypt.hash(password, 10);
+    const { rows } = await pool.query(
+        `INSERT INTO users (tenant_id, name, email, password_hash, role, phone, department, avatar)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, name, email, role, avatar, created_at`,
+        [req.tenantId, name, email, hash, role || 'agent', phone || null, department || null,
+        (name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2))]
+    );
+    res.status(201).json(rows[0]);
+});
+
+// PATCH /api/users/:id
+router.patch('/:id', async (req, res) => {
+    if (req.user.role !== 'admin' && req.user.id !== req.params.id)
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    const allowed = ['name', 'phone', 'department', 'role', 'is_active'];
+    const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+
+    // Change password separately
+    if (req.body.new_password) {
+        const hash = await bcrypt.hash(req.body.new_password, 10);
+        updates.password_hash = hash;
+    }
+
+    if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields' });
+    const set = Object.keys(updates).map((k, i) => `${k}=$${i + 3}`).join(',');
+    const { rows } = await pool.query(
+        `UPDATE users SET ${set} WHERE id=$1 AND tenant_id=$2 RETURNING id, name, email, role, avatar, is_active`,
+        [req.params.id, req.tenantId, ...Object.values(updates)]
+    );
+    res.json(rows[0]);
+});
+
+module.exports = router;

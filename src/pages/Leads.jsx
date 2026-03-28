@@ -1,0 +1,741 @@
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
+import { PageLoader, PageError } from '../components/Feedback';
+import { leadsApi, projectsApi, usersApi, notificationsApi, channelPartnersApi } from '../api/client';
+import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
+import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
+import { dialerEvents } from '../constants/events';
+
+const STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+const STAGE_COLORS = {
+    'New': 'badge-blue',
+    'Contacted': 'badge-indigo',
+    'Qualified': 'badge-cyan',
+    'Disqualified': 'badge-slate',
+    'Nurture': 'badge-violet',
+    'Site Visit': 'badge-teal',
+    'Negotiation': 'badge-amber',
+    'Won': 'badge-green',
+    'Lost': 'badge-red'
+};
+const STAGE_BG = {
+    'New': 'rgba(59, 130, 246, 0.08)',
+    'Contacted': 'rgba(99, 102, 241, 0.08)',
+    'Qualified': 'rgba(6, 182, 212, 0.08)',
+    'Disqualified': 'rgba(100, 116, 139, 0.08)',
+    'Nurture': 'rgba(124, 77, 255, 0.08)',
+    'Site Visit': 'rgba(20, 184, 166, 0.08)',
+    'Negotiation': 'rgba(245, 158, 11, 0.08)',
+    'Won': 'rgba(16, 185, 129, 0.08)',
+    'Lost': 'rgba(244, 63, 94, 0.08)'
+};
+
+const SOURCE_COLORS = {
+    Website: 'badge-blue',
+    Referral: 'badge-green',
+    'Social Media': 'badge-violet',
+    'Walk-in': 'badge-amber',
+    'PropTech Portal': 'badge-cyan',
+    'Google Ads': 'badge-rose',
+    'WhatsApp': 'badge-emerald',
+    'Facebook Ads': 'badge-blue',
+    'Instagram Ads': 'badge-pink',
+    'Zapier': 'badge-amber'
+};
+const SOURCES = ['Website', 'Referral', 'Social Media', 'Walk-in', 'PropTech Portal', 'Google Ads', 'WhatsApp', 'Facebook Ads', 'Instagram Ads', 'Zapier'];
+
+const DEFAULT_FORM = {
+    name: '', email: '', phone: '', city: '', source: 'Website',
+    stage: 'New', budget: '', property_type: '2BHK', project_id: '',
+    assigned_to: '', channel_partner_id: '', notes: '', score: 50,
+};
+
+export default function Leads() {
+    const navigate = useNavigate();
+    const { showToast } = useToast();
+    const [search, setSearch] = useState('');
+    const [filterStage, setFilterStage] = useState('All');
+    const [filterSource, setFilterSource] = useState('All');
+    const [showModal, setShowModal] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [form, setForm] = useState(DEFAULT_FORM);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(50);
+    const [saving, setSaving] = useState(false);
+    const [hoveredRow, setHoveredRow] = useState(null);
+    const [previewLeadId, setPreviewLeadId] = useState(null);
+    const fileInputRef = useRef(null);
+
+    // Bulk Selection State
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [bulkAction, setBulkAction] = useState(null); // 'assign', 'stage', 'delete', 'message'
+    const [bulkValue, setBulkValue] = useState('');
+    const [bulkMessage, setBulkMessage] = useState({ subject: '', body: '', channel: 'WhatsApp' });
+    const [bulkLoading, setBulkLoading] = useState(false);
+
+    // API params — rebuild on filter change
+    const params = useMemo(() => {
+        const p = { limit, page };
+        if (filterStage !== 'All') p.stage = filterStage;
+        if (filterSource !== 'All') p.source = filterSource;
+        if (search.trim()) p.q = search.trim();
+        return p;
+    }, [limit, page, filterStage, filterSource, search]);
+
+    const { data: leadsRes, loading, error, refetch } = useApi(
+        useCallback(() => leadsApi.list(params), [params]),
+        [filterStage, filterSource, search, page, limit]
+    );
+
+    // Reset selection and page when filtering changes
+    useEffect(() => {
+        setSelectedIds(new Set());
+        setPage(1);
+    }, [filterStage, filterSource, search]);
+    const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
+    const { data: users } = useApi(useCallback(() => usersApi.list(), []));
+    const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
+
+    const leads = leadsRes?.data || [];
+    const agents = (users || []).filter(u => ['agent', 'sales_manager'].includes(u.role));
+
+    const openAdd = () => { setForm(DEFAULT_FORM); setEditingId(null); setShowModal(true); };
+    const openEdit = (lead) => {
+        setForm({
+            name: lead.name, email: lead.email || '', phone: lead.phone || '',
+            city: lead.city || '', source: lead.source, stage: lead.stage,
+            budget: lead.budget || '', property_type: lead.property_type || '3BHK',
+            project_id: lead.project_id || '', assigned_to: lead.assigned_to || '',
+            channel_partner_id: lead.channel_partner_id || '',
+            notes: lead.notes || '', score: lead.score,
+        });
+        setEditingId(lead.id);
+        setShowModal(true);
+    };
+
+    const saveLead = async () => {
+        if (!form.name || !form.phone) { showToast('Name and phone are required', 'error'); return; }
+        setSaving(true);
+        try {
+            if (editingId) {
+                await leadsApi.update(editingId, form);
+                showToast('Lead updated successfully', 'success');
+            } else {
+                await leadsApi.create(form);
+                showToast('Lead added successfully', 'success');
+            }
+            setShowModal(false);
+            refetch();
+        } catch (err) {
+            showToast(err.error || 'Failed to save lead', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const deleteLead = async (id) => {
+        if (!window.confirm('Delete this lead?')) return;
+        try {
+            await leadsApi.delete(id);
+            showToast('Lead deleted', 'success');
+            refetch();
+        } catch (err) {
+            showToast(err.error || 'Failed to delete lead', 'error');
+        }
+    };
+
+    const toggleSelect = (id) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === leads.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(leads.map(l => l.id)));
+        }
+    };
+
+    const handleBulkAction = async () => {
+        if (!bulkAction) return;
+        setBulkLoading(true);
+        const ids = Array.from(selectedIds);
+        try {
+            if (bulkAction === 'delete') {
+                if (window.confirm(`Delete ${ids.length} selected leads?`)) {
+                    await leadsApi.bulkDelete({ leadIds: ids });
+                    showToast(`${ids.length} leads deleted`, 'success');
+                }
+            } else if (bulkAction === 'assign' && bulkValue) {
+                await leadsApi.bulkUpdate({ leadIds: ids, updates: { assigned_to: bulkValue } });
+                showToast(`${ids.length} leads reassigned`, 'success');
+            } else if (bulkAction === 'stage' && bulkValue) {
+                await leadsApi.bulkUpdate({ leadIds: ids, updates: { stage: bulkValue } });
+                showToast(`${ids.length} leads moved to ${bulkValue}`, 'success');
+            } else if (bulkAction === 'status' && bulkValue) {
+                await leadsApi.bulkUpdate({ leadIds: ids, updates: { status: bulkValue } });
+                showToast(`${ids.length} leads updated to status: ${bulkValue}`, 'success');
+            } else if (bulkAction === 'message') {
+                if (!bulkMessage.body) {
+                    showToast('Message body is required', 'error');
+                    setBulkLoading(false);
+                    return;
+                }
+                const recipients = ids.map(id => leads.find(l => l.id === id)).filter(Boolean);
+                const res = await notificationsApi.bulkSend({
+                    channels: [bulkMessage.channel],
+                    recipients: recipients,
+                    subject: bulkMessage.subject,
+                    body: bulkMessage.body
+                });
+                showToast(res.message, 'success');
+            }
+            setSelectedIds(new Set());
+            setBulkAction(null);
+            refetch();
+        } catch (err) {
+            showToast(err.error || 'Bulk operation failed', 'error');
+        } finally {
+            setBulkLoading(false);
+        }
+    };
+
+    const upd = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+    const handleImport = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            setBulkLoading(true);
+            const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:4000/api') + '/leads/import', {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${sessionStorage.getItem('zentrix_token')}` },
+                body: formData
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Upload failed');
+            showToast(`Imported ${data.imported} leads (${data.duplicates} duplicates skipped)`, 'success');
+            refetch();
+        } catch (err) {
+            showToast(err.message || 'Failed to import leads', 'error');
+        } finally {
+            setBulkLoading(false);
+            e.target.value = null;
+        }
+    };
+
+    return (
+        <div className="animate-fadeIn">
+            {/* Header */}
+            <div className="page-header" style={{ marginBottom: 20 }}>
+                <div className="page-header-left">
+                    <h1 className="page-title">Lead Management</h1>
+                    <p className="page-subtitle">{leadsRes?.total || 0} total leads</p>
+                </div>
+                
+
+                <div className="page-actions">
+                    <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImport} />
+                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} title="Refresh Data">
+                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading}>
+                        <Filter size={14} /> Import
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                        <Plus size={15} /> Add Lead
+                    </button>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="card mb-4" style={{ padding: '12px 20px', borderRadius: 12 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="search-bar" style={{ width: 340, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
+                        <Search size={14} style={{ color: 'var(--text-muted)' }} />
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads by name, city, budget..." style={{ background: 'transparent' }} />
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <select className="form-control form-control-sm" style={{ width: 130 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+                            <option value="All">All Stages</option>
+                            {STAGES.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                        <select className="form-control form-control-sm" style={{ width: 160 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
+                            <option value="All">All Sources</option>
+                            {SOURCES.map(s => <option key={s}>{s}</option>)}
+                        </select>
+                    </div>
+
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <Filter size={14} /> Filters
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Content */}
+            {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={refetch} /> : (
+                <div className="table-wrapper">
+                        <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{ width: 40, paddingRight: 0 }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={leads.length > 0 && selectedIds.size === leads.length}
+                                            onChange={toggleSelectAll}
+                                            style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
+                                        />
+                                    </th>
+                                    {['Lead', 'Contact', 'Stage', 'Source', 'Budget', 'Score', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
+                                        const widths = {
+                                            'Lead': '180px',
+                                            'Contact': '180px',
+                                            'Stage': '100px',
+                                            'Source': '100px',
+                                            'Budget': '90px',
+                                            'Score': '70px',
+                                            'Assigned To': '110px',
+                                            'Last Contact': '110px',
+                                            'Actions': '160px'
+                                        };
+                                        return (
+                                            <th key={h} style={{ 
+                                                width: widths[h] || 'auto',
+                                                minWidth: widths[h] || 'auto'
+                                            }}>{h}</th>
+                                        );
+                                    })}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {leads.map(lead => (
+                                    <tr
+                                        key={lead.id}
+                                        onClick={() => navigate(`/leads/${lead.id}`)}
+                                        onMouseEnter={() => setHoveredRow(lead.id)}
+                                        onMouseLeave={() => setHoveredRow(null)}
+                                        style={{ cursor: 'pointer', background: selectedIds.has(lead.id) ? 'var(--navy-50)' : undefined }}
+                                    >
+                                        <td onClick={e => e.stopPropagation()} style={{ paddingRight: 0 }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(lead.id)}
+                                                onChange={() => toggleSelect(lead.id)}
+                                                style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0 }}>
+                                                    {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                                                </div>
+                                                <div>
+                                                    <div 
+                                                        data-tooltip={lead.name}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative', width: '100%', maxWidth: '180px' }}
+                                                    >
+                                                        <div 
+                                                            style={{ 
+                                                                fontWeight: 600, 
+                                                                fontSize: '0.875rem', 
+                                                                whiteSpace: 'nowrap', 
+                                                                overflow: 'hidden',
+                                                                textOverflow: 'ellipsis',
+                                                                flex: '0 1 auto',
+                                                                minWidth: 0
+                                                            }}
+                                                        >
+                                                            {lead.name}
+                                                        </div>
+                                                        <div style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            opacity: hoveredRow === lead.id ? 1 : 0,
+                                                            visibility: hoveredRow === lead.id ? 'visible' : 'hidden',
+                                                            transition: 'all 0.15s ease',
+                                                            flexShrink: 0
+                                                        }}>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setPreviewLeadId(lead.id); }}
+                                                                style={{ 
+                                                                    background: '#ffffff', 
+                                                                    border: '1px solid #cbd6e2', 
+                                                                    borderRadius: 4, 
+                                                                    padding: '1px 8px', 
+                                                                    fontSize: '11px', 
+                                                                    color: '#516f90', 
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: 600,
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                                onMouseEnter={e => e.currentTarget.style.background = '#f5f8fa'}
+                                                                onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+                                                            >
+                                                                Preview
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lead.property_type} · {lead.project_name || 'Any'}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ fontSize: '0.8rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+                                                    <Mail size={11} style={{ color: 'var(--text-muted)' }} />
+                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.email || '—'}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                    <Phone size={11} style={{ color: 'var(--text-muted)' }} />
+                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.phone}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage}</span></td>
+                                        <td><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source}</span></td>
+                                        <td style={{ fontWeight: 600 }}>{lead.budget || '—'}</td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div className="progress-bar" style={{ width: 52, height: 5 }}>
+                                                    <div className="progress-fill" style={{ width: `${lead.score}%`, background: lead.score > 80 ? '#10b981' : lead.score > 60 ? '#f59e0b' : '#f43f5e' }} />
+                                                </div>
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{lead.score}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)` }}>
+                                                    {lead.agent_avatar || '?'}
+                                                </div>
+                                                <span style={{ fontSize: '0.8rem' }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                                        </td>
+                                        <td onClick={e => e.stopPropagation()}>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call"><Phone size={13} style={{ color: '#00a38d' }} /></button>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit"><Edit2 size={13} /></button>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)' }}><Trash2 size={13} /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {/* Pagination Controls */}
+                        {!loading && !error && leadsRes && (
+                            <div style={{
+                                position: 'sticky',
+                                bottom: 0,
+                                zIndex: 10,
+                                padding: '12px 16px',
+                                borderTop: '1px solid var(--border-light)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                background: 'rgba(252, 253, 253, 0.95)',
+                                backdropFilter: 'blur(8px)',
+                                boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
+                            }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                    Showing <strong>{leads.length > 0 ? (page - 1) * limit + 1 : 0}</strong> to <strong>{Math.min(page * limit, leadsRes.total)}</strong> of <strong>{leadsRes.total}</strong> leads
+                                </div>
+                                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                    <select
+                                        value={limit}
+                                        onChange={e => { setLimit(parseInt(e.target.value)); setPage(1); }}
+                                        style={{ padding: '4px 8px', border: '1px solid var(--border-light)', borderRadius: 4, fontSize: '0.78rem', background: 'white' }}
+                                    >
+                                        {[25, 50, 100, 200].map(l => <option key={l} value={l}>{l} per page</option>)}
+                                    </select>
+
+                                    <div style={{ display: 'flex', gap: 2 }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            disabled={page === 1}
+                                            onClick={() => setPage(p => p - 1)}
+                                            style={{ height: 32, width: 80 }}
+                                        >
+                                            Previous
+                                        </button>
+
+                                        {/* Simple page number indicator */}
+                                        <div style={{ display: 'flex', alignItems: 'center', padding: '0 8px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--navy-600)' }}>
+                                            Page {page} of {Math.ceil((leadsRes.total || 0) / limit) || 1}
+                                        </div>
+
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            disabled={page * limit >= leadsRes.total}
+                                            onClick={() => setPage(p => p + 1)}
+                                            style={{ height: 32, width: 80 }}
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )
+            }
+            {leads.length === 0 && (
+                <div className="empty-state">
+                    <div className="empty-state-icon">🔍</div>
+                    <div className="empty-state-title">No leads found</div>
+                    <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
+                </div>
+            )}
+
+            {/* Add/Edit Modal */}
+            {showModal && (
+                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                    <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">{editingId ? 'Edit Lead' : 'Add New Lead'}</h3>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setShowModal(false)}><X size={16} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-grid form-grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Full Name *</label>
+                                    <input className="form-control" value={form.name} onChange={e => upd('name', e.target.value)} placeholder="e.g. Rajesh Kumar" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Phone *</label>
+                                    <input className="form-control" value={form.phone} onChange={e => upd('phone', e.target.value)} placeholder="+91 98765 43210" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Email</label>
+                                    <input className="form-control" type="email" value={form.email} onChange={e => upd('email', e.target.value)} placeholder="email@example.com" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">City</label>
+                                    <input className="form-control" value={form.city} onChange={e => upd('city', e.target.value)} placeholder="Mumbai" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Stage</label>
+                                    <select className="form-control" value={form.stage} onChange={e => upd('stage', e.target.value)}>
+                                        {STAGES.map(s => <option key={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Source</label>
+                                    <select className="form-control" value={form.source} onChange={e => upd('source', e.target.value)}>
+                                        {SOURCES.map(s => <option key={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Budget</label>
+                                    <input className="form-control" value={form.budget} onChange={e => upd('budget', e.target.value)} placeholder="₹85L" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Property Type</label>
+                                    <select className="form-control" value={form.property_type} onChange={e => upd('property_type', e.target.value)}>
+                                        {['1BHK', '2BHK', '3BHK', '4BHK', 'Villa', 'Penthouse', 'Commercial'].map(t => <option key={t}>{t}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Interested Project</label>
+                                    <select className="form-control" value={form.project_id} onChange={e => upd('project_id', e.target.value)}>
+                                        <option value="">Select project</option>
+                                        {(projects || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Assign To</label>
+                                    <select className="form-control" value={form.assigned_to} onChange={e => upd('assigned_to', e.target.value)}>
+                                        <option value="">Select agent</option>
+                                        {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Referred by Partner</label>
+                                    <select className="form-control" value={form.channel_partner_id} onChange={e => upd('channel_partner_id', e.target.value)}>
+                                        <option value="">No partner (Direct)</option>
+                                        {(channelPartners || []).map(p => (
+                                            <option key={p.id} value={p.id}>{p.name} {p.company ? `(${p.company})` : ''}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Lead Score: {form.score}</label>
+                                    <input type="range" min={0} max={100} value={form.score} onChange={e => upd('score', parseInt(e.target.value))} style={{ width: '100%', accentColor: 'var(--navy-500)' }} />
+                                </div>
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Notes</label>
+                                    <textarea className="form-control" rows={3} value={form.notes} onChange={e => upd('notes', e.target.value)} placeholder="Any notes about this lead..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={saveLead} disabled={saving}>
+                                {saving ? 'Saving...' : editingId ? 'Save Changes' : 'Add Lead'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Actions Modal / Confirm */}
+            {bulkAction && (
+                <div className="modal-overlay" onClick={() => setBulkAction(null)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">
+                                {bulkAction === 'assign' ? 'Reassign Leads' :
+                                    bulkAction === 'stage' ? 'Update Stage' :
+                                        bulkAction === 'message' ? 'Send Bulk Message' :
+                                            'Delete Leads'}
+                            </h3>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setBulkAction(null)}><X size={16} /></button>
+                        </div>
+                        <div className="modal-body">
+                            <p style={{ marginBottom: 20 }}>
+                                You are about to apply this action to <strong>{selectedIds.size}</strong> selected leads.
+                            </p>
+
+                            {bulkAction === 'message' && (
+                                <div className="form-grid form-grid-2">
+                                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                        <label className="form-label">Channel</label>
+                                        <div style={{ display: 'flex', gap: 10 }}>
+                                            {['WhatsApp', 'Email', 'SMS'].map(ch => (
+                                                <button
+                                                    key={ch}
+                                                    className={`btn btn-sm ${bulkMessage.channel === ch ? 'btn-primary' : 'btn-secondary'}`}
+                                                    onClick={() => setBulkMessage(prev => ({ ...prev, channel: ch }))}
+                                                >
+                                                    {ch}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {bulkMessage.channel === 'Email' && (
+                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                            <label className="form-label">Subject</label>
+                                            <input
+                                                className="form-control"
+                                                value={bulkMessage.subject}
+                                                onChange={e => setBulkMessage(prev => ({ ...prev, subject: e.target.value }))}
+                                                placeholder="Email subject..."
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                        <label className="form-label">Message Body</label>
+                                        <textarea
+                                            className="form-control"
+                                            rows={5}
+                                            value={bulkMessage.body}
+                                            onChange={e => setBulkMessage(prev => ({ ...prev, body: e.target.value }))}
+                                            placeholder="Write your message here... Use {{name}} to personalize."
+                                        />
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                                            Available variables: {'{{name}}'}, {'{{first_name}}'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {bulkAction === 'assign' && (
+                                <div className="form-group">
+                                    <label className="form-label">Assign to Agent</label>
+                                    <select className="form-control" value={bulkValue} onChange={e => setBulkValue(e.target.value)}>
+                                        <option value="">Select agent...</option>
+                                        {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                            {bulkAction === 'stage' && (
+                                <div className="form-group">
+                                    <label className="form-label">Change Stage To</label>
+                                    <select className="form-control" value={bulkValue} onChange={e => setBulkValue(e.target.value)}>
+                                        <option value="">Select stage...</option>
+                                        {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                            )}
+
+                            {bulkAction === 'delete' && (
+                                <p style={{ color: 'var(--accent-rose)' }}>
+                                    This action cannot be undone. All related follow-ups will also be permanently deleted.
+                                </p>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setBulkAction(null)}>Cancel</button>
+                            <button
+                                className={`btn ${bulkAction === 'delete' ? 'btn-danger' : 'btn-primary'}`}
+                                onClick={handleBulkAction}
+                                disabled={bulkLoading || (!['delete', 'message'].includes(bulkAction) && !bulkValue)}
+                            >
+                                {bulkLoading ? 'Processing...' : 'Confirm Bulk Action'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+                <div style={{
+                    position: 'fixed', bottom: 30, left: '50%', transform: 'translateX(-50%)',
+                    background: 'var(--navy-900)', color: 'white',
+                    padding: '12px 20px', borderRadius: 100,
+                    display: 'flex', alignItems: 'center', gap: 20, zIndex: 100,
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+                    animation: 'slideUp 0.3s ease'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: '0.9rem' }}>
+                        <div style={{ background: 'var(--accent-cyan)', color: 'var(--navy-900)', padding: '2px 8px', borderRadius: 20 }}>
+                            {selectedIds.size}
+                        </div>
+                        Selected
+                    </div>
+
+                    <div style={{ height: 20, width: 1, background: 'rgba(255,255,255,0.2)' }} />
+
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('message'); setBulkMessage({ subject: '', body: '', channel: 'WhatsApp' }); }}>
+                            <MessageSquare size={14} /> Message
+                        </button>
+                        <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('stage'); setBulkValue(''); }}>
+                            <Tag size={14} /> Update Stage
+                        </button>
+                        <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('assign'); setBulkValue(''); }}>
+                            <Users size={14} /> Reassign
+                        </button>
+                        <button className="btn btn-sm" style={{ background: 'rgba(244,63,94,0.15)', color: '#f43f5e', border: 'none' }} onClick={() => { setBulkAction('delete'); }}>
+                            <Trash2 size={14} /> Delete
+                        </button>
+                    </div>
+
+                    <div style={{ height: 20, width: 1, background: 'rgba(255,255,255,0.2)' }} />
+                    <button className="btn btn-ghost btn-icon btn-sm" style={{ color: 'rgba(255,255,255,0.5)', padding: 0 }} onClick={() => setSelectedIds(new Set())}>
+                        <X size={18} />
+                    </button>
+                </div>
+            )}
+
+            {/* Preview Sidebar Panel */}
+            {previewLeadId && (
+                <ContactPreviewSidebar contactId={previewLeadId} onClose={() => setPreviewLeadId(null)} />
+            )}
+        </div>
+    );
+}
+
