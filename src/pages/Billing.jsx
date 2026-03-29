@@ -27,7 +27,7 @@ export default function Billing() {
                     key: order.key,
                     amount: order.amount,
                     currency: order.currency,
-                    name: 'ZentrixCRM',
+                    name: 'Zentrix CRM',
                     description: `Upgrade to ${plan} Plan`,
                     order_id: order.id,
                     handler: async function (response) {
@@ -62,34 +62,34 @@ export default function Billing() {
 
     return (
         <div className="animate-fadeIn">
-            <div className="page-header" style={{ textAlign: 'center', alignItems: 'center' }}>
+            <div className="page-header" style={{ textAlign: 'center', alignItems: 'center', marginBottom: 12 }}>
                 <div>
-                    <h1 className="page-title">Subscription & Billing</h1>
-                    <p className="page-subtitle">Choose the right plan to scale your real estate agency.</p>
+                    <h1 className="page-title" style={{ fontSize: '1.4rem', margin: 0 }}>Subscription & Billing</h1>
+                    <p className="page-subtitle" style={{ fontSize: '0.85rem', margin: 0 }}>Choose the right plan to scale your real estate agency.</p>
                 </div>
             </div>
 
             {/* Current Plan Alert */}
-            <div style={{ maxWidth: 800, margin: '0 auto 32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{ padding: 16, background: 'var(--navy-50)', border: '1px solid var(--navy-200)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ maxWidth: 800, margin: '0 auto 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ padding: '8px 16px', background: 'var(--navy-50)', border: '1px solid var(--navy-200)', borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Current Plan</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--navy-700)', textTransform: 'uppercase' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Current Plan</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--navy-700)', textTransform: 'uppercase' }}>
                             {user?.plan || 'Free Trial'}
                         </div>
                     </div>
                     {user?.plan === 'trial' && (
-                        <div className="badge badge-red">Trial expires soon</div>
+                        <div className="badge badge-red" style={{ fontSize: '10px', padding: '4px 8px' }}>Trial expires soon</div>
                     )}
                 </div>
 
                 {/* Gateway Switcher */}
-                <div style={{ alignSelf: 'center', background: '#f1f5f9', padding: 4, borderRadius: 10, display: 'flex', gap: 4 }}>
+                <div style={{ alignSelf: 'center', background: '#f1f5f9', padding: 3, borderRadius: 8, display: 'flex', gap: 4 }}>
                     <button
                         onClick={() => setGateway('razorpay')}
                         style={{
-                            padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                            fontSize: '0.85rem', fontWeight: 600,
+                            padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                            fontSize: '0.75rem', fontWeight: 600,
                             background: gateway === 'razorpay' ? 'white' : 'transparent',
                             boxShadow: gateway === 'razorpay' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
                             color: gateway === 'razorpay' ? 'var(--navy-700)' : 'var(--text-muted)',
@@ -101,8 +101,8 @@ export default function Billing() {
                     <button
                         onClick={() => setGateway('stripe')}
                         style={{
-                            padding: '8px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
-                            fontSize: '0.85rem', fontWeight: 600,
+                            padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                            fontSize: '0.75rem', fontWeight: 600,
                             background: gateway === 'stripe' ? 'white' : 'transparent',
                             boxShadow: gateway === 'stripe' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
                             color: gateway === 'stripe' ? 'var(--navy-700)' : 'var(--text-muted)',
@@ -134,37 +134,37 @@ export default function Billing() {
                     }
                 ].map(plan => (
                     <div key={plan.name} className="card" style={{
-                        padding: '24px 28px',
+                        padding: '16px 20px',
                         position: 'relative',
                         border: plan.recommended ? `2px solid ${plan.bg}` : '1px solid var(--border-light)',
-                        transform: plan.recommended ? 'scale(1.03)' : 'scale(1)',
                         zIndex: plan.recommended ? 10 : 1,
-                        overflow: plan.recommended ? 'visible' : 'hidden',
+                        overflow: 'visible',
                         display: 'flex',
                         flexDirection: 'column',
-                        height: '100%'
+                        height: '100%',
+                        borderRadius: '24px'
                     }}>
                         {plan.recommended && (
-                            <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: plan.bg, color: 'white', fontSize: '0.75rem', fontWeight: 700, padding: '6px 16px', borderRadius: 20, letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 'max-content', zIndex: 20 }}>
+                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: plan.bg, color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '4px 12px', borderRadius: 20, letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 'max-content', zIndex: 20 }}>
                                 MOST POPULAR
                             </div>
                         )}
 
-                        <div style={{ width: 42, height: 42, borderRadius: 12, background: `${plan.bg}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: plan.bg, marginBottom: 14 }}>
-                            {plan.icon}
+                        <div style={{ width: 30, height: 30, borderRadius: 8, background: `${plan.bg}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: plan.bg, marginBottom: 8 }}>
+                            {plan.icon && <plan.icon.type {...plan.icon.props} size={16} />}
                         </div>
-                        <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{plan.title}</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', minHeight: 36, marginTop: 4 }}>{plan.desc}</p>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>{plan.title}</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.7rem', margin: '2px 0 0' }}>{plan.desc}</p>
 
-                        <div style={{ margin: '16px 0', borderBottom: '1px solid var(--border-light)', paddingBottom: 16 }}>
-                            <span style={{ fontSize: '2.2rem', fontWeight: 800 }}>{plan.price}</span>
-                            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>/month</span>
+                        <div style={{ margin: '10px 0', borderBottom: '1px solid var(--border-light)', paddingBottom: 10 }}>
+                            <span style={{ fontSize: '1.5rem', fontWeight: 800 }}>{plan.price}</span>
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem' }}>/mo</span>
                         </div>
 
-                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0', display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {plan.features.map(f => (
-                                <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                                    <CheckCircle size={16} color={plan.bg} /> {f}
+                                <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                                    <CheckCircle size={14} color={plan.bg} /> {f}
                                 </li>
                             ))}
                         </ul>
@@ -173,15 +173,19 @@ export default function Billing() {
                             className="btn"
                             style={{
                                 width: '100%',
+                                height: 36,
                                 background: plan.recommended ? plan.bg : 'white',
                                 color: plan.recommended ? 'white' : 'var(--text-primary)',
                                 border: plan.recommended ? 'none' : '1px solid var(--border-medium)',
-                                marginTop: 'auto'
+                                marginTop: 'auto',
+                                fontSize: '0.8rem',
+                                fontWeight: 800,
+                                borderRadius: '10px'
                             }}
                             onClick={() => handleSubscribe(plan.name)}
                             disabled={loading || user?.plan === plan.name}
                         >
-                            {loading ? 'Processing...' : user?.plan === plan.name ? 'Current Plan' : `Upgrade to ${plan.title}`}
+                            {loading ? '...' : user?.plan === plan.name ? 'Current' : 'Upgrade'}
                         </button>
                     </div>
                 ))}

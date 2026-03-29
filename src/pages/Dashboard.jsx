@@ -15,14 +15,13 @@ import {
     ArrowUpRight, Zap, Eye, Bell
 } from 'lucide-react';
 
+const ALL_STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+
 const STAGE_COLORS = { 
     'New': '#3b82f6', 'Contacted': '#6366f1', 'Qualified': '#06b6d4',
-    'Qualified (MQL)': '#8b5cf6', 'Sales Qualified (SQL)': '#4263eb',
+    'Disqualified': '#64748b', 'Nurture': '#7c3aed',
     'Site Visit': '#0f172a', 'Negotiation': '#f59e0b',
     'Won': '#10b981', 'Lost': '#f43f5e',
-    'Nurture': '#7c3aed', 'Disqualified': '#e11d48',
-    'Connected': '#3b82f6', 'Attempted to Contact': '#64748b',
-    'Qualified (SQL)': '#6366f1'
 };
 
 const MONTHLY_CHART = [
@@ -53,7 +52,11 @@ export default function Dashboard() {
     const upcomingFollowups = stats.upcoming_followups || [];
     const overdue = stats.overdue || {};
 
-    const maxStageCount = Math.max(...(Array.isArray(stages) ? stages : []).map(s => parseInt(s.count) || 0), 1);
+    // Build full pipeline: all 9 stages with counts (0 for missing)
+    const stageMap = {};
+    (Array.isArray(stages) ? stages : []).forEach(s => { stageMap[s.stage] = parseInt(s.count) || 0; });
+    const fullPipeline = ALL_STAGES.map(stage => ({ stage, count: stageMap[stage] || 0 }));
+    const maxStageCount = Math.max(...fullPipeline.map(s => s.count), 1);
 
     const formatRevenue = (val) => {
         if (!val) return '₹0';
@@ -110,7 +113,7 @@ export default function Dashboard() {
         { label: 'WIN RATE', value: `${leads.win_rate || 0}%`, change: `${leads.won || 0} converted this qtr`, icon: Target, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', iconBg: '#f59e0b' },
     ];
 
-    const activeStages = stages.filter(s => !['Lost'].includes(s.stage));
+    const totalLeads = fullPipeline.reduce((a, b) => a + b.count, 0);
 
     return (
         <div className="dash-root animate-fadeIn">
@@ -144,7 +147,7 @@ export default function Dashboard() {
             <div className="dash-briefing">
                 <div className="dash-briefing-header">
                     <div className="dash-briefing-icon-wrap">
-                        <Sparkles size={20} color="#f59e0b" />
+                        <Sparkles size={14} color="#f59e0b" />
                     </div>
                     <h2 className="dash-briefing-title">Your Smart Briefing</h2>
                     <div className="dash-briefing-badge">
@@ -159,7 +162,7 @@ export default function Dashboard() {
                             <div key={idx} className="dash-insight-card hover-lift">
                                 <div className="dash-insight-header">
                                     <div className="dash-insight-icon" style={{ background: insight.bg, color: insight.color }}>
-                                        <Icon size={16} strokeWidth={2.5} />
+                                        <Icon size={12} strokeWidth={2.5} />
                                     </div>
                                     <h4 className="dash-insight-title">{insight.title}</h4>
                                 </div>
@@ -184,8 +187,8 @@ export default function Dashboard() {
                             <span className="dash-badge dash-badge-blue">MONTHLY</span>
                         </div>
                     </div>
-                    <div style={{ padding: '8px 16px 20px' }}>
-                        <ResponsiveContainer width="100%" height={260}>
+                    <div style={{ padding: '0 16px 6px', flex: 1, minHeight: 0 }}>
+                        <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={MONTHLY_CHART} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="dashLeadGrad" x1="0" y1="0" x2="0" y2="1">
@@ -216,37 +219,32 @@ export default function Dashboard() {
                     <div className="dash-card-header">
                         <div>
                             <h3 className="dash-card-title">Pipeline</h3>
-                            <p className="dash-card-subtitle">Current stage distribution</p>
+                            <p className="dash-card-subtitle">{totalLeads} leads across {fullPipeline.filter(s => s.count > 0).length} stages</p>
                         </div>
                         <button onClick={() => navigate('/pipeline')} className="dash-link-btn">
                             Board <ArrowRight size={12} />
                         </button>
                     </div>
                     <div className="dash-pipeline-body">
-                        {activeStages.map(({ stage, count }) => {
-                            const pct = (parseInt(count) / maxStageCount) * 100;
+                        {fullPipeline.map(({ stage, count }) => {
+                            const pct = maxStageCount > 0 ? (count / maxStageCount) * 100 : 0;
                             const color = STAGE_COLORS[stage] || '#64748b';
+                            const isEmpty = count === 0;
                             return (
-                                <div key={stage} className="dash-stage-row">
+                                <div key={stage} className="dash-stage-row" style={{ opacity: isEmpty ? 0.5 : 1 }}>
                                     <div className="dash-stage-info">
-                                        <span className="dash-stage-name">{stage}</span>
-                                        <span className="dash-stage-count">{count} leads</span>
+                                        <span className="dash-stage-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: 3, background: color, flexShrink: 0 }} />
+                                            {stage}
+                                        </span>
+                                        <span className="dash-stage-count">{count}</span>
                                     </div>
                                     <div className="dash-stage-bar">
-                                        <div className="dash-stage-fill" style={{ width: `${pct}%`, background: color }} />
+                                        <div className="dash-stage-fill" style={{ width: `${pct}%`, background: color, minWidth: isEmpty ? 0 : '4px' }} />
                                     </div>
                                 </div>
                             );
                         })}
-                        {overdue.overdue_count > 0 && (
-                            <div className="dash-overdue-alert">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <AlertCircle size={15} color="#e11d48" />
-                                    <span>Overdue Payments</span>
-                                </div>
-                                <span className="dash-overdue-count">{overdue.overdue_count}</span>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

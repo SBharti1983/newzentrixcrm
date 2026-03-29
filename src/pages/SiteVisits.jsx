@@ -87,10 +87,10 @@ export default function SiteVisits() {
     return (
         <div className="animate-fadeIn site-visit-planner-layout">
             {/* Header Section */}
-            <div className="site-visit-header-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
+            <div className="site-visit-header-premium" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                 <div>
-                    <h1 style={{ fontSize: '2.4rem', fontWeight: 900, color: '#0f172a', margin: '0 0 8px' }}>Site Visits</h1>
-                    <p style={{ fontSize: '1rem', color: '#64748b', fontWeight: 500, margin: 0 }}>Schedule and track property showcases for your leads</p>
+                    <h1 style={{ fontSize: '18px', fontWeight: 900, color: '#0f172a', margin: 0 }}>Site Visits</h1>
+                    <p style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, margin: 0 }}>Schedule and track property showcases for your leads</p>
                 </div>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                     <div style={{ display: 'flex', background: '#f1f5f9', padding: 4, borderRadius: 12, border: '1px solid #e2e8f0' }}>
@@ -121,36 +121,36 @@ export default function SiteVisits() {
                             <MapIcon size={14} /> Map
                         </button>
                     </div>
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ height: 48, borderRadius: 12, padding: '0 28px', background: '#0f172a', color: 'white', fontWeight: 800, fontSize: '14px', display: 'flex', alignItems: 'center', gap: 10, border: 'none', boxShadow: '0 4px 12px rgba(15,23,42,0.15)' }}>
-                        <Plus size={20} strokeWidth={3} /> Plan Visit
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ height: 34, borderRadius: '10px', padding: '0 16px', background: '#0f172a', color: 'white', fontWeight: 800, fontSize: '11px', display: 'flex', alignItems: 'center', gap: 6, border: 'none', boxShadow: '0 4px 12px rgba(15,23,42,0.15)' }}>
+                        <Plus size={16} strokeWidth={3} /> Plan Visit
                     </button>
                 </div>
             </div>
 
             {/* Stats Row */}
-            <div className="visit-stats-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(600px, 1.6fr) 1fr', gap: 24, marginBottom: 40 }}>
-                <div style={{ background: '#0a1628', borderRadius: 48, padding: '40px 56px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 20px 50px rgba(10,22,40,0.3)' }}>
+            <div className="visit-stats-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16, marginBottom: 24 }}>
+                <div style={{ background: '#0a1628', borderRadius: 18, padding: '12px 20px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', overflow: 'hidden', boxShadow: '0 12px 30px rgba(10,22,40,0.2)' }}>
                     <div style={{ position: 'relative', zIndex: 2 }}>
-                        <h4 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: 12, color: '#ffffff' }}>Conversion Pipeline</h4>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
-                            Average visit-to-booking conversion: <span style={{ color: '#10b981', fontWeight: 900 }}>24.5%</span>
+                        <h4 style={{ fontSize: '0.9rem', fontWeight: 900, marginBottom: 4, color: '#ffffff' }}>Conversion Pipeline</h4>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,0.7)' }}>
+                            Avg conversion: <span style={{ color: '#10b981', fontWeight: 900 }}>24.5%</span>
                         </div>
                     </div>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', padding: '24px 36px', borderRadius: 32, border: '1px solid rgba(255,255,255,0.12)', textAlign: 'center', minWidth: 160, position: 'relative', zIndex: 2 }}>
-                        <div style={{ fontSize: '9px', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', marginBottom: 2, letterSpacing: '0.1em' }}>This Month</div>
-                        <div style={{ fontSize: '42px', fontWeight: 900, lineHeight: 1, margin: '2px 0' }}>{completedThisMonth}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, opacity: 0.8 }}>Completed</div>
+                    <div style={{ background: 'rgba(255,255,255,0.06)', padding: '10px 20px', borderRadius: 14, border: '1px solid rgba(255,255,255,0.12)', textAlign: 'center', minWidth: 100, position: 'relative', zIndex: 2 }}>
+                        <div style={{ fontSize: '7px', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', marginBottom: 1, letterSpacing: '0.1em' }}>This Month</div>
+                        <div style={{ fontSize: '18px', fontWeight: 900, lineHeight: 1, margin: '1px 0' }}>{completedThisMonth}</div>
+                        <div style={{ fontSize: '9px', fontWeight: 800, opacity: 0.6 }}>Completed</div>
                     </div>
                 </div>
 
-                <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 48, padding: 40, display: 'flex', alignItems: 'center', gap: 32, boxShadow: '0 10px 40px rgba(0,0,0,0.03)' }}>
-                    <div style={{ width: 72, height: 72, background: '#e0f2f1', borderRadius: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488' }}>
-                        <Car size={32} />
+                <div style={{ background: 'white', border: '1px solid #f1f5f9', borderRadius: 18, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 8px 16px rgba(0,0,0,0.02)' }}>
+                    <div style={{ width: 44, height: 44, background: '#e0f2f1', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0d9488' }}>
+                        <Car size={16} />
                     </div>
                     <div>
-                        <div style={{ fontSize: '9px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 6, letterSpacing: '0.12em' }}>Logistics Health</div>
-                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>98% On-Time rate</div>
-                        <div style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 500, marginTop: 4 }}>All transport modes synchronized</div>
+                        <div style={{ fontSize: '8px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2, letterSpacing: '0.08em' }}>Logistics Health</div>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>98% On-Time rate</div>
+                        <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 500, marginTop: 1 }}>Transport synchronized</div>
                     </div>
                 </div>
             </div>

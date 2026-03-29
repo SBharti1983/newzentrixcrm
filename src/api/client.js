@@ -3,7 +3,12 @@
  * Centralized HTTP layer — all API calls go through here
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const defaultApiUrl = isProd 
+    ? 'https://zentrixcrm-production-cd2d.up.railway.app/api'
+    : 'http://localhost:5050/api';
+let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
+BASE_URL = BASE_URL.replace(/\/$/, '');
 
 // ─── Token helpers ────────────────────────────────────────────────
 export function getToken() {
@@ -83,8 +88,10 @@ async function tryRefresh() {
 
 // ─── Auth ─────────────────────────────────────────────────────────
 export const authApi = {
-    login: (email, password) =>
-        api('/auth/login', { method: 'POST', body: { email, password } }),
+    login: (email, password, subdomain) =>
+        api('/auth/login', { method: 'POST', body: { email, password, subdomain } }),
+    getTenant: (slug) => 
+        api(`/auth/tenant/${slug}`),
     register: (data) =>
         api('/auth/register', { method: 'POST', body: data }),
     logout: () => {
@@ -195,6 +202,14 @@ export const marketingApi = {
     createDrip: (data) => api('/marketing/drips', { method: 'POST', body: data }),
     enrollLeads: (id, leadIds) => api(`/marketing/drips/${id}/enroll`, { method: 'POST', body: { leadIds } }),
     getAnalytics: (id) => api(`/marketing/drips/${id}/analytics`),
+    
+    // WhatsApp Broadcasts
+    getBroadcasts: () => api('/marketing/broadcasts'),
+    createBroadcast: (data) => api('/marketing/broadcasts', { method: 'POST', body: data }),
+    
+    // Chatbot
+    getChatbot: () => api('/marketing/chatbot'),
+    updateChatbot: (data) => api('/marketing/chatbot', { method: 'PATCH', body: data }),
 };
 
 export const automationApi = {
@@ -258,6 +273,7 @@ export const notificationsApi = {
 // ─── Super Admin ──────────────────────────────────────────────────
 export const superAdminApi = {
     getTenants: () => api('/superadmin/tenants'),
+    createTenant: (data) => api('/superadmin/tenants', { method: 'POST', body: data }),
     updateTenant: (id, data) => api(`/superadmin/tenants/${id}`, { method: 'PATCH', body: data }),
     getStats: () => api('/superadmin/stats'),
 };

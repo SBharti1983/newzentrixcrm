@@ -24,11 +24,23 @@ const jwt = require('jsonwebtoken');
 
 const io = new Server(server, {
     cors: {
-        origin: [
-            process.env.FRONTEND_URL || 'http://localhost:5174',
-            'http://localhost:5173',
-            'http://localhost:3000',
-        ],
+        origin: function (origin, callback) {
+            if (!origin) return callback(null, true);
+            const allowed = [
+                process.env.FRONTEND_URL || 'http://localhost:5174',
+                'https://zentrix-crm-india.vercel.app',
+                'http://localhost:5173',
+                'http://localhost:3000'
+            ];
+            if (allowed.includes(origin) || 
+                /^https:\/\/(.*\.)?zentrixcrm\.com$/.test(origin) ||
+                /^http:\/\/(.*\.)?localhost(:\d+)?$/.test(origin) ||
+                /^http:\/\/10\.122\.82\.250(:\d+)?$/.test(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ["GET", "POST"]
     }
 });
@@ -117,12 +129,23 @@ io.on('connection', (socket) => {
 // ─── Security & Middleware ────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-    origin: [
-        process.env.FRONTEND_URL || 'http://localhost:5174',
-        'https://zentrix-crm-india.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:3000',
-    ],
+    origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+        const allowed = [
+            process.env.FRONTEND_URL || 'http://localhost:5174',
+            'https://zentrix-crm-india.vercel.app',
+            'http://localhost:5173',
+            'http://localhost:3000'
+        ];
+        if (allowed.includes(origin) || 
+            /^https:\/\/(.*\.)?zentrixcrm\.com$/.test(origin) ||
+            /^http:\/\/(.*\.)?localhost(:\d+)?$/.test(origin) ||
+            /^http:\/\/10\.122\.82\.250(:\d+)?$/.test(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -131,10 +154,10 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Rate limiter — 100 requests per 15 min per IP
+// Rate limiter — Increased for dev/demo stability
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 5000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' },
@@ -156,6 +179,7 @@ app.use('/api/auth/register', require('./routes/register'));
 app.use('/api/auth', require('./routes/passwordReset'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/leads', require('./routes/leads'));
+app.use('/api/calls', require('./routes/calls'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/followups', require('./routes/followups'));

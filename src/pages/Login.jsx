@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { authApi } from '../api/client';
 import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight } from 'lucide-react';
 
-const DEMO_ACCOUNTS = [
-    { label: 'Admin', email: 'arjun@zentrix.com', password: 'Admin@123', color: '#8b5cf6', role: 'Full Access' },
-    { label: 'Sales Manager', email: 'priya@zentrix.com', password: 'Manager@123', color: '#1e3a73', role: 'Manager View' },
-    { label: 'Sales Agent', email: 'rohan@zentrix.com', password: 'Agent@123', color: '#10b981', role: 'Agent View' },
-];
+const getSubdomain = () => {
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 3) {
+        if (parts[0] === 'www' && parts.length > 3) return parts[1];
+        if (parts[0] !== 'www') return parts[0];
+    }
+    if (parts.length === 2 && parts[1] === 'localhost') return parts[0];
+    return null;
+};
 
 const STATS = [
     { label: 'Active Leads', value: '10', icon: Users, color: '#3b63b8' },
@@ -19,22 +25,41 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPwd, setShowPwd] = useState(false);
+    const [selectedRole, setSelectedRole] = useState('Admin');
+    
+    const [subdomain] = useState(getSubdomain());
+    const [tenantName, setTenantName] = useState('Zentrix CRM');
+    const [tenantLogo, setTenantLogo] = useState('Z');
+    const [tenantColor, setTenantColor] = useState('linear-gradient(135deg, #3b63b8, #06b6d4)');
+    const [bgGradient, setBgGradient] = useState('linear-gradient(135deg, #0a1628 0%, #1e3a73 50%, #0f2347 100%)');
+
+    useEffect(() => {
+        if (subdomain) {
+            authApi.getTenant(subdomain).then(data => {
+                setTenantName(data.name);
+                setTenantLogo(data.logo_url ? <img src={data.logo_url} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14}}/> : data.name[0]);
+                if (data.primary_color) {
+                    setTenantColor(data.primary_color);
+                    setBgGradient(`linear-gradient(135deg, #0a1628 0%, ${data.primary_color}80 50%, #0f2347 100%)`);
+                }
+            }).catch(e => {
+                console.log("No specific branding for subdomain", subdomain);
+            });
+        }
+    }, [subdomain]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
-        console.log('[DEBUG] Login attempt to:', apiBase);
-        await login(email, password);
+        await login(email, password, subdomain);
     };
-
-    const fillDemo = (acc) => { setEmail(acc.email); setPassword(acc.password); };
 
     return (
         <div style={{
-            minHeight: '100vh', display: 'flex',
-            background: 'linear-gradient(135deg, #0a1628 0%, #1e3a73 50%, #0f2347 100%)',
+            minHeight: '100vh', width: '100%', flex: 1, display: 'flex',
+            background: bgGradient,
             fontFamily: "'Inter', sans-serif",
             position: 'relative', overflow: 'hidden',
+            transition: 'background 0.5s ease',
         }}>
             {/* Background decorations */}
             <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -63,25 +88,27 @@ export default function Login() {
             {/* Left Panel — Branding */}
             <div style={{
                 flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                padding: '60px 80px', position: 'relative', zIndex: 1,
+                padding: '40px 60px', position: 'relative', zIndex: 1,
             }} className="login-left-panel">
                 {/* Logo */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 60 }}>
                     <div style={{
                         width: 48, height: 48, borderRadius: 14,
-                        background: 'linear-gradient(135deg, #3b63b8, #06b6d4)',
+                        background: tenantColor,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: '1.5rem', fontWeight: 900, color: 'white',
                         boxShadow: '0 8px 32px rgba(59,99,184,0.4)',
                         letterSpacing: '-1px',
-                    }}>Z</div>
+                    }}>{tenantLogo}</div>
                     <div>
-                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'white', letterSpacing: '-0.5px' }}>ZentrixCRM</div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>Real Estate Intelligence Platform</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'white', letterSpacing: '-0.5px' }}>{tenantName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>
+                            {subdomain ? 'Verified Workspace' : 'Real Estate Intelligence Platform'}
+                        </div>
                     </div>
                 </div>
 
-                <div style={{ marginBottom: 48 }}>
+                <div style={{ marginBottom: 32 }}>
                     <h1 style={{ fontSize: '2.8rem', fontWeight: 900, color: 'white', lineHeight: 1.1, marginBottom: 16, letterSpacing: '-1px' }}>
                         Manage Every<br />
                         <span style={{ background: 'linear-gradient(90deg, #06b6d4, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
@@ -94,7 +121,7 @@ export default function Login() {
                 </div>
 
                 {/* Stats */}
-                <div style={{ display: 'flex', gap: 20, marginBottom: 48 }}>
+                <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
                     {STATS.map(({ label, value, icon: Icon, color }) => (
                         <div key={label} style={{
                             flex: 1, padding: '16px', borderRadius: 16,
@@ -131,33 +158,46 @@ export default function Login() {
                 boxShadow: '-20px 0 80px rgba(0,0,0,0.3)',
             }}>
                 <div style={{ width: '100%', maxWidth: 380 }}>
-                    <div style={{ marginBottom: 32 }}>
+                    <div style={{ marginBottom: 20 }}>
                         <h2 style={{ fontSize: '1.7rem', fontWeight: 800, color: 'var(--navy-700)', marginBottom: 6 }}>Sign in</h2>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Welcome back. Enter your credentials to continue.</p>
-                    </div>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20 }}>Welcome back. Enter your credentials to continue.</p>
 
-                    {/* Demo accounts */}
-                    <div style={{ marginBottom: 24 }}>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Quick Demo Access</div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                            {DEMO_ACCOUNTS.map(acc => (
-                                <button key={acc.label} onClick={() => fillDemo(acc)} style={{
-                                    flex: 1, padding: '8px 6px', border: `1px solid ${acc.color}30`,
-                                    borderRadius: 10, background: `${acc.color}08`, cursor: 'pointer',
-                                    transition: 'all 0.15s',
-                                }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = `${acc.color}15`; e.currentTarget.style.borderColor = `${acc.color}60`; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = `${acc.color}08`; e.currentTarget.style.borderColor = `${acc.color}30`; }}
-                                >
-                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: acc.color, marginBottom: 2 }}>{acc.label}</div>
-                                    <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>{acc.role}</div>
-                                </button>
-                            ))}
+                        <div style={{ display: 'flex', gap: 6, padding: 4, background: '#f1f5f9', borderRadius: 12, marginBottom: 20 }}>
+                            {[
+                                { name: 'Admin', color: '#8b5cf6' }, 
+                                { name: 'Manager', color: '#3b82f6' }, 
+                                { name: 'Agent', color: '#10b981' }
+                            ].map(role => {
+                                const isActive = selectedRole === role.name;
+                                return (
+                                    <button 
+                                        key={role.name} 
+                                        type="button" 
+                                        onClick={() => {
+                                            setSelectedRole(role.name);
+                                            // Demo-friendly credential auto-fill
+                                            if (role.name === 'Admin') { setEmail('admin@zentrix.com'); setPassword('Admin@123'); }
+                                            if (role.name === 'Manager') { setEmail('manager@zentrix.com'); setPassword('Manager@123'); }
+                                            if (role.name === 'Agent') { setEmail('agent@zentrix.com'); setPassword('Agent@123'); }
+                                        }}
+                                        style={{
+                                            flex: 1, padding: '8px 4px', fontSize: '0.74rem', fontWeight: 800,
+                                            borderRadius: 9, border: 'none', 
+                                            background: isActive ? role.color : 'transparent',
+                                            color: isActive ? 'white' : 'var(--text-muted)',
+                                            boxShadow: isActive ? `0 4px 12px ${role.color}40` : 'none',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.02em'
+                                        }}
+                                    >
+                                        {role.name}
+                                    </button>
+                                );
+                            })}
                         </div>
-                        <div style={{ fontSize: '0.67rem', color: 'var(--text-muted)', marginTop: 6 }}>↑ Click any card to auto-fill credentials</div>
                     </div>
-
-                    <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--border-light), transparent)', marginBottom: 24 }} />
 
                     <form onSubmit={handleSubmit}>
                         {/* Email */}
@@ -179,7 +219,7 @@ export default function Login() {
                         </div>
 
                         {/* Password */}
-                        <div style={{ marginBottom: 20 }}>
+                        <div style={{ marginBottom: 16 }}>
                             <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
                                 Password
                             </label>
@@ -240,16 +280,9 @@ export default function Login() {
                         </button>
                     </form>
 
-                    <div style={{ marginTop: 24, padding: '12px 14px', borderRadius: 10, background: 'var(--slate-50)', border: '1px solid var(--border-light)', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                        <strong>Demo credentials:</strong><br />
-                        Admin: arjun@zentrix.com / Admin@123<br />
-                        Manager: priya@zentrix.com / Manager@123<br />
-                        Agent: rohan@zentrix.com / Agent@123
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16, fontSize: '0.82rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 20, fontSize: '0.82rem' }}>
                         <a href="/forgot-password" style={{ color: 'var(--navy-500)', fontWeight: 600, textDecoration: 'none' }}>
-                            Forgot password?
+                            Reset Password
                         </a>
                         <a href="/register" style={{ color: 'var(--navy-500)', fontWeight: 600, textDecoration: 'none' }}>
                             Create account

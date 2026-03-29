@@ -7,24 +7,26 @@ import {
     CheckCircle2, Clock, Filter, Search,
     ChevronRight, MoreHorizontal, Sparkles,
     Brain, ShieldCheck, UserMinus, Heart,
-    ArrowUpRight, ArrowDownRight, MessageSquare
+    ArrowUpRight, ArrowDownRight, MessageSquare, MapPin, Handshake, X, Award, Home, Phone
 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 const LEAD_STATUSES = [
-    { id: 'New', label: 'New', icon: Clock, color: 'var(--slate-500)', bg: 'var(--slate-50)', description: 'Freshly imported leads' },
-    { id: 'Contacted', label: 'Contacted', icon: MessageSquare, color: 'var(--navy-500)', bg: 'var(--navy-50)', description: 'Initial contact made' },
-    { id: 'Qualified (MQL)', label: 'Qualified (MQL)', icon: ShieldCheck, color: 'var(--accent-emerald)', bg: 'rgba(16, 185, 129, 0.05)', description: 'Marketing Qualified Lead' },
-    { id: 'Sales Qualified (SQL)', label: 'Sales Qualified (SQL)', icon: Target, color: 'var(--accent-violet)', bg: 'rgba(139, 92, 246, 0.05)', description: 'Sales Qualified Lead' },
-    { id: 'Won', label: 'Won', icon: CheckCircle2, color: 'var(--accent-emerald)', bg: 'rgba(16, 185, 129, 0.08)', description: 'Successfully converted' },
-    { id: 'Lost', label: 'Lost', icon: AlertCircle, color: 'var(--accent-rose)', bg: 'rgba(244, 63, 94, 0.08)', description: 'Lost opportunity' },
-    { id: 'Disqualified', label: 'Disqualified', icon: UserMinus, color: 'var(--accent-rose)', bg: 'rgba(244, 63, 94, 0.05)', description: 'Not a good fit' }
+    { id: 'New', label: 'New', icon: Home, color: '#3b82f6', bg: '#eff6ff', description: 'Freshly imported leads' },
+    { id: 'Contacted', label: 'Contacted', icon: Phone, color: '#6366f1', bg: '#f5f3ff', description: 'Initial contact made' },
+    { id: 'Qualified', label: 'Qualified', icon: Target, color: '#06b6d4', bg: '#ecfeff', description: 'Interest confirmed' },
+    { id: 'Disqualified', label: 'Disqualified', icon: AlertCircle, color: '#94a3b8', bg: '#f1f5f9', description: 'Not a good fit' },
+    { id: 'Nurture', label: 'Nurture', icon: Sparkles, color: '#8b5cf6', bg: '#f5f3ff', description: 'Long term interest' },
+    { id: 'Site Visit', label: 'Site Visit', icon: MapPin, color: '#14b8a6', bg: '#f0fdfa', description: 'Property visit arranged' },
+    { id: 'Negotiation', label: 'Negotiation', icon: Handshake, color: '#f59e0b', bg: '#fffbeb', description: 'Pricing discussion' },
+    { id: 'Won', label: 'Won', icon: Award, color: '#10b981', bg: '#ecfdf5', description: 'Successfully converted' },
+    { id: 'Lost', label: 'Lost', icon: X, color: '#f43f5e', bg: '#fff1f2', description: 'Lost opportunity' }
 ];
 
 export default function LeadScoreStatus() {
     const { showToast } = useToast();
     const [search, setSearch] = useState('');
-    const [activeTab, setActiveTab] = useState('Qualified (MQL)');
+    const [activeTab, setActiveTab] = useState('Qualified');
     const [updatingId, setUpdatingId] = useState(null);
 
     const { data: leadsRes, loading, error, refetch } = useApi(
@@ -210,8 +212,13 @@ export default function LeadScoreStatus() {
                                                 <span className="badge-blue" style={{ fontSize: '11px' }}>{lead.source}</span>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--accent-emerald)', fontSize: '13px', fontWeight: 600 }}>
-                                                    <ArrowUpRight size={14} /> High
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: lead.score >= 70 ? 'var(--accent-emerald)' : 'var(--text-muted)', fontSize: '11px', fontWeight: 700 }}>
+                                                        <MapPin size={12} /> {lead.stage === 'Site Visit' || lead.score > 80 ? 'Visit Done' : 'No Visit'}
+                                                    </div>
+                                                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                                        Last active: {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString() : 'Never'}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', textAlign: 'right' }}>
@@ -255,18 +262,22 @@ export default function LeadScoreStatus() {
                         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: 24, maxWidth: 500 }}>
                             Lead scores are automatically calculated using a 100-point scale based on budget, property type interest, and recent engagement patterns.
                         </p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', marginBottom: 8 }}>Demographics</div>
-                                <div style={{ fontSize: '13px' }}>Location & Profile matches</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', marginBottom: 6 }}>Engagement</div>
+                                <div style={{ fontSize: '12px' }}>Site Visits & Calls</div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-amber)', textTransform: 'uppercase', marginBottom: 8 }}>Budget Fit</div>
-                                <div style={{ fontSize: '13px' }}>Alignment with Inventory</div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-violet)', textTransform: 'uppercase', marginBottom: 6 }}>Intent</div>
+                                <div style={{ fontSize: '12px' }}>Payments & Bookings</div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-rose)', textTransform: 'uppercase', marginBottom: 8 }}>Activity</div>
-                                <div style={{ fontSize: '13px' }}>Last 7 day engagement</div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-amber)', textTransform: 'uppercase', marginBottom: 6 }}>Budget</div>
+                                <div style={{ fontSize: '12px' }}>Price matching</div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-rose)', textTransform: 'uppercase', marginBottom: 6 }}>Recency</div>
+                                <div style={{ fontSize: '12px' }}>Last 7 days active</div>
                             </div>
                         </div>
                     </div>

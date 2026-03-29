@@ -21,9 +21,9 @@ export default function Automations() {
     // Form State
     const [formData, setFormData] = useState({
         name: '',
-        trigger_type: 'lead_created',
-        action_type: 'send_whatsapp',
-        action_config: { template: 'Welcome Message' }
+        trigger_type: 'lead_create',
+        action_type: 'send_client_message',
+        action_config: { channel: 'Email', subject: 'Next Steps', body: 'Hello {name}, thank you for your interest...', delay_days: 1 }
     });
 
     const loadLogs = useCallback(async () => {
@@ -51,7 +51,12 @@ export default function Automations() {
             await automationsApi.create(formData);
             showToast('Automation activated!', 'success');
             setShowCreate(false);
-            setFormData({ name: '', trigger_type: 'lead_created', action_type: 'send_whatsapp', action_config: { template: 'Welcome Message' } });
+            setFormData({ 
+                name: '', 
+                trigger_type: 'lead_create', 
+                action_type: 'send_client_message', 
+                action_config: { channel: 'Email', delay_days: 1 } 
+            });
             refetch();
         } catch (_err) {
             showToast('Failed to create workflow', 'error');
@@ -288,11 +293,17 @@ export default function Automations() {
                                         value={formData.trigger_type}
                                         onChange={e => setFormData({ ...formData, trigger_type: e.target.value })}
                                     >
-                                        <option value="lead_created">Whenever a New Lead is Created</option>
-                                        <option value="stage_changed">When Lead Moves to a New Stage</option>
-                                        <option value="no_activity">If Lead remains Cold for (X) Days</option>
+                                        <option value="lead_create">Whenever a New Lead is Created</option>
+                                        <option value="stage_change">When Lead Moves to a New Stage</option>
+                                        <option value="lead_idle">If Lead remains Cold for (X) Hours</option>
                                         <option value="site_visit_done">After Site Visit is Completed</option>
                                     </select>
+                                    {formData.trigger_type === 'stage_change' && (
+                                        <div style={{ marginTop: 12, display: 'flex', gap: 12 }}>
+                                            <input className="form-control" placeholder="From Stage (Any)" onChange={e => setFormData({ ...formData, trigger_config: { ...formData.trigger_config, from_stage: e.target.value } })} />
+                                            <input className="form-control" placeholder="To Stage (Any)" onChange={e => setFormData({ ...formData, trigger_config: { ...formData.trigger_config, to_stage: e.target.value } })} />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -310,11 +321,30 @@ export default function Automations() {
                                         value={formData.action_type}
                                         onChange={e => setFormData({ ...formData, action_type: e.target.value })}
                                     >
-                                        <option value="send_whatsapp">Send Automated WhatsApp Template</option>
-                                        <option value="send_email">Send Professional Email Sequence</option>
-                                        <option value="notify_agent">Alert Team Member immediately</option>
-                                        <option value="change_stage">Auto-advance Lead Stage</option>
+                                        <option value="send_client_message">Send Client Message (Email/WhatsApp)</option>
+                                        <option value="create_followup">Create Shared Follow-up Task</option>
+                                        <option value="notify_manager">Alert Manager for Review</option>
+                                        <option value="assign_agent">Intelligent Agent Assignment</option>
                                     </select>
+
+                                    {formData.action_type === 'send_client_message' && (
+                                        <div style={{ marginTop: 12 }}>
+                                            <select className="form-control" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, channel: e.target.value } })}>
+                                                <option value="Email">Send via Email</option>
+                                                <option value="WhatsApp">Send via WhatsApp</option>
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {formData.action_type === 'create_followup' && (
+                                        <div style={{ marginTop: 12, display: 'flex', gap: 12 }}>
+                                            <input type="number" className="form-control" placeholder="Delay focus (Days)" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, delay_days: e.target.value } })} />
+                                            <select className="form-control" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, task_type: e.target.value } })}>
+                                                <option value="Call">Call</option>
+                                                <option value="Meeting">Meeting</option>
+                                            </select>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

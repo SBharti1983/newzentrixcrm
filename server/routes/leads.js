@@ -340,6 +340,13 @@ router.patch('/:id', async (req, res) => {
             });
         }
 
+        // Trigger Stage Change automation if stage updated
+        if (updates.stage && updates.stage !== old.rows[0].stage) {
+            automationService.handleStageChange(rows[0], old.rows[0].stage, updates.stage, req.io).catch(err => {
+                console.error('[Automation Trigger] Stage change error:', err);
+            });
+        }
+
         res.json(rows[0]);
     } catch (err) {
         console.error(err);
@@ -388,18 +395,48 @@ router.post('/:id/ai-score', async (req, res) => {
         let score = 50;
         let reasons = [];
 
+        // --- ENHANCED DATA FETCHING ---
+        // 1. Site Visits
+        const { rows: siteVisits } = await pool.query(
+            `SELECT COUNT(*) FROM site_visits WHERE lead_id = $1 AND tenant_id = $2 AND status = 'Completed'`,
+            [req.params.id, req.tenantId]
+        );
+        const completedVisits = parseInt(siteVisits[0].count);
+
+        // 2. Payment History (Total Paid)
+        const { rows: payments } = await pool.query(
+            `SELECT COALESCE(SUM(i.amount), 0) as total_paid
+             FROM installments i
+             JOIN bookings b ON i.booking_id = b.id
+             JOIN customers c ON b.customer_id = c.id
+             WHERE c.lead_id = $1 AND c.tenant_id = $2 AND i.status = 'Paid'`,
+            [req.params.id, req.tenantId]
+        );
+        const totalPaid = parseFloat(payments[0].total_paid);
+
         // Check for Gemini API Key, fallback to simulated logic if missing
         if (!process.env.GEMINI_API_KEY) {
             console.log("GEMINI_API_KEY is not set, falling back to simulated logic");
-            if (lead.phone && lead.email) { score += 15; reasons.push("Has valid phone and email"); }
-            if (lead.budget && parseInt(lead.budget.replace(/[^0-9]/g, '')) > 50) { score += 20; reasons.push("High budget indication ($)"); }
-            if (lead.notes && lead.notes.length > 20) { score += 10; reasons.push("Detailed notes exist indicating conversation"); }
-            if (lead.source === 'Referral') { score += 15; reasons.push("Referral source carries higher conversion probability"); }
-            if (lead.stage === 'Site Visit' || lead.stage === 'Negotiation') { score += 20; reasons.push(`Late pipeline stage (${lead.stage}) indicates high intent`); }
+            if (lead.phone && lead.email) { score += 10; reasons.push("Has valid phone and email"); }
+            if (lead.budget && parseInt(lead.budget.replace(/[^0-9]/g, '')) > 50) { score += 15; reasons.push("High budget indication ($)"); }
+            if (lead.notes && lead.notes.length > 20) { score += 5; reasons.push("Detailed notes exist indicating conversation"); }
+            if (lead.source === 'Referral') { score += 10; reasons.push("Referral source carries higher conversion probability"); }
+            if (lead.stage === 'Site Visit' || lead.stage === 'Negotiation') { score += 15; reasons.push(`Late pipeline stage (${lead.stage}) indicates high intent`); }
+            
+            // New factors
+            if (completedVisits > 0) { 
+                score += (completedVisits * 15); 
+                reasons.push(`${completedVisits} completed site visit(s) - Strong physical intent`); 
+            }
+            if (totalPaid > 0) { 
+                score += 25; 
+                reasons.push(`Commitment shown via payments (₹${totalPaid.toLocaleString()})`); 
+            }
+
             if (lead.stage === 'Lost') { score = 10; reasons.push("Lead marked as lost"); }
             score = Math.min(Math.max(score, 10), 99); // Clamp score
         } else {
-            console.log("Running Real Google Gemini AI Evaluation");
+            console.log("Running Real Google Gemini AI Evaluation with site visits & payments");
             const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
             const prompt = `
@@ -414,10 +451,12 @@ router.post('/:id/ai-score', async (req, res) => {
             - Listed Budget: ${lead.budget || 'None'}
             - Property Type Requested: ${lead.property_type || 'None'}
             - Agent Notes: ${lead.notes || 'None'}
+            - Completed Site Visits: ${completedVisits}
+            - Total Amount Paid so far: ₹${totalPaid.toLocaleString()}
             
             Based on this information, output a JSON object containing:
             1. 'score': A number from 0 to 100 representing the lead's conversion likelihood (100 is highly likely to close).
-            2. 'reasons': An array of exactly 3 to 4 short, concise bullet points explaining why you gave this score based on the data.
+            2. 'reasons': An array of exactly 3 to 4 short, concise bullet points explaining why you gave this score based on the data. Focus on their physical engagement (visits) and financial commitment (payments) if present.
             
             IMPORTANT: Return ONLY valid JSON, without markdown formatting or code blocks.
             Example format: {"score": 85, "reasons": ["Good budget", "Contact info present"]}

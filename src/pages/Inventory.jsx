@@ -114,44 +114,44 @@ export default function Inventory() {
             {/* Asset Intelligence Ribbon */}
             <div style={{ 
                 background: 'linear-gradient(135deg, var(--navy-900), #0f172a)', 
-                padding: '44px 40px', 
-                borderRadius: '32px', 
-                marginBottom: 32,
+                padding: '12px 20px', 
+                borderRadius: '18px', 
+                marginBottom: 20,
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: '0 20px 48px rgba(10,22,40,0.18)'
+                boxShadow: '0 16px 40px rgba(10,22,40,0.15)'
             }}>
-                <div style={{ position: 'absolute', top: -30, right: -30, opacity: 0.05 }}>
-                    <Layers size={260} />
+                <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.03 }}>
+                    <Layers size={120} />
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: 24 }}>
-                    <div style={{ flex: '1 1 300px' }}>
-                        <div style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--accent-cyan)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <TrendingUp size={16} /> Institutional Asset Tracking
+                    <div style={{ flex: '1 1 200px' }}>
+                        <div style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-cyan)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <TrendingUp size={12} /> Institutional Asset Tracking
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '36px', fontWeight: 900, letterSpacing: '-1.5px' }}>Unit Inventory</h1>
-                        <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '15px' }}>Managing {units.length} premium units across {projects.length} strategic projects.</p>
+                        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, letterSpacing: '-0.3px' }}>Unit Inventory</h1>
+                        <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '11px' }}>Managing {units.length} premium units across {projects.length} strategic projects.</p>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
                         {[
-                            { label: 'Available Units', value: counts.Available, sub: `${((counts.Available / (units.length || 1)) * 100).toFixed(0)}% Portfolio`, color: 'var(--accent-emerald)' },
+                            { label: 'Available', value: counts.Available, sub: `${((counts.Available / (units.length || 1)) * 100).toFixed(0)}% Portfolio`, color: 'var(--accent-emerald)' },
                             { label: 'Reservations', value: counts.Booked, sub: 'Strategic Hold', color: 'var(--accent-amber)' },
-                            { label: 'Realized Assets', value: counts.Sold, sub: 'Total Absorption', color: 'white' },
+                            { label: 'Realized', value: counts.Sold, sub: 'Absorption', color: 'white' },
                         ].map(m => (
                           <div key={m.label} style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 6 }}>{m.label}</div>
-                              <div style={{ fontSize: '28px', fontWeight: 900, color: m.color }}>{m.value}</div>
-                              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginTop: 2 }}>{m.sub}</div>
+                              <div style={{ fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 1 }}>{m.label}</div>
+                              <div style={{ fontSize: '14px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, marginTop: 1 }}>{m.sub}</div>
                           </div>
                         ))}
                         <button className="btn hover-lift" onClick={() => setShowModal(true)} style={{ 
-                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 52, padding: '0 28px', borderRadius: '18px', border: 'none',
-                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)', fontSize: '13px', flexShrink: 0
+                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 34, padding: '0 14px', borderRadius: '10px', border: 'none',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.15)', fontSize: '11px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6
                         }}>
-                             <Plus size={18} /> ADD INVENTORY
+                             <Plus size={14} /> ADD ASSET
                         </button>
                     </div>
                 </div>

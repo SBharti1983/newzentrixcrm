@@ -19,16 +19,35 @@ function signTokens(user) {
     return { accessToken, refreshToken };
 }
 
+// ── GET /api/auth/tenant/:slug ─────────────────────────────────────
+// Public route to fetch tenant branding details for the login page
+router.get('/tenant/:slug', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT name, slug, logo_url, primary_color, is_active FROM tenants WHERE slug = $1`,
+            [req.params.slug]
+        );
+        if (rows.length === 0) return res.status(404).json({ error: 'Tenant not found' });
+        if (!rows[0].is_active) return res.status(403).json({ error: 'Tenant account is inactive' });
+        
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch tenant info' });
+    }
+});
+
 // ── POST /api/auth/login ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, subdomain } = req.body;
     if (!email || !password)
         return res.status(400).json({ error: 'Email and password are required' });
 
     try {
-        // Simplified query to diagnose the root cause
         const { rows } = await pool.query(
-            `SELECT u.* FROM users u WHERE LOWER(u.email) = LOWER($1)`, [email]
+            `SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.is_active as tenant_is_active 
+             FROM users u 
+             LEFT JOIN tenants t ON u.tenant_id = t.id 
+             WHERE LOWER(u.email) = LOWER($1)`, [email]
         );
         const user = rows[0];
         
@@ -36,19 +55,21 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
-        // Now check tenant status separately to be precise
-        const { rows: tenantRows } = await pool.query(
-            `SELECT is_active FROM tenants WHERE id = $1`, [user.tenant_id]
-        );
-        const tenant = tenantRows[0];
-        if (!tenant) {
-            console.log(`[AUTH] Login failed: Tenant record MISSING for user ${email} (Dangling ID: ${user.tenant_id})`);
-            return res.status(401).json({ error: 'System configuration error. Please contact support.' });
-        }
-        if (!tenant.is_active) {
+        if (user.tenant_id && user.tenant_is_active === false) {
             console.log(`[AUTH] Login failed: Tenant INACTIVE for ${email}`);
             return res.status(401).json({ error: 'Subscription inactive.' });
         }
+        if (user.tenant_id && user.tenant_is_active === null) {
+            console.log(`[AUTH] Login failed: Tenant record MISSING for user ${email}`);
+            return res.status(401).json({ error: 'System configuration error. Please contact support.' });
+        }
+        
+        // Disallow cross-tenant logins if a specific subdomain is requested
+        if (subdomain && user.tenant_slug && user.tenant_slug !== subdomain) {
+            console.log(`[AUTH] Login failed: User ${email} (tenant: ${user.tenant_slug}) attempted to log into subdomain: ${subdomain}`);
+            return res.status(403).json({ error: `This account does not belong to the '${subdomain}' workspace.` });
+        }
+
         if (!user.is_active) {
              console.log(`[AUTH] Login failed: User account DISABLED for ${email}`);
              return res.status(401).json({ error: 'Account disabled.' });

@@ -30,20 +30,108 @@ class AutomationService {
                         details.agent_id = agent.id;
                         details.message = `Lead assigned to ${agent.name} via ${wf.name}`;
                     } else if (wf.action_type === 'notify_manager') {
-                        // Notify managers if lead score is high (implemented in executeNotify)
                         await this.executeNotify(wf, lead, io);
                         details.message = `Managers notified for high-value lead.`;
                     }
 
-                    // Log the execution
                     await this.logExecution(tenant_id, wf.id, lead_id, status, details);
                 } catch (err) {
-                    console.error(`[Automation Service] Workflow '${wf.name}' failed:`, err);
+                    console.error(`[Automation Service] Lead workflow '${wf.name}' failed:`, err);
                     await this.logExecution(tenant_id, wf.id, lead_id, 'error', { error: err.message });
                 }
             }
         } catch (err) {
             console.error('[Automation Service] Lead creation trigger failed:', err);
+        }
+    }
+
+    /**
+     * Triggered when a lead's stage is updated
+     */
+    async handleStageChange(lead, oldStage, newStage, io) {
+        const { tenant_id, id: lead_id } = lead;
+        if (oldStage === newStage) return;
+
+        try {
+            // Find active workflows triggered by stage change
+            const { rows: workflows } = await pool.query(
+                `SELECT * FROM workflows 
+                 WHERE tenant_id = $1 AND trigger_type = 'stage_change' AND is_active = TRUE`,
+                [tenant_id]
+            );
+
+            for (const wf of workflows) {
+                // Check if this workflow is specific to certain stages
+                const conf = wf.trigger_config || {};
+                if (conf.from_stage && conf.from_stage !== oldStage) continue;
+                if (conf.to_stage && conf.to_stage !== newStage) continue;
+
+                let status = 'success';
+                let details = { message: `Stage change workflow '${wf.name}' matched.`, from: oldStage, to: newStage };
+
+                try {
+                    if (wf.action_type === 'create_followup') {
+                        await this.executeCreateFollowup(wf, lead);
+                        details.message = `Auto-scheduled follow-up for '${newStage}' progression.`;
+                    } else if (wf.action_type === 'send_client_message') {
+                        await this.executeClientMessage(wf, lead, io);
+                        details.message = `Client message (${wf.action_config.channel}) sent for ${newStage}.`;
+                    } else if (wf.action_type === 'notify_manager') {
+                        await this.executeNotify(wf, lead, io);
+                    }
+
+                    await this.logExecution(tenant_id, wf.id, lead_id, status, details);
+                } catch (err) {
+                    console.error(`[Automation Service] Stage change workflow '${wf.name}' failed:`, err);
+                    await this.logExecution(tenant_id, wf.id, lead_id, 'error', { error: err.message });
+                }
+            }
+        } catch (err) {
+            console.error('[Automation Service] Stage change trigger failed:', err);
+        }
+    }
+
+    /**
+     * Auto-schedules a follow-up task
+     */
+    async executeCreateFollowup(wf, lead) {
+        const { tenant_id, id: lead_id, assigned_to } = lead;
+        const config = wf.action_config || {};
+        const delayDays = parseInt(config.delay_days) || 1;
+        
+        const scheduledAt = new Date();
+        scheduledAt.setDate(scheduledAt.getDate() + delayDays);
+        scheduledAt.setHours(10, 0, 0, 0); // Default to 10 AM
+
+        await pool.query(
+            `INSERT INTO followups (tenant_id, lead_id, assigned_to, type, priority, scheduled_at, note)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [tenant_id, lead_id, assigned_to, config.task_type || 'Call', 'High', scheduledAt, `Auto-generated: ${wf.name}`]
+        );
+    }
+
+    /**
+     * Simulates sending an external message to the client
+     */
+    async executeClientMessage(wf, lead, io) {
+        const { tenant_id, id: lead_id, name: lead_name, email, phone } = lead;
+        const config = wf.action_config || {};
+        const channel = config.channel || 'Email';
+        
+        await pool.query(
+            `INSERT INTO notifications (tenant_id, lead_id, channel, recipient, subject, body, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [tenant_id, lead_id, channel, channel === 'Email' ? email : phone, 
+             config.subject || 'Follow-up', config.body || `Hello ${lead_name}...`, 'Sent']
+        );
+
+        // Optionally notify the assigned agent that a message was sent
+        if (lead.assigned_to && io) {
+            io.to(`user_${lead.assigned_to}`).emit('notification', {
+                title: '📧 Auto-Outgoing Message',
+                message: `${channel} sent to ${lead_name} automatically.`,
+                type: 'info'
+            });
         }
     }
 

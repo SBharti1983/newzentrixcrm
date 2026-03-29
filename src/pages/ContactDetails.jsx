@@ -153,6 +153,14 @@ export default function ContactDetails() {
         loadData();
     }, [loadData]);
 
+    useEffect(() => {
+        const originalOverflowX = document.body.style.overflowX;
+        document.body.style.overflowX = 'hidden';
+        return () => {
+            document.body.style.overflowX = originalOverflowX || 'auto';
+        };
+    }, []);
+
     const handleUpdateStage = async (newStage) => {
         if (newStage === contact.stage) {
             setShowStageMenu(false);
@@ -224,9 +232,11 @@ export default function ContactDetails() {
     const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New'];
 
     return (
-        <div className="contact-details-layout" style={{ backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
+        <div className="contact-details-layout" style={{ display: 'flex', width: '100%', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden', overflowX: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
             <div className="contact-details-sidebar" style={{ 
+                width: 300,
+                flexShrink: 0,
                 borderRight: '1px solid var(--border-light)', 
                 backgroundColor: 'white', 
                 display: 'flex', 
@@ -235,83 +245,73 @@ export default function ContactDetails() {
                 boxShadow: '4px 0 24px rgba(10,22,40,0.02)',
                 zIndex: 10
             }}>
-                <div style={{ padding: '16px 32px', borderBottom: '1px solid var(--border-light)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <button onClick={() => navigate('/leads')} className="hover-lift" style={{ 
-                        background: 'var(--slate-50)', border: '1px solid #e2e8f0', borderRadius: '12px',
-                        padding: '8px 14px', fontSize: '13px', color: 'var(--navy-600)', fontWeight: 800, 
-                        display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' 
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-light)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <button onClick={() => navigate('/leads')} style={{ 
+                        background: 'var(--slate-50)', border: '1px solid #e2e8f0', borderRadius: '10px',
+                        padding: '6px 12px', fontSize: '12px', color: 'var(--navy-600)', fontWeight: 800, 
+                        display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' 
                     }}>
-                        <ChevronLeft size={16} /> Back
+                        <ChevronLeft size={14} /> Back
                     </button>
-                    <div style={{ padding: '6px 14px', background: currentStageStyle.bg, color: currentStageStyle.text, borderRadius: '20px', fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <div style={{ padding: '4px 10px', background: currentStageStyle.bg, color: currentStageStyle.text, borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
                         {contact.stage}
                     </div>
                 </div>
 
-                <div style={{ padding: '32px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: 32 }}>
+                <div style={{ padding: '16px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
                         <div style={{
-                            width: 84, height: 84,
+                            width: 56, height: 56,
                             background: avatarBg,
                             color: 'white',
-                            borderRadius: '32px',
+                            borderRadius: '20px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '32px', fontWeight: 900,
-                            margin: '0 auto 20px',
-                            boxShadow: `0 20px 40px ${avatarBg}30`,
-                            border: '4px solid white',
-                            textTransform: 'uppercase',
+                            fontSize: '22px', fontWeight: 900,
+                            margin: '0 auto 10px',
+                            boxShadow: `0 8px 20px ${avatarBg}20`,
+                            border: '3px solid white',
                             position: 'relative'
                         }}>
                             {initial}
-                            <div style={{ position: 'absolute', bottom: -4, right: -4, width: 24, height: 24, background: '#10b981', border: '4px solid white', borderRadius: '50%', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.3)' }} />
+                            <div style={{ position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, background: '#10b981', border: '3px solid white', borderRadius: '50%' }} />
                         </div>
-                        <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.7px' }}>{contact.name}</h1>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                            <div style={{ fontSize: '13px', color: 'var(--slate-500)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <MapPin size={14} color="var(--slate-400)" /> {contact.city || 'Location Not Set'}
-                            </div>
+                        <h1 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.5px' }}>{contact.name}</h1>
+                        <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            <MapPin size={12} /> {contact.city || 'Location Pending'}
                         </div>
                     </div>
 
-                    {/* Strategic Action Hub */}
+                    {/* Strategic Action Hub - HIGH DENSITY */}
                     <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(4, 1fr)', 
-                        gap: 12, 
-                        marginBottom: 32,
-                        padding: '16px',
+                        gridTemplateColumns: 'repeat(3, 1fr)', 
+                        gap: 8, 
+                        marginBottom: 16,
+                        padding: '12px',
                         background: '#f8fafc',
-                        borderRadius: '24px',
-                        border: '1.5px solid #f1f5f9'
+                        borderRadius: '16px',
+                        border: '1px solid #f1f5f9'
                     }}>
                         {[
-                            { icon: Edit2, label: 'Note', color: '#f59e0b', bg: 'white', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Mail, label: 'Email', color: '#3b82f6', bg: 'white', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Phone, label: 'Call', color: '#10b981', bg: 'white', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
-                            { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', bg: 'white', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } }
+                            { icon: Mail, label: 'Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Phone, label: 'Call', color: '#10b981', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
+                            { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: MapPin, label: 'Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
+                            { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) },
+                            { icon: Rocket, label: 'Outreach', color: 'var(--navy-900)', action: () => { setComposerTrigger('followup'); setShowComposer(true); } }
                         ].map(act => (
                             <button 
                                 key={act.label} 
                                 onClick={act.action} 
-                                className="hover-lift" 
                                 style={{ 
-                                    padding: '16px 0', borderRadius: '18px', background: act.bg, 
+                                    padding: '10px 0', borderRadius: '12px', background: 'white', 
                                     border: `1.5px solid #f1f5f9`, display: 'flex', flexDirection: 'column', 
-                                    alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
-                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    boxShadow: '0 4px 12px rgba(10,22,40,0.03)'
+                                    alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer',
+                                    transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                                 }}
                             >
-                                <div style={{ 
-                                    width: 38, height: 38, borderRadius: '12px', 
-                                    background: `${act.color}10`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    border: `1px solid ${act.color}20`
-                                }}>
-                                    <act.icon size={18} color={act.color} strokeWidth={2.5} />
-                                </div>
-                                <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{act.label}</span>
+                                <act.icon size={14} color={act.color} strokeWidth={2.5} />
+                                <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
                             </button>
                         ))}
                     </div>
@@ -435,41 +435,39 @@ export default function ContactDetails() {
             </div>
 
             {/* MIDDLE COLUMN - Executive Intelligence & Timeline */}
-            <div className="contact-details-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, backgroundColor: '#fcfdfe' }}>
-                <div style={{ padding: '0 40px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
-                    <div style={{ display: 'flex', gap: 40 }}>
+            <div className="contact-details-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowX: 'hidden', backgroundColor: '#fcfdfe' }}>
+                <div style={{ padding: '0 24px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
+                    <div style={{ display: 'flex', gap: 24 }}>
                         {['Overview', 'Activities', 'Intelligence'].map(tab => (
                             <div
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 style={{
-                                    padding: '24px 0',
+                                    padding: '12px 0',
                                     color: activeTab === tab ? 'var(--navy-900)' : 'var(--slate-400)',
                                     fontWeight: activeTab === tab ? 900 : 700,
-                                    fontSize: '14px',
-                                    borderBottom: `3.5px solid ${activeTab === tab ? 'var(--navy-900)' : 'transparent'}`,
+                                    fontSize: '13px',
+                                    borderBottom: `2.5px solid ${activeTab === tab ? 'var(--navy-900)' : 'transparent'}`,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                    position: 'relative',
+                                    transition: 'all 0.2s',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 10,
+                                    gap: 8,
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em'
                                 }}
                             >
-                                {tab === 'Overview' && <Home size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-                                {tab === 'Activities' && <TrendingUp size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
-                                {tab === 'Intelligence' && <Brain size={16} strokeWidth={activeTab === tab ? 2.5 : 2} />}
+                                {tab === 'Overview' && <Home size={14} />}
+                                {tab === 'Activities' && <TrendingUp size={14} />}
+                                {tab === 'Intelligence' && <Brain size={14} />}
                                 {tab}
-                                {tab === 'Intelligence' && <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', border: '2px solid white', position: 'absolute', top: 18, right: -12 }} />}
                             </div>
                         ))}
                     </div>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }} className="animate-fadeIn">
-                    {activeTab === 'Intelligence' ? (
-                        <div style={{ maxWidth: 800, margin: '0 auto' }}>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 24px' }} className="animate-fadeIn">
+                        {activeTab === 'Intelligence' ? (
+                            <div style={{ maxWidth: 840, margin: '0 auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                                 <div>
                                     <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -574,115 +572,61 @@ export default function ContactDetails() {
                             )}
                         </div>
                     ) : activeTab === 'Overview' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            {/* Executive Deal Matrix */}
-                            <div style={{ 
-                                padding: '32px', 
-                                borderRadius: '32px', 
-                                background: 'white', 
-                                border: '1px solid #f1f5f9',
-                                boxShadow: '0 12px 32px rgba(10,22,40,0.02)'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Deal Matrix Intelligence</h3>
-                                    <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 800 }}>OBJECT ID: {contact.id.slice(0, 12).toUpperCase()}</div>
+                        <div style={{ maxWidth: 840, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {/* Deal Matrix Intelligence */}
+                            <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(10,22,40,0.02)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal Matrix Intelligence</h3>
+                                    <div style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 800 }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
                                 </div>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                                     {[
-                                        { label: 'Conversion Score', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b', desc: 'Forecast Confidence' },
-                                        { label: 'Origin Channel', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6', desc: 'Marketing Trait' },
-                                        { label: 'Last Signal', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pending', Icon: Zap, color: '#10b981', desc: 'Response Latency' }
+                                        { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b' },
+                                        { label: 'Source', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6' },
+                                        { label: 'Last Signal', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pending', Icon: Zap, color: '#10b981' }
                                     ].map(stat => (
-                                        <div key={stat.label} style={{ 
-                                            background: '#fcfdfe', 
-                                            padding: '24px', 
-                                            borderRadius: '24px', 
-                                            border: '1.5px solid #f1f5f9', 
-                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                            textAlign: 'left'
-                                        }} className="hover-lift">
-                                            <div style={{ width: 44, height: 44, borderRadius: '14px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, border: `1px solid ${stat.color}20` }}>
-                                                <stat.Icon size={20} color={stat.color} strokeWidth={2.5} />
+                                        <div key={stat.label} style={{ background: '#fcfdfe', padding: '8px', borderRadius: '10px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+                                            <div style={{ width: 24, height: 24, borderRadius: '6px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 4px' }}>
+                                                <stat.Icon size={12} color={stat.color} />
                                             </div>
-                                            <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{stat.label}</div>
-                                            <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.5px' }}>{stat.value}</div>
-                                            <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 4 }}>{stat.desc}</div>
+                                            <div style={{ fontSize: '7px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>{stat.label}</div>
+                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--navy-900)' }}>{stat.value}</div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                                                            {/* Strategic Outreach Hub (AI Powered) */}
-                                <div style={{ 
-                                    padding: '32px', 
-                                    borderRadius: '32px', 
-                                    background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
-                                    border: '1px solid #f1f5f9',
-                                    color: 'white',
-                                    position: 'relative',
-                                    overflow: 'hidden',
-                                    boxShadow: '0 20px 48px rgba(10,22,40,0.15)',
-                                }}>
-                                    <div style={{ position: 'absolute', top: -20, right: -20, opacity: 0.1 }}>
-                                        <Clock size={160} />
-                                    </div>
-                                    <div style={{ position: 'relative', zIndex: 1 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-                                            <div>
-                                                <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--accent-cyan)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <Sparkles size={14} /> AI Outreach Intelligence
-                                                </div>
-                                                <h3 style={{ margin: 0, fontSize: '24px', fontWeight: 900, letterSpacing: '-0.5px' }}>Strategic Outreach Window</h3>
-                                            </div>
-                                            <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.1)', borderRadius: '14px', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                                <div style={{ fontSize: '9px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: 4 }}>Forecast Confidence</div>
-                                                <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--accent-emerald)' }}>94.2% HIGH</div>
-                                            </div>
-                                        </div>
 
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 40, alignItems: 'center' }}>
-                                            <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                                                <div style={{ width: 80, height: 80, borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <div style={{ fontSize: '24px', fontWeight: 900 }}>11:30</div>
-                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>AM</div>
-                                                </div>
-                                                <div style={{ fontSize: '24px', fontWeight: 300, color: 'rgba(255,255,255,0.2)' }}>→</div>
-                                                <div style={{ width: 80, height: 80, borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                                    <div style={{ fontSize: '24px', fontWeight: 900 }}>01:30</div>
-                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'rgba(255,255,255,0.4)' }}>PM</div>
-                                                </div>
-                                                <div style={{ marginLeft: 16 }}>
-                                                    <div style={{ fontSize: '16px', fontWeight: 800, color: 'white' }}>Optimal Trigger Window</div>
-                                                    <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: 4 }}>Historical response peak detected.</div>
-                                                </div>
-                                            </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} className="btn hover-lift" style={{ height: 52, padding: '0 32px', borderRadius: '18px', background: 'var(--accent-cyan)', color: 'var(--navy-900)', fontWeight: 900, border: 'none', fontSize: '14px', boxShadow: '0 12px 24px rgba(6, 182, 212, 0.3)', cursor: 'pointer' }}>
-                                                    Schedule Follow-up
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                            {/* Outreach intelligence */}
+                            <div style={{ padding: '8px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', color: 'white' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                    <div style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-cyan)' }}>AI STRATEGIC WINDOW</div>
+                                    <div style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-emerald)' }}>94.2% CONFIDENCE</div>
                                 </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '11px', fontWeight: 900 }}>
+                                        <div style={{ padding: '3px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>11:30 AM</div>
+                                        <span style={{ opacity: 0.3 }}>→</span>
+                                        <div style={{ padding: '3px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>01:30 PM</div>
+                                    </div>
+                                    <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} style={{ height: 24, padding: '0 10px', borderRadius: '6px', background: 'var(--accent-cyan)', color: 'var(--navy-900)', fontWeight: 900, fontSize: '9px', border: 'none', cursor: 'pointer' }}>Schedule</button>
+                                </div>
+                            </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                                 {/* Interest Profile */}
-                                <div style={{ padding: '32px', borderRadius: '32px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 12px 32px rgba(10,22,40,0.02)' }}>
-                                    <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 28, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Interest Profile</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9' }}>
+                                    <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 8, textTransform: 'uppercase' }}>Interest Profile</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                         {[
-                                            { label: 'Property Type', value: contact.property_type || 'Residential', Icon: Home, color: '#3b82f6' },
-                                            { label: 'Budget Range', value: `₹${contact.budget || '1.1Cr'}`, Icon: DollarSign, color: '#10b981' },
-                                            { label: 'Preferred Project', value: contact.project_name || 'Zentrix Signature', Icon: Target, color: '#f59e0b' },
-                                            { label: 'Market Location', value: contact.city || 'Worli, Mumbai', Icon: MapPin, color: '#8b5cf6' }
+                                            { label: 'Type', value: contact.property_type || 'Residential', Icon: Home, color: '#3b82f6' },
+                                            { label: 'Budget', value: `₹${contact.budget || '1.1Cr'}`, Icon: DollarSign, color: '#10b981' },
+                                            { label: 'Project', value: contact.project_name || 'Signature', Icon: Target, color: '#f59e0b' }
                                         ].map(prop => (
-                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', background: '#f8fafc', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
-                                                <div style={{ width: 44, height: 44, borderRadius: '14px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 18, border: '1px solid #f1f5f9' }}>
-                                                    <prop.Icon size={18} color={prop.color} strokeWidth={2.5} />
-                                                </div>
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{prop.label}</div>
-                                                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{prop.value}</div>
+                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                                                <prop.Icon size={12} color={prop.color} />
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontSize: '7px', color: 'var(--slate-400)', fontWeight: 800 }}>{prop.label}</div>
+                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
                                                 </div>
                                             </div>
                                         ))}
@@ -690,36 +634,28 @@ export default function ContactDetails() {
                                 </div>
 
                                 {/* Interaction Pulse */}
-                                <div style={{ padding: '32px', borderRadius: '32px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 12px 32px rgba(10,22,40,0.02)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
-                                        <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Interaction Pulse</h3>
-                                        <button onClick={() => setActiveTab('Activities')} style={{ fontSize: '11px', fontWeight: 900, color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            Timeline <ArrowRight size={12} />
-                                        </button>
+                                <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                        <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase' }}>Interaction Pulse</h3>
+                                        <ArrowRight size={12} color="#3b82f6" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('Activities')} />
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                        {interactions.slice(0, 3).map((item, idx) => {
-                                            const typeColor = item.type === 'Site Visit' ? 'var(--accent-emerald)' : item.type === 'Offer' ? 'var(--accent-cyan)' : 'var(--accent-violet)';
-                                            return (
-                                                <div key={idx} style={{ position: 'relative', paddingLeft: 36, paddingBottom: idx < 2 ? 8 : 0 }}>
-                                                    <div style={{ position: 'absolute', left: 4, top: 6, width: 10, height: 10, borderRadius: '50%', background: typeColor, boxShadow: `0 0 12px ${typeColor}60`, border: '2px solid white', zIndex: 2 }} />
-                                                    {idx < 2 && <div style={{ position: 'absolute', left: 8.5, top: 16, width: 1, height: '120%', background: '#f1f5f9', zIndex: 1 }} />}
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                                                        <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
-                                                        <div style={{ fontSize: '10px', color: 'var(--slate-400)', fontWeight: 700, textTransform: 'uppercase' }}>{new Date(item.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
-                                                    </div>
-                                                    <div style={{ fontSize: '12px', color: 'var(--slate-500)', fontWeight: 600, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                                        {item.note || item.description || item.subject || 'Strategic interaction logged.'}
-                                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {interactions.slice(0, 3).map((item, idx) => (
+                                            <div key={idx} style={{ position: 'relative', paddingLeft: 14 }}>
+                                                <div style={{ position: 'absolute', left: 0, top: 4, width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-violet)' }} />
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
+                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
+                                                    <div style={{ fontSize: '8px', color: 'var(--slate-400)' }}>{new Date(item.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
                                                 </div>
-                                            );
-                                        })}
+                                                <div style={{ fontSize: '9px', color: 'var(--slate-500)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note || 'Interaction logged.'}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ) : activeTab === 'Activities' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
+                        <div style={{ maxWidth: 840, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
                             {/* Strategic Activity Composer */}
                             <div style={{ 
                                 padding: '24px', 
@@ -768,8 +704,8 @@ export default function ContactDetails() {
                                                 color: 'var(--navy-900)'
                                             }}
                                         />
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }}>
-                                            <div style={{ display: 'flex', gap: 8 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, flexWrap: 'wrap', gap: 16 }}>
+                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                                                 <button onClick={handleVoice} className="hover-lift" style={{ 
                                                     width: 44, height: 44, borderRadius: '14px', border: '1px solid #f1f5f9', 
                                                     background: isListening ? '#fee2e2' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' 
@@ -777,27 +713,27 @@ export default function ContactDetails() {
                                                     <Mic size={18} color={isListening ? '#ef4444' : 'var(--navy-600)'} />
                                                 </button>
                                                 <button onClick={handleSummarize} disabled={summarizing} className="hover-lift" style={{ 
-                                                    height: 44, padding: '0 20px', borderRadius: '14px', border: '1px solid #f1f5f9', 
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 
+                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9', 
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
                                                 }}>
-                                                    {summarizing ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} color="#8b5cf6" />}
+                                                    {summarizing ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} color="#8b5cf6" />}
                                                     AI Summarize
                                                 </button>
                                                 {['Email', 'WhatsApp'].includes(activityType) && (
                                                     <button onClick={handleAIGenerate} disabled={generatingContent} className="hover-lift" style={{ 
-                                                        height: 44, padding: '0 20px', borderRadius: '14px', border: '1px solid #e2e8f0', 
-                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 
+                                                        height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #e2e8f0', 
+                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
                                                     }}>
-                                                        {generatingContent ? <RefreshCw size={14} className="animate-spin" /> : <Wand2 size={14} color="#8b5cf6" />}
+                                                        {generatingContent ? <RefreshCw size={12} className="animate-spin" /> : <Wand2 size={12} color="#8b5cf6" />}
                                                         Auto-Draft
                                                     </button>
                                                 )}
                                                 <label className="hover-lift" style={{ 
-                                                    height: 44, padding: '0 20px', borderRadius: '14px', border: '1px solid #f1f5f9', 
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 
+                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9', 
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
                                                 }}>
-                                                    {uploadingAudio ? <RefreshCw size={14} className="animate-spin" /> : <UploadCloud size={14} color="#10b981" />}
-                                                    {uploadingAudio ? 'Transcribing...' : 'Upload Call'}
+                                                    {uploadingAudio ? <RefreshCw size={12} className="animate-spin" /> : <UploadCloud size={12} color="#10b981" />}
+                                                    {uploadingAudio ? 'Transcribing...' : 'Upload'}
                                                     <input 
                                                         type="file" 
                                                         accept="audio/*" 
@@ -905,7 +841,8 @@ export default function ContactDetails() {
             </div>
             {/* RIGHT COLUMN - Market Intelligence & Context */}
             <div className="contact-details-right" style={{ 
-                width: 380, 
+                width: 280, 
+                flexShrink: 0,
                 background: 'white', 
                 borderLeft: '1px solid #f1f5f9', 
                 display: 'flex', 
@@ -915,72 +852,65 @@ export default function ContactDetails() {
                 <div style={{ padding: '32px 24px' }}>
                     {/* Behavioral IQ Radar */}
                     <div style={{ 
-                        padding: '24px', 
-                        borderRadius: '32px', 
+                        padding: '10px 14px', 
+                        borderRadius: '12px', 
                         background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
                         color: 'white',
-                        marginBottom: 32,
-                        boxShadow: '0 20px 40px rgba(10,22,40,0.15)',
+                        marginBottom: 10,
+                        boxShadow: '0 6px 12px rgba(10,22,40,0.12)',
                         position: 'relative',
                         overflow: 'hidden'
                     }}>
-                        <div style={{ position: 'absolute', top: -20, right: -20, opacity: 0.1 }}>
-                            <Brain size={120} />
+                        <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}>
+                            <Brain size={60} />
                         </div>
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <Sparkles size={16} color="var(--accent-amber)" />
-                                <span style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Behavioral IQ</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Sparkles size={12} color="var(--accent-amber)" />
+                                <span style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Behavioral IQ</span>
                             </div>
-                            <div style={{ padding: '4px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '20px', fontSize: '10px', fontWeight: 900 }}>REAL-TIME</div>
+                            <div style={{ padding: '1px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '8px', fontWeight: 900 }}>REAL-TIME</div>
                         </div>
 
-                        <div style={{ marginBottom: 24, position: 'relative' }}>
-                            <div style={{ fontSize: '10px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Conversion Propensity</div>
-                            <div style={{ fontSize: '36px', fontWeight: 900, letterSpacing: '-1px' }}>{contact.score || 88}%</div>
-                            <div style={{ height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: 12, overflow: 'hidden' }}>
-                                <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'var(--accent-emerald)', boxShadow: '0 0 12px var(--accent-emerald)' }} />
+                        <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <div style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase', marginBottom: 1 }}>Conversion Propensity</div>
+                            <div style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.5px' }}>{contact.score || 88}%</div>
+                            <div style={{ height: 2.5, background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: 4, overflow: 'hidden' }}>
+                                <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }} />
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, position: 'relative' }}>
-                            <div style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '9px', opacity: 0.6, fontWeight: 800, marginBottom: 4 }}>INTENT</div>
-                                <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--accent-emerald)' }}>HIGH</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, position: 'relative' }}>
+                            <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, marginBottom: 1 }}>INTENT</div>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-emerald)' }}>HIGH</div>
                             </div>
-                            <div style={{ padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '9px', opacity: 0.6, fontWeight: 800, marginBottom: 4 }}>SENTIMENT</div>
-                                <div style={{ fontSize: '13px', fontWeight: 800, color: '#3b82f6' }}>POSITIVE</div>
+                            <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, marginBottom: 1 }}>SENTIMENT</div>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#3b82f6' }}>POSITIVE</div>
                             </div>
                         </div>
                     </div>
 
                     {/* Quick Access Documents & Deals */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                        <div style={{ padding: '24px', borderRadius: '28px', border: '1.5px solid #f1f5f9' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                                <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Deals</h3>
-                                <button style={{ border: 'none', background: 'none' }}><Plus size={16} color="var(--slate-400)" /></button>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                {[
-                                    { name: 'Unit 402 - Signature Tower', val: '₹1.15 Cr', status: 'In Negotiation' },
-                                    { name: 'Parking P12 - Basement', val: '₹4.50 L', status: 'Ready' }
-                                ].map((it, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 14, borderBottom: idx === 0 ? '1px solid #f1f5f9' : 'none' }}>
-                                        <div style={{ width: 40, height: 40, borderRadius: '12px', background: '#f8fafc', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <TrendingUp size={18} color="var(--navy-600)" />
+                        <div style={{ padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #f1f5f9', background: 'white' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase' }}>Active Deals</h3>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {[
+                                        { name: 'Unit B-402', val: '₹1.15 Cr' },
+                                        { name: 'Parking P12', val: '₹4.5 L' }
+                                    ].map((it, idx) => (
+                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: idx === 0 ? '1px solid #f8fafc' : 'none' }}>
+                                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
+                                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--accent-emerald)' }}>{it.val}</div>
                                         </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{it.name}</div>
-                                            <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 700, marginTop: 2 }}>{it.status}</div>
-                                        </div>
-                                        <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--accent-emerald)' }}>{it.val}</div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
 
                         {/* Assigned Team */}
                         <div style={{ padding: '24px', borderRadius: '28px', border: '1.5px solid #f1f5f9' }}>

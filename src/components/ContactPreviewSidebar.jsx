@@ -78,25 +78,46 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     </div>
                                 )}
                             </div>
-                            <button onClick={onClose} className="cps-close-btn"><X size={16} /></button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <button
+                                    onClick={() => navigate(`/leads/${contact.id}`)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)',
+                                        color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+                                        cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                >
+                                    <span>Open Full Record</span>
+                                    <ExternalLink size={12} />
+                                </button>
+                                <button onClick={onClose} className="cps-close-btn"><X size={16} /></button>
+                            </div>
                         </div>
 
                         <div className="cps-body">
                             {/* ── Profile Card ── */}
-                            <div className="cps-profile-card">
-                                <div className="cps-avatar" style={{ background: avatarColor, boxShadow: `0 12px 28px ${avatarColor}40` }}>
+                            <div className="cps-profile-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 20px 24px', gap: '16px' }}>
+                                <div className="cps-avatar" style={{ background: avatarColor, boxShadow: `0 12px 28px ${avatarColor}40`, margin: 0, width: 80, height: 80, fontSize: 32 }}>
                                     {contact.name?.[0]?.toUpperCase() || '?'}
-                                    <div className="cps-avatar-status" />
+                                    <div className="cps-avatar-status" style={{ right: 4, bottom: 4, width: 16, height: 16, border: '3px solid white' }} />
                                 </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <h2 className="cps-name">{contact.name}</h2>
-                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                                <div style={{ minWidth: 0, width: '100%' }}>
+                                    <h2 className="cps-name" style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{contact.name}</h2>
+                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                                         <div className="cps-stage-badge" style={{ background: stageStyle.bg, color: stageStyle.color, borderColor: `${stageStyle.color}30` }} onClick={() => setShowStagePicker(!showStagePicker)}>
                                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: stageStyle.color }} />
                                             {contact.stage || 'New'}
                                             <ChevronDown size={10} style={{ transform: showStagePicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                                         </div>
                                         <div className="cps-source-tag">via {contact.source || 'Direct'}</div>
+                                        {contact.city && (
+                                            <div className="cps-source-tag" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <MapPin size={10} /> {contact.city}
+                                            </div>
+                                        )}
                                     </div>
                                     {showStagePicker && (
                                         <div className="cps-stage-dropdown">
@@ -111,11 +132,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                 </div>
                             </div>
 
-                            {/* ── View Full Record ── */}
-                            <button className="cps-full-record-btn" onClick={() => navigate(`/leads/${contact.id}`)}>
-                                <span>Open Full Record</span>
-                                <ExternalLink size={13} />
-                            </button>
+                            {/* button moved to header */}
 
                             {/* ── Contact Details Grid ── */}
                             <div className="cps-details-section">
@@ -124,7 +141,6 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     {[
                                         { icon: Mail, label: 'Email', value: contact.email, color: '#3b82f6' },
                                         { icon: Phone, label: 'Phone', value: contact.phone, color: '#10b981' },
-                                        { icon: MapPin, label: 'City', value: contact.city, color: '#8b5cf6' },
                                         { icon: DollarSign, label: 'Budget', value: contact.budget ? `₹${contact.budget}` : null, color: '#f59e0b' },
                                     ].filter(f => f.value).map(f => (
                                         <div key={f.label} className="cps-detail-row">

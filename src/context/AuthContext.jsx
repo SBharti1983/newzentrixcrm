@@ -13,11 +13,11 @@ export function AuthProvider({ children }) {
     const [loginError, setLoginError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const login = async (email, password) => {
+    const login = async (email, password, subdomain) => {
         setLoading(true);
         setLoginError('');
         try {
-            const data = await authApi.login(email, password);
+            const data = await authApi.login(email, password, subdomain);
             setToken(data.accessToken);
             sessionStorage.setItem('zentrix_refresh_token', data.refreshToken);
             sessionStorage.setItem('zentrix_user', JSON.stringify(data.user));

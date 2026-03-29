@@ -227,7 +227,7 @@ export default function Pipeline() {
 
             {/* Stage Metrics Ribbon (Colorful Version) */}
             <div className="card mb-4" style={{ padding: '8px 10px', borderRadius: 16, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 2, overflowX: 'auto', paddingBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, overflowX: 'auto', paddingBottom: 0 }}>
                     {PIPELINE_STAGES.map((stage, i) => {
                         const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                         const sl = byStage(stage);
@@ -236,11 +236,11 @@ export default function Pipeline() {
                         const Icon = sc.lucide || Target;
                         
                         return (
-                            <div key={stage} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <div key={stage} style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 120 }}>
                                 <div style={{ 
                                     display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', 
                                     borderRadius: 30, background: 'white', border: `1px solid ${sc.color}15`,
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)', whiteSpace: 'nowrap'
+                                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)', whiteSpace: 'nowrap', flex: 1
                                 }}>
                                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: sc.bg, color: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                         <Icon size={12} />
@@ -458,8 +458,8 @@ export default function Pipeline() {
                 KANBAN VIEW
             ══════════════════════════════════════════════════════ */}
             {viewMode === 'kanban' && (
-                <div style={{ flex: 1, overflowX: 'auto', paddingBottom: 16 }}>
-                    <div className="pipeline-board" style={{ minHeight: 'calc(100vh - 340px)' }}>
+                <div style={{ flex: 1, paddingBottom: 16 }}>
+                    <div className="pipeline-board" style={{ minHeight: 'calc(100vh - 340px)', height: 'auto', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', overflowX: 'visible' }}>
                         {PIPELINE_STAGES.map(stage => {
                             const stageLeads = byStage(stage);
                             const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
@@ -476,8 +476,9 @@ export default function Pipeline() {
                                         outlineOffset: -1,
                                         background: isOver ? `linear-gradient(${cfg.bg}, white)` : 'var(--slate-50)',
                                         transition: 'all 0.15s',
-                                        minWidth: isCollapsed ? 52 : 250,
-                                        maxWidth: isCollapsed ? 52 : 250,
+                                        flex: isCollapsed ? '0 0 52px' : '1 1 220px',
+                                        minWidth: isCollapsed ? 52 : 220,
+                                        maxWidth: isCollapsed ? 52 : 'none',
                                         borderRadius: '12px 12px 0 0',
                                         boxShadow: 'var(--shadow-sm)'
                                     }}
@@ -687,6 +688,10 @@ export default function Pipeline() {
                                 </div>
                             );
                         })}
+                        {/* Dummy spacers to constrain last flex row stretch */}
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={`dummy-${i}`} style={{ flex: '1 1 220px', minWidth: 220, height: 0, opacity: 0, margin: 0, padding: 0 }} />
+                        ))}
                     </div>
                 </div>
             )}

@@ -68,42 +68,42 @@ export default function Projects() {
             {/* Project Intelligence Ribbon */}
             <div style={{ 
                 background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
-                padding: '44px 40px', 
-                borderRadius: '32px', 
-                marginBottom: 32,
+                padding: '12px 20px', 
+                borderRadius: '18px', 
+                marginBottom: 16,
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
                 boxShadow: '0 20px 40px rgba(10,22,40,0.15)'
             }}>
-                <div style={{ position: 'absolute', top: -20, right: -20, opacity: 0.05 }}>
-                    <Building2 size={240} />
+                <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.03 }}>
+                    <Building2 size={120} />
                 </div>
                 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1 }}>
                     <div>
-                        <div style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--accent-cyan)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <TrendingUp size={16} /> Portfolio Absorption Pulse
+                        <div style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-cyan)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <TrendingUp size={12} /> Portfolio Absorption Pulse
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '36px', fontWeight: 900, letterSpacing: '-1.5px' }}>Project Inventory</h1>
-                        <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '15px' }}>Monitoring {projects.length} strategic assets with {projects.reduce((s, p) => s + (p.available_units || 0), 0)} units live.</p>
+                        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, letterSpacing: '-0.3px' }}>Project Inventory</h1>
+                        <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '11px' }}>Monitoring {projects.length} strategic assets with {projects.reduce((s, p) => s + (p.available_units || 0), 0)} units live.</p>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: 40, alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
                         {[
                             { label: 'Overall Absorption', value: `${Math.round((projects.reduce((s,p) => s + ((p.total_units || 0) - (p.available_units || 0)), 0) / projects.reduce((s,p) => s + (p.total_units || 1), 0)) * 100)}%`, color: 'var(--accent-emerald)' },
                             { label: 'Visit Velocity', value: '+24%', color: 'var(--accent-cyan)' },
                         ].map(m => (
                           <div key={m.label} style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '10px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 4 }}>{m.label}</div>
-                              <div style={{ fontSize: '28px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                              <div style={{ fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 1 }}>{m.label}</div>
+                              <div style={{ fontSize: '14px', fontWeight: 900, color: m.color }}>{m.value}</div>
                           </div>
                         ))}
                         <button className="btn hover-lift" onClick={() => setShowModal(true)} style={{ 
-                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 52, padding: '0 28px', borderRadius: '18px', border: 'none',
-                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)', fontSize: '13px'
+                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 34, padding: '0 14px', borderRadius: '10px', border: 'none',
+                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 6
                         }}>
-                             <Plus size={18} /> ADD PROJECT
+                             <Plus size={14} /> ADD PROJECT
                         </button>
                     </div>
                 </div>

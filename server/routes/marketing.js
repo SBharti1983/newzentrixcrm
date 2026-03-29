@@ -136,4 +136,76 @@ router.post('/drips/:id/enroll', async (req, res) => {
     }
 });
 
+// --- WhatsApp Broadcasts ---
+router.get('/broadcasts', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT * FROM whatsapp_campaigns WHERE tenant_id = $1 ORDER BY created_at DESC`,
+            [req.tenantId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch broadcasts' });
+    }
+});
+
+router.post('/broadcasts', async (req, res) => {
+    const { name, message_body, lead_ids } = req.body;
+    try {
+        const { rows } = await pool.query(
+            `INSERT INTO whatsapp_campaigns (tenant_id, name, message_body, recipients_count, status, sent_at) 
+             VALUES ($1, $2, $3, $4, 'Completed', NOW()) RETURNING *`,
+            [req.tenantId, name, message_body, lead_ids.length]
+        );
+        
+        // In a real high-frequency implementation, we'd queue these to a worker.
+        // For now, we simulate the broadcast.
+        res.status(201).json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to initiate broadcast' });
+    }
+});
+
+// --- Chatbot Settings ---
+router.get('/chatbot', async (req, res) => {
+    try {
+        const { rows } = await pool.query(
+            `SELECT * FROM chatbot_settings WHERE tenant_id = $1`,
+            [req.tenantId]
+        );
+        if (rows.length === 0) {
+            // Create default settings if not exists
+            const { rows: defaultBot } = await pool.query(
+                `INSERT INTO chatbot_settings (tenant_id) VALUES ($1) RETURNING *`,
+                [req.tenantId]
+            );
+            return res.json(defaultBot[0]);
+        }
+        res.json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch chatbot settings' });
+    }
+});
+
+router.patch('/chatbot', async (req, res) => {
+    const fields = Object.entries(req.body);
+    const setClause = fields.map((f, i) => `"${f[0]}" = $${i + 2}`).join(', ');
+    const values = fields.map(f => f[1]);
+
+    try {
+        const { rows } = await pool.query(
+            `UPDATE chatbot_settings SET ${setClause}, updated_at = NOW() 
+             WHERE tenant_id = $1 RETURNING *`,
+            [req.tenantId, ...values]
+        );
+        res.json(rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update chatbot' });
+    }
+});
+
 module.exports = router;

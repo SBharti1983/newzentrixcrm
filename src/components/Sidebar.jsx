@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Users, Building2, UserCheck, Calendar,
     MapPin, BookOpen, BarChart3, Settings, ChevronLeft,
     ChevronRight, LogOut, Bell, Handshake, CreditCard,
-    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles
+    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_ACCESS } from '../constants/access';
@@ -61,6 +61,7 @@ const NAV_SECTIONS = [
         label: 'Communications',
         items: [
             { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: '3' },
+            { path: '/whatsapp-marketing', label: 'WhatsApp Intelligence', icon: Sparkles },
             { path: '/marketing', label: 'Marketing Hub', icon: Target },
             { path: '/notifications', label: 'Notifications', icon: Bell },
         ],
@@ -69,6 +70,7 @@ const NAV_SECTIONS = [
         label: 'Analytics',
         items: [
             { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+            { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
             { path: '/reports', label: 'Custom Reports', icon: FileCheck },
         ],
     },
@@ -92,9 +94,9 @@ const NAV_SECTIONS = [
 
 const ROLE_LABELS = {
     superadmin: 'Super Admin',
-    admin: 'Administrator',
-    sales_manager: 'Sales Manager',
-    agent: 'Sales Agent',
+    admin: 'Admin',
+    sales_manager: 'Manager',
+    agent: 'Agent',
     customer: 'Customer',
 };
 
@@ -112,9 +114,14 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     const { user, canAccess } = useAuth();
     const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
 
+    const isMainDomain = window.location.hostname === 'zentrixcrm.com' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
     const filteredSections = NAV_SECTIONS.map(section => ({
         ...section,
-        items: section.items.filter(item => canAccess(item.path)),
+        items: section.items.filter(item => {
+            if (item.path === '/superadmin' && !isMainDomain) return false;
+            return canAccess(item.path);
+        }),
     })).filter(section => section.items.length > 0);
 
     const handleNav = (path) => {
@@ -135,7 +142,7 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
             {/* Logo + mobile close button */}
             <div className="sidebar-logo">
                 <div className="sidebar-logo-icon">Z</div>
-                <span className="sidebar-logo-text">ZentrixCRM</span>
+                <span className="sidebar-logo-text">Zentrix CRM</span>
                 {isMobile && (
                     <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu">
                         <X size={20} />

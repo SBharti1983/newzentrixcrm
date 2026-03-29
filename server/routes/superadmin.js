@@ -30,15 +30,77 @@ router.get('/tenants', async (req, res) => {
     }
 });
 
-// Update tenant status or plan
-router.patch('/tenants/:id', async (req, res) => {
-    const { is_active, plan } = req.body;
+// Create a new tenant (and their admin user)
+router.post('/tenants', async (req, res) => {
+    const { name, admin_name, admin_email, admin_password, plan = 'trial', max_users = 3, max_leads = 500 } = req.body;
+    
+    if (!name || !admin_name || !admin_email || !admin_password) {
+        return res.status(400).json({ error: 'Company name, admin name, admin email, and admin password are required' });
+    }
+
+    const client = await pool.connect();
     try {
-        if (is_active !== undefined) {
-            await pool.query('UPDATE tenants SET is_active = $1 WHERE id = $2', [is_active, req.params.id]);
+        await client.query('BEGIN');
+
+        // Check email
+        const { rows: existing } = await client.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [admin_email]);
+        if (existing.length) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'An account with this email already exists' });
         }
-        if (plan !== undefined) {
-            await pool.query('UPDATE tenants SET plan = $1 WHERE id = $2', [plan, req.params.id]);
+
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+        const { rows: slugCheck } = await client.query('SELECT id FROM tenants WHERE slug = $1', [slug]);
+        const uniqueSlug = slugCheck.length ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
+
+        const { rows: [tenant] } = await client.query(
+            `INSERT INTO tenants (name, slug, plan, max_users, max_leads, max_projects)
+             VALUES ($1, $2, $3, $4, $5, 5) RETURNING *`,
+            [name, uniqueSlug, plan, max_users, max_leads]
+        );
+
+        const hash = await require('bcryptjs').hash(admin_password, 12);
+        const avatar = admin_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        
+        await client.query(
+            `INSERT INTO users (tenant_id, name, email, password_hash, role, avatar)
+             VALUES ($1, $2, $3, $4, 'admin', $5)`,
+            [tenant.id, admin_name, admin_email, hash, avatar]
+        );
+
+        await client.query('COMMIT');
+        
+        // Return full tenant format mirroring the GET endpoint
+        res.status(201).json({ ...tenant, user_count: 1, lead_count: 0 });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error(err);
+        res.status(500).json({ error: 'Failed to create tenant' });
+    } finally {
+        client.release();
+    }
+});
+
+// Update full tenant details
+router.patch('/tenants/:id', async (req, res) => {
+    const { is_active, plan, name, slug, logo_url, primary_color, max_users, max_leads } = req.body;
+    try {
+        const updates = [];
+        const values = [];
+        let index = 1;
+
+        if (is_active !== undefined) { updates.push(`is_active = $${index++}`); values.push(is_active); }
+        if (plan !== undefined) { updates.push(`plan = $${index++}`); values.push(plan); }
+        if (name !== undefined) { updates.push(`name = $${index++}`); values.push(name); }
+        if (slug !== undefined) { updates.push(`slug = $${index++}`); values.push(slug); }
+        if (logo_url !== undefined) { updates.push(`logo_url = $${index++}`); values.push(logo_url); }
+        if (primary_color !== undefined) { updates.push(`primary_color = $${index++}`); values.push(primary_color); }
+        if (max_users !== undefined) { updates.push(`max_users = $${index++}`); values.push(max_users); }
+        if (max_leads !== undefined) { updates.push(`max_leads = $${index++}`); values.push(max_leads); }
+
+        if (updates.length > 0) {
+            values.push(req.params.id);
+            await pool.query(`UPDATE tenants SET ${updates.join(', ')} WHERE id = $${index}`, values);
         }
         res.json({ success: true });
     } catch (err) {

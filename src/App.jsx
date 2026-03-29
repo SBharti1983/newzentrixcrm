@@ -40,12 +40,14 @@ import Automations from './pages/Automations';
 import AutomationDistribution from './pages/AutomationDistribution';
 import Commissions from './pages/Commissions';
 import CallRecords from './pages/CallRecords';
+import VoiceAnalytics from './pages/VoiceAnalytics';
 import LeadScoreStatus from './pages/LeadScoreStatus';
 import Kiosk from './pages/Kiosk';
 import Billing from './pages/Billing';
 import BillingSuccess from './pages/BillingSuccess';
 import Integrations from './pages/Integrations';
 import Marketing from './pages/Marketing';
+import WhatsAppMarketing from './pages/WhatsAppMarketing';
 import PartnerReferral from './pages/public/PartnerReferral';
 import CommandCenter from './pages/CommandCenter';
 import Reports from './pages/Reports';
@@ -180,8 +182,10 @@ function ProtectedApp() {
             <Route path="/integrations" element={<RoleGuard path="/integrations"><Integrations /></RoleGuard>} />
             <Route path="/commissions" element={<RoleGuard path="/commissions"><Commissions /></RoleGuard>} />
             <Route path="/call-records" element={<RoleGuard path="/call-records"><CallRecords /></RoleGuard>} />
+            <Route path="/voice-analytics" element={<RoleGuard path="/voice-analytics"><VoiceAnalytics /></RoleGuard>} />
             <Route path="/lead-scoring" element={<RoleGuard path="/lead-scoring"><LeadScoreStatus /></RoleGuard>} />
             <Route path="/marketing" element={<RoleGuard path="/marketing"><Marketing /></RoleGuard>} />
+            <Route path="/whatsapp-marketing" element={<RoleGuard path="/whatsapp-marketing"><WhatsAppMarketing /></RoleGuard>} />
             <Route path="/billing" element={<RoleGuard path="/billing"><Billing /></RoleGuard>} />
             <Route path="/command-center" element={<RoleGuard path="/command-center"><CommandCenter /></RoleGuard>} />
             <Route path="/billing/success" element={<BillingSuccess />} />
@@ -190,7 +194,6 @@ function ProtectedApp() {
         </main>
       </div>
       <Dialer />
-      <ZapierAssistant />
     </div>
   );
 }

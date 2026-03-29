@@ -32,7 +32,7 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
 
-    const page = PAGE_TITLES[location.pathname] || { title: 'ZentrixCRM', subtitle: '' };
+    const page = PAGE_TITLES[location.pathname] || { title: 'Zentrix CRM', subtitle: '' };
 
     const headerClass = [
         'header',
