@@ -1594,7 +1594,75 @@ tbody tr:hover {
   color: var(--navy-700);
 }
 
-/* ─── Empty States ───────────────────────────────────────────────── */
+/* ─── Command Center ────────────────────────────────────────── */
+.command-center-root {
+  padding: 12px 24px 24px;
+  height: calc(100vh - 100px);
+  background: #f8fafc;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: -24px -28px 0 -28px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .command-center-root {
+    height: auto;
+    overflow: visible;
+    padding: 12px 16px;
+    margin: 0;
+  }
+}
+
+.command-center-header {
+  padding: 20px 40px;
+  margin: 12px 24px 20px;
+  border-radius: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255,255,255,0.8);
+}
+
+@media (max-width: 768px) {
+  .command-center-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    margin: 10px 0;
+    align-items: flex-start;
+  }
+}
+
+.command-center-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(310px, 1.2fr) 2fr 1.2fr;
+  gap: 20px;
+  overflow: hidden;
+  padding: 0 8px;
+}
+
+@media (max-width: 1024px) {
+  .command-center-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+    gap: 16px;
+  }
+  .command-center-grid > div {
+    height: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .command-center-grid > div {
+    height: 500px;
+  }
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -2761,9 +2829,16 @@ tbody tr:hover {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: calc(100vh - var(--header-height) - 32px);
-  max-height: calc(100vh - var(--header-height) - 32px);
   overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .dash-root {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-bottom: 20px;
+  }
 }
 
 /* Stat Cards */
@@ -2772,6 +2847,18 @@ tbody tr:hover {
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 10px;
+}
+
+@media (max-width: 1024px) {
+  .dash-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dash-stat-card {
@@ -2918,6 +3005,13 @@ tbody tr:hover {
   position: relative;
 }
 
+@media (max-width: 900px) {
+  .dash-briefing-cards {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
 .dash-insight-card {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -3047,6 +3141,16 @@ tbody tr:hover {
   min-height: 0;
 }
 
+@media (max-width: 1024px) {
+  .dash-charts-row {
+    grid-template-columns: 1fr;
+    min-height: 600px;
+  }
+  .dash-chart-card {
+    height: 350px;
+  }
+}
+
 .dash-pipeline-card {
   display: flex;
   flex-direction: column;
@@ -3128,6 +3232,12 @@ tbody tr:hover {
   gap: 16px;
   flex: 1;
   min-height: 0;
+}
+
+@media (max-width: 1024px) {
+  .dash-bottom-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .dash-leads-card {
@@ -3229,6 +3339,12 @@ tbody tr:hover {
   font-weight: 800;
   border: 1px solid;
   white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .dash-lead-budget, .dash-lead-score-wrap, .dash-lead-agent {
+    display: none;
+  }
 }
 
 .dash-lead-budget {

@@ -138,27 +138,9 @@ export default function CommandCenter() {
     };
 
     return (
-        <div style={{ 
-            padding: '12px 24px 24px', 
-            height: 'calc(100vh - 100px)', 
-            background: '#f8fafc', 
-            overflow: 'hidden', 
-            display: 'flex', 
-            flexDirection: 'column',
-            margin: '-24px -28px 0 -28px',
-            boxSizing: 'border-box'
-        }}>
+        <div className="command-center-root animate-fadeIn">
             {/* Strategic Command Header */}
-            <div className="glass-panel" style={{ 
-                padding: '20px 40px', 
-                margin: '12px 24px 20px',
-                borderRadius: 24,
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.03)',
-                border: '1px solid rgba(255,255,255,0.8)'
-            }}>
+            <div className="command-center-header glass-panel">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div className="ai-pulse" style={{ width: 48, height: 48, borderRadius: '16px', background: 'var(--navy-900)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(10,22,40,0.2)' }}>
                         <Brain size={24} />
@@ -186,7 +168,7 @@ export default function CommandCenter() {
                 </div>
             </div>
 
-            <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(310px, 1.2fr) 2fr 1.2fr', gap: 20, overflow: 'hidden', padding: '0 8px' }}>
+            <div className="command-center-grid">
                 {/* Left Panel: Conversations List */}
                 <div className="card" style={{ flex: 1, padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
                     <div style={{ padding: '20px', borderBottom: '1px solid var(--border-light)' }}>
