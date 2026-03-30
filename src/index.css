@@ -2822,6 +2822,32 @@ tbody tr:hover {
   color: #dc2626;
 }
 
+/* ─── Site Visits Responsive ────────────────────────────────────── */
+@media (max-width: 900px) {
+  .site-visit-header-premium {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 16px;
+  }
+  
+  .visit-stats-row {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .filter-bar-integrated {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .site-visit-grid-premium {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 /* ─── Dashboard — Refined Layout ─────────────────────────────────── */
 .dash-root {
   max-width: 1440px;
@@ -3508,11 +3534,59 @@ tbody tr:hover {
   font-weight: 800;
 }
 
-.dash-priority-high {
-  background: #fef2f2;
-  color: #e11d48;
-  border: 1px solid #fecdd3;
+/* ─── Inventory Responsive ───────────────────────────────────────── */
+.inventory-ribbon {
+  background: linear-gradient(135deg, var(--navy-900), #0f172a);
+  padding: 12px 20px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(10,22,40,0.15);
 }
+
+.inventory-ribbon-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.inventory-table-wrapper {
+  background: white;
+  padding: 0;
+  border-radius: 32px;
+  overflow-x: auto;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 20px 48px rgba(10,22,40,0.03);
+}
+
+@media (max-width: 1024px) {
+  .inventory-ribbon-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .inventory-stats {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .inventory-table-wrapper th:nth-child(3),
+  .inventory-table-wrapper td:nth-child(3),
+  .inventory-table-wrapper th:nth-child(4),
+  .inventory-table-wrapper td:nth-child(4) {
+    display: none;
+  }
+}
+
 
 .dash-priority-normal {
   background: #eff6ff;

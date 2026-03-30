@@ -119,17 +119,34 @@ export default function Leads() {
         if (!form.name || !form.phone) { showToast('Name and phone are required', 'error'); return; }
         setSaving(true);
         try {
+            // Sanitize form: convert empty strings to null for optional/FK fields
+            const sanitized = { ...form };
+            ['email', 'city', 'budget', 'property_type', 'project_id', 'assigned_to', 'channel_partner_id', 'notes'].forEach(k => {
+                if (sanitized[k] === '' || sanitized[k] === undefined) sanitized[k] = null;
+            });
+            // Ensure score is a valid number
+            if (typeof sanitized.score !== 'number' || isNaN(sanitized.score)) sanitized.score = 50;
+
             if (editingId) {
-                await leadsApi.update(editingId, form);
+                await leadsApi.update(editingId, sanitized);
                 showToast('Lead updated successfully', 'success');
             } else {
-                await leadsApi.create(form);
+                await leadsApi.create(sanitized);
                 showToast('Lead added successfully', 'success');
             }
             setShowModal(false);
-            refetch();
+            // Await refetch so errors are caught here instead of crashing silently
+            try {
+                await refetch();
+            } catch (_refetchErr) {
+                // Refetch error is non-critical — useApi already sets error state
+                console.warn('[Leads] Refetch after save failed, data will refresh on next interaction.');
+            }
         } catch (err) {
-            showToast(err.error || 'Failed to save lead', 'error');
+            console.error('[Leads] Save error:', err);
+            const rawMsg = typeof err === 'object' ? (err.error || err.message || JSON.stringify(err)) : String(err);
+            const msg = typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg);
+            showToast(msg || 'Failed to save lead', 'error');
         } finally {
             setSaving(false);
         }
@@ -281,7 +298,15 @@ export default function Leads() {
             </div>
 
             {/* Main Content */}
-            {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={refetch} /> : (
+            {loading ? <PageLoader /> : error ? <PageError message={typeof error === 'string' ? error : 'Failed to load data'} onRetry={refetch} /> : (
+                <>
+                {leads.length === 0 ? (
+                    <div className="empty-state">
+                        <div className="empty-state-icon">🔍</div>
+                        <div className="empty-state-title">No leads found</div>
+                        <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
+                    </div>
+                ) : (
                 <div className="table-wrapper">
                         <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
                             <thead>
@@ -316,7 +341,9 @@ export default function Leads() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {leads.map(lead => (
+                                {leads.map(lead => {
+                                    const leadScore = typeof lead.score === 'number' ? lead.score : 0;
+                                    return (
                                     <tr
                                         key={lead.id}
                                         onClick={() => navigate(`/leads/${lead.id}`)}
@@ -339,7 +366,7 @@ export default function Leads() {
                                                 </div>
                                                 <div>
                                                     <div 
-                                                        data-tooltip={lead.name}
+                                                        data-tooltip={lead.name || ''}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative', width: '100%', maxWidth: '180px' }}
                                                     >
                                                         <div 
@@ -353,7 +380,7 @@ export default function Leads() {
                                                                 minWidth: 0
                                                             }}
                                                         >
-                                                            {lead.name}
+                                                            {lead.name || '—'}
                                                         </div>
                                                         <div style={{
                                                             display: 'inline-flex',
@@ -383,7 +410,7 @@ export default function Leads() {
                                                             </button>
                                                         </div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lead.property_type} · {lead.project_name || 'Any'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lead.property_type || '—'} · {lead.project_name || 'Any'}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -395,19 +422,19 @@ export default function Leads() {
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                                                     <Phone size={11} style={{ color: 'var(--text-muted)' }} />
-                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.phone}</span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.phone || '—'}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage}</span></td>
-                                        <td><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source}</span></td>
+                                        <td><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage || '—'}</span></td>
+                                        <td><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source || '—'}</span></td>
                                         <td style={{ fontWeight: 600 }}>{lead.budget || '—'}</td>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <div className="progress-bar" style={{ width: 52, height: 5 }}>
-                                                    <div className="progress-fill" style={{ width: `${lead.score}%`, background: lead.score > 80 ? '#10b981' : lead.score > 60 ? '#f59e0b' : '#f43f5e' }} />
+                                                    <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
                                                 </div>
-                                                <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{lead.score}</span>
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{leadScore}</span>
                                             </div>
                                         </td>
                                         <td>
@@ -429,12 +456,13 @@ export default function Leads() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
 
                         {/* Pagination Controls */}
-                        {!loading && !error && leadsRes && (
+                        {leadsRes && (
                             <div style={{
                                 position: 'sticky',
                                 bottom: 0,
@@ -449,7 +477,7 @@ export default function Leads() {
                                 boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
                             }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                    Showing <strong>{leads.length > 0 ? (page - 1) * limit + 1 : 0}</strong> to <strong>{Math.min(page * limit, leadsRes.total)}</strong> of <strong>{leadsRes.total}</strong> leads
+                                    Showing <strong>{leads.length > 0 ? (page - 1) * limit + 1 : 0}</strong> to <strong>{Math.min(page * limit, leadsRes.total || 0)}</strong> of <strong>{leadsRes.total || 0}</strong> leads
                                 </div>
                                 <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                                     <select
@@ -477,7 +505,7 @@ export default function Leads() {
 
                                         <button
                                             className="btn btn-ghost btn-sm"
-                                            disabled={page * limit >= leadsRes.total}
+                                            disabled={page * limit >= (leadsRes.total || 0)}
                                             onClick={() => setPage(p => p + 1)}
                                             style={{ height: 32, width: 80 }}
                                         >
@@ -488,15 +516,10 @@ export default function Leads() {
                             </div>
                         )}
                     </div>
+                )}
+                </>
                 )
             }
-            {leads.length === 0 && (
-                <div className="empty-state">
-                    <div className="empty-state-icon">🔍</div>
-                    <div className="empty-state-title">No leads found</div>
-                    <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
-                </div>
-            )}
 
             {/* Add/Edit Modal */}
             {showModal && (

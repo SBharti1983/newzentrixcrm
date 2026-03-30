@@ -9,15 +9,22 @@ export function useApi(apiFn, deps = []) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const mountedRef = useRef(true);
+    // Store apiFn in a ref so refetch() always calls the latest version
+    const apiFnRef = useRef(apiFn);
+    apiFnRef.current = apiFn;
 
     const fetch = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const result = await apiFn();
+            const result = await apiFnRef.current();
             if (mountedRef.current) setData(result);
         } catch (err) {
-            if (mountedRef.current) setError(err?.error || 'Failed to load data');
+            if (mountedRef.current) {
+                // Ensure error is always a string to prevent React rendering crashes
+                const errMsg = err?.error || err?.message || 'Failed to load data';
+                setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
+            }
         } finally {
             if (mountedRef.current) setLoading(false);
         }

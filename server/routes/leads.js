@@ -232,11 +232,20 @@ router.post('/bulk-delete', async (req, res) => {
 
 
 
+// Helper: convert empty strings to null for nullable/FK fields
+function emptyToNull(val) {
+    if (val === '' || val === undefined) return null;
+    return val;
+}
+
 // POST /api/leads
 router.post('/', validateLead, async (req, res) => {
     try {
         // Plan limit enforcement
         const { rows: [tenant] } = await pool.query(`SELECT max_leads FROM tenants WHERE id=$1`, [req.tenantId]);
+        if (!tenant) {
+            return res.status(400).json({ error: 'Tenant not found' });
+        }
         const { rows: [leadCount] } = await pool.query(`SELECT COUNT(*) FROM leads WHERE tenant_id=$1`, [req.tenantId]);
         if (parseInt(leadCount.count) >= tenant.max_leads) {
             return res.status(403).json({ error: `Lead limit reached (${tenant.max_leads}). Please upgrade your plan.` });
@@ -246,18 +255,30 @@ router.post('/', validateLead, async (req, res) => {
             name, phone, email, city, source, stage, priority, score,
             property_type, project_id, budget, assigned_to, notes, channel_partner_id
         } = req.body;
+
+        // Safety check: name and phone are mandatory
+        if (!name || !phone) {
+            return res.status(400).json({ error: 'Name and phone are required' });
+        }
+
         // Duplicate check by phone within tenant
         const dup = await pool.query(`SELECT id FROM leads WHERE tenant_id=$1 AND phone=$2`, [req.tenantId, phone]);
         if (dup.rows.length) {
             return res.status(409).json({ error: 'A lead with this phone number already exists.', existing_id: dup.rows[0].id });
         }
 
+        // Sanitize all nullable/FK fields — double insurance against empty string UUIDs
+        const safeProjectId = emptyToNull(project_id);
+        const safeAssignedTo = emptyToNull(assigned_to);
+        const safeChannelPartnerId = emptyToNull(channel_partner_id);
+        const safeScore = (typeof score === 'number' && !isNaN(score)) ? score : 50;
+
         const { rows } = await pool.query(
             `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, last_contact_at)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW()) RETURNING *`,
-            [req.tenantId, name, phone, email || null, city || null, source || 'Website', stage || 'New',
-            priority || 'Medium', score || 50, property_type || null, project_id || null, budget || null,
-            assigned_to || null, notes || null, channel_partner_id || null]
+            [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
+            priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
+            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId]
         );
 
         const newLead = rows[0];
@@ -268,13 +289,17 @@ router.post('/', validateLead, async (req, res) => {
         });
 
         // Activity log
-        await pool.query(
-            `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-             VALUES ($1,$2,'lead',$3,'created',$4)`,
-            [req.tenantId, req.user.id, rows[0].id, JSON.stringify(rows[0])]
-        );
+        try {
+            await pool.query(
+                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
+                 VALUES ($1,$2,'lead',$3,'created',$4)`,
+                [req.tenantId, req.user.id, rows[0].id, JSON.stringify(rows[0])]
+            );
+        } catch (logErr) {
+            console.error('[Activity Log] Non-critical error:', logErr.message);
+        }
 
-        if (assigned_to && String(assigned_to) !== String(req.user.id)) {
+        if (assigned_to && String(assigned_to) !== String(req.user.id) && req.io) {
             req.io.to(`user_${assigned_to}`).emit('notification', {
                 title: 'New Lead Assigned',
                 message: `You have been assigned a new lead: ${name}`,
@@ -285,8 +310,10 @@ router.post('/', validateLead, async (req, res) => {
 
         res.status(201).json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to create lead' });
+        console.error('[POST /leads] Error:', err.message, err.detail || '');
+        // Always return a clean string error to prevent frontend rendering crashes
+        const errMsg = typeof err.message === 'string' ? err.message : 'Failed to create lead';
+        res.status(500).json({ error: errMsg });
     }
 });
 
@@ -309,7 +336,12 @@ router.post('/:id/interactions', async (req, res) => {
 // PATCH /api/leads/:id
 router.patch('/:id', async (req, res) => {
     const allowed = ['name', 'phone', 'email', 'city', 'source', 'stage', 'priority', 'score', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'last_contact_at', 'channel_partner_id'];
-    const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+    // Convert empty strings to null for UUID/nullable foreign key fields
+    const nullableFields = ['email', 'city', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'channel_partner_id'];
+    const raw = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
+    const updates = Object.fromEntries(
+        Object.entries(raw).map(([k, v]) => [k, nullableFields.includes(k) ? emptyToNull(v) : v])
+    );
     if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields to update' });
 
     const setClauses = Object.keys(updates).map((k, i) => `${k} = $${i + 3}`).join(', ');
@@ -325,13 +357,17 @@ router.patch('/:id', async (req, res) => {
             [req.params.id, req.tenantId, ...values]
         );
 
-        await pool.query(
-            `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, old_data, new_data)
-             VALUES ($1,$2,'lead',$3,'updated',$4,$5)`,
-            [req.tenantId, req.user.id, req.params.id, JSON.stringify(old.rows[0]), JSON.stringify(rows[0])]
-        );
+        try {
+            await pool.query(
+                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, old_data, new_data)
+                 VALUES ($1,$2,'lead',$3,'updated',$4,$5)`,
+                [req.tenantId, req.user.id, req.params.id, JSON.stringify(old.rows[0]), JSON.stringify(rows[0])]
+            );
+        } catch (logErr) {
+            console.error('[Activity Log] Non-critical error:', logErr.message);
+        }
 
-        if (updates.assigned_to && String(updates.assigned_to) !== String(old.rows[0].assigned_to) && String(updates.assigned_to) !== String(req.user.id)) {
+        if (updates.assigned_to && String(updates.assigned_to) !== String(old.rows[0].assigned_to) && String(updates.assigned_to) !== String(req.user.id) && req.io) {
             req.io.to(`user_${updates.assigned_to}`).emit('notification', {
                 title: 'Lead Reassigned',
                 message: `Lead ${rows[0].name} has been reassigned to you.`,
@@ -349,8 +385,8 @@ router.patch('/:id', async (req, res) => {
 
         res.json(rows[0]);
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to update lead' });
+        console.error('[PATCH /leads/:id] Error:', err.message, err.detail || '');
+        res.status(500).json({ error: err.message || 'Failed to update lead' });
     }
 });
 

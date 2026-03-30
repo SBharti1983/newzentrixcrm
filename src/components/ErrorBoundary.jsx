@@ -15,6 +15,10 @@ class ErrorBoundary extends React.Component {
         console.error("Critical Runtime Error Catch:", error, errorInfo);
     }
 
+    resetError = () => {
+        this.setState({ hasError: false, error: null });
+    };
+
     render() {
         if (this.state.hasError) {
             return (
@@ -41,7 +45,7 @@ class ErrorBoundary extends React.Component {
                         
                         <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
                             <button 
-                                onClick={() => window.location.reload()}
+                                onClick={this.resetError}
                                 style={{
                                     padding: '14px 28px', borderRadius: '14px', 
                                     background: 'white', color: 'var(--navy-900)', 
@@ -49,10 +53,10 @@ class ErrorBoundary extends React.Component {
                                     display: 'flex', alignItems: 'center', gap: 10
                                 }}
                             >
-                                <RefreshCw size={18} /> REFRESH HUB
+                                <RefreshCw size={18} /> TRY AGAIN
                             </button>
                             <button 
-                                onClick={() => window.location.href = '/'}
+                                onClick={() => { this.resetError(); window.location.href = '/'; }}
                                 style={{
                                     padding: '14px 28px', borderRadius: '14px', 
                                     background: 'rgba(255,255,255,0.1)', color: 'white', 
