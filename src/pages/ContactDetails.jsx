@@ -7,17 +7,18 @@ import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
 
-const LIFECYCLE_STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+const LIFECYCLE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const LIFECYCLE_COLORS = {
-    'New': { bg: 'rgba(59, 130, 246, 0.08)', text: 'var(--navy-600)', icon: UserPlus },
-    'Contacted': { bg: 'rgba(99, 102, 241, 0.08)', text: '#4338ca', icon: Target },
+    'New Lead': { bg: 'rgba(59, 130, 246, 0.08)', text: 'var(--navy-600)', icon: UserPlus },
+    'Connected': { bg: 'rgba(99, 102, 241, 0.08)', text: '#4338ca', icon: Target },
     'Qualified': { bg: 'rgba(6, 182, 212, 0.08)', text: 'var(--accent-cyan-dark)', icon: Zap },
-    'Disqualified': { bg: 'var(--slate-100)', text: 'var(--slate-600)', icon: X },
-    'Nurture': { bg: 'rgba(124, 77, 255, 0.08)', text: '#7c3aed', icon: TrendingUp },
-    'Site Visit': { bg: 'rgba(20, 184, 166, 0.08)', text: '#0f766e', icon: MapPin },
+    'Site Visit Scheduled': { bg: 'rgba(20, 184, 166, 0.08)', text: '#0f766e', icon: MapPin },
+    'Site Visit Done': { bg: 'rgba(16, 185, 129, 0.08)', text: 'var(--accent-emerald-dark)', icon: ShieldCheck },
+    'Interested': { bg: 'rgba(124, 77, 255, 0.08)', text: '#7c3aed', icon: TrendingUp },
+    'Proposal Shared': { bg: 'rgba(217, 70, 239, 0.08)', text: '#c026d3', icon: FileText },
     'Negotiation': { bg: 'rgba(245, 158, 11, 0.08)', text: '#b45309', icon: DollarSign },
     'Won': { bg: 'rgba(16, 185, 129, 0.08)', text: 'var(--accent-emerald-dark)', icon: ShieldCheck },
-    'Lost': { bg: 'rgba(244, 63, 94, 0.08)', text: 'var(--accent-rose-dark)', icon: CheckSquare }
+    'Lost': { bg: 'rgba(244, 63, 94, 0.08)', text: 'var(--accent-rose-dark)', icon: X }
 };
 
 export default function ContactDetails() {
@@ -229,13 +230,13 @@ export default function ContactDetails() {
     ];
     const colorIndex = (contact.name || 'A').charCodeAt(0) % PALETTE.length;
     const avatarBg = PALETTE[colorIndex];
-    const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New'];
+    const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead'];
 
     return (
         <div className="contact-details-layout" style={{ display: 'flex', width: '100%', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden', overflowX: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
             <div className="contact-details-sidebar" style={{ 
-                width: 300,
+                width: 400,
                 flexShrink: 0,
                 borderRight: '1px solid var(--border-light)', 
                 backgroundColor: 'white', 
@@ -310,8 +311,8 @@ export default function ContactDetails() {
                                     transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                                 }}
                             >
-                                <act.icon size={14} color={act.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
+                                <act.icon size={16} color={act.color} strokeWidth={2.5} />
+                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
                             </button>
                         ))}
                     </div>

@@ -7,7 +7,7 @@ router.use(auth);
 
 // GET /api/users — list team members (admin/manager only)
 router.get('/', async (req, res) => {
-    if (!['admin', 'sales_manager'].includes(req.user.role))
+    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
         return res.status(403).json({ error: 'Insufficient permissions' });
     const { rows } = await pool.query(
         `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at
@@ -16,10 +16,18 @@ router.get('/', async (req, res) => {
     res.json(rows);
 });
 
-// POST /api/users — add new team member (admin only)
+// POST /api/users — add new team member (admin/manager only)
 router.post('/', async (req, res) => {
-    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
+    // Managers can add members, but only Agents
+    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
+        return res.status(403).json({ error: 'Admin/Manager only' });
+
     const { name, email, password, role, phone, department } = req.body;
+
+    if (req.user.role === 'sales_manager' && role !== 'agent') {
+        return res.status(403).json({ error: 'Managers can only add Sales Agents' });
+    }
+
     if (!name || !email || !password) return res.status(400).json({ error: 'name, email, password required' });
 
     // Check plan limits
@@ -42,9 +50,19 @@ router.post('/', async (req, res) => {
 
 // PATCH /api/users/:id
 router.patch('/:id', async (req, res) => {
-    if (req.user.role !== 'admin' && req.user.id !== req.params.id)
+    const isAdmin = ['superadmin', 'admin'].includes(req.user.role);
+    const id = req.params.id;
+
+    // Determine target user's role first
+    const { rows: trows } = await pool.query("SELECT role FROM users WHERE id=$1", [id]);
+    if (!trows.length) return res.status(404).json({ error: 'User not found' });
+    const targetRole = trows[0].role;
+
+    const canEdit = isAdmin || req.user.id === id || (req.user.role === 'sales_manager' && targetRole === 'agent');
+
+    if (!canEdit)
         return res.status(403).json({ error: 'Insufficient permissions' });
-    const allowed = ['name', 'phone', 'department', 'role', 'is_active'];
+    const allowed = ['name', 'email', 'phone', 'department', 'role', 'is_active'];
     const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
 
     // Change password separately

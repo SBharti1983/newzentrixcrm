@@ -8,27 +8,29 @@ import { useToast } from '../hooks/useToast';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
 import { dialerEvents } from '../constants/events';
 
-const STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+const STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const STAGE_COLORS = {
-    'New': 'badge-blue',
-    'Contacted': 'badge-indigo',
+    'New Lead': 'badge-blue',
+    'Connected': 'badge-indigo',
     'Qualified': 'badge-cyan',
-    'Disqualified': 'badge-slate',
-    'Nurture': 'badge-violet',
-    'Site Visit': 'badge-teal',
+    'Site Visit Scheduled': 'badge-teal',
+    'Site Visit Done': 'badge-emerald',
+    'Interested': 'badge-violet',
+    'Proposal Shared': 'badge-fuchsia',
     'Negotiation': 'badge-amber',
     'Won': 'badge-green',
     'Lost': 'badge-red'
 };
 const STAGE_BG = {
-    'New': 'rgba(59, 130, 246, 0.08)',
-    'Contacted': 'rgba(99, 102, 241, 0.08)',
+    'New Lead': 'rgba(59, 130, 246, 0.08)',
+    'Connected': 'rgba(99, 102, 241, 0.08)',
     'Qualified': 'rgba(6, 182, 212, 0.08)',
-    'Disqualified': 'rgba(100, 116, 139, 0.08)',
-    'Nurture': 'rgba(124, 77, 255, 0.08)',
-    'Site Visit': 'rgba(20, 184, 166, 0.08)',
+    'Site Visit Scheduled': 'rgba(20, 184, 166, 0.08)',
+    'Site Visit Done': 'rgba(16, 185, 129, 0.08)',
+    'Interested': 'rgba(124, 77, 255, 0.08)',
+    'Proposal Shared': 'rgba(217, 70, 239, 0.08)',
     'Negotiation': 'rgba(245, 158, 11, 0.08)',
-    'Won': 'rgba(16, 185, 129, 0.08)',
+    'Won': 'rgba(34, 197, 94, 0.08)',
     'Lost': 'rgba(244, 63, 94, 0.08)'
 };
 
@@ -48,7 +50,7 @@ const SOURCES = ['Website', 'Referral', 'Social Media', 'Walk-in', 'PropTech Por
 
 const DEFAULT_FORM = {
     name: '', email: '', phone: '', city: '', source: 'Website',
-    stage: 'New', budget: '', property_type: '2BHK', project_id: '',
+    stage: 'New Lead', status: 'Active', budget: '', property_type: '2BHK', project_id: '',
     assigned_to: '', channel_partner_id: '', notes: '', score: 50,
 };
 
@@ -58,6 +60,7 @@ export default function Leads() {
     const [search, setSearch] = useState('');
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All');
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(DEFAULT_FORM);
@@ -80,20 +83,21 @@ export default function Leads() {
         const p = { limit, page };
         if (filterStage !== 'All') p.stage = filterStage;
         if (filterSource !== 'All') p.source = filterSource;
+        if (filterStatus !== 'All') p.status = filterStatus;
         if (search.trim()) p.q = search.trim();
         return p;
-    }, [limit, page, filterStage, filterSource, search]);
+    }, [limit, page, filterStage, filterSource, filterStatus, search]);
 
     const { data: leadsRes, loading, error, refetch } = useApi(
         useCallback(() => leadsApi.list(params), [params]),
-        [filterStage, filterSource, search, page, limit]
+        [filterStage, filterSource, filterStatus, search, page, limit]
     );
 
     // Reset selection and page when filtering changes
     useEffect(() => {
         setSelectedIds(new Set());
         setPage(1);
-    }, [filterStage, filterSource, search]);
+    }, [filterStage, filterSource, filterStatus, search]);
     const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
     const { data: users } = useApi(useCallback(() => usersApi.list(), []));
     const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
@@ -105,7 +109,7 @@ export default function Leads() {
     const openEdit = (lead) => {
         setForm({
             name: lead.name, email: lead.email || '', phone: lead.phone || '',
-            city: lead.city || '', source: lead.source, stage: lead.stage,
+            city: lead.city || '', source: lead.source, stage: lead.stage, status: lead.status || 'Active',
             budget: lead.budget || '', property_type: lead.property_type || '3BHK',
             project_id: lead.project_id || '', assigned_to: lead.assigned_to || '',
             channel_partner_id: lead.channel_partner_id || '',
@@ -285,6 +289,13 @@ export default function Leads() {
                             <option value="All">All Stages</option>
                             {STAGES.map(s => <option key={s}>{s}</option>)}
                         </select>
+                        <select className="form-control form-control-sm" style={{ width: 130 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                            <option value="All">All Statuses</option>
+                            <option value="Active">Active</option>
+                            <option value="Nurture">Nurture</option>
+                            <option value="Won">Won</option>
+                            <option value="Lost">Lost</option>
+                        </select>
                         <select className="form-control form-control-sm" style={{ width: 160 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
                             <option value="All">All Sources</option>
                             {SOURCES.map(s => <option key={s}>{s}</option>)}
@@ -307,8 +318,8 @@ export default function Leads() {
                         <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
                     </div>
                 ) : (
-                <div className="table-wrapper">
-                        <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
+                <div className="table-wrapper" style={{ overflowX: 'auto', background: 'white', borderRadius: 12, border: '1px solid var(--border-light)' }}>
+                        <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead>
                                 <tr>
                                     <th style={{ width: 40, paddingRight: 0 }}>
@@ -319,22 +330,31 @@ export default function Leads() {
                                             style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                         />
                                     </th>
-                                    {['Lead', 'Contact', 'Stage', 'Source', 'Budget', 'Score', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
+                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Budget', 'Score', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
                                         const widths = {
-                                            'Lead': '180px',
-                                            'Contact': '180px',
+                                            'Lead': '140px',
+                                            'Contact': '140px',
+                                            'Status': '80px',
                                             'Stage': '100px',
-                                            'Source': '100px',
-                                            'Budget': '90px',
-                                            'Score': '70px',
-                                            'Assigned To': '110px',
-                                            'Last Contact': '110px',
-                                            'Actions': '160px'
+                                            'Source': '80px',
+                                            'Budget': '80px',
+                                            'Score': '60px',
+                                            'Assigned To': '100px',
+                                            'Last Contact': '90px',
+                                            'Actions': '120px'
                                         };
                                         return (
                                             <th key={h} style={{ 
                                                 width: widths[h] || 'auto',
-                                                minWidth: widths[h] || 'auto'
+                                                minWidth: widths[h] || 'auto',
+                                                textAlign: 'center',
+                                                padding: '12px 8px',
+                                                fontSize: '0.75rem',
+                                                textTransform: 'uppercase',
+                                                fontWeight: 800,
+                                                color: 'var(--slate-500)',
+                                                borderBottom: '1px solid var(--border-light)',
+                                                background: 'var(--slate-50)'
                                             }}>{h}</th>
                                         );
                                     })}
@@ -426,33 +446,45 @@ export default function Leads() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage || '—'}</span></td>
-                                        <td><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source || '—'}</span></td>
-                                        <td style={{ fontWeight: 600 }}>{lead.budget || '—'}</td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div className="progress-bar" style={{ width: 52, height: 5 }}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span style={{ 
+                                                fontSize: '0.75rem', 
+                                                fontWeight: 600, 
+                                                padding: '2px 8px', 
+                                                borderRadius: 12, 
+                                                background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9',
+                                                color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569'
+                                            }}>
+                                                {lead.status || 'Active'}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage || '—'}</span></td>
+                                        <td style={{ textAlign: 'center' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source || '—'}</span></td>
+                                        <td style={{ fontWeight: 600, textAlign: 'center' }}>{lead.budget || '—'}</td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                                                <div className="progress-bar" style={{ width: 44, height: 4 }}>
                                                     <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
                                                 </div>
-                                                <span style={{ fontSize: '0.78rem', fontWeight: 700 }}>{leadScore}</span>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{leadScore}</span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)` }}>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'center' }}>
+                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>
                                                     {lead.agent_avatar || '?'}
                                                 </div>
-                                                <span style={{ fontSize: '0.8rem' }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
+                                                <span style={{ fontSize: '0.75rem' }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
                                             {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                                         </td>
-                                        <td onClick={e => e.stopPropagation()}>
-                                            <div style={{ display: 'flex', gap: 6 }}>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call"><Phone size={13} style={{ color: '#00a38d' }} /></button>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit"><Edit2 size={13} /></button>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)' }}><Trash2 size={13} /></button>
+                                        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 28, height: 28 }}><Phone size={12} style={{ color: '#00a38d' }} /></button>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 28, height: 28 }}><Edit2 size={12} /></button>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 28, height: 28 }}><Trash2 size={12} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -546,6 +578,15 @@ export default function Leads() {
                                 <div className="form-group">
                                     <label className="form-label">City</label>
                                     <input className="form-control" value={form.city} onChange={e => upd('city', e.target.value)} placeholder="Mumbai" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Lead Status</label>
+                                    <select className="form-control" value={form.status} onChange={e => upd('status', e.target.value)}>
+                                        <option value="Active">Active</option>
+                                        <option value="Nurture">Nurture</option>
+                                        <option value="Won">Won</option>
+                                        <option value="Lost">Lost</option>
+                                    </select>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Stage</label>
@@ -693,6 +734,19 @@ export default function Leads() {
                                 </div>
                             )}
 
+                            {bulkAction === 'status' && (
+                                <div className="form-group">
+                                    <label className="form-label">Change Status To</label>
+                                    <select className="form-control" value={bulkValue} onChange={e => setBulkValue(e.target.value)}>
+                                        <option value="">Select status...</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Nurture">Nurture</option>
+                                        <option value="Won">Won</option>
+                                        <option value="Lost">Lost</option>
+                                    </select>
+                                </div>
+                            )}
+
                             {bulkAction === 'delete' && (
                                 <p style={{ color: 'var(--accent-rose)' }}>
                                     This action cannot be undone. All related follow-ups will also be permanently deleted.
@@ -738,6 +792,9 @@ export default function Leads() {
                         </button>
                         <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('stage'); setBulkValue(''); }}>
                             <Tag size={14} /> Update Stage
+                        </button>
+                        <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('status'); setBulkValue(''); }}>
+                            <Tag size={14} /> Update Status
                         </button>
                         <button className="btn btn-sm" style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none' }} onClick={() => { setBulkAction('assign'); setBulkValue(''); }}>
                             <Users size={14} /> Reassign

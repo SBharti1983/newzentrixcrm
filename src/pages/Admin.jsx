@@ -1,37 +1,50 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../hooks/useAuth';
 import { PageLoader, PageError } from '../components/Feedback';
 import { usersApi, projectsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings } from 'lucide-react';
 
 const ROLE_LABELS = {
+    superadmin: 'Super Administrator',
     admin: 'Administrator',
     sales_manager: 'Sales Manager',
     agent: 'Sales Agent',
 };
 const ROLE_BADGE = {
+    superadmin: 'badge-rose',
     admin: 'badge-violet',
     sales_manager: 'badge-blue',
     agent: 'badge-cyan',
 };
 
 const ROLE_PERMISSIONS = {
+    superadmin: ['Full System Access', 'Manage Tenants', 'View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 'Billing Access'],
     admin: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data'],
     sales_manager: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Assign Agents', 'Export Data'],
     agent: ['View Dashboard', 'Manage Own Leads', 'View Projects', 'Schedule Visits', 'Update Bookings'],
 };
 
-const DEFAULT_FORM = { name: '', email: '', role: 'agent', dept: 'Sales', phone: '' };
+const DEFAULT_FORM = { name: '', email: '', role: 'agent', department: 'Sales', phone: '', password: 'Zentrix@123' };
 
 export default function Admin() {
     const { showToast } = useToast();
     const { data: usersRaw, loading, error, refetch } = useApi(() => usersApi.list());
     const { data: projectsRaw } = useApi(() => projectsApi.list());
-    const users = usersRaw || [];
+    const usersRawList = usersRaw || [];
     const PROJECTS_DATA = projectsRaw || [];
     // derive current user from session storage
-    const currentUser = (() => { try { return JSON.parse(sessionStorage.getItem('zentrix_user') || '{}'); } catch { return {}; } })();
+    const { user: currentUser } = useAuth();
+
+    // Filter users based on current user role: Managers only see Agents and themselves
+    const users = usersRawList.filter(u => {
+        if (currentUser.role === 'sales_manager') {
+             // Manager sees themselves and Agents
+             return u.id === currentUser.id || u.role === 'agent';
+        }
+        return true; // Admins and SuperAdmins see everyone
+    });
 
     const [tab, setTab] = useState('users');
     const [showModal, setShowModal] = useState(false);
@@ -40,15 +53,17 @@ export default function Admin() {
     const [saving, setSaving] = useState(false);
 
     const openAdd = () => { setForm(DEFAULT_FORM); setEditingUser(null); setShowModal(true); };
-    const openEdit = (u) => { setForm({ ...u }); setEditingUser(u.id); setShowModal(true); };
+    const openEdit = (u) => { setForm({ ...u, new_password: '' }); setEditingUser(u.id); setShowModal(true); };
     const save = async () => {
         if (!form.name || !form.email) { showToast('Name and email required', 'error'); return; }
         setSaving(true);
         try {
             if (editingUser) {
-                await usersApi.update(editingUser, { name: form.name, email: form.email, role: form.role, dept: form.dept, phone: form.phone });
+                const payload = { name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone };
+                if (form.new_password) payload.new_password = form.new_password;
+                await usersApi.update(editingUser, payload);
             } else {
-                await usersApi.create({ name: form.name, email: form.email, role: form.role, dept: form.dept, phone: form.phone, password: 'Zentrix@123' });
+                await usersApi.create({ name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone, password: form.password || 'Zentrix@123' });
             }
             showToast(editingUser ? 'User updated!' : 'User added!', 'success');
             setShowModal(false); refetch();
@@ -109,7 +124,7 @@ export default function Admin() {
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8 }}>{u.email}</div>
                                         <div style={{ display: 'flex', gap: 6 }}>
                                             <span className={`badge ${ROLE_BADGE[u.role]}`}>{ROLE_LABELS[u.role]}</span>
-                                            <span className="badge badge-slate">{u.dept}</span>
+                                            <span className="badge badge-slate">{u.department || 'Sales'}</span>
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
@@ -181,11 +196,13 @@ export default function Admin() {
                     {Object.entries(ROLE_PERMISSIONS).map(([role, perms]) => (
                         <div key={role} className="card" style={{ overflow: 'visible' }}>
                             <div style={{
-                                background: role === 'admin'
-                                    ? 'linear-gradient(135deg, var(--accent-violet-dark), var(--accent-violet))'
-                                    : role === 'sales_manager'
-                                        ? 'linear-gradient(135deg, var(--navy-700), var(--navy-500))'
-                                        : 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))',
+                                background: role === 'superadmin'
+                                    ? 'linear-gradient(135deg, var(--accent-rose-dark), var(--accent-rose))'
+                                    : role === 'admin'
+                                        ? 'linear-gradient(135deg, var(--accent-violet-dark), var(--accent-violet))'
+                                        : role === 'sales_manager'
+                                            ? 'linear-gradient(135deg, var(--navy-700), var(--navy-50))'
+                                            : 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))',
                                 padding: '20px 22px',
                                 borderRadius: 'var(--border-radius-lg) var(--border-radius-lg) 0 0',
                             }}>
@@ -252,7 +269,7 @@ export default function Admin() {
 
             {/* User Modal */}
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                <div className="modal-overlay">
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header">
                             <h3 className="modal-title">{editingUser ? 'Edit User' : 'Add Team Member'}</h3>
@@ -264,21 +281,37 @@ export default function Admin() {
                                     <label className="form-label">Full Name *</label>
                                     <input className="form-control" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Full name" />
                                 </div>
-                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                <div className="form-group">
                                     <label className="form-label">Email *</label>
                                     <input className="form-control" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="email@zentrix.com" />
                                 </div>
+                                {!editingUser ? (
+                                    <div className="form-group">
+                                        <label className="form-label">Default Password *</label>
+                                        <input className="form-control" type="text" value={form.password || ''} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="Default password" />
+                                    </div>
+                                ) : (
+                                    <div className="form-group">
+                                        <label className="form-label">New Password</label>
+                                        <input className="form-control" type="password" value={form.new_password || ''} onChange={e => setForm({ ...form, new_password: e.target.value })} placeholder="Leave blank to keep" />
+                                    </div>
+                                )}
                                 <div className="form-group">
                                     <label className="form-label">Role</label>
                                     <select className="form-control" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                        <option value="admin">Administrator</option>
-                                        <option value="sales_manager">Sales Manager</option>
+                                        {currentUser.role !== 'sales_manager' && (
+                                            <>
+                                                <option value="superadmin">Super Administrator</option>
+                                                <option value="admin">Administrator</option>
+                                                <option value="sales_manager">Sales Manager</option>
+                                            </>
+                                        )}
                                         <option value="agent">Sales Agent</option>
                                     </select>
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Department</label>
-                                    <input className="form-control" value={form.dept} onChange={e => setForm({ ...form, dept: e.target.value })} placeholder="Sales" />
+                                    <input className="form-control" value={form.department || ''} onChange={e => setForm({ ...form, department: e.target.value })} placeholder="Sales" />
                                 </div>
                             </div>
                         </div>

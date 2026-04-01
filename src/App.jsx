@@ -22,6 +22,7 @@ import Bookings from './pages/Bookings';
 import Followups from './pages/Followups';
 import SiteVisits from './pages/SiteVisits';
 import Analytics from './pages/Analytics';
+import Leaderboard from './pages/Leaderboard';
 import Admin from './pages/Admin';
 import Notifications from './pages/Notifications';
 import ChannelPartners from './pages/ChannelPartners';
@@ -170,6 +171,7 @@ function ProtectedApp() {
             <Route path="/notifications" element={<RoleGuard path="/notifications"><Notifications /></RoleGuard>} />
             <Route path="/channel-partners" element={<RoleGuard path="/channel-partners"><ChannelPartners /></RoleGuard>} />
             <Route path="/analytics" element={<RoleGuard path="/analytics"><Analytics /></RoleGuard>} />
+            <Route path="/leaderboard" element={<RoleGuard path="/leaderboard"><Leaderboard /></RoleGuard>} />
             <Route path="/reports" element={<RoleGuard path="/reports"><Reports /></RoleGuard>} />
             <Route path="/admin" element={<RoleGuard path="/admin"><Admin /></RoleGuard>} />
             <Route path="/calendar" element={<RoleGuard path="/calendar"><CalendarPage /></RoleGuard>} />

@@ -60,7 +60,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/bookings
 router.post('/', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
         const { customer_id, project_id, unit_no, unit_id, assigned_agent_id, total_amount, payment_plan, token_amount, token_mode, token_reference, notes } = req.body;
         if (!customer_id || !project_id) return res.status(400).json({ error: 'Customer and project are required' });

@@ -126,7 +126,7 @@ router.get('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
-    const { stage, source, priority, agent, q, channel_partner_id } = req.query;
+    const { stage, source, priority, agent, q, channel_partner_id, status } = req.query;
     const offset = (page - 1) * limit;
     const conditions = [`l.tenant_id = $1`];
     const params = [req.tenantId];
@@ -137,6 +137,7 @@ router.get('/', async (req, res) => {
     if (priority) { conditions.push(`l.priority = $${i++}`); params.push(priority); }
     if (agent) { conditions.push(`l.assigned_to = $${i++}`); params.push(agent); }
     if (channel_partner_id) { conditions.push(`l.channel_partner_id = $${i++}`); params.push(channel_partner_id); }
+    if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
     if (q) { conditions.push(`(l.name ILIKE $${i} OR l.city ILIKE $${i} OR l.phone ILIKE $${i} OR l.email ILIKE $${i})`); params.push(`%${q}%`); i++; }
 
     const where = conditions.join(' AND ');
@@ -174,7 +175,7 @@ router.post('/bulk-update', async (req, res) => {
     if (!Array.isArray(leadIds) || leadIds.length === 0) {
         return res.status(400).json({ error: 'leadIds array is required' });
     }
-    const allowed = ['stage', 'assigned_to', 'priority', 'score'];
+    const allowed = ['stage', 'assigned_to', 'priority', 'score', 'status'];
     const validUpdates = Object.fromEntries(Object.entries(updates).filter(([k]) => allowed.includes(k)));
     if (!Object.keys(validUpdates).length) return res.status(400).json({ error: 'No valid fields to update' });
 
@@ -211,7 +212,7 @@ router.post('/bulk-update', async (req, res) => {
 
 // POST /api/leads/bulk-delete
 router.post('/bulk-delete', async (req, res) => {
-    if (!['admin', 'sales_manager'].includes(req.user.role)) {
+    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role)) {
         return res.status(403).json({ error: 'Insufficient permissions' });
     }
     const { leadIds } = req.body;
@@ -253,7 +254,7 @@ router.post('/', validateLead, async (req, res) => {
 
         const {
             name, phone, email, city, source, stage, priority, score,
-            property_type, project_id, budget, assigned_to, notes, channel_partner_id
+            property_type, project_id, budget, assigned_to, notes, channel_partner_id, status
         } = req.body;
 
         // Safety check: name and phone are mandatory
@@ -274,11 +275,11 @@ router.post('/', validateLead, async (req, res) => {
         const safeScore = (typeof score === 'number' && !isNaN(score)) ? score : 50;
 
         const { rows } = await pool.query(
-            `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, last_contact_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,NOW()) RETURNING *`,
+            `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW()) RETURNING *`,
             [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
             priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
-            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId]
+            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active']
         );
 
         const newLead = rows[0];
@@ -335,7 +336,7 @@ router.post('/:id/interactions', async (req, res) => {
 
 // PATCH /api/leads/:id
 router.patch('/:id', async (req, res) => {
-    const allowed = ['name', 'phone', 'email', 'city', 'source', 'stage', 'priority', 'score', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'last_contact_at', 'channel_partner_id'];
+    const allowed = ['name', 'phone', 'email', 'city', 'source', 'stage', 'priority', 'score', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'last_contact_at', 'channel_partner_id', 'status'];
     // Convert empty strings to null for UUID/nullable foreign key fields
     const nullableFields = ['email', 'city', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'channel_partner_id'];
     const raw = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
@@ -392,7 +393,7 @@ router.patch('/:id', async (req, res) => {
 
 // DELETE /api/leads/:id  (admin/manager only)
 router.delete('/:id', async (req, res) => {
-    if (!['admin', 'sales_manager'].includes(req.user.role))
+    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
         return res.status(403).json({ error: 'Insufficient permissions' });
     try {
         await pool.query(`DELETE FROM leads WHERE id=$1 AND tenant_id=$2`, [req.params.id, req.tenantId]);

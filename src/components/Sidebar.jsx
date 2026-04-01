@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Users, Building2, UserCheck, Calendar,
     MapPin, BookOpen, BarChart3, Settings, ChevronLeft,
     ChevronRight, LogOut, Bell, Handshake, CreditCard,
-    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic
+    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_ACCESS } from '../constants/access';
@@ -70,6 +70,7 @@ const NAV_SECTIONS = [
         label: 'Analytics',
         items: [
             { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+            { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
             { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
             { path: '/reports', label: 'Custom Reports', icon: FileCheck },
         ],

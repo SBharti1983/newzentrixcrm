@@ -7,7 +7,9 @@ import {
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { analyticsApi } from '../api/client';
-import { TrendingUp, Users, Home, BarChart3, Target, Award, Calendar, Phone, Sparkles } from 'lucide-react';
+import { TrendingUp, Users, Home, BarChart3, Target, Award, Calendar, Phone, Sparkles, MessageSquare, MapPin, Zap, ChevronRight, AlertCircle } from 'lucide-react';
+import { leadsApi } from '../api/client';
+import { useCallback, useMemo } from 'react';
 
 const PIE_COLORS = ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-emerald)', 'var(--accent-violet)', 'var(--accent-rose)'];
 
@@ -34,6 +36,80 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Analytics() {
     const [range, setRange] = useState('6months');
     const { data: data, loading, error, refetch } = useApi(() => analyticsApi.get({ range }), [range]);
+    
+    // Fetch top leads for priority queue
+    const { data: leadsRes, loading: leadsLoading } = useApi(
+        useCallback(() => leadsApi.list({ limit: 100, sort: 'created_at', order: 'desc' }), []),
+        []
+    );
+
+    const calculateLeadScore = useCallback((lead) => {
+        let score = 0;
+        
+        const called = lead.stage !== 'New Lead' || lead.last_contact_at != null;
+        const siteVisit = ['Site Visit Done', 'Proposal Shared', 'Negotiation', 'Won'].includes(lead.stage);
+        const whatsappReply = !!lead.last_contact_at; // Proxy
+        const budgetMatch = !!lead.budget;
+        const highBudget = lead.budget && lead.budget.includes('Cr');
+        const isRecent = new Date() - new Date(lead.created_at) < 7 * 24 * 60 * 60 * 1000;
+        const inactiveDays = lead.last_contact_at ? (new Date() - new Date(lead.last_contact_at)) / (1000 * 60 * 60 * 24) : 10;
+        const multipleVisits = ['Negotiation', 'Won'].includes(lead.stage);
+
+        if (called) score += 10;
+        if (siteVisit) score += 25;
+        if (whatsappReply) score += 15;
+        if (budgetMatch) score += 20;
+        if (highBudget) score += 15;
+        if (isRecent) score += 10;
+        if (inactiveDays > 7) score -= 10;
+        if (multipleVisits) score += 20;
+
+        return Math.max(0, Math.min(score, 100));
+    }, []);
+
+    const priorityLeads = useMemo(() => {
+        if (!leadsRes?.data) return [];
+        return leadsRes.data
+            .map(l => ({ ...l, calculatedScore: calculateLeadScore(l) }))
+            .sort((a, b) => b.calculatedScore - a.calculatedScore)
+            .slice(0, 5);
+    }, [leadsRes, calculateLeadScore]);
+
+    const leadHealthStats = useMemo(() => {
+        if (!leadsRes?.data) return { hot: 0, warm: 0, cold: 0 };
+        const stats = { hot: 0, warm: 0, cold: 0 };
+        leadsRes.data.forEach(l => {
+            const score = calculateLeadScore(l);
+            if (score >= 80) stats.hot++;
+            else if (score >= 50) stats.warm++;
+            else stats.cold++;
+        });
+        return stats;
+    }, [leadsRes, calculateLeadScore]);
+
+    const scoreConversionData = useMemo(() => {
+        if (!leadsRes?.data) return [];
+        const brackets = [
+            { range: '0-40 (Cold)', min: 0, max: 40, count: 0, won: 0 },
+            { range: '41-70 (Warm)', min: 41, max: 70, count: 0, won: 0 },
+            { range: '71-100 (Hot)', min: 71, max: 100, count: 0, won: 0 }
+        ];
+
+        leadsRes.data.forEach(l => {
+            const score = calculateLeadScore(l);
+            const bracket = brackets.find(b => score >= b.min && score <= b.max);
+            if (bracket) {
+                bracket.count++;
+                if (l.stage === 'Won') bracket.won++;
+            }
+        });
+
+        return brackets.map(b => ({
+            name: b.range,
+            rate: b.count ? Math.round((b.won / b.count) * 100) : 0,
+            count: b.count
+        }));
+    }, [leadsRes, calculateLeadScore]);
 
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
@@ -225,53 +301,161 @@ export default function Analytics() {
                 </div>
             </div>
 
-            {/* Tactical Intelligence Section */}
-            <div className="grid grid-2 mb-10" style={{ gap: 32 }}>
-                <div className="glass-card" style={{ borderRadius: 32, padding: '32px', border: '1px solid rgba(255,255,255,0.8)' }}>
-                    <div style={{ marginBottom: 30 }}>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Communication Efficacy</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Distribution of outbound call outcomes</p>
+            {/* Predictive Intelligence & Priority Queue */}
+            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: '1fr 1.5fr', gap: 32 }}>
+                {/* Lead Health Distribution */}
+                <div className="glass-panel" style={{ borderRadius: 32, padding: 32, background: 'linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 100%)', color: 'white', border: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Zap size={20} color="var(--accent-cyan)" />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'white' }}>Auto-Tagging Logic</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>Predictive Lead Health Distribution</p>
+                        </div>
                     </div>
-                    <div style={{ height: 320 }}>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        {[
+                            { label: '🔥 HOT LEADS', value: leadHealthStats.hot, color: 'var(--accent-rose)', desc: 'Score 80+ · Ready for closure', pct: leadsRes?.data?.length ? Math.round((leadHealthStats.hot / leadsRes.data.length) * 100) : 0 },
+                            { label: '☀️ WARM LEADS', value: leadHealthStats.warm, color: 'var(--accent-amber)', desc: 'Score 50+ · Actively engaged', pct: leadsRes?.data?.length ? Math.round((leadHealthStats.warm / leadsRes.data.length) * 100) : 0 },
+                            { label: '❄️ COLD LEADS', value: leadHealthStats.cold, color: 'var(--accent-cyan)', desc: 'Score <50 · Nurturing required', pct: leadsRes?.data?.length ? Math.round((leadHealthStats.cold / leadsRes.data.length) * 100) : 0 }
+                        ].map((s, i) => (
+                            <div key={i}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
+                                    <div>
+                                        <div style={{ fontSize: '12px', fontWeight: 900, color: s.color, letterSpacing: '0.05em' }}>{s.label}</div>
+                                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.desc}</div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: 900 }}>{s.value}</div>
+                                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>{s.pct}% OF TOTAL</div>
+                                    </div>
+                                </div>
+                                <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, overflow: 'hidden' }}>
+                                    <div style={{ width: `${s.pct}%`, height: '100%', background: s.color }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Priority Call Queue */}
+                <div className="glass-card" style={{ borderRadius: 32, padding: 32 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Phone size={20} color="var(--navy-600)" />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Call Priority Queue</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Sales reps should target these leads next</p>
+                            </div>
+                        </div>
+                        <button className="badge-blue" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px' }}>View Full Queue</button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        {priorityLeads.map((lead, i) => (
+                            <div key={i} className="hover-light" style={{ 
+                                padding: '16px 20px', 
+                                borderBottom: i < priorityLeads.length - 1 ? '1px solid var(--slate-100)' : 'none',
+                                display: 'flex', alignItems: 'center', gap: 16,
+                                borderRadius: 16,
+                                transition: 'all 0.2s'
+                            }}>
+                                <div style={{ 
+                                    width: 40, height: 40, borderRadius: 12, background: 'var(--navy-900)', color: 'white', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' 
+                                }}>
+                                    {lead.name?.[0]}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)' }}>{lead.name}</div>
+                                    <div style={{ display: 'flex', gap: 10, marginTop: 2 }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <MapPin size={10} /> {lead.stage}
+                                        </span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <Sparkles size={10} /> {lead.calculatedScore} pts
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button 
+                                        className="btn btn-ghost btn-sm btn-icon" 
+                                        style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-emerald)10', color: 'var(--accent-emerald)' }}
+                                    >
+                                        <Phone size={14} />
+                                    </button>
+                                    <button 
+                                        className="btn btn-ghost btn-sm btn-icon" 
+                                        style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-cyan)10', color: 'var(--accent-cyan)' }}
+                                    >
+                                        <MessageSquare size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {priorityLeads.length === 0 && (
+                            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                <AlertCircle size={32} style={{ opacity: 0.2, marginBottom: 12 }} />
+                                <div>No high-priority leads detected.</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Conversion Intelligence */}
+            <div className="grid grid-2 mb-10" style={{ gap: 32 }}>
+                <div className="glass-card" style={{ borderRadius: 32, padding: '32px' }}>
+                    <div style={{ marginBottom: 30 }}>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Score vs Conversion Rate</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Realized conversion percentage by predictive score bracket</p>
+                    </div>
+                    <div style={{ height: 280 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={data.callOutcomes}
-                                    cx="50%" cy="50%"
-                                    innerRadius={65}
-                                    outerRadius={95}
-                                    paddingAngle={6}
-                                    dataKey="value"
-                                >
-                                    {data.callOutcomes.map((_, i) => <Cell key={i} fill={PIE_COLORS[(i + 2) % PIE_COLORS.length]} />)}
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '0.85rem', fontWeight: 700, paddingTop: 20 }} iconType="circle" />
-                            </PieChart>
+                            <BarChart data={scoreConversionData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600 }} unit="%" />
+                                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} content={<CustomTooltip />} />
+                                <Bar dataKey="rate" name="Conversion Rate" fill="var(--accent-emerald)" radius={[10, 10, 0, 0]} barSize={60}>
+                                    {scoreConversionData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={index === 2 ? 'var(--accent-rose)' : index === 1 ? 'var(--accent-amber)' : 'var(--accent-cyan)'} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                <div className="glass-card" style={{ borderRadius: 32, padding: '32px', border: '1px solid rgba(255,255,255,0.8)' }}>
+                <div className="glass-card" style={{ borderRadius: 32, padding: '32px' }}>
                     <div style={{ marginBottom: 30 }}>
-                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Agent Velocity</h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Outbound volume per representative</p>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Lead Velocity Trend</h3>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Daily volume of high-intent leads</p>
                     </div>
-                    <div style={{ height: 320 }}>
+                    <div style={{ height: 280 }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data.agentCalls} barGap={0}>
+                            <AreaChart data={data.monthlySales}>
+                                <defs>
+                                    <linearGradient id="velocityGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--accent-cyan)" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="var(--accent-cyan)" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: 700 }} />
+                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700 }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600 }} />
-                                <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} content={<CustomTooltip />} />
-                                <Bar dataKey="calls" name="Calls Made" fill="var(--accent-emerald)" radius={[8, 8, 0, 0]} barSize={48} />
-                            </BarChart>
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="leads" stroke="var(--accent-cyan)" strokeWidth={3} fill="url(#velocityGrad)" />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
             </div>
 
-            {/* Performance Rankings */}
             {/* Elite Sales Arena - Modernized Leaderboard */}
             <div className="glass-panel" style={{ 
                 borderRadius: 32, 

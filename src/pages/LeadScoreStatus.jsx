@@ -12,16 +12,23 @@ import {
 import { useToast } from '../hooks/useToast';
 
 const LEAD_STATUSES = [
-    { id: 'New', label: 'New', icon: Home, color: '#3b82f6', bg: '#eff6ff', description: 'Freshly imported leads' },
-    { id: 'Contacted', label: 'Contacted', icon: Phone, color: '#6366f1', bg: '#f5f3ff', description: 'Initial contact made' },
+    { id: 'New Lead', label: 'New Lead', icon: Home, color: '#3b82f6', bg: '#eff6ff', description: 'Freshly imported leads' },
+    { id: 'Connected', label: 'Connected', icon: Phone, color: '#6366f1', bg: '#f5f3ff', description: 'Initial contact made' },
     { id: 'Qualified', label: 'Qualified', icon: Target, color: '#06b6d4', bg: '#ecfeff', description: 'Interest confirmed' },
-    { id: 'Disqualified', label: 'Disqualified', icon: AlertCircle, color: '#94a3b8', bg: '#f1f5f9', description: 'Not a good fit' },
-    { id: 'Nurture', label: 'Nurture', icon: Sparkles, color: '#8b5cf6', bg: '#f5f3ff', description: 'Long term interest' },
-    { id: 'Site Visit', label: 'Site Visit', icon: MapPin, color: '#14b8a6', bg: '#f0fdfa', description: 'Property visit arranged' },
+    { id: 'Site Visit Scheduled', label: 'Site Visit Scheduled', icon: MapPin, color: '#14b8a6', bg: '#f0fdfa', description: 'Property visit arranged' },
+    { id: 'Site Visit Done', label: 'Site Visit Done', icon: CheckCircle2, color: '#10b981', bg: '#ecfdf5', description: 'Completed property visit' },
+    { id: 'Interested', label: 'Interested', icon: Sparkles, color: '#8b5cf6', bg: '#f5f3ff', description: 'Long term interest' },
+    { id: 'Proposal Shared', label: 'Proposal Shared', icon: Target, color: '#d946ef', bg: '#fdf4ff', description: 'Sent proposal' },
     { id: 'Negotiation', label: 'Negotiation', icon: Handshake, color: '#f59e0b', bg: '#fffbeb', description: 'Pricing discussion' },
     { id: 'Won', label: 'Won', icon: Award, color: '#10b981', bg: '#ecfdf5', description: 'Successfully converted' },
     { id: 'Lost', label: 'Lost', icon: X, color: '#f43f5e', bg: '#fff1f2', description: 'Lost opportunity' }
 ];
+
+const getLeadTag = (score) => {
+    if (score >= 80) return { label: '🔥 HOT', color: '#ef4444', bg: '#fef2f2' };
+    if (score >= 50) return { label: '☀️ WARM', color: '#f59e0b', bg: '#fffbeb' };
+    return { label: '❄️ COLD', color: '#3b82f6', bg: '#eff6ff' };
+};
 
 export default function LeadScoreStatus() {
     const { showToast } = useToast();
@@ -45,15 +52,43 @@ export default function LeadScoreStatus() {
         return counts;
     }, [leads]);
 
+    const calculateLeadScore = useCallback((lead) => {
+        let score = 0;
+        
+        const called = lead.stage !== 'New Lead' || lead.last_contact_at != null;
+        const siteVisit = ['Site Visit Done', 'Proposal Shared', 'Negotiation', 'Won'].includes(lead.stage);
+        const whatsappReply = !!lead.last_contact_at; // Proxy
+        const budgetMatch = !!lead.budget;
+        const highBudget = lead.budget && lead.budget.includes('Cr');
+        const isRecent = new Date() - new Date(lead.created_at) < 7 * 24 * 60 * 60 * 1000;
+        const inactiveDays = lead.last_contact_at ? (new Date() - new Date(lead.last_contact_at)) / (1000 * 60 * 60 * 24) : 10;
+        const multipleVisits = ['Negotiation', 'Won'].includes(lead.stage);
+
+        if (called) score += 10;
+        if (siteVisit) score += 25;
+        if (whatsappReply) score += 15;
+        if (budgetMatch) score += 20;
+        if (highBudget) score += 15;
+        if (isRecent) score += 10;
+        if (inactiveDays > 7) score -= 10;
+        if (multipleVisits) score += 20;
+
+        return Math.max(0, Math.min(score, 100));
+    }, []);
+
+    const enrichedLeads = useMemo(() => {
+        return leads.map(l => ({ ...l, calculatedScore: calculateLeadScore(l) }));
+    }, [leads, calculateLeadScore]);
+
     const filteredLeads = useMemo(() => {
-        return leads.filter(l => {
+        return enrichedLeads.filter(l => {
             const matchesTab = l.stage === activeTab;
             const matchesSearch = !search ||
                 l.name?.toLowerCase().includes(search.toLowerCase()) ||
                 l.email?.toLowerCase().includes(search.toLowerCase());
             return matchesTab && matchesSearch;
-        }).sort((a, b) => (b.score || 0) - (a.score || 0));
-    }, [leads, activeTab, search]);
+        }).sort((a, b) => b.calculatedScore - a.calculatedScore); // Priority Queue Sort (Highest Score First)
+    }, [enrichedLeads, activeTab, search]);
 
     const updateStage = async (id, stage) => {
         setUpdatingId(id);
@@ -89,7 +124,7 @@ export default function LeadScoreStatus() {
                             <div>
                                 <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Score</div>
                                 <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy-900)' }}>
-                                    {leads.length ? Math.round(leads.reduce((acc, l) => acc + (l.score || 0), 0) / leads.length) : 0}
+                                    {enrichedLeads.length ? Math.round(enrichedLeads.reduce((acc, l) => acc + l.calculatedScore, 0) / enrichedLeads.length) : 0}
                                 </div>
                             </div>
                         </div>
@@ -164,11 +199,11 @@ export default function LeadScoreStatus() {
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ background: 'var(--slate-50)', borderBottom: '1px solid var(--border-light)' }}>
-                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lead Name</th>
-                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>AI Score</th>
-                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Source</th>
-                                <th style={{ padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Engagement</th>
-                                <th style={{ padding: '16px 24px', textAlign: 'right', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Actions</th>
+                                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Lead Name</th>
+                                <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>AI Score</th>
+                                <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Priority</th>
+                                <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Engagement</th>
+                                <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -181,60 +216,66 @@ export default function LeadScoreStatus() {
                                 </tr>
                             ) : (
                                 filteredLeads.map(lead => {
-                                    const scoreColor = lead.score >= 80 ? 'var(--accent-emerald)' : lead.score >= 50 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+                                    const scoreColor = lead.calculatedScore >= 80 ? 'var(--accent-emerald)' : lead.calculatedScore >= 50 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+                                    const tag = getLeadTag(lead.calculatedScore);
                                     return (
                                         <tr key={lead.id} style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.2s' }} className="hover-row">
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <td style={{ padding: '12px 16px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <div style={{
-                                                        width: 36, height: 36, borderRadius: '50%',
+                                                        width: 32, height: 32, borderRadius: '50%',
                                                         background: 'var(--navy-900)', color: 'white',
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontWeight: 800, fontSize: '14px'
+                                                        fontWeight: 800, fontSize: '12px'
                                                     }}>
                                                         {lead.name?.[0]}
                                                     </div>
                                                     <div>
-                                                        <div style={{ fontWeight: 700, color: 'var(--navy-900)' }}>{lead.name}</div>
-                                                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lead.email}</div>
+                                                        <div style={{ fontWeight: 700, color: 'var(--navy-900)', fontSize: '0.85rem' }}>{lead.name}</div>
+                                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{lead.email || lead.phone}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                    <div style={{ flex: 1, height: 6, background: 'var(--slate-100)', borderRadius: 3, maxWidth: 100, overflow: 'hidden' }}>
-                                                        <div style={{ width: `${lead.score}%`, height: '100%', background: scoreColor }} />
+                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                                                    <div style={{ flex: 1, height: 4, background: 'var(--slate-100)', borderRadius: 2, maxWidth: 60, overflow: 'hidden' }}>
+                                                        <div style={{ width: `${lead.calculatedScore}%`, height: '100%', background: scoreColor }} />
                                                     </div>
-                                                    <span style={{ fontWeight: 800, color: scoreColor, fontSize: '14px' }}>{lead.score}</span>
+                                                    <span style={{ fontWeight: 800, color: scoreColor, fontSize: '13px' }}>{lead.calculatedScore}</span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <span className="badge-blue" style={{ fontSize: '11px' }}>{lead.source}</span>
+                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                <div style={{
+                                                    padding: '3px 8px', borderRadius: '6px', 
+                                                    background: tag.bg, color: tag.color,
+                                                    fontSize: '10px', fontWeight: 900, display: 'inline-block'
+                                                }}>
+                                                    {tag.label}
+                                                </div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: lead.score >= 70 ? 'var(--accent-emerald)' : 'var(--text-muted)', fontSize: '11px', fontWeight: 700 }}>
-                                                        <MapPin size={12} /> {lead.stage === 'Site Visit' || lead.score > 80 ? 'Visit Done' : 'No Visit'}
+                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: lead.calculatedScore >= 70 ? 'var(--accent-emerald)' : 'var(--text-muted)', fontSize: '11px', fontWeight: 700 }}>
+                                                        <MapPin size={10} /> {lead.stage.includes('Site Visit') || lead.calculatedScore > 80 ? 'Visit Done' : 'No Visit'}
                                                     </div>
                                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                                                        Last active: {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString() : 'Never'}
+                                                        {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString() : 'Never'}
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
                                                     {LEAD_STATUSES.filter(s => s.id !== activeTab).slice(0, 2).map(next => (
                                                         <button
                                                             key={next.id}
                                                             onClick={() => updateStage(lead.id, next.id)}
                                                             className="btn btn-ghost"
-                                                            style={{ fontSize: '11px', padding: '4px 8px', color: next.color }}
+                                                            style={{ fontSize: '10px', padding: '4px 6px', color: next.color }}
                                                             disabled={updatingId === lead.id}
                                                         >
                                                             To {next.label.split(' ')[0]}
                                                         </button>
                                                     ))}
-                                                    <button className="icon-btn"><MoreHorizontal size={16} /></button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -257,10 +298,10 @@ export default function LeadScoreStatus() {
                             <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Sparkles size={20} color="var(--accent-cyan)" />
                             </div>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>Zapier Predictive Scoring</h2>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>Predictive Lead Scoring & Auto-Tagging</h2>
                         </div>
                         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: 24, maxWidth: 500 }}>
-                            Lead scores are automatically calculated using a 100-point scale based on budget, property type interest, and recent engagement patterns.
+                            Leads are automatically evaluated using our custom 100-point algorithm to identify high-intent prospects and orchestrate a Call Priority Queue. Hot (80+), Warm (50+), Cold (0+).
                         </p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
                             <div style={{ background: 'rgba(255,255,255,0.05)', padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>

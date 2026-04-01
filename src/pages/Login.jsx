@@ -22,8 +22,8 @@ const STATS = [
 
 export default function Login() {
     const { login, loginError, loading } = useAuth();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('rohan.mishra@zentrixcrm.com');
+    const [password, setPassword] = useState('Cyber@2026!');
     const [showPwd, setShowPwd] = useState(false);
     const [selectedRole, setSelectedRole] = useState('Admin');
     
@@ -176,7 +176,7 @@ export default function Login() {
                                         onClick={() => {
                                             setSelectedRole(role.name);
                                             // Demo-friendly credential auto-fill
-                                            if (role.name === 'Admin') { setEmail('admin@zentrix.com'); setPassword('Admin@123'); }
+                                            if (role.name === 'Admin') { setEmail('rohan.mishra@zentrixcrm.com'); setPassword('Cyber@2026!'); }
                                             if (role.name === 'Manager') { setEmail('manager@zentrix.com'); setPassword('Manager@123'); }
                                             if (role.name === 'Agent') { setEmail('agent@zentrix.com'); setPassword('Agent@123'); }
                                         }}

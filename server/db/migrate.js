@@ -589,6 +589,7 @@ $$;
 --  PATCH: Ensure missing columns exist in existing tables
 -- ═══════════════════════════════════════════════════════════════════
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS channel_partner_id UUID REFERENCES channel_partners(id) ON DELETE SET NULL;
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'Active';
 ALTER TABLE inventory ADD COLUMN IF NOT EXISTS parking VARCHAR(50);
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS alt_phone VARCHAR(20);
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS segment VARCHAR(50) DEFAULT 'Standard';

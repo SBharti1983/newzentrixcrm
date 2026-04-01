@@ -15,13 +15,13 @@ import {
     ArrowUpRight, Zap, Eye, Bell
 } from 'lucide-react';
 
-const ALL_STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+const ALL_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 
 const STAGE_COLORS = { 
-    'New': '#3b82f6', 'Contacted': '#6366f1', 'Qualified': '#06b6d4',
-    'Disqualified': '#64748b', 'Nurture': '#7c3aed',
-    'Site Visit': '#0f172a', 'Negotiation': '#f59e0b',
-    'Won': '#10b981', 'Lost': '#f43f5e',
+    'New Lead': '#3b82f6', 'Connected': '#6366f1', 'Qualified': '#06b6d4',
+    'Site Visit Scheduled': '#14b8a6', 'Site Visit Done': '#10b981',
+    'Interested': '#8b5cf6', 'Proposal Shared': '#d946ef',
+    'Negotiation': '#f59e0b', 'Won': '#10b981', 'Lost': '#f43f5e',
 };
 
 const MONTHLY_CHART = [
@@ -68,7 +68,7 @@ export default function Dashboard() {
     const smartInsights = useMemo(() => {
         const negotiationStage = stages.find(s => s.stage === 'Negotiation');
         const hotCount = negotiationStage ? parseInt(negotiationStage.count) : 0;
-        const siteVisitStage = stages.find(s => s.stage === 'Site Visit');
+        const siteVisitStage = stages.find(s => s.stage === 'Site Visit Done');
         const svCount = siteVisitStage ? parseInt(siteVisitStage.count) : 0;
         const overdueCount = overdue.overdue_count || 0;
 
@@ -88,7 +88,7 @@ export default function Dashboard() {
                 bg: 'rgba(59,130,246,0.1)',
                 title: 'Pipeline Velocity',
                 desc: svCount > 0 
-                    ? `Your 'Site Visit' to 'Negotiation' conversion is up by 12% this week.`
+                    ? `Your 'Site Visit Done' to 'Negotiation' conversion is up by 12% this week.`
                     : 'Schedule more site visits to accelerate your pipeline conversion rate.',
             },
             {

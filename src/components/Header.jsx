@@ -17,6 +17,7 @@ const PAGE_TITLES = {
     '/followups': { title: 'Follow-Up Scheduler', subtitle: 'Schedule and track all follow-ups' },
     '/site-visits': { title: 'Site Visit Planner', subtitle: 'Plan and manage property site visits' },
     '/analytics': { title: 'Sales Analytics', subtitle: 'In-depth sales insights and performance' },
+    '/leaderboard': { title: 'Sales Leaderboard', subtitle: 'Track and celebrate top performing agents' },
     '/admin': { title: 'Admin Controls', subtitle: 'Manage users, roles, and system settings' },
     '/payment-tracker': { title: 'Payment Tracker', subtitle: 'Track EMI and payment schedules' },
     '/agreements': { title: 'Agreements & Docs', subtitle: 'Manage contracts and documents' },

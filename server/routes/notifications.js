@@ -7,7 +7,7 @@ router.use(auth);
 
 // ─── Role guard ──────────────────────────────────────────────────────
 const requireManager = (req, res, next) => {
-    if (!['admin', 'sales_manager'].includes(req.user.role))
+    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
         return res.status(403).json({ error: 'Manager or Admin only' });
     next();
 };

@@ -15,24 +15,26 @@ import {
 } from 'lucide-react';
 
 const STAGE_CONFIG = {
-    'New': { color: '#3b82f6', bg: '#eff6ff', accent: '#3b82f6', icon: '🆕', lucide: Home },
-    'Contacted': { color: '#6366f1', bg: '#f5f3ff', accent: '#6366f1', icon: '📞', lucide: Phone },
+    'New Lead': { color: '#3b82f6', bg: '#eff6ff', accent: '#3b82f6', icon: '🆕', lucide: Home },
+    'Connected': { color: '#6366f1', bg: '#f5f3ff', accent: '#6366f1', icon: '📞', lucide: Phone },
     'Qualified': { color: '#06b6d4', bg: '#ecfeff', accent: '#0891b2', icon: '🛡️', lucide: Target },
-    'Disqualified': { color: '#94a3b8', bg: '#f1f5f9', accent: '#64748b', icon: '🚫', lucide: AlertCircle },
-    'Nurture': { color: '#8b5cf6', bg: '#f5f3ff', accent: '#7c3aed', icon: '🌱', lucide: Sparkles },
-    'Site Visit': { color: '#14b8a6', bg: '#f0fdfa', accent: '#0d9488', icon: '🏠', lucide: MapPin },
+    'Site Visit Scheduled': { color: '#14b8a6', bg: '#f0fdfa', accent: '#0d9488', icon: '📅', lucide: MapPin },
+    'Site Visit Done': { color: '#10b981', bg: '#ecfdf5', accent: '#059669', icon: '✅', lucide: CheckCircle2 },
+    'Interested': { color: '#8b5cf6', bg: '#f5f3ff', accent: '#7c3aed', icon: '⭐', lucide: Star },
+    'Proposal Shared': { color: '#d946ef', bg: '#fdf4ff', accent: '#c026d3', icon: '📄', lucide: Sparkles },
     'Negotiation': { color: '#f59e0b', bg: '#fffbeb', accent: '#d97706', icon: '🤝', lucide: Handshake },
     'Won': { color: '#10b981', bg: '#ecfdf5', accent: '#059669', icon: '🏆', lucide: Award },
     'Lost': { color: '#f43f5e', bg: '#fff1f2', accent: '#e11d48', icon: '❌', lucide: X },
 };
 
 const STAGE_TAGS = {
-    'New': 'badge-blue',
-    'Contacted': 'badge-indigo',
+    'New Lead': 'badge-blue',
+    'Connected': 'badge-indigo',
     'Qualified': 'badge-cyan',
-    'Disqualified': 'badge-slate',
-    'Nurture': 'badge-violet',
-    'Site Visit': 'badge-teal',
+    'Site Visit Scheduled': 'badge-teal',
+    'Site Visit Done': 'badge-emerald',
+    'Interested': 'badge-violet',
+    'Proposal Shared': 'badge-fuchsia',
     'Negotiation': 'badge-amber',
     'Won': 'badge-green',
     'Lost': 'badge-red'
@@ -69,18 +71,18 @@ function parseBudgetL(budget) {
     return n;
 }
 
-const PIPELINE_STAGES = ['New', 'Contacted', 'Qualified', 'Disqualified', 'Nurture', 'Site Visit', 'Negotiation', 'Won', 'Lost'];
+const PIPELINE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 
 const DEFAULT_LEAD = {
     name: '', email: '', phone: '', city: '', source: 'Website',
-    stage: 'Lead', status: 'New', budget: '', property_type: '3BHK',
+    stage: 'New Lead', status: 'Active', budget: '', property_type: '3BHK',
     project_id: '', assigned_to: '', notes: '', score: 60,
 };
 
 export default function Pipeline() {
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const { data: leadsRes, loading, error, refetch } = useApi(() => leadsApi.list({ limit: 200 }));
+    const { data: leadsRes, loading, error, refetch } = useApi(() => leadsApi.list({ limit: 200, status: 'Active' }));
     const { data: projects } = useApi(() => projectsApi.list({ status: 'Active' }));
     const { data: users } = useApi(() => usersApi.list());
 
@@ -238,7 +240,7 @@ export default function Pipeline() {
                         return (
                             <div key={stage} style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 120 }}>
                                 <div style={{ 
-                                    display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '4px 10px', 
                                     borderRadius: 30, background: 'white', border: `1px solid ${sc.color}15`,
                                     boxShadow: '0 1px 4px rgba(0,0,0,0.02)', whiteSpace: 'nowrap', flex: 1
                                 }}>
@@ -460,7 +462,7 @@ export default function Pipeline() {
             {viewMode === 'kanban' && (
                 <div style={{ flex: 1, paddingBottom: 16 }}>
                     <div className="pipeline-board" style={{ minHeight: 'calc(100vh - 340px)', height: 'auto', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', overflowX: 'visible' }}>
-                        {PIPELINE_STAGES.map(stage => {
+                        {PIPELINE_STAGES.map((stage, idx) => {
                             const stageLeads = byStage(stage);
                             const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                             const isOver = dragOver === stage;
@@ -468,15 +470,17 @@ export default function Pipeline() {
                             const val = stageValueL(stage);
 
                             return (
-                                <div key={stage}
-                                    className="pipeline-column"
+                                <>
+                                    {idx === 5 && <div key="row-break" style={{ width: '100%', height: 0, flexBasis: '100%', margin: 0 }} />}
+                                    <div key={stage}
+                                        className="pipeline-column"
                                     style={{
                                         borderTop: `4px solid ${cfg.accent}`,
                                         outline: isOver ? `2px dashed ${cfg.accent}` : 'none',
                                         outlineOffset: -1,
                                         background: isOver ? `linear-gradient(${cfg.bg}, white)` : 'var(--slate-50)',
                                         transition: 'all 0.15s',
-                                        flex: isCollapsed ? '0 0 52px' : '1 1 220px',
+                                        flex: isCollapsed ? '0 0 52px' : '1 1 280px',
                                         minWidth: isCollapsed ? 52 : 220,
                                         maxWidth: isCollapsed ? 52 : 'none',
                                         borderRadius: '12px 12px 0 0',
@@ -563,13 +567,13 @@ export default function Pipeline() {
                                                             style={{ 
                                                                 opacity: isDragging ? 0.35 : 1,
                                                                 background: 'white',
-                                                                borderRadius: '20px',
-                                                                padding: '16px',
+                                                                borderRadius: '24px',
+                                                                padding: '24px',
                                                                 border: '1.5px solid #f1f5f9',
-                                                                boxShadow: isDragging ? 'none' : '0 4px 12px rgba(10,22,40,0.03)',
+                                                                boxShadow: isDragging ? 'none' : '0 8px 24px rgba(10,22,40,0.04)',
                                                                 display: 'flex',
                                                                 flexDirection: 'column',
-                                                                gap: 12,
+                                                                gap: 18,
                                                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                                 cursor: 'grab'
                                                             }}
@@ -685,12 +689,13 @@ export default function Pipeline() {
                                             </div>
                                         </>
                                     )}
-                                </div>
+                                    </div>
+                                </>
                             );
                         })}
                         {/* Dummy spacers to constrain last flex row stretch */}
                         {Array.from({ length: 5 }).map((_, i) => (
-                            <div key={`dummy-${i}`} style={{ flex: '1 1 220px', minWidth: 220, height: 0, opacity: 0, margin: 0, padding: 0 }} />
+                            <div key={`dummy-${i}`} style={{ flex: '1 1 280px', minWidth: 220, height: 0, opacity: 0, margin: 0, padding: 0 }} />
                         ))}
                     </div>
                 </div>

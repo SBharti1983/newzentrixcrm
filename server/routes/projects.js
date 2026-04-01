@@ -42,7 +42,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/projects
 router.post('/', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
         // Plan limit enforcement
@@ -70,7 +70,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/projects/:id
 router.patch('/:id', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
         const allowed = ['name', 'location', 'description', 'status', 'total_units', 'available_units', 'price_range', 'possession_date', 'rera_number', 'amenities'];
         const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
@@ -109,7 +109,7 @@ router.get('/:id/inventory', async (req, res) => {
 // POST /api/projects/:id/inventory — add unit
 router.post('/:id/inventory', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
         const { unit_no, floor, area_sqft, property_type, facing, base_price, status } = req.body;
         if (!unit_no) return res.status(400).json({ error: 'Unit number is required' });
@@ -130,7 +130,7 @@ router.post('/:id/inventory', async (req, res) => {
 // PATCH /api/projects/:id/inventory/:unitId — update unit
 router.patch('/:id/inventory/:unitId', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
         const allowed = ['unit_no', 'floor', 'area_sqft', 'property_type', 'facing', 'base_price', 'status', 'parking'];

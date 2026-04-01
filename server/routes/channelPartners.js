@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 // POST /api/channel-partners
 router.post('/', async (req, res) => {
     try {
-        if (!['admin', 'sales_manager'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
         const { name, company, email, phone, city, rera_no, contact_person, status, commission_rate, notes, assigned_projects, type } = req.body;
         if (!name) return res.status(400).json({ error: 'Name required' });
