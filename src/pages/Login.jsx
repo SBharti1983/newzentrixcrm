@@ -176,7 +176,7 @@ export default function Login() {
                                         onClick={() => {
                                             setSelectedRole(role.name);
                                             // Demo-friendly credential auto-fill
-                                            if (role.name === 'Admin') { setEmail('rohan.mishra@zentrixcrm.com'); setPassword('Admin@123'); }
+                                            if (role.name === 'Admin') { setEmail('rohan.mishra@zentrixcrm.com'); setPassword('Cyber@2026!'); }
                                             if (role.name === 'Manager') { setEmail('rohan@zentrixcrm.com'); setPassword('Admin@123'); }
                                             if (role.name === 'Agent') { setEmail('agent@zentrix.com'); setPassword('Agent@123'); }
                                         }}
