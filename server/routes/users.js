@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
         return res.status(403).json({ error: 'Insufficient permissions' });
     const { rows } = await pool.query(
         `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at
-         FROM users WHERE tenant_id=$1 ORDER BY role, name`, [req.tenantId]
+         FROM users WHERE tenant_id=$1 AND is_active=TRUE ORDER BY role, name`, [req.tenantId]
     );
     res.json(rows);
 });
