@@ -9,7 +9,7 @@ router.use(auth);
 router.get('/', async (req, res) => {
     const tid = req.tenantId;
     try {
-        const [leads, bookings, installs, pipeline, stages, followups] = await Promise.all([
+        const [leads, bookings, installs, pipeline, stages, followups, nurture] = await Promise.all([
             // Lead summary
             pool.query(`
                 SELECT
@@ -59,6 +59,31 @@ router.get('/', async (req, res) => {
                 LEFT JOIN users u ON f.assigned_to = u.id
                 WHERE f.tenant_id = $1 AND f.status = 'Pending'
                 ORDER BY f.scheduled_at LIMIT 10`, [tid]),
+
+            // Nurture Summary — Tracking reactivation performance
+            pool.query(`
+                SELECT
+                    COUNT(*) FILTER (WHERE status = 'Nurture') as total_nurture,
+                    (
+                        SELECT COUNT(*)
+                        FROM activity_log
+                        WHERE tenant_id = $1
+                          AND entity_type = 'lead'
+                          AND action = 'updated'
+                          AND old_data->>'status' = 'Nurture'
+                          AND (new_data->>'status' = 'Active' OR new_data->>'status' IS NULL)
+                          AND created_at >= date_trunc('month', NOW())
+                    ) as reactivated_this_month,
+                    (
+                        SELECT COUNT(*)
+                        FROM activity_log
+                        WHERE tenant_id = $1
+                          AND entity_type = 'lead'
+                          AND action = 'updated'
+                          AND old_data->>'status' = 'Nurture'
+                          AND new_data->>'stage' = 'Won'
+                    ) as nurture_to_won
+                FROM leads WHERE tenant_id = $1`, [tid]),
         ]);
 
         res.json({
@@ -68,6 +93,7 @@ router.get('/', async (req, res) => {
             pipeline: { value: pipeline.rows[0].pipeline_value },
             stages: stages.rows,
             upcoming_followups: followups.rows,
+            nurture: nurture.rows[0],
         });
     } catch (err) {
         console.error('Dashboard error:', err);

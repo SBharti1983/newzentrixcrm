@@ -12,7 +12,7 @@ import {
     Mail, MessageSquare, AlertCircle, Sparkles,
     Users, Briefcase, ShoppingCart, Target,
     ChevronRight, Clock, Flame, Activity, 
-    ArrowUpRight, Zap, Eye, Bell
+    ArrowUpRight, Zap, Eye, Bell, RotateCw
 } from 'lucide-react';
 
 const ALL_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
@@ -111,6 +111,8 @@ export default function Dashboard() {
         { label: 'TOTAL BOOKINGS', value: formatRevenue(bookings.total_value), change: `${bookings.total || 0} units sold`, icon: ShoppingCart, gradient: 'linear-gradient(135deg, #10b981, #059669)', iconBg: '#10b981' },
         { label: 'GROSS PIPELINE', value: formatRevenue(pipeline.value), change: `${stages.filter(s => !['Won','Lost'].includes(s.stage)).reduce((a, b) => a + parseInt(b.count), 0)} in progress`, icon: Briefcase, gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', iconBg: '#8b5cf6' },
         { label: 'WIN RATE', value: `${leads.win_rate || 0}%`, change: `${leads.won || 0} converted this qtr`, icon: Target, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', iconBg: '#f59e0b' },
+        { label: 'NURTURE LEADS', value: stats.nurture?.total_nurture || '0', change: `Active long-term`, icon: RotateCw, gradient: 'linear-gradient(135deg, #7c3aed, #6d28d9)', iconBg: '#7c3aed' },
+        { label: 'REACTIVATED (MTD)', value: stats.nurture?.reactivated_this_month || '0', change: `Moved to active`, icon: Zap, gradient: 'linear-gradient(135deg, #10b981, #059669)', iconBg: '#10b981' },
     ];
 
     const totalLeads = fullPipeline.reduce((a, b) => a + b.count, 0);

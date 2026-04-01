@@ -3,7 +3,7 @@ import {
     LayoutDashboard, Users, Building2, UserCheck, Calendar,
     MapPin, BookOpen, BarChart3, Settings, ChevronLeft,
     ChevronRight, LogOut, Bell, Handshake, CreditCard,
-    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy
+    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy, RotateCw
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_ACCESS } from '../constants/access';
@@ -22,9 +22,15 @@ const NAV_SECTIONS = [
         items: [
             { path: '/leads', label: 'Leads', icon: Users, badge: '10' },
             { path: '/pipeline', label: 'Pipeline', icon: BarChart3 },
+            { path: '/nurture-leads', label: 'Nurture Leads', icon: RotateCw },
             { path: '/lead-scoring', label: 'Lead Scoring', icon: Target },
-            { path: '/call-records', label: 'Call Log', icon: History },
-            { path: '/automation-distribution', label: 'Auto-Distribute', icon: Zap },
+        ],
+    },
+    {
+        label: 'Planning',
+        items: [
+            { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: '5' },
+            { path: '/site-visits', label: 'Site Visits', icon: MapPin },
         ],
     },
     {
@@ -32,6 +38,25 @@ const NAV_SECTIONS = [
         items: [
             { path: '/projects', label: 'Projects', icon: Building2 },
             { path: '/inventory', label: 'Inventory', icon: BookOpen },
+        ],
+    },
+    {
+        label: 'Communications',
+        items: [
+            { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: '3' },
+            { path: '/whatsapp-marketing', label: 'WhatsApp Intelligence', icon: Sparkles },
+            { path: '/marketing', label: 'Marketing Hub', icon: Target },
+            { path: '/call-records', label: 'Call Log', icon: History },
+            { path: '/notifications', label: 'Notifications', icon: Bell },
+        ],
+    },
+    {
+        label: 'Analytics',
+        items: [
+            { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+            { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+            { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
+            { path: '/reports', label: 'Custom Reports', icon: FileCheck },
         ],
     },
     {
@@ -51,33 +76,9 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Planning',
-        items: [
-            { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: '5' },
-            { path: '/site-visits', label: 'Site Visits', icon: MapPin },
-        ],
-    },
-    {
-        label: 'Communications',
-        items: [
-            { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: '3' },
-            { path: '/whatsapp-marketing', label: 'WhatsApp Intelligence', icon: Sparkles },
-            { path: '/marketing', label: 'Marketing Hub', icon: Target },
-            { path: '/notifications', label: 'Notifications', icon: Bell },
-        ],
-    },
-    {
-        label: 'Analytics',
-        items: [
-            { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-            { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-            { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
-            { path: '/reports', label: 'Custom Reports', icon: FileCheck },
-        ],
-    },
-    {
         label: 'Admin',
         items: [
+            { path: '/automation-distribution', label: 'Auto-Distribute', icon: Zap },
             { path: '/automations', label: 'Automations', icon: Zap },
             { path: '/integrations', label: 'Integrations', icon: ExternalLink },
             { path: '/commissions', label: 'Commissions', icon: IndianRupee },
@@ -208,7 +209,7 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
             {/* Footer */}
             <div className="sidebar-footer">
                 <div className="sidebar-user" onClick={() => handleNav('/admin')}>
-                    <div className="sidebar-avatar">{user?.avatar || '??'}</div>
+                    <div className="sidebar-avatar">{user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}</div>
                     <div className="sidebar-user-info">
                         <div className="sidebar-user-name">{user?.name || 'User'}</div>
                         <div className="sidebar-user-role">{ROLE_LABELS[user?.role] || '—'}</div>

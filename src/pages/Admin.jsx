@@ -72,8 +72,13 @@ export default function Admin() {
     const deleteUser = async (id) => {
         if (id === currentUser.id) { showToast('Cannot delete yourself', 'error'); return; }
         if (!window.confirm('Are you sure you want to disable this user?')) return;
-        try { await usersApi.update(id, { is_active: false }); refetch(); }
-        catch { showToast('Failed', 'error'); }
+        try {
+            await usersApi.update(id, { is_active: false });
+            showToast('User deactivated successfully', 'success');
+            refetch();
+        } catch (err) {
+            showToast(err?.error || err?.message || 'Failed to deactivate user', 'error');
+        }
     };
 
     if (loading) return <PageLoader />;

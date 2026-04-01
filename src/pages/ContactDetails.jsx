@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageLoader, PageError } from '../components/Feedback';
-import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw } from 'lucide-react';
 import { leadsApi, zapierApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
@@ -245,10 +245,10 @@ export default function ContactDetails() {
     const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead'];
 
     return (
-        <div className="contact-details-layout" style={{ display: 'flex', width: '100%', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden', overflowX: 'hidden' }}>
+        <div className="contact-details-layout" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
             <div className="contact-details-sidebar" style={{ 
-                width: 400,
+                width: 320,
                 flexShrink: 0,
                 borderRight: '1px solid var(--border-light)', 
                 backgroundColor: 'white', 
@@ -281,26 +281,26 @@ export default function ContactDetails() {
                     </div>
                 </div>
 
-                <div style={{ padding: '16px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ padding: '12px' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 12 }}>
                         <div style={{
-                            width: 56, height: 56,
+                            width: 48, height: 48,
                             background: avatarBg,
                             color: 'white',
-                            borderRadius: '20px',
+                            borderRadius: '16px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '22px', fontWeight: 900,
-                            margin: '0 auto 10px',
+                            fontSize: '18px', fontWeight: 900,
+                            margin: '0 auto 8px',
                             boxShadow: `0 8px 20px ${avatarBg}20`,
                             border: '3px solid white',
                             position: 'relative'
                         }}>
                             {initial}
-                            <div style={{ position: 'absolute', bottom: -2, right: -2, width: 16, height: 16, background: '#10b981', border: '3px solid white', borderRadius: '50%' }} />
+                            <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, background: '#10b981', border: '2px solid white', borderRadius: '50%' }} />
                         </div>
-                        <h1 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.5px' }}>{contact.name}</h1>
-                        <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                            <MapPin size={12} /> {contact.city || 'Location Pending'}
+                        <h1 style={{ margin: '0 0 2px', fontSize: '16px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.5px' }}>{contact.name}</h1>
+                        <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                            <MapPin size={11} /> {contact.city || 'Location Pending'}
                         </div>
                     </div>
 
@@ -322,11 +322,11 @@ export default function ContactDetails() {
                     <div style={{ 
                         display: 'grid', 
                         gridTemplateColumns: 'repeat(3, 1fr)', 
-                        gap: 8, 
-                        marginBottom: 16,
-                        padding: '12px',
+                        gap: 6, 
+                        marginBottom: 12,
+                        padding: '8px',
                         background: '#f8fafc',
-                        borderRadius: '16px',
+                        borderRadius: '14px',
                         border: '1px solid #f1f5f9'
                     }}>
                         {[
@@ -343,35 +343,34 @@ export default function ContactDetails() {
                                 }
                             }},
                             { icon: MapPin, label: 'Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
-                            { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) },
-                            { icon: Rocket, label: 'Outreach', color: 'var(--navy-900)', action: () => { setComposerTrigger('followup'); setShowComposer(true); } }
+                            { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) }
                         ].map(act => (
                             <button 
                                 key={act.label} 
                                 onClick={act.action} 
                                 style={{ 
-                                    padding: '10px 0', borderRadius: '12px', background: 'white', 
+                                    padding: '8px 0', borderRadius: '10px', background: 'white', 
                                     border: `1.5px solid #f1f5f9`, display: 'flex', flexDirection: 'column', 
-                                    alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer',
+                                    alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer',
                                     transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                                 }}
                             >
-                                <act.icon size={16} color={act.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
+                                <act.icon size={14} color={act.color} strokeWidth={2.5} />
+                                <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
                             </button>
                         ))}
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {/* Core Identity Section */}
                         <div style={{ 
-                            padding: '24px', 
-                            borderRadius: '28px', 
+                            padding: '14px', 
+                            borderRadius: '18px', 
                             background: '#f8fafc', 
                             border: '1px solid #f1f5f9',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 20
+                            gap: 14
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Core Identity</h3>
@@ -482,13 +481,14 @@ export default function ContactDetails() {
 
             {/* MIDDLE COLUMN - Executive Intelligence & Timeline */}
             <div className="contact-details-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowX: 'hidden', backgroundColor: '#fcfdfe' }}>
-                <div style={{ padding: '0 24px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
-                    <div style={{ display: 'flex', gap: 24 }}>
+                <div style={{ padding: '0 16px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
+                    <div style={{ display: 'flex' }}>
                         {['Overview', 'Activities', 'Intelligence'].map(tab => (
                             <div
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 style={{
+                                    flex: 1,
                                     padding: '12px 0',
                                     color: activeTab === tab ? 'var(--navy-900)' : 'var(--slate-400)',
                                     fontWeight: activeTab === tab ? 900 : 700,
@@ -498,6 +498,7 @@ export default function ContactDetails() {
                                     transition: 'all 0.2s',
                                     display: 'flex',
                                     alignItems: 'center',
+                                    justifyContent: 'center',
                                     gap: 8,
                                     textTransform: 'uppercase',
                                     letterSpacing: '0.05em'
@@ -511,7 +512,7 @@ export default function ContactDetails() {
                         ))}
                     </div>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '12px 24px' }} className="animate-fadeIn">
+                <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }} className="animate-fadeIn">
                         {activeTab === 'Intelligence' ? (
                             <div style={{ maxWidth: 840, margin: '0 auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -701,34 +702,54 @@ export default function ContactDetails() {
                             </div>
                         </div>
                     ) : activeTab === 'Activities' ? (
-                        <div style={{ maxWidth: 840, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
-                            {/* Strategic Activity Composer */}
+                        <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
                             <div style={{ 
-                                padding: '24px', 
-                                borderRadius: '32px', 
+                                padding: '16px', 
+                                borderRadius: '20px', 
                                 background: 'white', 
                                 border: '1px solid #f1f5f9',
-                                boxShadow: '0 8px 24px rgba(10,22,40,0.02)'
+                                boxShadow: '0 4px 12px rgba(10,22,40,0.02)'
                             }}>
-                                <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                                    {['Note', 'Email', 'Call', 'WhatsApp', 'Meeting', 'Move to Nurture'].map(btn => {
-                                        const btnConfig = typeof btn === 'string' ? { type: btn, icon: btn === 'Move to Nurture' ? TrendingUp : Edit2, color: btn === 'Move to Nurture' ? '#7c3aed' : '#94a3b8' } : btn;
-                                        const Icon = btnConfig.icon || TrendingUp;
+                                <div style={{ 
+                                    display: 'flex', 
+                                    gap: 3, 
+                                    marginBottom: 16,
+                                    background: '#f8fafc',
+                                    padding: '4px',
+                                    borderRadius: '14px',
+                                    border: '1px solid #f1f5f9'
+                                }}>
+                                    {[
+                                        { type: 'Note', icon: Edit2, color: '#6366f1' },
+                                        { type: 'Email', icon: Mail, color: '#3b82f6' },
+                                        { type: 'Call', icon: Phone, color: '#10b981' },
+                                        { type: 'WhatsApp', icon: MessageSquare, color: '#25D366' },
+                                        { type: 'Meeting', icon: Users, color: '#f59e0b' }
+                                    ].map(btn => {
+                                        const isActive = activityType === btn.type;
                                         return (
                                             <button 
-                                                key={btnConfig.type}
-                                                onClick={() => { setActivityType(btnConfig.type); setShowActivityBox(true); }}
+                                                key={btn.type}
+                                                onClick={() => { setActivityType(btn.type); setShowActivityBox(true); }}
                                                 style={{
-                                                    flex: 1, padding: '12px 0', borderRadius: '16px', border: '1px solid',
-                                                    borderColor: activityType === btnConfig.type ? (btnConfig.color || '#7c3aed') : '#f1f5f9',
-                                                    background: activityType === btnConfig.type ? `${btnConfig.color || '#7c3aed'}05` : 'transparent',
-                                                    color: activityType === btnConfig.type ? 'var(--navy-900)' : 'var(--slate-400)',
-                                                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                                    transition: 'all 0.2s', fontWeight: 800
+                                                    flex: 1, 
+                                                    padding: '8px 12px', 
+                                                    borderRadius: '10px', 
+                                                    border: 'none',
+                                                    background: isActive ? 'white' : 'transparent',
+                                                    color: isActive ? 'var(--navy-900)' : 'var(--slate-500)',
+                                                    cursor: 'pointer', 
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    gap: 8,
+                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', 
+                                                    fontWeight: 800,
+                                                    boxShadow: isActive ? '0 4px 12px rgba(10,22,40,0.08)' : 'none'
                                                 }}
                                             >
-                                                <Icon size={18} color={activityType === btnConfig.type ? (btnConfig.color || '#7c3aed') : 'var(--slate-300)'} strokeWidth={2.5} />
-                                                <span style={{ fontSize: '10px', textTransform: 'uppercase' }}>{btnConfig.type}</span>
+                                                <btn.icon size={14} color={isActive ? btn.color : 'var(--slate-400)'} strokeWidth={2.5} />
+                                                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{btn.type}</span>
                                             </button>
                                         );
                                     })}
@@ -825,9 +846,9 @@ export default function ContactDetails() {
                                             <button 
                                                 onClick={handleAddNote}
                                                 className="hover-lift"
-                                                style={{ padding: '0 32px', height: 48, borderRadius: '16px', background: 'var(--navy-900)', color: 'white', fontWeight: 900, fontSize: '14px', boxShadow: '0 8px 20px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
+                                                style={{ padding: '0 16px', height: 34, borderRadius: '10px', background: 'var(--navy-900)', color: 'white', fontWeight: 800, fontSize: '12px', boxShadow: '0 4px 12px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
                                             >
-                                                Log Interaction
+                                                Log
                                             </button>
                                         </div>
                                     </div>
@@ -920,159 +941,100 @@ export default function ContactDetails() {
             </div>
             {/* RIGHT COLUMN - Market Intelligence & Context */}
             <div className="contact-details-right" style={{ 
-                width: 280, 
+                width: 240, 
                 flexShrink: 0,
                 background: 'white', 
                 borderLeft: '1px solid #f1f5f9', 
                 display: 'flex', 
                 flexDirection: 'column', 
-                overflowY: 'auto' 
+                overflowY: 'auto',
+                overflowX: 'hidden'
             }}>
-                <div style={{ padding: '32px 24px' }}>
+                <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {/* Behavioral IQ Radar */}
                     <div style={{ 
-                        padding: '10px 14px', 
-                        borderRadius: '12px', 
+                        padding: '12px 14px', 
+                        borderRadius: '16px', 
                         background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
                         color: 'white',
-                        marginBottom: 10,
-                        boxShadow: '0 6px 12px rgba(10,22,40,0.12)',
-                        position: 'relative',
-                        overflow: 'hidden'
+                        boxShadow: '0 8px 24px rgba(10,22,40,0.18)',
+                        position: 'relative'
                     }}>
-                        <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}>
-                            <Brain size={60} />
-                        </div>
-                        
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Sparkles size={12} color="var(--accent-amber)" />
-                                <span style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Behavioral IQ</span>
+                                <Sparkles size={12} color="#f59e0b" />
+                                <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Behavioral IQ</span>
                             </div>
-                            <div style={{ padding: '1px 6px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '8px', fontWeight: 900 }}>REAL-TIME</div>
+                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '8px', fontWeight: 900 }}>REAL-TIME</div>
                         </div>
 
-                        <div style={{ marginBottom: 8, position: 'relative' }}>
-                            <div style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase', marginBottom: 1 }}>Conversion Propensity</div>
-                            <div style={{ fontSize: '20px', fontWeight: 900, letterSpacing: '-0.5px' }}>{contact.score || 88}%</div>
-                            <div style={{ height: 2.5, background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: 4, overflow: 'hidden' }}>
-                                <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'var(--accent-emerald)', boxShadow: '0 0 6px var(--accent-emerald)' }} />
+                        <div style={{ marginBottom: 12 }}>
+                            <div style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.5px' }}>{contact.score || 88}%</div>
+                            <div style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>Conversion Propensity</div>
+                            <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: 8, overflow: 'hidden' }}>
+                                <div style={{ width: `${contact.score || 88}%`, height: '100%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, position: 'relative' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                             <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, marginBottom: 1 }}>INTENT</div>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-emerald)' }}>HIGH</div>
+                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase' }}>INTENT</div>
+                                <div style={{ fontSize: '11px', fontWeight: 900, color: '#10b981' }}>HIGH</div>
                             </div>
                             <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, marginBottom: 1 }}>SENTIMENT</div>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#3b82f6' }}>POSITIVE</div>
+                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase' }}>SENTIMENT</div>
+                                <div style={{ fontSize: '11px', fontWeight: 900, color: '#3b82f6' }}>POSITIVE</div>
                             </div>
                         </div>
                     </div>
 
                     {/* Quick Access Documents & Deals */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                        <div style={{ padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #f1f5f9', background: 'white' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase' }}>Active Deals</h3>
+                    <div style={{ padding: '14px', borderRadius: '16px', border: '1.5px solid #f1f5f9', background: 'white' }}>
+                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Deals</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {[
+                                { name: 'Unit B-402', val: '₹1.15 Cr' },
+                                { name: 'Parking P12', val: '₹4.5 L' }
+                            ].map((it, idx) => (
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: idx === 0 ? '1px solid #f8fafc' : 'none' }}>
+                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
+                                    <div style={{ fontSize: '11px', fontWeight: 900, color: '#059669' }}>{it.val}</div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {[
-                                        { name: 'Unit B-402', val: '₹1.15 Cr' },
-                                        { name: 'Parking P12', val: '₹4.5 L' }
-                                    ].map((it, idx) => (
-                                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: idx === 0 ? '1px solid #f8fafc' : 'none' }}>
-                                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
-                                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--accent-emerald)' }}>{it.val}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                        {/* Assigned Team */}
-                        <div style={{ padding: '24px', borderRadius: '28px', border: '1.5px solid #f1f5f9' }}>
-                            <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Assigned Team</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                {[
-                                    { name: 'Siddharth M.', role: 'Senior Manager', initial: 'SM', color: '#3b82f6' },
-                                    { name: 'Priya Singh', role: 'Sales Executive', initial: 'PS', color: '#f59e0b' }
-                                ].map((it, idx) => (
-                                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                        <div style={{ width: 40, height: 40, borderRadius: '14px', background: `${it.color}10`, color: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '12px', border: `1px solid ${it.color}20` }}>{it.initial}</div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--navy-900)' }}>{it.name}</div>
-                                            <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 700 }}>{it.role}</div>
-                                        </div>
-                                        <Phone size={14} color="var(--slate-300)" style={{ cursor: 'pointer' }} />
-                                    </div>
-                                ))}
-                            </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div style={{ marginTop: 40 }}>
-                        <button className="hover-lift" style={{ 
-                            width: '100%', padding: '20px', borderRadius: '24px', background: 'var(--navy-900)', color: 'white', fontWeight: 900, fontSize: '14px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, border: 'none', cursor: 'pointer',
-                            boxShadow: '0 12px 24px rgba(10,22,40,0.15)'
-                        }}>
-                            <Brain size={18} /> CONSULT AI SPECIALIST
-                        </button>
+                    {/* Assigned Team */}
+                    <div style={{ padding: '16px', borderRadius: '18px', border: '1.5px solid #f1f5f9', background: 'white' }}>
+                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned Team</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {[
+                                { name: 'Siddharth M.', role: 'Senior Manager', initial: 'SM', color: '#3b82f6' },
+                                { name: 'Priya Singh', role: 'Sales Executive', initial: 'PS', color: '#f59e0b' }
+                            ].map((it, idx) => (
+                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: `${it.color}10`, color: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '11px', border: `1px solid ${it.color}15` }}>{it.initial}</div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
+                                        <div style={{ fontSize: '10px', color: 'var(--slate-400)', fontWeight: 700 }}>{it.role}</div>
+                                    </div>
+                                    <Phone size={12} color="var(--slate-300)" style={{ cursor: 'pointer' }} />
+                                </div>
+                            ))}
+                        </div>
                     </div>
+
+                    <button className="hover-lift" style={{ 
+                        width: '100%', padding: '12px', borderRadius: '14px', background: 'var(--navy-900)', color: 'white', fontWeight: 900, fontSize: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer',
+                        boxShadow: '0 8px 16px rgba(10,22,40,0.12)'
+                    }}>
+                        <Brain size={14} /> CONSULT AI SPECIALIST
+                    </button>
                 </div>
             </div>
 
-            {/* STRATEGIC COMMAND DOCK */}
-            <div style={{
-                position: 'fixed',
-                bottom: 24,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 100,
-                display: 'flex',
-                gap: 8,
-                padding: '10px 14px',
-                background: 'rgba(15, 23, 42, 0.85)',
-                backdropFilter: 'blur(24px) saturate(1.8)',
-                WebkitBackdropFilter: 'blur(24px) saturate(1.8)',
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)',
-                animation: 'slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}>
-                <button 
-                    onClick={() => { setComposerTrigger('site_visit'); setShowComposer(true); }}
-                    className="hover-lift" 
-                    style={{
-                        padding: '10px 22px', borderRadius: '14px', background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '12px',
-                        display: 'flex', alignItems: 'center', gap: 8, border: 'none', cursor: 'pointer'
-                    }}
-                >
-                    <MapPin size={14} /> Book Visit
-                </button>
-                <button 
-                    onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }}
-                    className="hover-lift" 
-                    style={{
-                        padding: '10px 22px', borderRadius: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)', color: 'white', 
-                        fontWeight: 800, fontSize: '12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer'
-                    }}
-                >
-                    <FileText size={14} /> Send Offers
-                </button>
-                <div style={{ width: 1, background: 'rgba(255,255,255,0.12)', margin: '4px 6px' }} />
-                <button 
-                    onClick={() => setShowStageMenu(!showStageMenu)}
-                    style={{
-                        padding: '10px 20px', borderRadius: '14px', background: 'rgba(139,92,246,0.15)', color: '#c4b5fd', 
-                        fontWeight: 800, fontSize: '12px', border: '1px solid rgba(139,92,246,0.2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8
-                    }}
-                >
-                    <ArrowRight size={13} /> Move Stage
-                </button>
-            </div>
+
 
             {/* Stage Selector Portal */}
             {showStageMenu && (

@@ -53,12 +53,14 @@ router.patch('/:id', async (req, res) => {
     const isAdmin = ['superadmin', 'admin'].includes(req.user.role);
     const id = req.params.id;
 
-    // Determine target user's role first
-    const { rows: trows } = await pool.query("SELECT role FROM users WHERE id=$1", [id]);
+    // Determine target user's role first (scoped to tenant)
+    const { rows: trows } = await pool.query("SELECT role FROM users WHERE id=$1 AND tenant_id=$2", [id, req.tenantId]);
     if (!trows.length) return res.status(404).json({ error: 'User not found' });
     const targetRole = trows[0].role;
 
-    const canEdit = isAdmin || req.user.id === id || (req.user.role === 'sales_manager' && targetRole === 'agent');
+    // Use String() to avoid type mismatch (JWT id is number, params id is string)
+    const isSelf = String(req.user.id) === String(id);
+    const canEdit = isAdmin || isSelf || (req.user.role === 'sales_manager' && targetRole === 'agent');
 
     if (!canEdit)
         return res.status(403).json({ error: 'Insufficient permissions' });

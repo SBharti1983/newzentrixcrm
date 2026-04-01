@@ -350,29 +350,35 @@ export default function Leads() {
                                     </th>
                                     {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Budget', 'Score', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
                                         const widths = {
-                                            'Lead': '140px',
-                                            'Contact': '140px',
-                                            'Status': '80px',
-                                            'Stage': '100px',
-                                            'Source': '80px',
-                                            'Budget': '80px',
-                                            'Score': '60px',
+                                            'Lead': '170px',
+                                            'Contact': '170px',
+                                            'Status': '75px',
+                                            'Stage': '95px',
+                                            'Source': '85px',
+                                            'Budget': '85px',
+                                            'Score': '55px',
                                             'Assigned To': '100px',
-                                            'Last Contact': '90px',
-                                            'Actions': '120px'
+                                            'Last Contact': '125px',
+                                            'Actions': '135px'
                                         };
+                                        const isSticky = h === 'Actions';
                                         return (
                                             <th key={h} style={{ 
                                                 width: widths[h] || 'auto',
                                                 minWidth: widths[h] || 'auto',
                                                 textAlign: 'center',
-                                                padding: '12px 8px',
+                                                padding: '12px 10px',
                                                 fontSize: '0.75rem',
                                                 textTransform: 'uppercase',
                                                 fontWeight: 800,
                                                 color: 'var(--slate-500)',
                                                 borderBottom: '1px solid var(--border-light)',
-                                                background: 'var(--slate-50)'
+                                                background: 'var(--slate-50)',
+                                                position: isSticky ? 'sticky' : 'static',
+                                                right: isSticky ? 0 : 'auto',
+                                                zIndex: isSticky ? 30 : 1,
+                                                boxShadow: isSticky ? '-4px 0 8px rgba(0,0,0,0.06)' : 'none',
+                                                whiteSpace: 'nowrap'
                                             }}>{h}</th>
                                         );
                                     })}
@@ -397,70 +403,75 @@ export default function Leads() {
                                                 style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                             />
                                         </td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <td style={{ padding: '8px 12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0 }}>
                                                     {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
                                                 </div>
-                                                <div>
+                                                <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                                    <div style={{ 
+                                                        height: 18, 
+                                                        opacity: hoveredRow === lead.id ? 1 : 0, 
+                                                        visibility: hoveredRow === lead.id ? 'visible' : 'hidden',
+                                                        transition: 'all 0.15s ease',
+                                                        display: 'flex',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setPreviewLeadId(lead.id); }}
+                                                            style={{ 
+                                                                background: '#ffffff', 
+                                                                border: '1px solid #cbd6e2', 
+                                                                borderRadius: 4, 
+                                                                padding: '1px 6px', 
+                                                                fontSize: '10px', 
+                                                                color: '#516f90', 
+                                                                cursor: 'pointer',
+                                                                fontWeight: 600,
+                                                                whiteSpace: 'nowrap',
+                                                                lineHeight: '1'
+                                                            }}
+                                                            onMouseEnter={e => e.currentTarget.style.background = '#f5f8fa'}
+                                                            onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
+                                                        >
+                                                            Preview
+                                                        </button>
+                                                    </div>
                                                     <div 
                                                         data-tooltip={lead.name || ''}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative', width: '100%', maxWidth: '180px' }}
+                                                        style={{ 
+                                                            fontWeight: 700, 
+                                                            fontSize: '0.85rem', 
+                                                            whiteSpace: 'nowrap', 
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            color: 'var(--navy-900)'
+                                                        }}
                                                     >
-                                                        <div 
-                                                            style={{ 
-                                                                fontWeight: 600, 
-                                                                fontSize: '0.875rem', 
-                                                                whiteSpace: 'nowrap', 
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                flex: '0 1 auto',
-                                                                minWidth: 0
-                                                            }}
-                                                        >
-                                                            {lead.name || '—'}
-                                                        </div>
-                                                        <div style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            opacity: hoveredRow === lead.id ? 1 : 0,
-                                                            visibility: hoveredRow === lead.id ? 'visible' : 'hidden',
-                                                            transition: 'all 0.15s ease',
-                                                            flexShrink: 0
-                                                        }}>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); setPreviewLeadId(lead.id); }}
-                                                                style={{ 
-                                                                    background: '#ffffff', 
-                                                                    border: '1px solid #cbd6e2', 
-                                                                    borderRadius: 4, 
-                                                                    padding: '1px 8px', 
-                                                                    fontSize: '11px', 
-                                                                    color: '#516f90', 
-                                                                    cursor: 'pointer',
-                                                                    fontWeight: 600,
-                                                                    whiteSpace: 'nowrap'
-                                                                }}
-                                                                onMouseEnter={e => e.currentTarget.style.background = '#f5f8fa'}
-                                                                onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
-                                                            >
-                                                                Preview
-                                                            </button>
-                                                        </div>
+                                                        {lead.name || '—'}
                                                     </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lead.property_type || '—'} · {lead.project_name || 'Any'}</div>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        {lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
-                                            <div style={{ fontSize: '0.8rem' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-                                                    <Mail size={11} style={{ color: 'var(--text-muted)' }} />
-                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.email || '—'}</span>
+                                        <td style={{ padding: '8px 12px' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem', minWidth: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                    <Mail size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                                    <span style={{ 
+                                                        color: 'var(--text-secondary)', 
+                                                        overflowWrap: 'anywhere',
+                                                        lineHeight: 1.1,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis'
+                                                    }}>{lead.email || '—'}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                    <Phone size={11} style={{ color: 'var(--text-muted)' }} />
-                                                    <span style={{ color: 'var(--text-secondary)' }}>{lead.phone || '—'}</span>
+                                                    <Phone size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                                    <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</span>
                                                 </div>
                                             </div>
                                         </td>
@@ -468,7 +479,7 @@ export default function Leads() {
                                             <span style={{ 
                                                 fontSize: '0.75rem', 
                                                 fontWeight: 600, 
-                                                padding: '2px 8px', 
+                                                padding: '3px 8px', 
                                                 borderRadius: 12, 
                                                 background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9',
                                                 color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569'
@@ -476,19 +487,19 @@ export default function Leads() {
                                                 {lead.status || 'Active'}
                                             </span>
                                         </td>
-                                        <td style={{ textAlign: 'center' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`}>{lead.stage || '—'}</span></td>
-                                        <td style={{ textAlign: 'center' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`}>{lead.source || '—'}</span></td>
-                                        <td style={{ fontWeight: 600, textAlign: 'center' }}>{lead.budget || '—'}</td>
+                                        <td style={{ textAlign: 'center' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>{lead.stage || '—'}</span></td>
+                                        <td style={{ textAlign: 'center' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
+                                        <td style={{ fontWeight: 600, textAlign: 'center', fontSize: '0.8rem' }}>{lead.budget || '—'}</td>
                                         <td style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                                                <div className="progress-bar" style={{ width: 44, height: 4 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                                                <div className="progress-bar" style={{ width: 40, height: 5 }}>
                                                     <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
                                                 </div>
                                                 <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>{leadScore}</span>
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
                                                 <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>
                                                     {lead.agent_avatar || '?'}
                                                 </div>
@@ -498,11 +509,19 @@ export default function Leads() {
                                         <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
                                             {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                                         </td>
-                                        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-                                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 28, height: 28 }}><Phone size={12} style={{ color: '#00a38d' }} /></button>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 28, height: 28 }}><Edit2 size={12} /></button>
-                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 28, height: 28 }}><Trash2 size={12} /></button>
+                                        <td onClick={e => e.stopPropagation()} style={{ 
+                                            textAlign: 'center',
+                                            position: 'sticky',
+                                            right: 0,
+                                            background: hoveredRow === lead.id ? 'var(--slate-50)' : selectedIds.has(lead.id) ? 'var(--navy-50)' : 'white',
+                                            zIndex: 30,
+                                            boxShadow: '-4px 0 8px rgba(0,0,0,0.06)',
+                                            padding: '8px 12px'
+                                        }}>
+                                            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                                                <button className="btn btn-ghost btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 32, height: 32 }}><Phone size={16} style={{ color: '#00a38d' }} /></button>
+                                                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 32, height: 32 }}><Edit2 size={16} /></button>
+                                                <button className="btn btn-ghost btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 32, height: 32 }}><Trash2 size={16} /></button>
                                             </div>
                                         </td>
                                     </tr>

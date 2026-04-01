@@ -140,6 +140,8 @@ router.get('/', async (req, res) => {
     if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
     if (req.query.nurture_due === 'true') {
         conditions.push(`l.status = 'Nurture' AND l.reconnect_date <= CURRENT_DATE`);
+    } else if (req.query.nurture_overdue === 'true') {
+        conditions.push(`l.status = 'Nurture' AND l.reconnect_date < CURRENT_DATE`);
     } else if (req.query.reconnect_date) {
         conditions.push(`l.reconnect_date = $${i++}`);
         params.push(req.query.reconnect_date);
@@ -149,7 +151,7 @@ router.get('/', async (req, res) => {
     const where = conditions.join(' AND ');
 
     try {
-        const [dataRes, countRes] = await Promise.all([
+        const [dataRes, countRes, nurtureStats] = await Promise.all([
             pool.query(
                 `SELECT l.*, u.name as agent_name, u.avatar as agent_avatar, p.name as project_name
                  FROM leads l
@@ -161,11 +163,22 @@ router.get('/', async (req, res) => {
                 [...params, limit, offset]
             ),
             pool.query(`SELECT COUNT(*) FROM leads l WHERE ${where}`, params),
+            pool.query(
+                `SELECT 
+                    COUNT(*) FILTER (WHERE status = 'Nurture' AND reconnect_date = CURRENT_DATE) as due_today,
+                    COUNT(*) FILTER (WHERE status = 'Nurture' AND reconnect_date < CURRENT_DATE) as overdue
+                 FROM leads WHERE tenant_id = $1`,
+                [req.tenantId]
+            )
         ]);
 
         res.json({
             data: dataRes.rows,
             total: parseInt(countRes.rows[0].count),
+            counts: {
+                dueToday: parseInt(nurtureStats.rows[0].due_today),
+                overdue: parseInt(nurtureStats.rows[0].overdue)
+            },
             page: parseInt(page),
             limit: parseInt(limit),
         });

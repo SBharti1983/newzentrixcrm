@@ -13,6 +13,7 @@ import { PresenceProvider, usePresence } from './context/PresenceContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
+import NurtureLeads from './pages/NurtureLeads';
 import Pipeline from './pages/Pipeline';
 import Projects from './pages/Projects';
 import Inventory from './pages/Inventory';
@@ -158,6 +159,7 @@ function ProtectedApp() {
           <Routes>
             <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : <Dashboard />}</RoleGuard>} />
             <Route path="/leads" element={<RoleGuard path="/leads"><Leads /></RoleGuard>} />
+            <Route path="/nurture-leads" element={<RoleGuard path="/nurture-leads"><NurtureLeads /></RoleGuard>} />
             <Route path="/leads/:id" element={<RoleGuard path="/leads"><ContactDetails /></RoleGuard>} />
             <Route path="/pipeline" element={<RoleGuard path="/pipeline"><Pipeline /></RoleGuard>} />
             <Route path="/projects" element={<RoleGuard path="/projects"><Projects /></RoleGuard>} />

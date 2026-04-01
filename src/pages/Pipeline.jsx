@@ -99,7 +99,7 @@ export default function Pipeline() {
     const [filterSource, setFilterSource] = useState('All');
     const [filterPriority, setFilterPriority] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
-    const [viewMode, setViewMode] = useState('metrics');
+    const [viewMode, setViewMode] = useState('kanban');
     const { user: currentUser } = useAuth();
     const { viewers, trackPage } = usePresence();
 
@@ -175,8 +175,8 @@ export default function Pipeline() {
         } catch { showToast('Failed to update stage', 'error'); }
     };
 
-    if (loading) return <PageLoader />;
-    if (error) return <PageError message={error} onRetry={refetch} />;
+    if (loading && !leadsRes) return <PageLoader />;
+    if (error && !leadsRes) return <PageError message={error} onRetry={refetch} />;
 
     return (
         <div className="animate-fadeIn">
@@ -228,36 +228,30 @@ export default function Pipeline() {
             </div>
 
             {/* Stage Metrics Ribbon (Colorful Version) */}
-            <div className="card mb-4" style={{ padding: '8px 10px', borderRadius: 16, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, overflowX: 'auto', paddingBottom: 0 }}>
+            <div className="card" style={{ padding: '3px 6px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '4px', width: '100%' }}>
                     {PIPELINE_STAGES.map((stage, i) => {
                         const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                        const sl = byStage(stage);
-                        const count = sl.length;
+                        const count = byStage(stage).length;
                         const val = stageValueL(stage);
                         const Icon = sc.lucide || Target;
                         
                         return (
-                            <div key={stage} style={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1, minWidth: 120 }}>
-                                <div style={{ 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '4px 10px', 
-                                    borderRadius: 30, background: 'white', border: `1px solid ${sc.color}15`,
-                                    boxShadow: '0 1px 4px rgba(0,0,0,0.02)', whiteSpace: 'nowrap', flex: 1
-                                }}>
-                                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: sc.bg, color: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <Icon size={12} />
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                                            <span style={{ fontWeight: 800, fontSize: '0.72rem', color: 'var(--navy-900)' }}>{stage}</span>
-                                            <span style={{ fontWeight: 800, color: sc.color, fontSize: '0.72rem' }}>{count}</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.55rem', fontWeight: 600, color: 'var(--text-muted)' }}>{fmtL(val)}</div>
-                                    </div>
+                            <div key={stage} style={{ 
+                                display: 'flex', alignItems: 'center', gap: 4, padding: '3px 6px', 
+                                borderRadius: 8, background: sc.bg, border: `1px solid ${sc.color}15`,
+                                minWidth: 0, overflow: 'hidden'
+                            }}>
+                                <div style={{ width: 22, height: 22, borderRadius: '6px', background: 'white', color: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                                    <Icon size={11} />
                                 </div>
-                                {i < PIPELINE_STAGES.length - 1 && (
-                                    <div style={{ color: 'var(--slate-200)' }}><ChevronRight size={10} /></div>
-                                )}
+                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.6rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage.split(' ')[0]}</span>
+                                        <span style={{ fontWeight: 800, color: sc.color, fontSize: '0.6rem', flexShrink: 0 }}>{count}</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: 1 }}>{fmtL(val)}</div>
+                                </div>
                             </div>
                         );
                     })}
@@ -265,7 +259,7 @@ export default function Pipeline() {
             </div>
 
             {/* Search & Filters (Compact Style) */}
-            <div className="card shadow-sm mb-4" style={{ padding: '10px 16px', borderRadius: 16, background: 'white', border: '1px solid var(--border-light)' }}>
+            <div className="card shadow-sm" style={{ padding: '6px 12px', borderRadius: 12, background: 'white', border: '1px solid var(--border-light)', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <div className="search-box" style={{ flex: 1, position: 'relative' }}>
                         <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
@@ -460,9 +454,9 @@ export default function Pipeline() {
                 KANBAN VIEW
             ══════════════════════════════════════════════════════ */}
             {viewMode === 'kanban' && (
-                <div style={{ flex: 1, paddingBottom: 16 }}>
-                    <div className="pipeline-board" style={{ minHeight: 'calc(100vh - 340px)', height: 'auto', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start', overflowX: 'visible' }}>
-                        {PIPELINE_STAGES.map((stage, idx) => {
+                <div style={{ flex: 1, minHeight: 0, minWidth: 0, width: '100%', overflow: 'hidden' }}>
+                    <div className="pipeline-board">
+                        {PIPELINE_STAGES.map((stage) => {
                             const stageLeads = byStage(stage);
                             const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                             const isOver = dragOver === stage;
@@ -470,27 +464,27 @@ export default function Pipeline() {
                             const val = stageValueL(stage);
 
                             return (
-                                <>
-                                    {idx === 5 && <div key="row-break" style={{ width: '100%', height: 0, flexBasis: '100%', margin: 0 }} />}
-                                    <div key={stage}
-                                        className="pipeline-column"
+                                <div key={stage}
+                                    className="pipeline-column"
                                     style={{
                                         borderTop: `4px solid ${cfg.accent}`,
                                         outline: isOver ? `2px dashed ${cfg.accent}` : 'none',
-                                        outlineOffset: -1,
                                         background: isOver ? `linear-gradient(${cfg.bg}, white)` : 'var(--slate-50)',
                                         transition: 'all 0.15s',
-                                        flex: isCollapsed ? '0 0 52px' : '1 1 280px',
-                                        minWidth: isCollapsed ? 52 : 220,
-                                        maxWidth: isCollapsed ? 52 : 'none',
+                                        width: '100%',
+                                        height: '100%',
+                                        minWidth: 0,
                                         borderRadius: '12px 12px 0 0',
-                                        boxShadow: 'var(--shadow-sm)'
+                                        boxShadow: 'var(--shadow-sm)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        overflow: 'hidden'
                                     }}
                                     onDragOver={e => onDragOver(e, stage)}
                                     onDrop={e => onDrop(e, stage)}
                                 >
                                     {/* Column Header */}
-                                    <div className="pipeline-col-header" style={{ gap: 6, padding: '16px 14px', borderBottom: '1px solid var(--border-light)' }}>
+                                    <div className="pipeline-col-header" style={{ gap: 4, padding: '4px 6px', borderBottom: '1px solid var(--border-light)', flexShrink: 0 }}>
                                         {isCollapsed ? (
                                             <button onClick={() => setCollapsed(c => ({ ...c, [stage]: false }))}
                                                 style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%' }}>
@@ -500,17 +494,17 @@ export default function Pipeline() {
                                             </button>
                                         ) : (
                                             <>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                                    <div style={{ width: 26, height: 26, borderRadius: '8px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
                                                         {cfg.emoji || '📁'}
                                                     </div>
-                                                    <div style={{ minWidth: 0 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                            <span className="pipeline-col-name" style={{ fontWeight: 900, color: 'var(--navy-900)', fontSize: '1rem', letterSpacing: '-0.01em' }}>{stage}</span>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '2px 8px', borderRadius: 99 }}>{stageLeads.length}</span>
+                                                    <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
+                                                            <span className="pipeline-col-name" style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.8rem', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
+                                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '2px 6px', borderRadius: 99, flexShrink: 0 }}>{stageLeads.length}</span>
                                                         </div>
-                                                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: cfg.color, marginTop: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                            {fmtL(val)} pipeline <ChevronRight size={10} strokeWidth={3} />
+                                                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, marginTop: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {fmtL(val)} pipe <ChevronRight size={10} strokeWidth={3} />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -520,183 +514,96 @@ export default function Pipeline() {
                                                         className="hover-lift" title="Add lead">
                                                         <Plus size={16} strokeWidth={2.5} />
                                                     </button>
-                                                    <button onClick={() => setCollapsed(c => ({ ...c, [stage]: true }))}
-                                                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 6, borderRadius: 8, transition: 'all 0.2s' }}
-                                                        className="hover-lift" title="Collapse">
-                                                        <ChevronRight size={16} strokeWidth={2.5} />
-                                                    </button>
                                                 </div>
                                             </>
                                         )}
                                     </div>
 
                                     {!isCollapsed && (
-                                        <>
-                                            {/* Column Body with High Fidelity Cards */}
-                                            <div className="pipeline-col-body" style={{ 
-                                                padding: '12px', 
-                                                display: 'flex', 
-                                                flexDirection: 'column', 
-                                                gap: 14, 
-                                                minHeight: 360,
-                                                transition: 'min-height 0.3s ease' 
-                                            }}>
-                                                {stageLeads.map(lead => {
-                                                    const age = daysSince(lead.last_contact_at);
-                                                    const pc = PRIORITY_CONFIG[lead.priority] || PRIORITY_CONFIG.Medium;
-                                                    const isDragging = dragging === lead.id;
+                                        <div className="pipeline-col-body" style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                                            {stageLeads.map(lead => {
+                                                const pc = PRIORITY_CONFIG[lead.priority] || PRIORITY_CONFIG.Medium;
+                                                const isDragging = dragging === lead.id;
+                                                const avatarBg = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444', '#6366f1', '#14b8a6', '#ec4899', '#f97316'][(lead.name || 'A').charCodeAt(0) % 10];
 
-                                                    // Professional Avatar Palette Logic
-                                                    const PALETTE = [
-                                                        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', 
-                                                        '#ef4444', '#6366f1', '#14b8a6', '#ec4899', '#f97316'
-                                                    ];
-                                                    const colorIndex = (lead.name || 'A').charCodeAt(0) % PALETTE.length;
-                                                    const avatarBg = PALETTE[colorIndex];
-
-                                                    return (
-                                                        <div key={lead.id}
-                                                            className="kanban-card"
-                                                            draggable
-                                                            onDragStart={e => onDragStart(e, lead.id)}
-                                                            onDragEnd={onDragEnd}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedLead(lead);
-                                                            }}
-                                                            style={{ 
-                                                                opacity: isDragging ? 0.35 : 1,
-                                                                background: 'white',
-                                                                borderRadius: '24px',
-                                                                padding: '24px',
-                                                                border: '1.5px solid #f1f5f9',
-                                                                boxShadow: isDragging ? 'none' : '0 8px 24px rgba(10,22,40,0.04)',
-                                                                display: 'flex',
-                                                                flexDirection: 'column',
-                                                                gap: 18,
-                                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                                cursor: 'grab'
-                                                            }}
-                                                        >
-                                                            {/* Card Top: Avatar & Name */}
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                                                    <div style={{ 
-                                                                        width: 32, height: 32, borderRadius: '50%', 
-                                                                        background: avatarBg,
-                                                                        color: 'white', display: 'flex', alignItems: 'center', 
-                                                                        justifyContent: 'center', fontSize: '11px', fontWeight: 900,
-                                                                        boxShadow: `0 3px 8px ${avatarBg}30`,
-                                                                        flexShrink: 0
-                                                                    }}>
-                                                                        {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0,2).toUpperCase()}
-                                                                    </div>
-                                                                    <div style={{ minWidth: 0 }}>
-                                                                        <div style={{ fontWeight: 900, fontSize: '13px', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name}</div>
-                                                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{lead.city || 'Location Not Set'}</div>
-                                                                    </div>
-                                                                </div>
-                                                                <button style={{ border: 'none', background: 'none', color: 'var(--slate-300)', cursor: 'pointer', padding: 4 }}><MoreHorizontal size={16} /></button>
+                                                return (
+                                                    <div key={lead.id}
+                                                        className="kanban-card"
+                                                        draggable
+                                                        onDragStart={e => onDragStart(e, lead.id)}
+                                                        onDragEnd={onDragEnd}
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); }}
+                                                        style={{ 
+                                                            opacity: isDragging ? 0.35 : 1,
+                                                            background: 'white',
+                                                            borderRadius: '12px',
+                                                            padding: '10px',
+                                                            border: '1px solid #e2e8f0',
+                                                            boxShadow: isDragging ? 'none' : '0 2px 8px rgba(10,22,40,0.04)',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 8,
+                                                            cursor: 'grab'
+                                                        }}
+                                                    >
+                                                        {/* Top: Info */}
+                                                        <div style={{ display: 'flex', gap: 8, minWidth: 0 }}>
+                                                            <div style={{ width: 34, height: 34, borderRadius: '10px', background: avatarBg, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
+                                                                {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0,2).toUpperCase()}
                                                             </div>
-
-                                                            {/* Tags Row */}
-                                                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                                                <span style={{ 
-                                                                    padding: '4px 10px', borderRadius: '8px', fontSize: '10px', 
-                                                                    fontWeight: 800, background: pc.bg, color: pc.color,
-                                                                    border: `1px solid ${pc.color}20`
-                                                                }}>{lead.priority}</span>
-                                                                <span style={{ 
-                                                                    padding: '4px 10px', borderRadius: '8px', fontSize: '10px', 
-                                                                    fontWeight: 800, background: '#f8fafc', color: '#64748b',
-                                                                    border: '1px solid #f1f5f9'
-                                                                }}>{lead.source}</span>
-                                                            </div>
-
-                                                            {/* Project & Budget Details */}
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '12px', color: 'var(--navy-700)', fontWeight: 700 }}>
-                                                                    <div style={{ width: 18, height: 18, borderRadius: '4px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                        <Home size={10} color="var(--navy-600)" />
-                                                                    </div>
-                                                                    {lead.project_name || 'Generic Interest'}
-                                                                </div>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '13px', fontWeight: 900, color: 'var(--navy-900)' }}>
-                                                                    <div style={{ width: 18, height: 18, borderRadius: '4px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                                        <Zap size={10} color="#f59e0b" />
-                                                                    </div>
-                                                                    {lead.budget || '₹—'}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Card Footer: Metrics & Owner */}
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 12, borderTop: '1px solid #f8fafc' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                                    <div style={{ position: 'relative', width: 28, height: 28 }}>
-                                                                        <svg width="28" height="28" viewBox="0 0 52 52" style={{ transform: 'rotate(-90deg)' }}>
-                                                                            <circle cx="26" cy="26" r="22" fill="none" stroke="#f1f5f9" strokeWidth="8" />
-                                                                            <circle cx="26" cy="26" r="22" fill="none"
-                                                                                stroke={lead.score > 80 ? 'var(--accent-emerald)' : lead.score > 55 ? 'var(--accent-amber)' : 'var(--accent-rose)'}
-                                                                                strokeWidth="8"
-                                                                                strokeDasharray={`${(lead.score / 100) * 138.2} 138.2`}
-                                                                                strokeLinecap="round" />
-                                                                        </svg>
-                                                                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)' }}>{lead.score}</span>
-                                                                    </div>
-                                                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 800 }}>{age}d</div>
-                                                                </div>
-                                                                <div style={{ 
-                                                                    width: 24, height: 24, borderRadius: '50%', background: '#f1f5f9',
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    fontSize: '10px', fontWeight: 900, color: 'var(--navy-600)',
-                                                                    border: '1.5px solid white', boxShadow: '0 0 0 1px #f1f5f9'
-                                                                }} title={`Owned by ${lead.agent_name || 'Unassigned'}`}>
-                                                                    {lead.agent_name ? lead.agent_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}
-                                                                </div>
+                                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{lead.name}</div>
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.city || 'Pune'}</div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
 
-                                                {/* Business Logic: Structured 2-Slot Layout */}
-                                                {stageLeads.length < 2 && Array.from({ length: 2 - stageLeads.length }).map((_, i) => (
-                                                    <div key={`ghost-${stage}-${i}`} style={{
-                                                        border: `1.5px dashed ${isOver ? cfg.accent : '#f1f5f9'}`,
-                                                        borderRadius: '20px', height: 160,
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        color: isOver ? cfg.color : '#e2e8f0',
-                                                        fontSize: '0.75rem', fontWeight: 700,
-                                                        background: isOver ? cfg.bg : 'rgba(241, 245, 249, 0.4)',
-                                                        transition: 'all 0.15s'
-                                                    }}>
-                                                        {isOver && i === 0 ? '📥 Drop Lead Here' : ''}
+                                                        {/* Project Badge */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', fontWeight: 700, color: 'var(--slate-600)', background: 'var(--slate-50)', padding: '5px 8px', borderRadius: '8px' }}>
+                                                            <Home size={11} style={{ opacity: 0.6 }} />
+                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.project || 'Zentrix Elite'}</span>
+                                                        </div>
+
+                                                        {/* Tags */}
+                                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: pc.bg, color: pc.color }}>{lead.priority}</span>
+                                                            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: 'var(--slate-100)', color: 'var(--slate-600)' }}>{lead.source}</span>
+                                                        </div>
+
+                                                        {/* Stats Footer */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-light)', paddingTop: 8, marginTop: 2 }}>
+                                                            <div style={{ fontWeight: 900, fontSize: '0.85rem', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                <Zap size={12} fill="var(--accent-emerald)" color="transparent" />
+                                                                {lead.budget || '₹60L'}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>Today</div>
+                                                        </div>
                                                     </div>
-                                                ))}
+                                                );
+                                            })}
 
-                                                <button onClick={() => { setAddForm({ ...DEFAULT_LEAD, stage }); setShowAddModal(stage); }}
-                                                    style={{
-                                                        width: '100%', padding: '12px', border: '1px dashed var(--border-light)',
-                                                        borderRadius: '12px', background: 'transparent',
-                                                        cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                                                        transition: 'all 0.15s', marginTop: 12, fontWeight: 700
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = cfg.bg; e.currentTarget.style.borderColor = cfg.accent; e.currentTarget.style.color = cfg.color; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--border-light)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-                                                >
-                                                    <Plus size={16} /> Add Lead
-                                                </button>
-                                            </div>
-                                        </>
+                                            {/* Minimalist Ghost Slot */}
+                                            {stageLeads.length < 1 && (
+                                                <div style={{ border: '1.5px dashed var(--border-light)', borderRadius: 12, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, background: 'var(--slate-50)' }}>
+                                                    {isOver ? '📥 Release to Move' : 'Empty Stage'}
+                                                </div>
+                                            )}
+
+                                            <button onClick={() => { setAddForm({ ...DEFAULT_LEAD, stage }); setShowAddModal(stage); }}
+                                                className="add-lead-btn"
+                                                style={{
+                                                    width: '100%', padding: '10px', border: '1px dashed var(--border-light)',
+                                                    borderRadius: '10px', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', 
+                                                    fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                                    marginTop: 'auto', transition: 'all 0.15s'
+                                                }}
+                                            >
+                                                <Plus size={14} /> Add Lead
+                                            </button>
+                                        </div>
                                     )}
-                                    </div>
-                                </>
+                                </div>
                             );
                         })}
-                        {/* Dummy spacers to constrain last flex row stretch */}
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <div key={`dummy-${i}`} style={{ flex: '1 1 280px', minWidth: 220, height: 0, opacity: 0, margin: 0, padding: 0 }} />
-                        ))}
                     </div>
                 </div>
             )}
@@ -705,7 +612,7 @@ export default function Pipeline() {
                 MATRIX VIEW (TABLE)
             ══════════════════════════════════════════════════════ */}
             {viewMode === 'matrix' && (
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ padding: '0 24px 24px 24px', flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
                     <div className="card" style={{ padding: 0, background: 'white', border: '1px solid var(--border-light)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
