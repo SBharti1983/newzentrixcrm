@@ -47,11 +47,13 @@ const SOURCE_COLORS = {
     'Zapier': 'badge-amber'
 };
 const SOURCES = ['Website', 'Referral', 'Social Media', 'Walk-in', 'PropTech Portal', 'Google Ads', 'WhatsApp', 'Facebook Ads', 'Instagram Ads', 'Zapier'];
+const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
 const DEFAULT_FORM = {
     name: '', email: '', phone: '', city: '', source: 'Website',
     stage: 'New Lead', status: 'Active', budget: '', property_type: '2BHK', project_id: '',
     assigned_to: '', channel_partner_id: '', notes: '', score: 50,
+    nurture_reason: '', reconnect_date: '',
 };
 
 export default function Leads() {
@@ -61,6 +63,7 @@ export default function Leads() {
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
+    const [filterNurtureDue, setFilterNurtureDue] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(DEFAULT_FORM);
@@ -84,9 +87,10 @@ export default function Leads() {
         if (filterStage !== 'All') p.stage = filterStage;
         if (filterSource !== 'All') p.source = filterSource;
         if (filterStatus !== 'All') p.status = filterStatus;
+        if (filterNurtureDue) p.nurture_due = 'true';
         if (search.trim()) p.q = search.trim();
         return p;
-    }, [limit, page, filterStage, filterSource, filterStatus, search]);
+    }, [limit, page, filterStage, filterSource, filterStatus, search, filterNurtureDue]);
 
     const { data: leadsRes, loading, error, refetch } = useApi(
         useCallback(() => leadsApi.list(params), [params]),
@@ -97,7 +101,7 @@ export default function Leads() {
     useEffect(() => {
         setSelectedIds(new Set());
         setPage(1);
-    }, [filterStage, filterSource, filterStatus, search]);
+    }, [filterStage, filterSource, filterStatus, search, filterNurtureDue]);
     const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
     const { data: users } = useApi(useCallback(() => usersApi.list(), []));
     const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
@@ -114,6 +118,8 @@ export default function Leads() {
             project_id: lead.project_id || '', assigned_to: lead.assigned_to || '',
             channel_partner_id: lead.channel_partner_id || '',
             notes: lead.notes || '', score: lead.score,
+            nurture_reason: lead.nurture_reason || '',
+            reconnect_date: lead.reconnect_date ? lead.reconnect_date.split('T')[0] : '',
         });
         setEditingId(lead.id);
         setShowModal(true);
@@ -121,11 +127,15 @@ export default function Leads() {
 
     const saveLead = async () => {
         if (!form.name || !form.phone) { showToast('Name and phone are required', 'error'); return; }
+        if (form.status === 'Nurture' && (!form.nurture_reason || !form.reconnect_date)) {
+            showToast('Nurture reason and Reconnect date are mandatory', 'error');
+            return;
+        }
         setSaving(true);
         try {
             // Sanitize form: convert empty strings to null for optional/FK fields
             const sanitized = { ...form };
-            ['email', 'city', 'budget', 'property_type', 'project_id', 'assigned_to', 'channel_partner_id', 'notes'].forEach(k => {
+            ['email', 'city', 'budget', 'property_type', 'project_id', 'assigned_to', 'channel_partner_id', 'notes', 'reconnect_date', 'nurture_reason'].forEach(k => {
                 if (sanitized[k] === '' || sanitized[k] === undefined) sanitized[k] = null;
             });
             // Ensure score is a valid number
@@ -302,6 +312,14 @@ export default function Leads() {
                         </select>
                     </div>
 
+                    <button 
+                        className={`btn btn-sm ${filterNurtureDue ? 'btn-primary' : 'btn-ghost'}`} 
+                        style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700 }}
+                        onClick={() => setFilterNurtureDue(!filterNurtureDue)}
+                    >
+                        🎯 Nurture Due
+                    </button>
+                    
                     <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }}>
                         <Filter size={14} /> Filters
                     </button>
@@ -600,6 +618,22 @@ export default function Leads() {
                                         {SOURCES.map(s => <option key={s}>{s}</option>)}
                                     </select>
                                 </div>
+
+                                {form.status === 'Nurture' && (
+                                    <>
+                                        <div className="form-group">
+                                            <label className="form-label" style={{ color: 'var(--accent-rose)', fontWeight: 700 }}>Nurture Reason *</label>
+                                            <select className="form-control" value={form.nurture_reason} onChange={e => upd('nurture_reason', e.target.value)} style={{ borderColor: 'var(--accent-rose)' }}>
+                                                <option value="">Select reason...</option>
+                                                {NURTURE_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label className="form-label" style={{ color: 'var(--accent-rose)', fontWeight: 700 }}>Reconnect Date *</label>
+                                            <input type="date" className="form-control" value={form.reconnect_date} onChange={e => upd('reconnect_date', e.target.value)} style={{ borderColor: 'var(--accent-rose)' }} />
+                                        </div>
+                                    </>
+                                )}
                                 <div className="form-group">
                                     <label className="form-label">Budget</label>
                                     <input className="form-control" value={form.budget} onChange={e => upd('budget', e.target.value)} placeholder="₹85L" />

@@ -180,6 +180,18 @@ export default function ContactDetails() {
         }
     };
 
+    const handleUpdateStatus = async (newStatus, extras = {}) => {
+        try {
+            const updated = await leadsApi.update(id, { status: newStatus, ...extras });
+            setContact(updated);
+            showToast(`Lead status updated to ${newStatus}`, 'success');
+            setShowActivityBox(false);
+            setNewNote('');
+        } catch (err) {
+            showToast(err.error || 'Failed to update status', 'error');
+        }
+    };
+
 
     const displayDates = useMemo(() => {
         if (!contact) return {};
@@ -254,8 +266,18 @@ export default function ContactDetails() {
                     }}>
                         <ChevronLeft size={14} /> Back
                     </button>
-                    <div style={{ padding: '4px 10px', background: currentStageStyle.bg, color: currentStageStyle.text, borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
-                        {contact.stage}
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div style={{ 
+                            padding: '4px 10px', 
+                            background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.1)' : contact.status === 'Won' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)', 
+                            color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : '#3b82f6', 
+                            borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' 
+                        }}>
+                            {contact.status || 'Active'}
+                        </div>
+                        <div style={{ padding: '4px 10px', background: currentStageStyle.bg, color: currentStageStyle.text, borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}>
+                            {contact.stage}
+                        </div>
                     </div>
                 </div>
 
@@ -282,6 +304,20 @@ export default function ContactDetails() {
                         </div>
                     </div>
 
+                    {contact.status === 'Nurture' && (
+                        <div style={{ 
+                            margin: '0 12px 16px', padding: '14px', background: '#fdf4ff', border: '1px solid #f5d0fe', 
+                            borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: 6 
+                        }}>
+                            <div style={{ fontSize: '10px', fontWeight: 900, color: '#a21caf', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <RotateCw size={12} /> Reconnect: {new Date(contact.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </div>
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#701a75' }}>
+                                Reason: {contact.nurture_reason}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Strategic Action Hub - HIGH DENSITY */}
                     <div style={{ 
                         display: 'grid', 
@@ -297,6 +333,15 @@ export default function ContactDetails() {
                             { icon: Mail, label: 'Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
                             { icon: Phone, label: 'Call', color: '#10b981', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
                             { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: '#7c3aed', action: () => { 
+                                if (contact.status === 'Nurture') {
+                                    handleUpdateStatus('Active');
+                                } else {
+                                    setActivityType('Move to Nurture');
+                                    setActiveTab('Activities');
+                                    setShowActivityBox(true);
+                                }
+                            }},
                             { icon: MapPin, label: 'Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
                             { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) },
                             { icon: Rocket, label: 'Outreach', color: 'var(--navy-900)', action: () => { setComposerTrigger('followup'); setShowComposer(true); } }
@@ -666,32 +711,65 @@ export default function ContactDetails() {
                                 boxShadow: '0 8px 24px rgba(10,22,40,0.02)'
                             }}>
                                 <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
-                                    {[
-                                        { type: 'Note', icon: Edit2, color: '#f59e0b' },
-                                        { type: 'Email', icon: Mail, color: '#3b82f6' },
-                                        { type: 'Call', icon: Phone, color: '#10b981' },
-                                        { type: 'WhatsApp', icon: MessageSquare, color: '#25D366' },
-                                        { type: 'Meeting', icon: CalendarIcon, color: '#ef4444' }
-                                    ].map(btn => (
-                                        <button 
-                                            key={btn.type}
-                                            onClick={() => { setActivityType(btn.type); setShowActivityBox(true); }}
-                                            style={{
-                                                flex: 1, padding: '12px 0', borderRadius: '16px', border: '1px solid',
-                                                borderColor: activityType === btn.type ? btn.color : '#f1f5f9',
-                                                background: activityType === btn.type ? `${btn.color}05` : 'transparent',
-                                                color: activityType === btn.type ? 'var(--navy-900)' : 'var(--slate-400)',
-                                                cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                                                transition: 'all 0.2s', fontWeight: 800
-                                            }}
-                                        >
-                                            <btn.icon size={18} color={activityType === btn.type ? btn.color : 'var(--slate-300)'} strokeWidth={2.5} />
-                                            <span style={{ fontSize: '10px', textTransform: 'uppercase' }}>{btn.type}</span>
-                                        </button>
-                                    ))}
+                                    {['Note', 'Email', 'Call', 'WhatsApp', 'Meeting', 'Move to Nurture'].map(btn => {
+                                        const btnConfig = typeof btn === 'string' ? { type: btn, icon: btn === 'Move to Nurture' ? TrendingUp : Edit2, color: btn === 'Move to Nurture' ? '#7c3aed' : '#94a3b8' } : btn;
+                                        const Icon = btnConfig.icon || TrendingUp;
+                                        return (
+                                            <button 
+                                                key={btnConfig.type}
+                                                onClick={() => { setActivityType(btnConfig.type); setShowActivityBox(true); }}
+                                                style={{
+                                                    flex: 1, padding: '12px 0', borderRadius: '16px', border: '1px solid',
+                                                    borderColor: activityType === btnConfig.type ? (btnConfig.color || '#7c3aed') : '#f1f5f9',
+                                                    background: activityType === btnConfig.type ? `${btnConfig.color || '#7c3aed'}05` : 'transparent',
+                                                    color: activityType === btnConfig.type ? 'var(--navy-900)' : 'var(--slate-400)',
+                                                    cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                                                    transition: 'all 0.2s', fontWeight: 800
+                                                }}
+                                            >
+                                                <Icon size={18} color={activityType === btnConfig.type ? (btnConfig.color || '#7c3aed') : 'var(--slate-300)'} strokeWidth={2.5} />
+                                                <span style={{ fontSize: '10px', textTransform: 'uppercase' }}>{btnConfig.type}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                                 
-                                {showActivityBox && (
+                                {showActivityBox && activityType === 'Move to Nurture' && (
+                                    <div className="animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        <div style={{ display: 'flex', gap: 16 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>Nurture Reason *</label>
+                                                <select 
+                                                    className="form-control" 
+                                                    value={interactions[0]?.note || ''} 
+                                                    onChange={e => setNewNote(e.target.value)}
+                                                    style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                                                >
+                                                    <option value="">Select reason...</option>
+                                                    {['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Looking for better options'].map(r => <option key={r} value={r}>{r}</option>)}
+                                                </select>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>Reconnect Date *</label>
+                                                <input 
+                                                    type="date" 
+                                                    className="form-control"
+                                                    onChange={e => (window._tmpReconnectDate = e.target.value)}
+                                                    style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleUpdateStatus('Nurture', { nurture_reason: newNote, reconnect_date: window._tmpReconnectDate })}
+                                            className="btn btn-primary"
+                                            style={{ width: '100%', height: 48, borderRadius: '16px', background: '#7c3aed', fontWeight: 900 }}
+                                        >
+                                            Confirm Move to Nurture
+                                        </button>
+                                    </div>
+                                )}
+
+                                {showActivityBox && activityType !== 'Move to Nurture' && (
                                     <div className="animate-fadeIn">
                                         <textarea
                                             value={newNote}

@@ -138,6 +138,12 @@ router.get('/', async (req, res) => {
     if (agent) { conditions.push(`l.assigned_to = $${i++}`); params.push(agent); }
     if (channel_partner_id) { conditions.push(`l.channel_partner_id = $${i++}`); params.push(channel_partner_id); }
     if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
+    if (req.query.nurture_due === 'true') {
+        conditions.push(`l.status = 'Nurture' AND l.reconnect_date <= CURRENT_DATE`);
+    } else if (req.query.reconnect_date) {
+        conditions.push(`l.reconnect_date = $${i++}`);
+        params.push(req.query.reconnect_date);
+    }
     if (q) { conditions.push(`(l.name ILIKE $${i} OR l.city ILIKE $${i} OR l.phone ILIKE $${i} OR l.email ILIKE $${i})`); params.push(`%${q}%`); i++; }
 
     const where = conditions.join(' AND ');
@@ -254,7 +260,8 @@ router.post('/', validateLead, async (req, res) => {
 
         const {
             name, phone, email, city, source, stage, priority, score,
-            property_type, project_id, budget, assigned_to, notes, channel_partner_id, status
+            property_type, project_id, budget, assigned_to, notes, channel_partner_id, status,
+            nurture_reason, reconnect_date
         } = req.body;
 
         // Safety check: name and phone are mandatory
@@ -275,11 +282,11 @@ router.post('/', validateLead, async (req, res) => {
         const safeScore = (typeof score === 'number' && !isNaN(score)) ? score : 50;
 
         const { rows } = await pool.query(
-            `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW()) RETURNING *`,
+            `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at, nurture_reason, reconnect_date)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18) RETURNING *`,
             [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
             priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
-            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active']
+            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active', nurture_reason || null, emptyToNull(reconnect_date)]
         );
 
         const newLead = rows[0];
@@ -288,6 +295,19 @@ router.post('/', validateLead, async (req, res) => {
         automationService.handleLeadCreate(newLead, req.io).catch(err => {
             console.error('[Automation Trigger] Error executing workflows:', err);
         });
+
+        // Auto-create Nurture Followup if applicable
+        if (newLead.status === 'Nurture' && newLead.reconnect_date) {
+            try {
+                await pool.query(
+                    `INSERT INTO followups (tenant_id, lead_id, assigned_to, type, scheduled_at, note)
+                     VALUES ($1, $2, $3, 'Nurture Reconnection', $4, $5)`,
+                    [req.tenantId, newLead.id, newLead.assigned_to, newLead.reconnect_date, `Nurture follow-up: ${newLead.nurture_reason}`]
+                );
+            } catch (fErr) {
+                console.error('[Nurture Auto-Followup] Failed:', fErr.message);
+            }
+        }
 
         // Activity log
         try {
@@ -336,9 +356,9 @@ router.post('/:id/interactions', async (req, res) => {
 
 // PATCH /api/leads/:id
 router.patch('/:id', async (req, res) => {
-    const allowed = ['name', 'phone', 'email', 'city', 'source', 'stage', 'priority', 'score', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'last_contact_at', 'channel_partner_id', 'status'];
+    const allowed = ['name', 'phone', 'email', 'city', 'source', 'stage', 'priority', 'score', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'last_contact_at', 'channel_partner_id', 'status', 'nurture_reason', 'reconnect_date'];
     // Convert empty strings to null for UUID/nullable foreign key fields
-    const nullableFields = ['email', 'city', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'channel_partner_id'];
+    const nullableFields = ['email', 'city', 'property_type', 'project_id', 'budget', 'assigned_to', 'notes', 'channel_partner_id', 'reconnect_date'];
     const raw = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
     const updates = Object.fromEntries(
         Object.entries(raw).map(([k, v]) => [k, nullableFields.includes(k) ? emptyToNull(v) : v])
@@ -382,6 +402,19 @@ router.patch('/:id', async (req, res) => {
             automationService.handleStageChange(rows[0], old.rows[0].stage, updates.stage, req.io).catch(err => {
                 console.error('[Automation Trigger] Stage change error:', err);
             });
+        }
+
+        // Auto-create Nurture Followup if status changed to Nurture
+        if (updates.status === 'Nurture' && updates.reconnect_date && old.rows[0].status !== 'Nurture') {
+            try {
+                await pool.query(
+                    `INSERT INTO followups (tenant_id, lead_id, assigned_to, type, scheduled_at, note)
+                     VALUES ($1, $2, $3, 'Nurture Reconnection', $4, $5)`,
+                    [req.tenantId, req.params.id, rows[0].assigned_to, updates.reconnect_date, `Nurture follow-up: ${updates.nurture_reason}`]
+                );
+            } catch (fErr) {
+                console.error('[Nurture Auto-Followup] Failed:', fErr.message);
+            }
         }
 
         res.json(rows[0]);

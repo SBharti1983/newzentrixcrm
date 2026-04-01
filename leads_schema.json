@@ -1,0 +1,86 @@
+[
+  {
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "tenant_id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "assigned_to",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "score",
+    "data_type": "integer"
+  },
+  {
+    "column_name": "project_id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "last_contact_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "is_duplicate",
+    "data_type": "boolean"
+  },
+  {
+    "column_name": "created_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "updated_at",
+    "data_type": "timestamp with time zone"
+  },
+  {
+    "column_name": "channel_partner_id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "notes",
+    "data_type": "text"
+  },
+  {
+    "column_name": "property_type",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "status",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "budget",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "name",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "email",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "phone",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "city",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "source",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "stage",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "priority",
+    "data_type": "character varying"
+  }
+]

@@ -41,6 +41,14 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
         try { await leadsApi.update(contactId, { stage: newStage }); refetch(); setShowStagePicker(false); } catch (e) { console.error(e); }
     };
 
+    const updateStatus = async (newStatus, extras = {}) => {
+        try {
+            await leadsApi.update(contactId, { status: newStatus, ...extras });
+            refetch();
+            setActiveAction(null);
+        } catch (e) { console.error(e); }
+    };
+
     const [mounted, setMounted] = useState(false);
     useEffect(() => {
         const frame = requestAnimationFrame(() => setMounted(true));
@@ -106,19 +114,38 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                 </div>
                                 <div style={{ minWidth: 0, width: '100%' }}>
                                     <h2 className="cps-name" style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{contact.name}</h2>
-                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                                        <div className="cps-stage-badge" style={{ 
+                                            background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.1)' : contact.status === 'Won' ? 'rgba(16,185,129,0.1)' : contact.status === 'Lost' ? 'rgba(244,63,94,0.1)' : 'rgba(59,130,246,0.1)',
+                                            color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : contact.status === 'Lost' ? '#e11d48' : '#3b82f6',
+                                            borderColor: 'transparent',
+                                            fontWeight: 800,
+                                            fontSize: '10px'
+                                        }}>
+                                            {contact.status || 'Active'}
+                                        </div>
                                         <div className="cps-stage-badge" style={{ background: stageStyle.bg, color: stageStyle.color, borderColor: `${stageStyle.color}30` }} onClick={() => setShowStagePicker(!showStagePicker)}>
                                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: stageStyle.color }} />
                                             {contact.stage || 'New'}
                                             <ChevronDown size={10} style={{ transform: showStagePicker ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                                         </div>
                                         <div className="cps-source-tag">via {contact.source || 'Direct'}</div>
-                                        {contact.city && (
-                                            <div className="cps-source-tag" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                <MapPin size={10} /> {contact.city}
-                                            </div>
-                                        )}
                                     </div>
+
+                                    {contact.status === 'Nurture' && (
+                                        <div style={{ 
+                                            background: '#fdf4ff', border: '1px solid #f5d0fe', borderRadius: 12, padding: '10px 14px', 
+                                            marginTop: 8, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 800, color: '#a21caf' }}>
+                                                <RotateCw size={12} /> RECONNECT ON {new Date(contact.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase()}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: '#701a75', fontWeight: 500 }}>
+                                                Reason: {contact.nurture_reason || 'Follow up'}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {showStagePicker && (
                                         <div className="cps-stage-dropdown">
                                             {LIFECYCLE_STAGES.map(s => (
@@ -169,17 +196,53 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                         <button key={a.label} className="cps-action-btn" onClick={() => {
                                             if (a.label === 'Call' && contact.phone) { dialerEvents.call(contact.id, contact.phone, contact.name); }
                                             else if (a.label === 'WhatsApp' && contact.phone) { const p = contact.phone.replace(/[^0-9]/g, ''); window.open(`https://wa.me/${p.startsWith('91') ? '' : '91'}${p}`, '_blank'); }
+                                            else if (a.label === 'Note' && contact.status === 'Nurture') { setActiveAction('Edit Nurture'); }
                                             else { setActiveAction(a.label); }
                                         }}>
                                             <div className="cps-action-icon" style={{ '--ac': a.color }}><a.icon size={16} color={a.color} strokeWidth={2.5} /></div>
                                             <span>{a.label}</span>
                                         </button>
                                     ))}
+                                    <button className="cps-action-btn" onClick={() => setActiveAction('Move to Nurture')} style={{ background: 'rgba(124,58,237,0.05)' }}>
+                                        <div className="cps-action-icon" style={{ '--ac': '#7c3aed' }}><TrendingUp size={16} color="#7c3aed" strokeWidth={2.5} /></div>
+                                        <span style={{ color: '#7c3aed', fontWeight: 800 }}>Nurture</span>
+                                    </button>
+                                    {contact.status === 'Nurture' && (
+                                        <button className="cps-action-btn" onClick={() => updateStatus('Active')} style={{ background: 'rgba(16,185,129,0.05)' }}>
+                                            <div className="cps-action-icon" style={{ '--ac': '#10b981' }}><Zap size={16} color="#10b981" strokeWidth={2.5} /></div>
+                                            <span style={{ color: '#10b981', fontWeight: 800 }}>Reactivate</span>
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
                             {/* ── Inline Form ── */}
-                            {activeAction && (
+                            {activeAction === 'Move to Nurture' && (
+                                <div className="cps-inline-form animate-fadeIn" style={{ border: '1px solid #f5d0fe', background: '#fff9ff' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                                        <h4 className="cps-form-title" style={{ color: '#a21caf' }}>Move to Nurture</h4>
+                                        <button onClick={() => setActiveAction(null)} style={{ background: 'none', border: 'none', color: 'var(--slate-400)', cursor: 'pointer', fontSize: '12px', fontWeight: 700 }}>Cancel</button>
+                                    </div>
+                                    <div className="form-group mb-3">
+                                        <label className="form-label">Reason for Nurture</label>
+                                        <select className="form-control" value={noteContent} onChange={e => setNoteContent(e.target.value)}>
+                                            <option value="">Select reason...</option>
+                                            {['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later'].map(r => <option key={r} value={r}>{r}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="form-group mb-3">
+                                        <label className="form-label">Reconnect Date</label>
+                                        <input type="date" className="form-control" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                                    </div>
+                                    <button disabled={!noteContent || !dueDate || isSaving} className="cps-save-btn" style={{ background: '#7c3aed' }} onClick={async () => {
+                                        setIsSaving(true);
+                                        await updateStatus('Nurture', { nurture_reason: noteContent, reconnect_date: dueDate });
+                                        setIsSaving(false);
+                                    }}>{isSaving ? 'Moving...' : 'Move to Nurture'}</button>
+                                </div>
+                            )}
+
+                            {activeAction && activeAction !== 'Move to Nurture' && (
                                 <div className="cps-inline-form animate-fadeIn">
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                                         <h4 className="cps-form-title">Log {activeAction}</h4>
