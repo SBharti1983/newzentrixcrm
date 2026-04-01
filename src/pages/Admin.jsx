@@ -71,7 +71,8 @@ export default function Admin() {
     };
     const deleteUser = async (id) => {
         if (id === currentUser.id) { showToast('Cannot delete yourself', 'error'); return; }
-        try { await usersApi.update(id, { active: false }); refetch(); }
+        if (!window.confirm('Are you sure you want to disable this user?')) return;
+        try { await usersApi.update(id, { is_active: false }); refetch(); }
         catch { showToast('Failed', 'error'); }
     };
 
