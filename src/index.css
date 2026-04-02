@@ -4557,3 +4557,20 @@ tbody tr:hover {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
+.pipeline-top-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 2fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media(max-width: 768px) {
+  .pipeline-top-grid {
+    grid-template-columns: 1fr;
+  }
+  .inbox-sidebar { width: 100% !important; }
+  .inbox-sidebar.hidden-mobile { display: none !important; }
+  .inbox-main { display: flex !important; }
+  .inbox-main.hidden-mobile { display: none !important; }
+}

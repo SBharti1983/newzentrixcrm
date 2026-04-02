@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Mail, MessageSquare, Phone, MoreVertical, Paperclip, Send, Check, CheckCheck, RefreshCw, Wand2, User } from 'lucide-react';
+import { Search, Mail, MessageSquare, Phone, MoreVertical, Paperclip, Send, Check, CheckCheck, RefreshCw, Wand2, User, ChevronLeft } from 'lucide-react';
 import { notificationsApi } from '../api/client';
 import { PageLoader } from '../components/Feedback';
 import { useToast } from '../hooks/useToast';
@@ -108,7 +108,7 @@ export default function Inbox() {
 
             <div className="card" style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: 0 }}>
                 {/* Sidebar */}
-                <div style={{ width: 320, borderRight: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', background: 'var(--slate-50)' }}>
+                <div className={`inbox-sidebar ${activeId ? 'hidden-mobile' : ''}`} style={{ width: 320, borderRight: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', background: 'var(--slate-50)' }}>
                     <div style={{ padding: 16, borderBottom: '1px solid var(--border-light)' }}>
                         <div className="search-bar" style={{ width: '100%', background: 'white' }}>
                             <Search size={14} style={{ color: 'var(--text-muted)' }} />
@@ -154,12 +154,15 @@ export default function Inbox() {
                 </div>
 
                 {/* Main Chat Area */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'white' }}>
+                <div className={`inbox-main ${!activeId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'white' }}>
                     {activeId ? (
                         <>
                             {/* Chat Header */}
                             <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <button className="btn btn-ghost d-none d-block-mobile" style={{ padding: '4px', marginRight: '4px' }} onClick={() => setActiveId(null)}>
+                                        <ChevronLeft size={20} />
+                                    </button>
                                     <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'var(--accent-teal)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem' }}>
                                         {activeConv.name ? activeConv.name[0] : '?'}
                                     </div>

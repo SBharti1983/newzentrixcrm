@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { PageLoader } from './Feedback';
 import { leadsApi } from '../api/client';
 import { dialerEvents } from '../constants/events';
-import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight } from 'lucide-react';
+import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight, RotateCw } from 'lucide-react';
 import { usePresence } from '../context/PresenceContext';
 import { useAuth } from '../hooks/useAuth';
 

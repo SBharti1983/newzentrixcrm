@@ -179,14 +179,14 @@ export default function Pipeline() {
     if (error && !leadsRes) return <PageError message={error} onRetry={refetch} />;
 
     return (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeIn" style={{ maxWidth: '100%', overflowX: 'hidden', minHeight: 0 }}>
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 20 }}>
                 <div className="page-header-left">
                     <h1 className="page-title">Sales Pipeline</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
                         <p className="page-subtitle">Visualize and manage your lead funnel stages</p>
-                        
+
                         {/* Real-time Presence */}
                         {activeViewers.length > 0 && (
                             <div className="presence-indicator" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--slate-50)', padding: '4px 10px', borderRadius: 20, border: '1px solid var(--border-light)' }}>
@@ -227,28 +227,27 @@ export default function Pipeline() {
                 </div>
             </div>
 
-            {/* Stage Metrics Ribbon (Colorful Version) */}
-            <div className="card" style={{ padding: '3px 6px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10, 1fr)', gap: '4px', width: '100%' }}>
+            <div className="card" style={{ padding: '3px 4px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box', overflowX: 'auto' }}>
+                <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
                     {PIPELINE_STAGES.map((stage, i) => {
                         const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                         const count = byStage(stage).length;
                         const val = stageValueL(stage);
                         const Icon = sc.lucide || Target;
-                        
+
                         return (
-                            <div key={stage} style={{ 
-                                display: 'flex', alignItems: 'center', gap: 4, padding: '3px 6px', 
+                            <div key={stage} style={{
+                                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
                                 borderRadius: 8, background: sc.bg, border: `1px solid ${sc.color}15`,
-                                minWidth: 0, overflow: 'hidden'
+                                minWidth: 0, overflow: 'hidden', flex: '1 1 0'
                             }}>
                                 <div style={{ width: 22, height: 22, borderRadius: '6px', background: 'white', color: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                                     <Icon size={11} />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-                                        <span style={{ fontWeight: 800, fontSize: '0.6rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage.split(' ')[0]}</span>
-                                        <span style={{ fontWeight: 800, color: sc.color, fontSize: '0.6rem', flexShrink: 0 }}>{count}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.65rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
+                                        <span style={{ fontWeight: 800, color: sc.color, fontSize: '0.65rem', flexShrink: 0 }}>{count}</span>
                                     </div>
                                     <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: 1 }}>{fmtL(val)}</div>
                                 </div>
@@ -267,9 +266,9 @@ export default function Pipeline() {
                             type="text"
                             placeholder="Search leads by name, city, budget, project..."
                             className="form-control"
-                            style={{ 
-                                paddingLeft: 40, borderRadius: 8, border: '1px solid var(--border-light)', 
-                                background: 'var(--slate-50)', height: 36, fontSize: '0.82rem', fontWeight: 500 
+                            style={{
+                                paddingLeft: 40, borderRadius: 8, border: '1px solid var(--border-light)',
+                                background: 'var(--slate-50)', height: 36, fontSize: '0.82rem', fontWeight: 500
                             }}
                             value={searchQ}
                             onChange={(e) => setSearchQ(e.target.value)}
@@ -322,30 +321,31 @@ export default function Pipeline() {
             ══════════════════════════════════════════════════════ */}
             {/* ── Metrics View: Professional Command Layout ── */}
             {viewMode === 'metrics' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    {/* Top Row: KPIs and Funnel Chart */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1fr) 2fr', gap: 20, alignItems: 'stretch' }}>
-                        {/* KPI Grid */}
-                        <div className="grid grid-2" style={{ gap: 16 }}>
-                            {[
-                                { label: 'Pipeline Value', value: totalPipelineVal, icon: <DollarSign size={20} />, color: 'var(--navy-600)', bg: 'rgba(30,58,115,0.05)', border: 'rgba(30,58,115,0.1)' },
-                                { label: 'Active Leads', value: active, icon: <Zap size={20} />, color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.05)', border: 'rgba(6,182,212,0.1)' },
-                                { label: 'Win Rate', value: `${convRate}%`, icon: <Award size={20} />, color: 'var(--accent-emerald-dark)', bg: 'rgba(16,185,129,0.05)', border: 'rgba(16,185,129,0.1)' },
-                                { label: 'Lost Leads', value: lost, icon: <TrendingUp size={20} style={{ transform: 'rotate(90deg)' }} />, color: 'var(--accent-rose-dark)', bg: 'rgba(244,63,94,0.05)', border: 'rgba(244,63,94,0.1)' },
-                            ].map(s => (
-                                <div key={s.label} className="hover-lift" style={{ background: s.bg, borderRadius: '16px', border: `1px solid ${s.border}`, padding: '20px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                        <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>{s.icon}</div>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
-                                    </div>
-                                    <div style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--navy-800)', lineHeight: 1 }}>{s.value}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* KPI Grid Full Width Top Row */}
+                    <div className="grid grid-4" style={{ gap: 12 }}>
+                        {[
+                            { label: 'Pipeline Value', value: totalPipelineVal, icon: <DollarSign size={18} />, color: 'var(--navy-600)', bg: 'rgba(30,58,115,0.05)', border: 'rgba(30,58,115,0.1)' },
+                            { label: 'Active Leads', value: active, icon: <Zap size={18} />, color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.05)', border: 'rgba(6,182,212,0.1)' },
+                            { label: 'Win Rate', value: `${convRate}%`, icon: <Award size={18} />, color: 'var(--accent-emerald-dark)', bg: 'rgba(16,185,129,0.05)', border: 'rgba(16,185,129,0.1)' },
+                            { label: 'Lost Leads', value: lost, icon: <TrendingUp size={18} style={{ transform: 'rotate(90deg)' }} />, color: 'var(--accent-rose-dark)', bg: 'rgba(244,63,94,0.05)', border: 'rgba(244,63,94,0.1)' },
+                        ].map(s => (
+                            <div key={s.label} className="hover-lift" style={{ background: s.bg, borderRadius: '12px', border: `1px solid ${s.border}`, padding: '16px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{s.icon}</div>
+                                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
                                 </div>
-                            ))}
-                        </div>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--navy-800)', lineHeight: 1 }}>{s.value}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Funnel Chart Row */}
+                    <div>
 
                         {/* Funnel Card */}
-                        <div className="card" style={{ padding: '24px 32px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <div className="card" style={{ padding: '16px 20px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <Target size={18} className="text-primary" /> Visual Sales Funnel
                                 </h3>
@@ -354,11 +354,11 @@ export default function Pipeline() {
                                     <div style={{ textAlign: 'center' }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'center', flex: 1 }}>
-                                <div style={{ position: 'relative', height: 260 }}>
-                                    <svg width="100%" height="260" viewBox="0 0 500 320" preserveAspectRatio="xMidYMid meet">
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'stretch', flex: 1 }}>
+                                <div style={{ position: 'relative', height: '100%', minHeight: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="100%" height="250" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid meet">
                                         <defs>
-                                            <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="3" /><feOffset dx="0" dy="4" /><feComponentTransfer><feFuncA type="linear" slope="0.15" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                                            <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dx="0" dy="2" /><feComponentTransfer><feFuncA type="linear" slope="0.1" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
                                             {PIPELINE_STAGES.map((stage, i) => (
                                                 <linearGradient key={`grad-${i}`} id={`grad-side-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
                                                     <stop offset="0%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="0.85" /><stop offset="100%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="1" />
@@ -367,50 +367,60 @@ export default function Pipeline() {
                                         </defs>
                                         {PIPELINE_STAGES.map((stage, i) => {
                                             const count = byStage(stage).length;
-                                            const h = 35; const gap = 4; const y = i * (h + gap);
-                                            const topW = 420 - (i * 45); const botW = 420 - ((i + 1) * 45);
+                                            const h = 21; const gap = 3; const y = i * (h + gap);
+                                            const topW = 440 - (i * 32); const botW = 440 - ((i + 1) * 32);
                                             const x1 = (500 - topW) / 2; const x2 = x1 + topW; const x3 = (500 - botW) / 2 + botW; const x4 = (500 - botW) / 2;
                                             const points = `${x1},${y} ${x2},${y} ${x3},${y + h} ${x4},${y + h}`;
                                             return (
                                                 <g key={stage} className="funnel-segment" style={{ cursor: 'pointer' }}>
                                                     <polygon points={points} fill={`url(#grad-side-${i})`} filter="url(#fShadow)" />
-                                                    <text x="250" y={y + (h / 2) + 4} textAnchor="middle" fill="white" style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', pointerEvents: 'none' }}>{stage.split(' ')[0]} ({count})</text>
+                                                    <text x="250" y={y + (h / 2) + 3} textAnchor="middle" fill="white" style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', pointerEvents: 'none' }}>{stage} ({count})</text>
                                                 </g>
                                             );
                                         })}
                                     </svg>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {PIPELINE_STAGES.slice(0, 6).map((stage) => {
-                                        const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                                        return (
-                                            <div key={stage} style={{ padding: '8px 12px', background: 'var(--slate-50)', borderRadius: '10px', borderLeft: `3px solid ${cfg.accent}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{stage}</div>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-800)' }}>{fmtL(stageValueL(stage))}</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: cfg.accent }}>{count}</div>
-                                            </div>
-                                        );
-                                    })}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 270, overflowY: 'hidden' }}>
+                                    {(() => {
+                                        const maxCount = Math.max(1, ...PIPELINE_STAGES.map(s => byStage(s).length));
+                                        return PIPELINE_STAGES.map((stage) => {
+                                            const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
+                                            const pct = `${(count / maxCount) * 100}%`;
+                                            return (
+                                                <div key={stage} style={{ padding: '3px 8px', background: 'var(--slate-50)', borderRadius: '6px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 30px', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
+
+                                                    {/* Volume Sparkline to fill empty space */}
+                                                    <div style={{ height: '4px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
+                                                        <div style={{ width: pct, height: '100%', background: cfg.accent, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
+                                                    </div>
+
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-800)', textAlign: 'right' }}>{fmtL(stageValueL(stage))}</div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: cfg.accent, textAlign: 'right' }}>{count}</div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Bottom Row: Detailed Performance and Opportunities */}
-                    <div className="grid grid-2" style={{ gap: 24, alignItems: 'start' }}>
+                    <div className="grid grid-2" style={{ gap: 16, alignItems: 'start' }}>
                         {/* Stage Performance Table */}
                         <div className="card" style={{ padding: 0 }}>
-                            <div className="card-header" style={{ padding: '24px' }}>
-                                <div className="card-title" style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <ViewListIcon size={18} style={{ color: 'var(--navy-600)' }} /> Stage Performance
+                            <div className="card-header" style={{ padding: '12px 16px' }}>
+                                <div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <ViewListIcon size={16} style={{ color: 'var(--navy-600)' }} /> Stage Performance
                                 </div>
                             </div>
                             <div className="card-body" style={{ padding: 0 }}>
-                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.85rem' }}>
+                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.75rem' }}>
                                     <thead>
                                         <tr style={{ background: 'var(--slate-50)' }}>
                                             {['Stage', 'Leads', 'Pipeline Value', 'Avg. Score'].map(h => (
-                                                <th key={h} style={{ padding: '14px 20px', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
+                                                <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
@@ -421,10 +431,10 @@ export default function Pipeline() {
                                             const avgScore = sl.length ? Math.round(sl.reduce((a, l) => a + (parseInt(l.score) || 0), 0) / sl.length) : 0;
                                             return (
                                                 <tr key={stage} style={{ borderBottom: i === PIPELINE_STAGES.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                                    <td style={{ padding: '16px 20px' }}><div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.accent }} /><span style={{ fontWeight: 700, color: 'var(--navy-800)' }}>{stage}</span></div></td>
-                                                    <td style={{ padding: '16px 20px' }}><span style={{ fontWeight: 800, color: cfg.accent }}>{sl.length}</span></td>
-                                                    <td style={{ padding: '16px 20px', fontWeight: 700 }}>{fmtL(stageValueL(stage))}</td>
-                                                    <td style={{ padding: '16px 20px' }}>{sl.length ? <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ height: 6, width: 40, background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', width: `${avgScore}%`, background: avgScore > 80 ? 'var(--accent-emerald)' : avgScore > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div><span style={{ fontWeight: 700 }}>{avgScore}</span></div> : '—'}</td>
+                                                    <td style={{ padding: '8px 12px' }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.accent }} /><span style={{ fontWeight: 800, color: 'var(--navy-800)' }}>{stage}</span></div></td>
+                                                    <td style={{ padding: '8px 12px' }}><span style={{ fontWeight: 800, color: cfg.accent }}>{sl.length}</span></td>
+                                                    <td style={{ padding: '8px 12px', fontWeight: 800 }}>{fmtL(stageValueL(stage))}</td>
+                                                    <td style={{ padding: '8px 12px' }}>{sl.length ? <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ height: 4, width: 30, background: 'var(--slate-100)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: `${avgScore}%`, background: avgScore > 80 ? 'var(--accent-emerald)' : avgScore > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div><span style={{ fontWeight: 800, fontSize: '0.7rem' }}>{avgScore}</span></div> : '—'}</td>
                                                 </tr>
                                             );
                                         })}
@@ -435,13 +445,35 @@ export default function Pipeline() {
 
                         {/* High Value Opportunities */}
                         <div className="card" style={{ padding: 0 }}>
-                            <div className="card-header" style={{ padding: '24px' }}><div className="card-title" style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: 10 }}><Zap size={18} style={{ color: 'var(--accent-amber-dark)' }} /> High Value Opportunities</div></div>
-                            <div className="card-body" style={{ padding: '0 24px 24px' }}>
-                                {[...leads].sort((a, b) => parseBudgetL(b.budget) - parseBudgetL(a.budget)).slice(0, 6).map((l, i) => (
-                                    <div key={l.id} onClick={() => setSelectedLead(l)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px', border: '1px solid var(--border-light)', borderRadius: '12px', marginBottom: '10px', cursor: 'pointer', background: i === 0 ? 'rgba(245,158,11,0.03)' : 'white' }}>
-                                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: `hsl(${l.id * 47 % 360},60%,55%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'white' }}>{l.name[0]}</div>
-                                        <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>{l.name}</div><div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{l.city}</div></div>
-                                        <div style={{ textAlign: 'right' }}><div style={{ fontWeight: 900, color: 'var(--navy-600)', fontSize: '0.95rem' }}>{l.budget}</div><div style={{ fontSize: '0.65rem', fontWeight: 700, color: STAGE_CONFIG[l.stage]?.color }}>{l.stage}</div></div>
+                            <div className="card-header" style={{ padding: '12px 16px' }}><div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={16} style={{ color: 'var(--accent-amber-dark)' }} /> High Value Opportunities</div></div>
+                            <div className="card-body" style={{ padding: '0 16px 12px' }}>
+                                {[...leads].sort((a, b) => parseBudgetL(b.budget) - parseBudgetL(a.budget)).slice(0, 5).map((l, i) => (
+                                    <div key={l.id} onClick={() => setSelectedLead(l)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer', background: i === 0 ? 'rgba(245,158,11,0.03)' : 'white' }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: '6px', background: `hsl(${l.id * 47 % 360},60%,55%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>{l.name[0]}</div>
+
+                                        {/* Left Column: Client Core Info */}
+                                        <div style={{ minWidth: 100, maxWidth: 140, flexShrink: 0 }}>
+                                            <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{l.city || 'Undisclosed City'}</div>
+                                        </div>
+
+                                        {/* Middle Column: Filled AI Score & Context */}
+                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderLeft: '1px dashed var(--border-light)', borderRight: '1px dashed var(--border-light)', padding: '0 10px', minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--slate-600)', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                                <Layout size={10} style={{ color: 'var(--slate-400)', flexShrink: 0 }} />
+                                                {l.project || 'General Inquiry'}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                                <div style={{ height: 4, width: 40, background: 'var(--slate-200)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: `${l.score || 0}%`, background: (l.score || 0) > 80 ? 'var(--accent-emerald)' : (l.score || 0) > 50 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div>
+                                                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--slate-500)' }}>{l.score || 0}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Right Column: Value & Funnel Position */}
+                                        <div style={{ textAlign: 'right', minWidth: 80, flexShrink: 0 }}>
+                                            <div style={{ fontWeight: 900, color: 'var(--navy-600)', fontSize: '0.8rem' }}>{l.budget}</div>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: STAGE_CONFIG[l.stage]?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px', marginLeft: 'auto' }}>{l.stage}</div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -533,7 +565,7 @@ export default function Pipeline() {
                                                         onDragStart={e => onDragStart(e, lead.id)}
                                                         onDragEnd={onDragEnd}
                                                         onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); }}
-                                                        style={{ 
+                                                        style={{
                                                             opacity: isDragging ? 0.35 : 1,
                                                             background: 'white',
                                                             borderRadius: '12px',
@@ -549,7 +581,7 @@ export default function Pipeline() {
                                                         {/* Top: Info */}
                                                         <div style={{ display: 'flex', gap: 8, minWidth: 0 }}>
                                                             <div style={{ width: 34, height: 34, borderRadius: '10px', background: avatarBg, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
-                                                                {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0,2).toUpperCase()}
+                                                                {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                             </div>
                                                             <div style={{ minWidth: 0, flex: 1 }}>
                                                                 <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{lead.name}</div>
@@ -592,7 +624,7 @@ export default function Pipeline() {
                                                 className="add-lead-btn"
                                                 style={{
                                                     width: '100%', padding: '10px', border: '1px dashed var(--border-light)',
-                                                    borderRadius: '10px', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)', 
+                                                    borderRadius: '10px', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted)',
                                                     fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                                     marginTop: 'auto', transition: 'all 0.15s'
                                                 }}
@@ -619,10 +651,10 @@ export default function Pipeline() {
                                 <thead>
                                     <tr style={{ background: 'var(--slate-50)' }}>
                                         {['Lead Details', 'Location', 'Budget', 'Stage', 'Priority', 'Agent', 'Score', ''].map((h, i) => (
-                                            <th key={i} style={{ 
-                                                padding: '16px 24px', textAlign: 'left', fontSize: '0.68rem', 
-                                                fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', 
-                                                letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)' 
+                                            <th key={i} style={{
+                                                padding: '16px 24px', textAlign: 'left', fontSize: '0.68rem',
+                                                fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase',
+                                                letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)'
                                             }}>{h}</th>
                                         ))}
                                     </tr>
@@ -632,17 +664,17 @@ export default function Pipeline() {
                                         const cfg = STAGE_CONFIG[l.stage] || DEFAULT_STAGE_CONFIG;
                                         const pc = PRIORITY_CONFIG[l.priority] || PRIORITY_CONFIG.Low;
                                         return (
-                                            <tr key={l.id} 
-                                                className="hover-lift" 
+                                            <tr key={l.id}
+                                                className="hover-lift"
                                                 onClick={() => setSelectedLead(l)}
-                                                style={{ 
-                                                    cursor: 'pointer', 
+                                                style={{
+                                                    cursor: 'pointer',
                                                     borderBottom: i === filteredLeads.length - 1 ? 'none' : '1px solid var(--border-light)',
                                                 }}>
                                                 <td style={{ padding: '16px 24px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        <div style={{ 
-                                                            width: 40, height: 40, borderRadius: '8px', 
+                                                        <div style={{
+                                                            width: 40, height: 40, borderRadius: '8px',
                                                             background: 'var(--slate-50)',
                                                             color: 'var(--navy-600)',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.95rem',
@@ -659,15 +691,15 @@ export default function Pipeline() {
                                                 <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{l.city || '—'}</td>
                                                 <td style={{ padding: '16px 24px', fontSize: '1rem', fontWeight: 900, color: 'var(--navy-800)' }}>{l.budget}</td>
                                                 <td style={{ padding: '16px 24px' }}>
-                                                    <span style={{ 
-                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem', 
+                                                    <span style={{
+                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem',
                                                         fontWeight: 700, background: cfg.bg, color: cfg.color,
                                                         border: `1px solid ${cfg.color}20`
                                                     }}>{l.stage}</span>
                                                 </td>
                                                 <td style={{ padding: '16px 24px' }}>
-                                                    <span style={{ 
-                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem', 
+                                                    <span style={{
+                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem',
                                                         fontWeight: 700, background: pc.bg, color: pc.color,
                                                         border: `1px solid ${pc.color}20`
                                                     }}>{l.priority}</span>
@@ -718,7 +750,7 @@ export default function Pipeline() {
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
                                     <div style={{
                                         width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-                                        background: `hsl(${(l.id || '0').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 360}, 60%, 55%)`,
+                                        background: `hsl(${(l.id || '0').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360}, 60%, 55%)`,
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         fontSize: '1.1rem', fontWeight: 800, color: 'white',
                                     }}>

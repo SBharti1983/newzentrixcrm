@@ -389,9 +389,7 @@ export default function Leads() {
                                                 position: isSticky ? 'sticky' : 'static',
                                                 right: isSticky ? 0 : 'auto',
                                                 zIndex: isSticky ? 30 : 1,
-                                                boxShadow: 'none',
-                                                WebkitTransform: isSticky ? 'translateZ(0)' : 'none',
-                                                transform: isSticky ? 'translateZ(0)' : 'none',
+                                                boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none',
                                                 whiteSpace: 'nowrap'
                                             }}>{h}</th>
                                         );
@@ -531,15 +529,13 @@ export default function Leads() {
                                             right: 0,
                                             background: hoveredRow === lead.id ? 'var(--slate-50)' : selectedIds.has(lead.id) ? 'var(--navy-50)' : 'white',
                                             zIndex: 30,
-                                            boxShadow: 'none',
-                                            padding: '4px 6px',
-                                            WebkitTransform: 'translateZ(0)',
-                                            transform: 'translateZ(0)'
+                                            boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
+                                            padding: '4px 6px'
                                         }}>
-                                            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-                                                <button className="btn btn-ghost btn-icon" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 28, height: 28 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
-                                                <button className="btn btn-ghost btn-icon" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 28, height: 28 }}><Edit2 size={14} /></button>
-                                                <button className="btn btn-ghost btn-icon" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 28, height: 28 }}><Trash2 size={14} /></button>
+                                            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', minWidth: '90px' }}>
+                                                <button className="btn btn-ghost" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
+                                                <button className="btn btn-ghost" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Edit2 size={14} /></button>
+                                                <button className="btn btn-ghost" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Trash2 size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
