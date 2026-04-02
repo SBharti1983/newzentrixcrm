@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Building2, User, Mail, Lock, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 import { authApi, setToken } from '../api/client';
@@ -35,6 +35,14 @@ export default function Register() {
         }
     };
 
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+
     const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
     return (
@@ -42,7 +50,7 @@ export default function Register() {
             minHeight: '100vh', width: '100%', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0e1d33 100%)',
             fontFamily: "'Inter', sans-serif",
-            padding: '40px 24px',
+            padding: isMobile ? '20px 16px' : '40px 24px',
             position: 'relative',
             overflowX: 'hidden',
         }}>
@@ -61,13 +69,14 @@ export default function Register() {
 
             <div style={{
                 display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
                 background: 'rgba(255,255,255,0.02)',
                 backdropFilter: 'blur(40px)',
-                borderRadius: '32px',
+                borderRadius: isMobile ? '24px' : '32px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 overflow: 'hidden',
                 width: '100%',
-                maxWidth: '1100px',
+                maxWidth: isMobile ? '450px' : '1100px',
                 boxShadow: '0 40px 100px rgba(0,0,0,0.5)',
                 position: 'relative',
                 zIndex: 2,
@@ -75,7 +84,7 @@ export default function Register() {
                 {/* Left Side: Registration Form */}
                 <div style={{
                     flex: '1',
-                    padding: '32px 48px',
+                    padding: isMobile ? '24px 20px' : '32px 48px',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
@@ -90,7 +99,7 @@ export default function Register() {
                             fontSize: '1.2rem', fontWeight: 800, color: '#fff',
                             boxShadow: '0 8px 16px rgba(99, 102, 241, 0.3)',
                         }}>Z</div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
+                        <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
                             Create your account
                         </h1>
                         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: 4, fontWeight: 500 }}>
@@ -109,7 +118,7 @@ export default function Register() {
                     )}
 
                     <form onSubmit={handleSubmit}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                        <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company *</label>
                                 <div style={{ position: 'relative' }}>
@@ -171,12 +180,13 @@ export default function Register() {
                 {/* Right Side: Interactive Content */}
                 <div style={{
                     flex: '1.1',
-                    padding: '40px 48px',
+                    padding: isMobile ? '32px 20px' : '40px 48px',
                     background: 'linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.08) 100%)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'center',
-                    borderLeft: '1px solid rgba(255,255,255,0.05)',
+                    borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                    borderTop: isMobile ? '1px solid rgba(255,255,255,0.05)' : 'none',
                     position: 'relative',
                 }}>
                     <div style={{ maxWidth: '400px' }}>

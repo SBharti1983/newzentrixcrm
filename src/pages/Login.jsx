@@ -155,8 +155,8 @@ const styleSheet = `
 
 export default function Login() {
     const { login, loginError, loading } = useAuth();
-    const [email, setEmail] = useState('rohan.mishra@zentrixcrm.com');
-    const [password, setPassword] = useState('Cyber@2026!');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [showPwd, setShowPwd] = useState(false);
     const [selectedRole, setSelectedRole] = useState('Admin');
     const [mounted, setMounted] = useState(false);
@@ -193,7 +193,8 @@ export default function Login() {
                 setTenantLogo(data.logo_url ? <img src={data.logo_url} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14}}/> : data.name[0]);
                 if (data.primary_color) {
                     setTenantColor(data.primary_color);
-                    setBgGradient(`linear-gradient(140deg, #050d1a 0%, ${data.primary_color}40 35%, ${data.primary_color}20 60%, #0a1628 100%)`);
+                    // For enterprise emerald branding, use a deep navy/charcoal base with emerald glow
+                    setBgGradient(`linear-gradient(145deg, #050d17 0%, ${data.primary_color}18 45%, ${data.primary_color}0a 75%, #050912 100%)`);
                 }
             }).catch(() => {
                 console.log("No specific branding for subdomain", subdomain);
@@ -370,9 +371,6 @@ export default function Login() {
                                     className={isActive ? '' : 'login-role-btn'}
                                     onClick={() => {
                                         setSelectedRole(role.name);
-                                        if (role.name === 'Admin') { setEmail('rohan.mishra@zentrixcrm.com'); setPassword('Cyber@2026!'); }
-                                        if (role.name === 'Manager') { setEmail('rohan@zentrixcrm.com'); setPassword('Admin@123'); }
-                                        if (role.name === 'Agent') { setEmail('agent@zentrix.com'); setPassword('Agent@123'); }
                                     }}
                                     style={{
                                         flex: 1, padding: '9px 4px', fontSize: '0.74rem', fontWeight: 700,

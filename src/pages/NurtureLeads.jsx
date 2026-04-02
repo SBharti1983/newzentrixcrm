@@ -68,7 +68,7 @@ export default function NurtureLeads() {
             <div className="page-header" style={{ marginBottom: 20 }}>
                 <div className="page-header-left">
                     <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <RotateCw size={24} color="#7c3aed" /> Nurture Module
+                        <RotateCw size={24} color="#7c3aed" /> Nurture Leads
                     </h1>
                     <p className="page-subtitle">Managing long-term follow-ups and re-engagement</p>
                 </div>

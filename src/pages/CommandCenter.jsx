@@ -238,14 +238,44 @@ export default function CommandCenter() {
                                     <div>
                                         <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>{activeLead.name || 'Unknown Lead'}</h3>
                                         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                                            <span style={{ fontSize: '0.72rem', background: 'var(--navy-50)', color: 'var(--navy-600)', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>{activeLead.status}</span>
-                                            <span style={{ fontSize: '0.72rem', background: 'var(--slate-50)', color: 'var(--text-muted)', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>ID: #{activeLead.id}</span>
+                                            <span style={{ 
+                                                fontSize: '0.65rem', 
+                                                background: activeLead.status === 'Won' ? '#dcfce7' : activeLead.status === 'Lost' ? '#ffe4e6' : '#e0e7ff', 
+                                                color: activeLead.status === 'Won' ? '#15803d' : activeLead.status === 'Lost' ? '#be123c' : '#4338ca', 
+                                                padding: '3px 10px', 
+                                                borderRadius: '100px', 
+                                                fontWeight: 900,
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em',
+                                                border: `1px solid ${activeLead.status === 'Won' ? '#16653420' : activeLead.status === 'Lost' ? '#9f123920' : '#4338ca20'}`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 5
+                                            }}>
+                                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                                                {activeLead.status || 'Active'}
+                                            </span>
+                                            <span style={{ 
+                                                fontSize: '0.65rem', 
+                                                background: '#f8fafc', 
+                                                color: '#64748b', 
+                                                padding: '3px 10px', 
+                                                borderRadius: '100px', 
+                                                fontWeight: 800,
+                                                border: '1px solid #e2e8f0',
+                                                fontFamily: 'monospace'
+                                            }}>
+                                                ID: {activeLead.id?.toString().slice(0, 8)}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: 10 }}>
                                     <button className="icon-btn" onClick={() => dialerEvents.call(activeLead.id, activeLead.phone, activeLead.name)} title="Call Lead">
                                         <Phone size={18} color="var(--accent-emerald)" />
+                                    </button>
+                                    <button className="icon-btn" onClick={() => window.open(`https://wa.me/${activeLead.phone?.replace(/[^0-9]/g, '')}`, '_blank')} title="WhatsApp Lead">
+                                        <MessageSquare size={18} color="#25D366" />
                                     </button>
                                     <button className="icon-btn" title="Send Email"><Mail size={18} /></button>
                                     <button className="btn btn-primary btn-sm" onClick={() => navigate(`/leads/${activeLead.id}`)}>View Profile</button>
@@ -295,7 +325,7 @@ export default function CommandCenter() {
                                         <textarea
                                             value={replyText}
                                             onChange={e => setReplyText(e.target.value)}
-                                            placeholder="Write a message or use AI to draft..."
+                                            placeholder="Write a message or use AI to draft for WhatsApp..."
                                             style={{
                                                 width: '100%', border: '1.5px solid var(--border-light)', borderRadius: '16px',
                                                 padding: '16px 50px 16px 16px', outline: 'none', resize: 'none', height: '100px',
@@ -312,7 +342,7 @@ export default function CommandCenter() {
                                                 disabled={isDrafting}
                                             >
                                                 <Sparkles size={14} style={{ marginRight: 6 }} /> 
-                                                {isDrafting ? 'Conjuring...' : 'AI Magic Draft'}
+                                                {isDrafting ? 'Conjuring...' : 'AI WhatsApp Draft'}
                                             </button>
                                         </div>
                                         <div style={{ position: 'absolute', bottom: 12, right: 12 }}>

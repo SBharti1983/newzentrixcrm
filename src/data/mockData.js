@@ -105,10 +105,13 @@ export const MONTHLY_SALES = [
 export const PIPELINE_STAGES = ['New', 'Contacted', 'Qualified (MQL)', 'Sales Qualified (SQL)', 'Won', 'Lost', 'Disqualified'];
 
 export const LEAD_SOURCES = [
-  { name: 'Website', value: 35 },
-  { name: 'Referral', value: 28 },
-  { name: 'Social Media', value: 20 },
-  { name: 'Walk-in', value: 12 },
+  { name: 'Website', value: 30 },
+  { name: 'Referral', value: 20 },
+  { name: 'Social Media', value: 15 },
+  { name: 'Walk-in', value: 10 },
+  { name: 'Magic Bricks', value: 8 },
+  { name: '99 Acres', value: 7 },
+  { name: 'Housing', value: 5 },
   { name: 'PropTech', value: 5 },
 ];
 

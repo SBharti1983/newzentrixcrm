@@ -604,13 +604,14 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
         let skippedLimit = 0;
 
         for (const row of rows) {
-            const name = row['Name'] || row['name'];
-            const phone = String(row['Phone'] || row['phone']).trim();
+            const name = row['Name'] || row['name'] || row['Lead Name'] || row['lead_name'];
+            const contactCellValue = row['Contact'] || row['contact'] || row['Phone'] || row['phone'] || row['Mobile'] || row['mobile'];
+            const phone = contactCellValue ? String(contactCellValue).trim() : '';
             const email = row['Email'] || row['email'];
             const city = row['City'] || row['city'];
             const source = row['Source'] || row['source'] || 'Import';
 
-            if (!name || !phone) continue;
+            if (!name || !phone || phone === 'undefined' || phone === '') continue;
 
             if (importedCount >= remaining) {
                 skippedLimit++;

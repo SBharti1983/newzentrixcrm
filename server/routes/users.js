@@ -35,8 +35,17 @@ router.post('/', async (req, res) => {
         `SELECT COUNT(*) FROM users WHERE tenant_id=$1 AND is_active=TRUE`, [req.tenantId]
     );
     const { rows: [tenant] } = await pool.query(`SELECT max_users FROM tenants WHERE id=$1`, [req.tenantId]);
-    if (parseInt(count.count) >= tenant.max_users)
-        return res.status(403).json({ error: `User limit reached (${tenant.max_users}). Please upgrade your plan.` });
+    
+    if (!tenant) return res.status(404).json({ error: 'Tenant record not found' });
+
+    if (parseInt(count.count) >= tenant.max_users) {
+        console.log(`[USERS] Limit reached for tenant ${req.tenantId}: ${count.count}/${tenant.max_users}`);
+        return res.status(403).json({ error: `User limit reached (${tenant.max_users}). Please upgrade your plan or contact support.` });
+    }
+
+    // Duplicate email check (scoped to tenant)
+    const { rows: [existing] } = await pool.query(`SELECT id FROM users WHERE tenant_id=$1 AND LOWER(email)=LOWER($2)`, [req.tenantId, email]);
+    if (existing) return res.status(409).json({ error: 'A team member with this email already exists in your workspace.' });
 
     const hash = await bcrypt.hash(password, 10);
     const { rows } = await pool.query(

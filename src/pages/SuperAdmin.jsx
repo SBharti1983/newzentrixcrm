@@ -220,7 +220,10 @@ export default function SuperAdmin() {
             {/* Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ background: 'rgba(10,22,40,0.4)', backdropFilter: 'blur(16px)' }}>
-                    <div className="modal animate-fadeIn" onClick={e => e.stopPropagation()} style={{ maxWidth: 840, width: '95%', background: 'white', borderRadius: '36px', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.3)' }}>
+                    <div className="modal animate-fadeIn" onClick={e => e.stopPropagation()} style={{ 
+                        maxWidth: 840, width: '95%', background: 'white', borderRadius: '36px', 
+                        overflowY: 'auto', maxHeight: '90vh', boxShadow: '0 40px 100px rgba(0,0,0,0.3)' 
+                    }}>
                         <div style={{ padding: '36px 48px', position: 'relative' }}>
                             <button onClick={() => setShowModal(false)} style={{ position: 'absolute', top: 32, right: 32, width: 44, height: 44, borderRadius: '16px', border: '1px solid #f1f5f9', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <X size={24} />

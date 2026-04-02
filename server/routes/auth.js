@@ -38,11 +38,13 @@ router.get('/tenant/:slug', async (req, res) => {
 
 // ── POST /api/auth/login ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
-    const { email, password, subdomain } = req.body;
+    let { email, password, subdomain } = req.body;
     if (!email || !password)
         return res.status(400).json({ error: 'Email and password are required' });
 
+    email = email.trim();
     try {
+        console.log(`[AUTH] Login attempt for: "${email}" (subdomain: ${subdomain})`);
         const { rows } = await pool.query(
             `SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.is_active as tenant_is_active 
              FROM users u 
@@ -52,6 +54,7 @@ router.post('/login', async (req, res) => {
         const user = rows[0];
         
         if (!user) {
+            console.log(`[AUTH] User not found: ${email}`);
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
@@ -76,6 +79,7 @@ router.post('/login', async (req, res) => {
         }
 
         const valid = await bcrypt.compare(password, user.password_hash);
+        console.log(`[AUTH] Password match for ${email}: ${valid}`);
 
         if (!valid) {
             return res.status(401).json({ error: 'Invalid email or password' });

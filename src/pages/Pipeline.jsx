@@ -99,7 +99,7 @@ export default function Pipeline() {
     const [filterSource, setFilterSource] = useState('All');
     const [filterPriority, setFilterPriority] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
-    const [viewMode, setViewMode] = useState('kanban');
+    const [viewMode, setViewMode] = useState('metrics');
     const { user: currentUser } = useAuth();
     const { viewers, trackPage } = usePresence();
 

@@ -257,7 +257,12 @@ export default function Enquiry() {
                             <div>
                                 <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 5 }}>How did you hear about us?</label>
                                 <select className="form-control" value={form.source} onChange={e => upd('source', e.target.value)}>
-                                    {['Website Enquiry', 'Google Search', 'Facebook/Instagram', 'Friend Referral', 'Newspaper/TV', 'Site Visit Directly', 'PropTech Portal'].map(s => <option key={s}>{s}</option>)}
+                                    {[
+                                        'Website Enquiry', 'Google Search', 'Facebook/Instagram', 
+                                        'Friend Referral', 'Newspaper/TV', 'Site Visit Directly', 
+                                        'PropTech Portal', '99 Acres', 'Housing', 'Magic Bricks', 
+                                        'OLX', 'NoBroker', 'Squareyards', 'Channel Partner'
+                                    ].map(s => <option key={s}>{s}</option>)}
                                 </select>
                             </div>
                             <div>

@@ -123,11 +123,11 @@ export default function Dialer() {
             onClick={() => setIsOpen(true)}
             className="hover-lift"
             style={{
-                position: 'fixed', bottom: 32, right: 32, zIndex: 9999,
-                width: 64, height: 64, borderRadius: '22px',
+                position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
+                width: 56, height: 56, borderRadius: '18px',
                 background: 'linear-gradient(135deg, #0a1628, #00122e)',
                 color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 15px 35px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
+                boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
             }}
         >
             <Smartphone size={28} />
@@ -138,7 +138,7 @@ export default function Dialer() {
     return (
         <div 
             style={{
-                position: 'fixed', bottom: 32, right: 32, zIndex: 9999,
+                position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
                 width: isMinimized ? 240 : 380, 
                 maxHeight: isMinimized ? 72 : 600,
                 background: '#0a1a2e', 
