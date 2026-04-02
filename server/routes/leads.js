@@ -26,21 +26,7 @@ router.get('/export-calls', async (req, res) => {
     }
 });
 
-// GET /api/leads/search - Global search
-router.get('/search', async (req, res) => {
-    try {
-        const { q } = req.query;
-        if (!q) return res.json([]);
-        const { rows } = await pool.query(
-            "SELECT id, name, phone, email, stage FROM leads WHERE tenant_id = $1 AND (name ILIKE $2 OR phone ILIKE $2 OR email ILIKE $2) LIMIT 10",
-            [req.tenantId, `%${q}%`]
-        );
-        res.json(rows);
-    } catch (err) {
-        console.error('Search error:', err);
-        res.status(500).json({ error: 'Search failed' });
-    }
-});
+
 
 // GET /api/leads/:id/matches - Find suggested properties
 router.get('/:id/matches', async (req, res) => {

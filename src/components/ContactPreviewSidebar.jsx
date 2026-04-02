@@ -4,7 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { PageLoader } from './Feedback';
 import { leadsApi } from '../api/client';
 import { dialerEvents } from '../constants/events';
-import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight, RotateCw } from 'lucide-react';
+import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight, RotateCw, ClipboardCheck } from 'lucide-react';
 import { usePresence } from '../context/PresenceContext';
 import { useAuth } from '../hooks/useAuth';
 
@@ -91,12 +91,12 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     onClick={() => navigate(`/leads/${contact.id}`)}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: 6,
-                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)',
-                                        color: 'white', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
+                                        background: 'white', border: '1px solid #e2e8f0',
+                                        color: '#0f172a', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
                                         cursor: 'pointer', transition: 'all 0.2s'
                                     }}
-                                    onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
-                                    onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+                                    onMouseOver={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                                    onMouseOut={(e) => { e.currentTarget.style.background = 'white'; }}
                                 >
                                     <span>Open Full Record</span>
                                     <ExternalLink size={12} />
@@ -107,14 +107,14 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
 
                         <div className="cps-body">
                             {/* ── Profile Card ── */}
-                            <div className="cps-profile-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '12px 20px 24px', gap: '16px' }}>
-                                <div className="cps-avatar" style={{ background: avatarColor, boxShadow: `0 12px 28px ${avatarColor}40`, margin: 0, width: 80, height: 80, fontSize: 32 }}>
+                            <div className="cps-profile-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0px 20px 8px', gap: '8px' }}>
+                                <div className="cps-avatar" style={{ background: avatarColor, boxShadow: `0 12px 28px ${avatarColor}40`, margin: 0, width: 60, height: 60, fontSize: 24 }}>
                                     {contact.name?.[0]?.toUpperCase() || '?'}
-                                    <div className="cps-avatar-status" style={{ right: 4, bottom: 4, width: 16, height: 16, border: '3px solid white' }} />
+                                    <div className="cps-avatar-status" style={{ right: 2, bottom: 2, width: 14, height: 14, border: '2px solid white' }} />
                                 </div>
                                 <div style={{ minWidth: 0, width: '100%' }}>
-                                    <h2 className="cps-name" style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{contact.name}</h2>
-                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+                                    <h2 className="cps-name" style={{ fontSize: '1.25rem', marginBottom: '2px' }}>{contact.name}</h2>
+                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
                                         <div className="cps-stage-badge" style={{ 
                                             background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.1)' : contact.status === 'Won' ? 'rgba(16,185,129,0.1)' : contact.status === 'Lost' ? 'rgba(244,63,94,0.1)' : 'rgba(59,130,246,0.1)',
                                             color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : contact.status === 'Lost' ? '#e11d48' : '#3b82f6',
@@ -186,10 +186,10 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                 <div className="cps-section-label">Quick Actions</div>
                                 <div className="cps-actions-grid">
                                     {[
-                                        { icon: Edit2, label: 'Note', color: '#f59e0b' },
                                         { icon: Mail, label: 'Email', color: '#3b82f6' },
                                         { icon: Phone, label: 'Call', color: '#10b981' },
                                         { icon: MessageSquare, label: 'WhatsApp', color: '#25D366' },
+                                        { icon: Edit2, label: 'Note', color: '#f59e0b' },
                                         { icon: CheckSquare, label: 'Task', color: '#6366f1' },
                                         { icon: CalendarIcon, label: 'Meeting', color: '#ef4444' }
                                     ].map(a => (
@@ -199,17 +199,25 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                             else if (a.label === 'Note' && contact.status === 'Nurture') { setActiveAction('Edit Nurture'); }
                                             else { setActiveAction(a.label); }
                                         }}>
-                                            <div className="cps-action-icon" style={{ '--ac': a.color }}><a.icon size={16} color={a.color} strokeWidth={2.5} /></div>
+                                            <div className="cps-action-icon" style={{ '--ac': a.color }}><a.icon size={14} color={a.color} strokeWidth={2.5} /></div>
                                             <span>{a.label}</span>
                                         </button>
                                     ))}
                                     <button className="cps-action-btn" onClick={() => setActiveAction('Move to Nurture')} style={{ background: 'rgba(124,58,237,0.05)' }}>
-                                        <div className="cps-action-icon" style={{ '--ac': '#7c3aed' }}><TrendingUp size={16} color="#7c3aed" strokeWidth={2.5} /></div>
+                                        <div className="cps-action-icon" style={{ '--ac': '#7c3aed' }}><TrendingUp size={14} color="#7c3aed" strokeWidth={2.5} /></div>
                                         <span style={{ color: '#7c3aed', fontWeight: 800 }}>Nurture</span>
+                                    </button>
+                                    <button className="cps-action-btn" onClick={() => setActiveAction('Visit')} style={{ background: 'rgba(245,158,11,0.05)' }}>
+                                        <div className="cps-action-icon" style={{ '--ac': '#f59e0b' }}><MapPin size={14} color="#f59e0b" strokeWidth={2.5} /></div>
+                                        <span style={{ color: '#f59e0b', fontWeight: 800 }}>Visit</span>
+                                    </button>
+                                    <button className="cps-action-btn" onClick={() => setActiveAction('Offer')} style={{ background: 'rgba(139,92,246,0.05)' }}>
+                                        <div className="cps-action-icon" style={{ '--ac': '#8b5cf6' }}><ClipboardCheck size={14} color="#8b5cf6" strokeWidth={2.5} /></div>
+                                        <span style={{ color: '#8b5cf6', fontWeight: 800 }}>Offer</span>
                                     </button>
                                     {contact.status === 'Nurture' && (
                                         <button className="cps-action-btn" onClick={() => updateStatus('Active')} style={{ background: 'rgba(16,185,129,0.05)' }}>
-                                            <div className="cps-action-icon" style={{ '--ac': '#10b981' }}><Zap size={16} color="#10b981" strokeWidth={2.5} /></div>
+                                            <div className="cps-action-icon" style={{ '--ac': '#10b981' }}><Zap size={14} color="#10b981" strokeWidth={2.5} /></div>
                                             <span style={{ color: '#10b981', fontWeight: 800 }}>Reactivate</span>
                                         </button>
                                     )}

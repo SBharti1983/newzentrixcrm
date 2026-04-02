@@ -248,7 +248,7 @@ export default function ContactDetails() {
         <div className="contact-details-layout" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
             <div className="contact-details-sidebar" style={{
-                width: 480,
+                width: 400,
                 flexShrink: 0,
                 borderRight: '1px solid var(--border-light)',
                 backgroundColor: 'white',
@@ -333,6 +333,9 @@ export default function ContactDetails() {
                             { icon: Mail, label: 'Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
                             { icon: Phone, label: 'Call', color: '#10b981', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
                             { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Edit2, label: 'Note', color: '#f59e0b', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CheckSquare, label: 'Task', color: '#6366f1', action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CalendarIcon, label: 'Meeting', color: '#ef4444', action: () => { setActivityType('Meeting'); setActiveTab('Activities'); setShowActivityBox(true); } },
                             {
                                 icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: '#7c3aed', action: () => {
                                     if (contact.status === 'Nurture') {
@@ -621,29 +624,29 @@ export default function ContactDetails() {
                             )}
                         </div>
                     ) : activeTab === 'Overview' ? (
-                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 40 }}>
                             {/* Deal Matrix Intelligence */}
-                            <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <div style={{ width: 4, height: 16, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
+                            <div style={{ padding: '6px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ width: 4, height: 12, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
                                         <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal Matrix Intelligence</h3>
                                     </div>
-                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, background: '#f8fafc', padding: '3px 10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
+                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, background: '#f8fafc', padding: '1px 8px', borderRadius: '6px', border: '1px solid #f1f5f9' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
                                     {[
                                         { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b', trend: '+4.2%' },
                                         { label: 'Source', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6' },
                                         { label: 'Last Signal', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pending', Icon: Zap, color: '#10b981' }
                                     ].map(stat => (
-                                        <div key={stat.label} style={{ background: 'linear-gradient(135deg, #f8fafc, #ffffff)', padding: '12px 10px', borderRadius: '12px', border: '1px solid #eef2f6', textAlign: 'center', position: 'relative' }}>
-                                            <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', border: `1px solid ${stat.color}15` }}>
-                                                <stat.Icon size={13} color={stat.color} />
+                                        <div key={stat.label} style={{ background: 'linear-gradient(135deg, #f8fafc, #ffffff)', padding: '5px 10px', borderRadius: '10px', border: '1px solid #eef2f6', textAlign: 'center', position: 'relative' }}>
+                                            <div style={{ width: 22, height: 22, borderRadius: '6px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2px', border: `1px solid ${stat.color}15` }}>
+                                                <stat.Icon size={11} color={stat.color} />
                                             </div>
-                                            <div style={{ fontSize: '8px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{stat.label}</div>
-                                            <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px' }}>{stat.value}</div>
-                                            {stat.trend && <div style={{ fontSize: '8px', fontWeight: 800, color: '#10b981', marginTop: 2 }}>▲ {stat.trend}</div>}
+                                            <div style={{ fontSize: '7.5px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 0 }}>{stat.label}</div>
+                                            <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px', lineHeight: 1 }}>{stat.value}</div>
+                                            {stat.trend && <div style={{ fontSize: '7px', fontWeight: 800, color: '#10b981', marginTop: 1, lineHeight: 1 }}>▲ {stat.trend}</div>}
                                         </div>
                                     ))}
                                     {/* Consult AI Specialist */}
@@ -652,69 +655,87 @@ export default function ContactDetails() {
                                         className="hover-lift"
                                         style={{
                                             background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-                                            borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
+                                            borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
                                             display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                            justifyContent: 'center', gap: 5, padding: '12px 8px',
+                                            justifyContent: 'center', gap: 2, padding: '4px 6px',
                                             boxShadow: '0 4px 16px rgba(10,22,40,0.2)',
                                             position: 'relative', overflow: 'hidden'
                                         }}
                                     >
                                         <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.5), transparent)' }} />
-                                        <Brain size={15} color="#f59e0b" />
-                                        <div style={{ fontSize: '7px', fontWeight: 900, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Consult AI</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 900, color: 'white' }}>Specialist</div>
+                                        <Brain size={13} color="#f59e0b" />
+                                        <div style={{ fontSize: '7px', fontWeight: 900, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }}>Consult AI</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 900, color: 'white', lineHeight: 1 }}>Specialist</div>
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Unified Intelligence Bar — 1 row, 2 columns */}
-                            <div style={{ borderRadius: '16px', background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 8px 32px rgba(10,22,40,0.25)', display: 'flex' }}>
-                                {/* Left: AI Strategic Window */}
-                                <div style={{ flex: 1, padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
-                                        <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Strategic Window</span>
-                                        <div style={{ fontSize: '9px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.15)', marginLeft: 'auto' }}>94.2% CONF.</div>
+                            {/* Dual Intelligence Cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                                {/* AI Strategic Window Card */}
+                                <div style={{ 
+                                    borderRadius: '12px', 
+                                    background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
+                                    border: '1px solid rgba(255,255,255,0.05)', 
+                                    boxShadow: '0 8px 32px rgba(10,22,40,0.25)', 
+                                    padding: '10px 12px', 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    justifyContent: 'center', 
+                                    gap: 6 
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
+                                        <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strategic Window</span>
+                                        <div style={{ fontSize: '8px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '1px 6px', borderRadius: '5px', border: '1px solid rgba(16,185,129,0.15)', marginLeft: 'auto' }}>94% CONF.</div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '12px', fontWeight: 900, color: 'white' }}>
-                                            <div style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>11:30 AM</div>
-                                            <span style={{ opacity: 0.3, color: 'white' }}>→</span>
-                                            <div style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>01:30 PM</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center', fontSize: '11px', fontWeight: 900, color: 'white' }}>
+                                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>11:30</div>
+                                            <span style={{ opacity: 0.3, color: 'white', fontSize: '10px' }}>→</span>
+                                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>13:30</div>
                                         </div>
-                                        <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} className="hover-lift" style={{ height: 28, padding: '0 14px', borderRadius: '8px', background: 'linear-gradient(90deg, #06b6d4, #0ea5e9)', color: 'white', fontWeight: 900, fontSize: '10px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(6,182,212,0.3)', marginLeft: 'auto' }}>Schedule</button>
+                                        <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} className="hover-lift" style={{ height: 22, padding: '0 10px', borderRadius: '6px', background: 'linear-gradient(90deg, #06b6d4, #0ea5e9)', color: 'white', fontWeight: 900, fontSize: '9px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(6,182,212,0.3)', marginLeft: 'auto' }}>Schedule</button>
                                     </div>
                                 </div>
-                                {/* Vertical Divider */}
-                                <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
-                                {/* Right: Behavioral IQ */}
-                                <div style={{ flex: 1, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Sparkles size={16} color="#f59e0b" />
+
+                                {/* Behavioral IQ Card */}
+                                <div style={{ 
+                                    borderRadius: '12px', 
+                                    background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
+                                    border: '1px solid rgba(255,255,255,0.05)', 
+                                    boxShadow: '0 8px 32px rgba(10,22,40,0.25)', 
+                                    padding: '8px 12px', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 10 
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Sparkles size={12} color="#f59e0b" />
                                         </div>
                                         <div>
-                                            <div style={{ fontSize: '8px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Behavioral IQ</div>
-                                            <div style={{ fontSize: '22px', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.5px' }}>{contact.score || 88}<span style={{ fontSize: '12px', opacity: 0.5 }}>%</span></div>
+                                            <div style={{ fontSize: '7px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
+                                            <div style={{ fontSize: '18px', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.3px' }}>{contact.score || 88}<span style={{ fontSize: '9px', opacity: 0.5 }}>%</span></div>
                                         </div>
                                     </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                        <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px', boxShadow: '0 0 12px rgba(16,185,129,0.4)' }} />
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                        <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '3px', boxShadow: '0 0 8px rgba(16,185,129,0.3)' }} />
                                         </div>
-                                        <div style={{ display: 'flex', gap: 6 }}>
+                                        <div style={{ display: 'flex', gap: 3 }}>
                                             {[
-                                                { label: 'Intent', value: 'HIGH', color: '#10b981' },
-                                                { label: 'Sentiment', value: 'POSITIVE', color: '#3b82f6' },
-                                                { label: 'Urgency', value: 'MEDIUM', color: '#f59e0b' }
+                                                { label: 'INTNT', value: 'HIGH', color: '#10b981' },
+                                                { label: 'SENT', value: 'POS', color: '#3b82f6' },
+                                                { label: 'URGE', value: 'MED', color: '#f59e0b' }
                                             ].map(m => (
-                                                <div key={m.label} style={{ flex: 1, padding: '4px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{m.label}</div>
-                                                    <div style={{ fontSize: '11px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                                                <div key={m.label} style={{ flex: 1, minWidth: 0, padding: '2px 3px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '5.5px', color: 'rgba(255,255,255,0.3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.label}</div>
+                                                    <div style={{ fontSize: '8px', fontWeight: 900, color: m.color, overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1 }}>{m.value}</div>
                                                 </div>
                                             ))}
-                                            <div style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', flexShrink: 0, letterSpacing: '0.06em' }}>
-                                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', marginRight: 6, boxShadow: '0 0 6px #10b981' }} />
+                                            <div style={{ padding: '0 5px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', fontSize: '6.5px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', flexShrink: 0, letterSpacing: '0.03em' }}>
+                                                <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#10b981', marginRight: 3, boxShadow: '0 0 4px #10b981' }} />
                                                 LIVE
                                             </div>
                                         </div>
@@ -723,7 +744,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Interest Profile + Interaction Pulse */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Interest Profile */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -781,7 +802,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Active Deals + Assigned Team */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Active Deals */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid #e8edf3', background: 'white', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -861,6 +882,7 @@ export default function ContactDetails() {
                                 }}>
                                     {[
                                         { type: 'Note', icon: Edit2, color: '#6366f1' },
+                                        { type: 'Task', icon: CheckSquare, color: '#8b5cf6' },
                                         { type: 'Email', icon: Mail, color: '#3b82f6' },
                                         { type: 'Call', icon: Phone, color: '#10b981' },
                                         { type: 'WhatsApp', icon: MessageSquare, color: '#25D366' },
@@ -988,7 +1010,7 @@ export default function ContactDetails() {
                                                 className="hover-lift"
                                                 style={{ padding: '0 16px', height: 34, borderRadius: '10px', background: 'var(--navy-900)', color: 'white', fontWeight: 800, fontSize: '12px', boxShadow: '0 4px 12px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
                                             >
-                                                Log
+                                                Log Interaction
                                             </button>
                                         </div>
                                     </div>

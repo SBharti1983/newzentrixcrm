@@ -349,9 +349,9 @@ export default function Pipeline() {
                                 <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <Target size={18} className="text-primary" /> Visual Sales Funnel
                                 </h3>
-                                <div style={{ display: 'flex', gap: 20 }}>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
-                                    <div style={{ textAlign: 'center' }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
+                                <div style={{ display: 'flex', gap: 12, paddingRight: 8 }}>
+                                    <div style={{ textAlign: 'right', width: 100 }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
+                                    <div style={{ textAlign: 'right', width: 80 }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'stretch', flex: 1 }}>
@@ -381,16 +381,23 @@ export default function Pipeline() {
                                     </svg>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 270, overflowY: 'hidden' }}>
+                                    {/* Headers for columns */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 100px 80px', gap: '12px', padding: '4px 8px', marginBottom: 2 }}>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Stage</div>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Progression</div>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Value</div>
+                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Count</div>
+                                    </div>
                                     {(() => {
                                         const maxCount = Math.max(1, ...PIPELINE_STAGES.map(s => byStage(s).length));
                                         return PIPELINE_STAGES.map((stage) => {
                                             const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                                             const pct = `${(count / maxCount) * 100}%`;
                                             return (
-                                                <div key={stage} style={{ padding: '3px 8px', background: 'var(--slate-50)', borderRadius: '6px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 30px', alignItems: 'center', gap: '8px' }}>
+                                                <div key={stage} style={{ padding: '3px 8px', background: 'var(--slate-50)', borderRadius: '6px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: '1.4fr 1fr 100px 80px', alignItems: 'center', gap: '12px' }}>
                                                     <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
 
-                                                    {/* Volume Sparkline to fill empty space */}
+                                                    {/* Volume Sparkline */}
                                                     <div style={{ height: '4px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
                                                         <div style={{ width: pct, height: '100%', background: cfg.accent, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
                                                     </div>

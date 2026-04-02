@@ -283,7 +283,7 @@ export default function Leads() {
                 </div>
                 
 
-                <div className="page-actions">
+                <div className="page-actions" style={{ marginRight: 20 }}>
                     <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImport} />
                     <button className="btn btn-secondary btn-sm" onClick={() => refetch()} title="Refresh Data">
                         <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh

@@ -205,6 +205,7 @@ app.use('/api/automation', require('./routes/automation'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/webhooks', require('./routes/webhooks'));
+app.use('/api/search', require('./routes/search'));
 
 // ─── Welcome Message ──────────────────────────────────────────────
 app.get('/', (req, res) => {
