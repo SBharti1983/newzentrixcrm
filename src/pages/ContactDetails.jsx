@@ -108,7 +108,7 @@ export default function ContactDetails() {
 
         setUploadingAudio(true);
         showToast('Uploading and transcribing audio...', 'info');
-        
+
         const formData = new FormData();
         formData.append('audio', file);
         formData.append('leadId', id); // send lead ID to tie transcript chronologically
@@ -237,7 +237,7 @@ export default function ContactDetails() {
 
 
     const PALETTE = [
-        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4', 
+        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#06b6d4',
         '#ef4444', '#6366f1', '#14b8a6', '#ec4899', '#f97316'
     ];
     const colorIndex = (contact.name || 'A').charCodeAt(0) % PALETTE.length;
@@ -247,31 +247,31 @@ export default function ContactDetails() {
     return (
         <div className="contact-details-layout" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
-            <div className="contact-details-sidebar" style={{ 
-                width: 320,
+            <div className="contact-details-sidebar" style={{
+                width: 480,
                 flexShrink: 0,
-                borderRight: '1px solid var(--border-light)', 
-                backgroundColor: 'white', 
-                display: 'flex', 
-                flexDirection: 'column', 
+                borderRight: '1px solid var(--border-light)',
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'column',
                 overflowY: 'auto',
                 boxShadow: '4px 0 24px rgba(10,22,40,0.02)',
                 zIndex: 10
             }}>
                 <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-light)', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <button onClick={() => navigate('/leads')} style={{ 
+                    <button onClick={() => navigate('/leads')} style={{
                         background: 'var(--slate-50)', border: '1px solid #e2e8f0', borderRadius: '10px',
-                        padding: '6px 12px', fontSize: '12px', color: 'var(--navy-600)', fontWeight: 800, 
-                        display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' 
+                        padding: '6px 12px', fontSize: '12px', color: 'var(--navy-600)', fontWeight: 800,
+                        display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer'
                     }}>
                         <ChevronLeft size={14} /> Back
                     </button>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <div style={{ 
-                            padding: '4px 10px', 
-                            background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.1)' : contact.status === 'Won' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)', 
-                            color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : '#3b82f6', 
-                            borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' 
+                        <div style={{
+                            padding: '4px 10px',
+                            background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.1)' : contact.status === 'Won' ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.1)',
+                            color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : '#3b82f6',
+                            borderRadius: '14px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase'
                         }}>
                             {contact.status || 'Active'}
                         </div>
@@ -305,9 +305,9 @@ export default function ContactDetails() {
                     </div>
 
                     {contact.status === 'Nurture' && (
-                        <div style={{ 
-                            margin: '0 12px 16px', padding: '14px', background: '#fdf4ff', border: '1px solid #f5d0fe', 
-                            borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: 6 
+                        <div style={{
+                            margin: '0 12px 16px', padding: '14px', background: '#fdf4ff', border: '1px solid #f5d0fe',
+                            borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: 6
                         }}>
                             <div style={{ fontSize: '10px', fontWeight: 900, color: '#a21caf', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <RotateCw size={12} /> Reconnect: {new Date(contact.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -319,10 +319,10 @@ export default function ContactDetails() {
                     )}
 
                     {/* Strategic Action Hub - HIGH DENSITY */}
-                    <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(3, 1fr)', 
-                        gap: 6, 
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        gap: 6,
                         marginBottom: 12,
                         padding: '8px',
                         background: '#f8fafc',
@@ -333,24 +333,26 @@ export default function ContactDetails() {
                             { icon: Mail, label: 'Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
                             { icon: Phone, label: 'Call', color: '#10b981', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
                             { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: '#7c3aed', action: () => { 
-                                if (contact.status === 'Nurture') {
-                                    handleUpdateStatus('Active');
-                                } else {
-                                    setActivityType('Move to Nurture');
-                                    setActiveTab('Activities');
-                                    setShowActivityBox(true);
+                            {
+                                icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: '#7c3aed', action: () => {
+                                    if (contact.status === 'Nurture') {
+                                        handleUpdateStatus('Active');
+                                    } else {
+                                        setActivityType('Move to Nurture');
+                                        setActiveTab('Activities');
+                                        setShowActivityBox(true);
+                                    }
                                 }
-                            }},
+                            },
                             { icon: MapPin, label: 'Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
                             { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) }
                         ].map(act => (
-                            <button 
-                                key={act.label} 
-                                onClick={act.action} 
-                                style={{ 
-                                    padding: '8px 0', borderRadius: '10px', background: 'white', 
-                                    border: `1.5px solid #f1f5f9`, display: 'flex', flexDirection: 'column', 
+                            <button
+                                key={act.label}
+                                onClick={act.action}
+                                style={{
+                                    padding: '8px 0', borderRadius: '10px', background: 'white',
+                                    border: `1.5px solid #f1f5f9`, display: 'flex', flexDirection: 'column',
                                     alignItems: 'center', justifyContent: 'center', gap: 3, cursor: 'pointer',
                                     transition: 'all 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                                 }}
@@ -363,10 +365,10 @@ export default function ContactDetails() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {/* Core Identity Section */}
-                        <div style={{ 
-                            padding: '14px', 
-                            borderRadius: '18px', 
-                            background: '#f8fafc', 
+                        <div style={{
+                            padding: '14px',
+                            borderRadius: '18px',
+                            background: '#f8fafc',
                             border: '1px solid #f1f5f9',
                             display: 'flex',
                             flexDirection: 'column',
@@ -376,7 +378,7 @@ export default function ContactDetails() {
                                 <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Core Identity</h3>
                                 <button style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}><Edit2 size={13} color="var(--slate-400)" /></button>
                             </div>
-                            
+
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 {[
                                     { label: 'Email Address', value: contact.email, icon: Mail, color: '#3b82f6' },
@@ -384,8 +386,8 @@ export default function ContactDetails() {
                                     { label: 'Lead Owner', value: contact.agent_name || 'Arjun Sharma', icon: UserPlus, color: '#8b5cf6' }
                                 ].map(field => (
                                     <div key={field.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                        <div style={{ 
-                                            width: 36, height: 36, borderRadius: '12px', 
+                                        <div style={{
+                                            width: 36, height: 36, borderRadius: '12px',
                                             background: 'white', border: '1px solid #eef2f6',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             boxShadow: '0 2px 6px rgba(10,22,40,0.02)'
@@ -408,15 +410,15 @@ export default function ContactDetails() {
                                     <ShieldCheck size={14} color="var(--accent-emerald)" /> Journey Milestone
                                 </div>
                                 <div style={{ position: 'relative' }}>
-                                    <button 
+                                    <button
                                         onClick={() => setShowStageMenu(!showStageMenu)}
-                                        style={{ 
-                                            width: '100%', padding: '14px 16px', borderRadius: '16px', 
-                                            background: 'white', 
-                                            color: 'var(--navy-900)', 
+                                        style={{
+                                            width: '100%', padding: '14px 16px', borderRadius: '16px',
+                                            background: 'white',
+                                            color: 'var(--navy-900)',
                                             border: '1.5px solid #f1f5f9',
-                                            fontSize: '13px', fontWeight: 900, 
-                                            textAlign: 'left', display: 'flex', justifyContent: 'space-between', 
+                                            fontSize: '13px', fontWeight: 900,
+                                            textAlign: 'left', display: 'flex', justifyContent: 'space-between',
                                             alignItems: 'center', cursor: 'pointer', transition: 'all 0.2s',
                                             boxShadow: '0 4px 12px rgba(10,22,40,0.02)'
                                         }}
@@ -442,10 +444,10 @@ export default function ContactDetails() {
                         </div>
 
                         {/* Inventory Pulse */}
-                        <div style={{ 
-                            padding: '24px', 
-                            borderRadius: '28px', 
-                            background: 'white', 
+                        <div style={{
+                            padding: '24px',
+                            borderRadius: '28px',
+                            background: 'white',
                             border: '1px solid #f1f5f9',
                             boxShadow: '0 10px 24px rgba(10,22,40,0.03)'
                         }}>
@@ -453,20 +455,20 @@ export default function ContactDetails() {
                                 <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Strategic Interest</h3>
                                 <Sparkles size={14} color="#f59e0b" />
                             </div>
-                            <div className="hover-lift" style={{ 
-                                background: 'linear-gradient(135deg, #f8fafc, #ffffff)', 
-                                padding: '16px', borderRadius: '20px', 
-                                border: '1.5px solid #f1f5f9', 
-                                display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' 
+                            <div className="hover-lift" style={{
+                                background: 'linear-gradient(135deg, #f8fafc, #ffffff)',
+                                padding: '16px', borderRadius: '20px',
+                                border: '1.5px solid #f1f5f9',
+                                display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer'
                             }}>
-                                <div style={{ 
-                                    width: 48, height: 48, borderRadius: '14px', 
-                                    background: 'var(--navy-900)', color: 'white', 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                    fontWeight: 900, fontSize: '12px', flexShrink: 0, 
-                                    boxShadow: '0 8px 16px rgba(10,22,40,0.15)' 
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: '14px',
+                                    background: 'var(--navy-900)', color: 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontWeight: 900, fontSize: '12px', flexShrink: 0,
+                                    boxShadow: '0 8px 16px rgba(10,22,40,0.15)'
                                 }}>
-                                    {contact.project_name?.slice(0,2).toUpperCase() || 'SP'}
+                                    {contact.project_name?.slice(0, 2).toUpperCase() || 'SP'}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{contact.project_name || 'Signature Park'}</div>
@@ -513,8 +515,8 @@ export default function ContactDetails() {
                     </div>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }} className="animate-fadeIn">
-                        {activeTab === 'Intelligence' ? (
-                            <div style={{ maxWidth: 840, margin: '0 auto' }}>
+                    {activeTab === 'Intelligence' ? (
+                        <div style={{ maxWidth: 840, margin: '0 auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
                                 <div>
                                     <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -547,7 +549,7 @@ export default function ContactDetails() {
                                                 94% MATCH
                                             </div>
                                         </div>
-                                        
+
                                         {/* AI INTENT HEATMAP */}
                                         <div style={{ marginTop: 32, display: 'flex', gap: 32, alignItems: 'center' }}>
                                             <div style={{ position: 'relative', width: 120, height: 120 }}>
@@ -619,61 +621,128 @@ export default function ContactDetails() {
                             )}
                         </div>
                     ) : activeTab === 'Overview' ? (
-                        <div style={{ maxWidth: 840, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {/* Deal Matrix Intelligence */}
-                            <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9', boxShadow: '0 4px 12px rgba(10,22,40,0.02)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                    <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal Matrix Intelligence</h3>
-                                    <div style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 800 }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
+                            <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div style={{ width: 4, height: 16, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal Matrix Intelligence</h3>
+                                    </div>
+                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, background: '#f8fafc', padding: '3px 10px', borderRadius: '8px', border: '1px solid #f1f5f9' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                                     {[
-                                        { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b' },
+                                        { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b', trend: '+4.2%' },
                                         { label: 'Source', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6' },
                                         { label: 'Last Signal', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pending', Icon: Zap, color: '#10b981' }
                                     ].map(stat => (
-                                        <div key={stat.label} style={{ background: '#fcfdfe', padding: '8px', borderRadius: '10px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-                                            <div style={{ width: 24, height: 24, borderRadius: '6px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 4px' }}>
-                                                <stat.Icon size={12} color={stat.color} />
+                                        <div key={stat.label} style={{ background: 'linear-gradient(135deg, #f8fafc, #ffffff)', padding: '12px 10px', borderRadius: '12px', border: '1px solid #eef2f6', textAlign: 'center', position: 'relative' }}>
+                                            <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', border: `1px solid ${stat.color}15` }}>
+                                                <stat.Icon size={13} color={stat.color} />
                                             </div>
-                                            <div style={{ fontSize: '7px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>{stat.label}</div>
-                                            <div style={{ fontSize: '13px', fontWeight: 900, color: 'var(--navy-900)' }}>{stat.value}</div>
+                                            <div style={{ fontSize: '8px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{stat.label}</div>
+                                            <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px' }}>{stat.value}</div>
+                                            {stat.trend && <div style={{ fontSize: '8px', fontWeight: 800, color: '#10b981', marginTop: 2 }}>▲ {stat.trend}</div>}
                                         </div>
                                     ))}
+                                    {/* Consult AI Specialist */}
+                                    <button
+                                        onClick={() => setActiveTab('Intelligence')}
+                                        className="hover-lift"
+                                        style={{
+                                            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                                            borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                            justifyContent: 'center', gap: 5, padding: '12px 8px',
+                                            boxShadow: '0 4px 16px rgba(10,22,40,0.2)',
+                                            position: 'relative', overflow: 'hidden'
+                                        }}
+                                    >
+                                        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.5), transparent)' }} />
+                                        <Brain size={15} color="#f59e0b" />
+                                        <div style={{ fontSize: '7px', fontWeight: 900, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Consult AI</div>
+                                        <div style={{ fontSize: '9px', fontWeight: 900, color: 'white' }}>Specialist</div>
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Outreach intelligence */}
-                            <div style={{ padding: '8px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', color: 'white' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                                    <div style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-cyan)' }}>AI STRATEGIC WINDOW</div>
-                                    <div style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-emerald)' }}>94.2% CONFIDENCE</div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '11px', fontWeight: 900 }}>
-                                        <div style={{ padding: '3px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>11:30 AM</div>
-                                        <span style={{ opacity: 0.3 }}>→</span>
-                                        <div style={{ padding: '3px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>01:30 PM</div>
+                            {/* Unified Intelligence Bar — 1 row, 2 columns */}
+                            <div style={{ borderRadius: '16px', background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 8px 32px rgba(10,22,40,0.25)', display: 'flex' }}>
+                                {/* Left: AI Strategic Window */}
+                                <div style={{ flex: 1, padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+                                        <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI Strategic Window</span>
+                                        <div style={{ fontSize: '9px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(16,185,129,0.15)', marginLeft: 'auto' }}>94.2% CONF.</div>
                                     </div>
-                                    <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} style={{ height: 24, padding: '0 10px', borderRadius: '6px', background: 'var(--accent-cyan)', color: 'var(--navy-900)', fontWeight: 900, fontSize: '9px', border: 'none', cursor: 'pointer' }}>Schedule</button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: '12px', fontWeight: 900, color: 'white' }}>
+                                            <div style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>11:30 AM</div>
+                                            <span style={{ opacity: 0.3, color: 'white' }}>→</span>
+                                            <div style={{ padding: '4px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>01:30 PM</div>
+                                        </div>
+                                        <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} className="hover-lift" style={{ height: 28, padding: '0 14px', borderRadius: '8px', background: 'linear-gradient(90deg, #06b6d4, #0ea5e9)', color: 'white', fontWeight: 900, fontSize: '10px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(6,182,212,0.3)', marginLeft: 'auto' }}>Schedule</button>
+                                    </div>
+                                </div>
+                                {/* Vertical Divider */}
+                                <div style={{ width: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+                                {/* Right: Behavioral IQ */}
+                                <div style={{ flex: 1, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                                        <div style={{ width: 36, height: 36, borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Sparkles size={16} color="#f59e0b" />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '8px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Behavioral IQ</div>
+                                            <div style={{ fontSize: '22px', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.5px' }}>{contact.score || 88}<span style={{ fontSize: '12px', opacity: 0.5 }}>%</span></div>
+                                        </div>
+                                    </div>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px', boxShadow: '0 0 12px rgba(16,185,129,0.4)' }} />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            {[
+                                                { label: 'Intent', value: 'HIGH', color: '#10b981' },
+                                                { label: 'Sentiment', value: 'POSITIVE', color: '#3b82f6' },
+                                                { label: 'Urgency', value: 'MEDIUM', color: '#f59e0b' }
+                                            ].map(m => (
+                                                <div key={m.label} style={{ flex: 1, padding: '4px 8px', background: 'rgba(255,255,255,0.04)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                                    <div style={{ fontSize: '7px', color: 'rgba(255,255,255,0.35)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{m.label}</div>
+                                                    <div style={{ fontSize: '11px', fontWeight: 900, color: m.color }}>{m.value}</div>
+                                                </div>
+                                            ))}
+                                            <div style={{ padding: '4px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', flexShrink: 0, letterSpacing: '0.06em' }}>
+                                                <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', marginRight: 6, boxShadow: '0 0 6px #10b981' }} />
+                                                LIVE
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            {/* Interest Profile + Interaction Pulse */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                 {/* Interest Profile */}
-                                <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9' }}>
-                                    <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 8, textTransform: 'uppercase' }}>Interest Profile</h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                        <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#3b82f6' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interest Profile</h3>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {[
-                                            { label: 'Type', value: contact.property_type || 'Residential', Icon: Home, color: '#3b82f6' },
-                                            { label: 'Budget', value: `₹${contact.budget || '1.1Cr'}`, Icon: DollarSign, color: '#10b981' },
+                                            { label: 'Property Type', value: contact.property_type || 'Residential', Icon: Home, color: '#3b82f6' },
+                                            { label: 'Budget Range', value: `₹${contact.budget || '1.1Cr'}`, Icon: DollarSign, color: '#10b981' },
                                             { label: 'Project', value: contact.project_name || 'Signature', Icon: Target, color: '#f59e0b' }
                                         ].map(prop => (
-                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
-                                                <prop.Icon size={12} color={prop.color} />
+                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${prop.color}08`, border: `1px solid ${prop.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                    <prop.Icon size={13} color={prop.color} />
+                                                </div>
                                                 <div style={{ minWidth: 0 }}>
-                                                    <div style={{ fontSize: '7px', color: 'var(--slate-400)', fontWeight: 800 }}>{prop.label}</div>
-                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
+                                                    <div style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{prop.label}</div>
+                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
                                                 </div>
                                             </div>
                                         ))}
@@ -681,20 +750,91 @@ export default function ContactDetails() {
                                 </div>
 
                                 {/* Interaction Pulse */}
-                                <div style={{ padding: '10px 14px', borderRadius: '14px', background: 'white', border: '1px solid #f1f5f9' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                                        <h3 style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase' }}>Interaction Pulse</h3>
-                                        <ArrowRight size={12} color="#3b82f6" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('Activities')} />
+                                <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#8b5cf6' }} />
+                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interaction Pulse</h3>
+                                        </div>
+                                        <button onClick={() => setActiveTab('Activities')} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '9px', fontWeight: 800, color: '#3b82f6', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer' }}>
+                                            View all <ArrowRight size={10} />
+                                        </button>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        {interactions.slice(0, 3).map((item, idx) => {
+                                            const typeColor = item.type === 'Call' ? '#10b981' : item.type === 'Email' ? '#3b82f6' : item.type === 'WhatsApp' ? '#25D366' : '#f59e0b';
+                                            return (
+                                                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: typeColor, marginTop: 5, flexShrink: 0, boxShadow: `0 0 6px ${typeColor}40` }} />
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+                                                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
+                                                            <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{new Date(item.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
+                                                        </div>
+                                                        <div style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{item.note || 'Interaction logged.'}</div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Active Deals + Assigned Team */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                {/* Active Deals */}
+                                <div style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid #e8edf3', background: 'white', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#10b981' }} />
+                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Active Deals</h3>
+                                        </div>
+                                        <div style={{ fontSize: '9px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '3px 8px', borderRadius: '6px' }}>₹1.195 Cr</div>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {interactions.slice(0, 3).map((item, idx) => (
-                                            <div key={idx} style={{ position: 'relative', paddingLeft: 14 }}>
-                                                <div style={{ position: 'absolute', left: 0, top: 4, width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-violet)' }} />
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1 }}>
-                                                    <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
-                                                    <div style={{ fontSize: '8px', color: 'var(--slate-400)' }}>{new Date(item.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
+                                        {[
+                                            { name: 'Unit B-402', val: '₹1.15 Cr', tag: 'Booked', tagColor: '#10b981' },
+                                            { name: 'Parking P12', val: '₹4.5 L', tag: 'Confirmed', tagColor: '#3b82f6' }
+                                        ].map((it, idx) => (
+                                            <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
+                                                    <div style={{ display: 'inline-flex', marginTop: 3, fontSize: '8px', fontWeight: 800, color: it.tagColor, background: `${it.tagColor}10`, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>{it.tag}</div>
                                                 </div>
-                                                <div style={{ fontSize: '9px', color: 'var(--slate-500)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.note || 'Interaction logged.'}</div>
+                                                <div style={{ fontSize: '13px', fontWeight: 900, color: '#059669', letterSpacing: '-0.3px' }}>{it.val}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Assigned Team */}
+                                <div style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid #e8edf3', background: 'white', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                        <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#f59e0b' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assigned Team</h3>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {[
+                                            { name: 'Siddharth M.', role: 'Senior Manager', initial: 'SM', color: '#3b82f6', online: true },
+                                            { name: 'Priya Singh', role: 'Sales Executive', initial: 'PS', color: '#f59e0b', online: false }
+                                        ].map((it, idx) => (
+                                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: `${it.color}12`, color: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '10px', border: `1.5px solid ${it.color}20` }}>{it.initial}</div>
+                                                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: it.online ? '#10b981' : '#94a3b8', border: '2px solid #f8fafc' }} />
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
+                                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{it.role}</div>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                        <Phone size={12} color="var(--slate-400)" />
+                                                    </div>
+                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                        <Mail size={12} color="var(--slate-400)" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -703,16 +843,16 @@ export default function ContactDetails() {
                         </div>
                     ) : activeTab === 'Activities' ? (
                         <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
-                            <div style={{ 
-                                padding: '16px', 
-                                borderRadius: '20px', 
-                                background: 'white', 
+                            <div style={{
+                                padding: '16px',
+                                borderRadius: '20px',
+                                background: 'white',
                                 border: '1px solid #f1f5f9',
                                 boxShadow: '0 4px 12px rgba(10,22,40,0.02)'
                             }}>
-                                <div style={{ 
-                                    display: 'flex', 
-                                    gap: 3, 
+                                <div style={{
+                                    display: 'flex',
+                                    gap: 3,
                                     marginBottom: 16,
                                     background: '#f8fafc',
                                     padding: '4px',
@@ -728,22 +868,22 @@ export default function ContactDetails() {
                                     ].map(btn => {
                                         const isActive = activityType === btn.type;
                                         return (
-                                            <button 
+                                            <button
                                                 key={btn.type}
                                                 onClick={() => { setActivityType(btn.type); setShowActivityBox(true); }}
                                                 style={{
-                                                    flex: 1, 
-                                                    padding: '8px 12px', 
-                                                    borderRadius: '10px', 
+                                                    flex: 1,
+                                                    padding: '8px 12px',
+                                                    borderRadius: '10px',
                                                     border: 'none',
                                                     background: isActive ? 'white' : 'transparent',
                                                     color: isActive ? 'var(--navy-900)' : 'var(--slate-500)',
-                                                    cursor: 'pointer', 
-                                                    display: 'flex', 
-                                                    alignItems: 'center', 
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                     justifyContent: 'center',
                                                     gap: 8,
-                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)', 
+                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                     fontWeight: 800,
                                                     boxShadow: isActive ? '0 4px 12px rgba(10,22,40,0.08)' : 'none'
                                                 }}
@@ -754,15 +894,15 @@ export default function ContactDetails() {
                                         );
                                     })}
                                 </div>
-                                
+
                                 {showActivityBox && activityType === 'Move to Nurture' && (
                                     <div className="animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                         <div style={{ display: 'flex', gap: 16 }}>
                                             <div style={{ flex: 1 }}>
                                                 <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>Nurture Reason *</label>
-                                                <select 
-                                                    className="form-control" 
-                                                    value={interactions[0]?.note || ''} 
+                                                <select
+                                                    className="form-control"
+                                                    value={interactions[0]?.note || ''}
                                                     onChange={e => setNewNote(e.target.value)}
                                                     style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
                                                 >
@@ -772,15 +912,15 @@ export default function ContactDetails() {
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <label style={{ fontSize: '11px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>Reconnect Date *</label>
-                                                <input 
-                                                    type="date" 
+                                                <input
+                                                    type="date"
                                                     className="form-control"
                                                     onChange={e => (window._tmpReconnectDate = e.target.value)}
                                                     style={{ width: '100%', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}
                                                 />
                                             </div>
                                         </div>
-                                        <button 
+                                        <button
                                             onClick={() => handleUpdateStatus('Nurture', { nurture_reason: newNote, reconnect_date: window._tmpReconnectDate })}
                                             className="btn btn-primary"
                                             style={{ width: '100%', height: 48, borderRadius: '16px', background: '#7c3aed', fontWeight: 900 }}
@@ -796,9 +936,9 @@ export default function ContactDetails() {
                                             value={newNote}
                                             onChange={e => setNewNote(e.target.value)}
                                             placeholder={`Crafting a professional ${activityType.toLowerCase()} response...`}
-                                            style={{ 
-                                                width: '100%', padding: '24px', borderRadius: '24px', 
-                                                border: '1px solid #f1f5f9', background: '#fcfdfe', 
+                                            style={{
+                                                width: '100%', padding: '24px', borderRadius: '24px',
+                                                border: '1px solid #f1f5f9', background: '#fcfdfe',
                                                 minHeight: 140, fontSize: '15px', fontWeight: 500,
                                                 outline: 'none', fontFamily: 'inherit', resize: 'vertical',
                                                 color: 'var(--navy-900)'
@@ -806,44 +946,44 @@ export default function ContactDetails() {
                                         />
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, flexWrap: 'wrap', gap: 16 }}>
                                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                <button onClick={handleVoice} className="hover-lift" style={{ 
-                                                    width: 44, height: 44, borderRadius: '14px', border: '1px solid #f1f5f9', 
-                                                    background: isListening ? '#fee2e2' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                                                <button onClick={handleVoice} className="hover-lift" style={{
+                                                    width: 44, height: 44, borderRadius: '14px', border: '1px solid #f1f5f9',
+                                                    background: isListening ? '#fee2e2' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}>
                                                     <Mic size={18} color={isListening ? '#ef4444' : 'var(--navy-600)'} />
                                                 </button>
-                                                <button onClick={handleSummarize} disabled={summarizing} className="hover-lift" style={{ 
-                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9', 
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
+                                                <button onClick={handleSummarize} disabled={summarizing} className="hover-lift" style={{
+                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9',
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                                 }}>
                                                     {summarizing ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} color="#8b5cf6" />}
                                                     AI Summarize
                                                 </button>
                                                 {['Email', 'WhatsApp'].includes(activityType) && (
-                                                    <button onClick={handleAIGenerate} disabled={generatingContent} className="hover-lift" style={{ 
-                                                        height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #e2e8f0', 
-                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
+                                                    <button onClick={handleAIGenerate} disabled={generatingContent} className="hover-lift" style={{
+                                                        height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #e2e8f0',
+                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                                     }}>
                                                         {generatingContent ? <RefreshCw size={12} className="animate-spin" /> : <Wand2 size={12} color="#8b5cf6" />}
                                                         Auto-Draft
                                                     </button>
                                                 )}
-                                                <label className="hover-lift" style={{ 
-                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9', 
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 
+                                                <label className="hover-lift" style={{
+                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9',
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
                                                 }}>
                                                     {uploadingAudio ? <RefreshCw size={12} className="animate-spin" /> : <UploadCloud size={12} color="#10b981" />}
                                                     {uploadingAudio ? 'Transcribing...' : 'Upload'}
-                                                    <input 
-                                                        type="file" 
-                                                        accept="audio/*" 
-                                                        style={{ display: 'none' }} 
-                                                        onChange={handleAudioUpload} 
+                                                    <input
+                                                        type="file"
+                                                        accept="audio/*"
+                                                        style={{ display: 'none' }}
+                                                        onChange={handleAudioUpload}
                                                         disabled={uploadingAudio}
                                                     />
                                                 </label>
                                             </div>
-                                            <button 
+                                            <button
                                                 onClick={handleAddNote}
                                                 className="hover-lift"
                                                 style={{ padding: '0 16px', height: 34, borderRadius: '10px', background: 'var(--navy-900)', color: 'white', fontWeight: 800, fontSize: '12px', boxShadow: '0 4px 12px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
@@ -858,17 +998,17 @@ export default function ContactDetails() {
                             {/* Activity Pulse Timeline */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                                 {interactions.map((item, idx) => {
-                                    const cfg = item.type === 'Call' ? { icon: Phone, color: '#10b981', bg: 'rgba(16, 185, 129, 0.05)' } : 
-                                                item.type === 'Email' ? { icon: Mail, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.05)' } :
-                                                item.type === 'WhatsApp' ? { icon: MessageSquare, color: '#25D366', bg: 'rgba(37, 211, 102, 0.05)' } :
+                                    const cfg = item.type === 'Call' ? { icon: Phone, color: '#10b981', bg: 'rgba(16, 185, 129, 0.05)' } :
+                                        item.type === 'Email' ? { icon: Mail, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.05)' } :
+                                            item.type === 'WhatsApp' ? { icon: MessageSquare, color: '#25D366', bg: 'rgba(37, 211, 102, 0.05)' } :
                                                 { icon: Edit2, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.05)' };
                                     return (
-                                        <div key={idx} style={{ 
+                                        <div key={idx} style={{
                                             padding: '28px', borderRadius: '28px', background: 'white', border: '1px solid #f1f5f9',
                                             boxShadow: '0 4px 12px rgba(10,22,40,0.01)', display: 'flex', gap: 24
                                         }}>
-                                            <div style={{ 
-                                                width: 48, height: 48, borderRadius: '16px', background: cfg.bg, 
+                                            <div style={{
+                                                width: 48, height: 48, borderRadius: '16px', background: cfg.bg,
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                                 border: `1px solid ${cfg.color}20`
                                             }}>
@@ -881,18 +1021,18 @@ export default function ContactDetails() {
                                                         <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                     </div>
                                                 </div>
-                                                
+
                                                 {item.note && item.note.includes('[Automated AI Transcript') ? (() => {
                                                     const lines = item.note.split('\n');
                                                     const headerLine = lines[0];
                                                     const sentimentMatch = headerLine.match(/Sentiment: (.*?)]/);
                                                     const sentimentBadge = sentimentMatch ? sentimentMatch[1] : null;
                                                     const transcriptLines = lines.slice(2).filter(l => l.trim().length > 0);
-                                                    
+
                                                     return (
                                                         <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px dashed #cbd5e1' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '12px' }}><Sparkles size={12}/> AI Audio Parser</div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '12px' }}><Sparkles size={12} /> AI Audio Parser</div>
                                                                 {sentimentBadge && (
                                                                     <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: sentimentBadge === 'Positive' ? '#10b981' : sentimentBadge === 'Negative' || sentimentBadge === 'Concerned' ? '#ef4444' : '#64748b', background: 'white', padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>Sentiment: {sentimentBadge}</div>
                                                                 )}
@@ -902,7 +1042,7 @@ export default function ContactDetails() {
                                                                     const isAgent = line.startsWith('Agent:');
                                                                     const text = line.replace(/^(Agent|Client):\s*/, '');
                                                                     return (
-                                                                        <div key={i} style={{ 
+                                                                        <div key={i} style={{
                                                                             alignSelf: isAgent ? 'flex-end' : 'flex-start',
                                                                             background: isAgent ? 'var(--navy-900)' : 'white',
                                                                             color: isAgent ? 'white' : 'var(--navy-900)',
@@ -939,110 +1079,17 @@ export default function ContactDetails() {
                     ) : null}
                 </div>
             </div>
-            {/* RIGHT COLUMN - Market Intelligence & Context */}
-            <div className="contact-details-right" style={{ 
-                width: 240, 
-                flexShrink: 0,
-                background: 'white', 
-                borderLeft: '1px solid #f1f5f9', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                overflowY: 'auto',
-                overflowX: 'hidden'
-            }}>
-                <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    {/* Behavioral IQ Radar */}
-                    <div style={{ 
-                        padding: '12px 14px', 
-                        borderRadius: '16px', 
-                        background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
-                        color: 'white',
-                        boxShadow: '0 8px 24px rgba(10,22,40,0.18)',
-                        position: 'relative'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Sparkles size={12} color="#f59e0b" />
-                                <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Behavioral IQ</span>
-                            </div>
-                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', fontSize: '8px', fontWeight: 900 }}>REAL-TIME</div>
-                        </div>
 
-                        <div style={{ marginBottom: 12 }}>
-                            <div style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.5px' }}>{contact.score || 88}%</div>
-                            <div style={{ fontSize: '8px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>Conversion Propensity</div>
-                            <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: 8, overflow: 'hidden' }}>
-                                <div style={{ width: `${contact.score || 88}%`, height: '100%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                            <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase' }}>INTENT</div>
-                                <div style={{ fontSize: '11px', fontWeight: 900, color: '#10b981' }}>HIGH</div>
-                            </div>
-                            <div style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: '7px', opacity: 0.6, fontWeight: 800, textTransform: 'uppercase' }}>SENTIMENT</div>
-                                <div style={{ fontSize: '11px', fontWeight: 900, color: '#3b82f6' }}>POSITIVE</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Quick Access Documents & Deals */}
-                    <div style={{ padding: '14px', borderRadius: '16px', border: '1.5px solid #f1f5f9', background: 'white' }}>
-                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Active Deals</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {[
-                                { name: 'Unit B-402', val: '₹1.15 Cr' },
-                                { name: 'Parking P12', val: '₹4.5 L' }
-                            ].map((it, idx) => (
-                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: idx === 0 ? '1px solid #f8fafc' : 'none' }}>
-                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
-                                    <div style={{ fontSize: '11px', fontWeight: 900, color: '#059669' }}>{it.val}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Assigned Team */}
-                    <div style={{ padding: '16px', borderRadius: '18px', border: '1.5px solid #f1f5f9', background: 'white' }}>
-                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned Team</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {[
-                                { name: 'Siddharth M.', role: 'Senior Manager', initial: 'SM', color: '#3b82f6' },
-                                { name: 'Priya Singh', role: 'Sales Executive', initial: 'PS', color: '#f59e0b' }
-                            ].map((it, idx) => (
-                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: `${it.color}10`, color: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '11px', border: `1px solid ${it.color}15` }}>{it.initial}</div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
-                                        <div style={{ fontSize: '10px', color: 'var(--slate-400)', fontWeight: 700 }}>{it.role}</div>
-                                    </div>
-                                    <Phone size={12} color="var(--slate-300)" style={{ cursor: 'pointer' }} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <button className="hover-lift" style={{ 
-                        width: '100%', padding: '12px', borderRadius: '14px', background: 'var(--navy-900)', color: 'white', fontWeight: 900, fontSize: '12px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, border: 'none', cursor: 'pointer',
-                        boxShadow: '0 8px 16px rgba(10,22,40,0.12)'
-                    }}>
-                        <Brain size={14} /> CONSULT AI SPECIALIST
-                    </button>
-                </div>
-            </div>
 
 
 
             {/* Stage Selector Portal */}
             {showStageMenu && (
-                <div 
+                <div
                     onClick={() => setShowStageMenu(false)}
                     style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,22,40,0.5)', backdropFilter: 'blur(12px)' }}
                 >
-                    <div 
+                    <div
                         onClick={e => e.stopPropagation()}
                         className="animate-fadeIn"
                         style={{ background: 'white', borderRadius: '28px', padding: '32px', width: 440, maxWidth: '92vw', boxShadow: '0 32px 64px rgba(0,0,0,0.25)' }}
@@ -1060,7 +1107,7 @@ export default function ContactDetails() {
                                 const StageIcon = styles.icon || CheckSquare;
                                 const isActive = contact.stage === s;
                                 return (
-                                    <button 
+                                    <button
                                         key={s}
                                         onClick={() => handleUpdateStage(s)}
                                         className="hover-lift"
@@ -1085,7 +1132,7 @@ export default function ContactDetails() {
             {showComposer && (
                 <NotificationComposer
                     onClose={() => setShowComposer(false)}
-                    onSent={() => { 
+                    onSent={() => {
                         showToast(`Intelligence Engine triggered ${composerTrigger.replace('_', ' ')} flow`, 'success');
                         loadData();
                     }}

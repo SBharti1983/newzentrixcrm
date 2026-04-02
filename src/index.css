@@ -4316,6 +4316,11 @@ tbody tr:hover {
 .contact-details-sidebar {
   width: 420px;
   flex-shrink: 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.contact-details-sidebar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 /* ─── Mobile Responsiveness ──────────────────────────────────────── */
