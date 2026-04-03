@@ -5,10 +5,13 @@ const auth = require('../middleware/auth');
 const router = express.Router();
 router.use(auth);
 
-// GET /api/users — list team members (admin/manager only)
+// GET /api/users — list team members (admin/manager/superadmin)
 router.get('/', async (req, res) => {
-    if (!['admin', 'sales_manager'].includes(req.user.role))
+    console.log(`[ACL] User ${req.user.email} (Role: ${req.user.role}) attempting to list users for tenant ${req.tenantId}`);
+    if (!['admin', 'sales_manager', 'superadmin'].includes(req.user.role)) {
+        console.warn(`[ACL] DENIED: User ${req.user.email} role '${req.user.role}' unauthorized for user list.`);
         return res.status(403).json({ error: 'Insufficient permissions' });
+    }
     const { rows } = await pool.query(
         `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at, reports_to
          FROM users WHERE tenant_id=$1 AND is_active=TRUE ORDER BY role, name`, [req.tenantId]
@@ -16,11 +19,10 @@ router.get('/', async (req, res) => {
     res.json(rows);
 });
 
-// POST /api/users — add new team member (admin/manager only)
+// POST /api/users — add new team member (admin/manager/superadmin)
 router.post('/', async (req, res) => {
-    // Admin, Sales Manager, and Team Leader can add members
-    if (!['admin', 'sales_manager', 'team_leader'].includes(req.user.role))
-        return res.status(403).json({ error: 'Admin/Manager/Team Leader only' });
+    if (!['admin', 'sales_manager', 'team_leader', 'superadmin'].includes(req.user.role))
+        return res.status(403).json({ error: 'Admin/Manager/TL/SuperAdmin only' });
 
     const { name, email, password, role, phone, department, reports_to } = req.body;
 
@@ -52,7 +54,7 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'A team member with this email already exists in your workspace.' });
 
     const hash = await bcrypt.hash(password, 10);
-    // Auto-set reports_to if not provided and creator is not admin
+    // Auto-set reports_to if not provided and creator is not admin/superadmin
     const finalReportsTo = reports_to || (['sales_manager', 'team_leader'].includes(req.user.role) ? req.user.id : null);
 
     const { rows } = await pool.query(
@@ -66,7 +68,7 @@ router.post('/', async (req, res) => {
 
 // PATCH /api/users/:id
 router.patch('/:id', async (req, res) => {
-    const isAdmin = req.user.role === 'admin';
+    const isPowerful = ['admin', 'superadmin'].includes(req.user.role);
     const id = req.params.id;
 
     // Determine target user's role first (scoped to tenant)
@@ -74,12 +76,10 @@ router.patch('/:id', async (req, res) => {
     if (!trows.length) return res.status(404).json({ error: 'User not found' });
     const targetRole = trows[0].role;
 
-    // Use String() to avoid type mismatch (JWT id is number, params id is string)
-    // Use String() to avoid type mismatch (JWT id is number, params id is string)
     const isSelf = String(req.user.id) === String(id);
     const isManagerOfTarget = req.user.role === 'sales_manager' && ['team_leader', 'agent'].includes(targetRole);
     const isTLOfTarget = req.user.role === 'team_leader' && targetRole === 'agent';
-    const canEdit = isAdmin || isSelf || isManagerOfTarget || isTLOfTarget;
+    const canEdit = isPowerful || isSelf || isManagerOfTarget || isTLOfTarget;
 
     if (!canEdit)
         return res.status(403).json({ error: 'Insufficient permissions' });
