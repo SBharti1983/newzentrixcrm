@@ -1,0 +1,15 @@
+﻿{
+    "accessToken":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNkZDAzNTY4LTJhMTctNDk1ZS1hMTk0LTUxZmY4OWU0YjAzMiIsInRlbmFudElkIjoiNmYwMjNjMGEtYTUwNS00YWU0LTk2MmEtMDM4YTk0NGQ1MDBlIiwicm9sZSI6ImFkbWluIiwibmFtZSI6IkRlbW8gQWRtaW4iLCJlbWFpbCI6ImRlbW9hZG1pbkB6ZW50cml4LmNvbSIsImF2YXRhciI6IkRBIiwiaWF0IjoxNzc1MjQ4ODY2LCJleHAiOjE3NzUzMzUyNjZ9.NOl3Jg61Y9pUlTluisT6Qpm_8B7PpMDpAU2PkwO9NN8",
+    "refreshToken":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNkZDAzNTY4LTJhMTctNDk1ZS1hMTk0LTUxZmY4OWU0YjAzMiIsImlhdCI6MTc3NTI0ODg2NiwiZXhwIjoxNzc1ODUzNjY2fQ.sY7OR09Oi7J_lf0GeVpV8SGrLi3yf-_SYaXQ5tMb3i0",
+    "user":  {
+                 "id":  "cdd03568-2a17-495e-a194-51ff89e4b032",
+                 "name":  "Demo Admin",
+                 "email":  "demoadmin@zentrix.com",
+                 "role":  "admin",
+                 "avatar":  "DA",
+                 "tenantId":  "6f023c0a-a505-4ae4-962a-038a944d500e",
+                 "tenantName":  "Maya Infratech",
+                 "tenantSlug":  "mayainfratech",
+                 "plan":  "pro"
+             }
+}

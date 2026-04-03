@@ -9,6 +9,7 @@ function signTokens(user) {
     const payload = {
         id: user.id, tenantId: user.tenant_id,
         role: user.role, name: user.name, email: user.email, avatar: user.avatar,
+        features: user.settings?.features || {},
     };
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN || '7d',
@@ -157,7 +158,7 @@ router.post('/login', async (req, res) => {
     try {
         console.log(`[AUTH] Login attempt for: "${email}" (subdomain: ${subdomain})`);
         const { rows } = await pool.query(
-            `SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.is_active as tenant_is_active 
+            `SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active 
              FROM users u 
              LEFT JOIN tenants t ON u.tenant_id = t.id 
              WHERE LOWER(u.email) = LOWER($1)`, [email]
@@ -218,6 +219,7 @@ router.post('/login', async (req, res) => {
                 role: user.role, avatar: user.avatar,
                 tenantId: user.tenant_id, tenantName: user.tenant_name,
                 tenantSlug: user.tenant_slug, plan: user.plan,
+                features: user.settings?.features || {},
             },
         });
     } catch (err) {

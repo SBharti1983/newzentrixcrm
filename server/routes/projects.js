@@ -39,72 +39,9 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// POST /api/projects
-router.post('/', async (req, res) => {
-    try {
-        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
-            return res.status(403).json({ error: 'Insufficient permissions' });
+// Note: Project CRUD (Create, Update, Delete) has been temporarily disabled/reverted per user request.
+// Only viewing is currently enabled via GET routes.
 
-        // Plan limit enforcement
-        const { rows: [tenant] } = await pool.query(`SELECT max_projects FROM tenants WHERE id=$1`, [req.tenantId]);
-        const { rows: [count] } = await pool.query(`SELECT COUNT(*) FROM projects WHERE tenant_id=$1`, [req.tenantId]);
-        if (parseInt(count.count) >= tenant.max_projects) {
-            return res.status(403).json({ error: `Project limit reached (${tenant.max_projects}). Please upgrade your plan.` });
-        }
-
-        const { name, location, description, status, total_units, available_units, price_range, possession_date, rera_number, amenities } = req.body;
-        if (!name) return res.status(400).json({ error: 'Project name is required' });
-        const { rows } = await pool.query(
-            `INSERT INTO projects (tenant_id, name, location, description, status, total_units, available_units, price_range, possession_date, rera_number, amenities)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
-            [req.tenantId, name, location || null, description || null, status || 'Active', total_units || 0, available_units || 0,
-            price_range || null, possession_date || null, rera_number || null, JSON.stringify(amenities || [])]
-        );
-        res.status(201).json(rows[0]);
-    } catch (err) {
-        console.error('POST /projects error:', err);
-        res.status(500).json({ error: 'Failed to create project' });
-    }
-});
-
-// PATCH /api/projects/:id
-router.patch('/:id', async (req, res) => {
-    try {
-        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
-            return res.status(403).json({ error: 'Insufficient permissions' });
-        const allowed = ['name', 'location', 'description', 'status', 'total_units', 'available_units', 'price_range', 'possession_date', 'rera_number', 'amenities'];
-        const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
-        if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields' });
-        const set = Object.keys(updates).map((k, i) => `${k}=$${i + 3}`).join(',');
-        const { rows } = await pool.query(
-            `UPDATE projects SET ${set} WHERE id=$1 AND tenant_id=$2 RETURNING *`,
-            [req.params.id, req.tenantId, ...Object.values(updates)]
-        );
-        if (!rows[0]) return res.status(404).json({ error: 'Project not found' });
-        res.json(rows[0]);
-    } catch (err) {
-        console.error('PATCH /projects error:', err);
-        res.status(500).json({ error: 'Failed to update project' });
-    }
-});
-
-// DELETE /api/projects/:id
-router.delete('/:id', async (req, res) => {
-    try {
-        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
-            return res.status(403).json({ error: 'Insufficient permissions' });
-
-        const { rowCount } = await pool.query(
-            "DELETE FROM projects WHERE id = $1 AND tenant_id = $2",
-            [req.params.id, req.tenantId]
-        );
-        if (rowCount === 0) return res.status(404).json({ error: 'Project not found' });
-        res.json({ message: 'Project deleted successfully' });
-    } catch (err) {
-        console.error('DELETE /projects error:', err);
-        res.status(500).json({ error: 'Failed to delete project. Ensure no units or leads are linked.' });
-    }
-});
 
 // GET /api/projects/:id/inventory
 router.get('/:id/inventory', async (req, res) => {

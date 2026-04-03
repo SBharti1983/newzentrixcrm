@@ -1,0 +1,77 @@
+﻿[dotenv@17.3.1] injecting env (10) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+node : (node:20640) 
+Warning: SECURITY WARNING: 
+The SSL modes 'prefer', 
+'require', and 'verify-ca' 
+are treated as aliases for 
+'verify-full'.
+At line:1 char:1
++ node test_api_output.js 
+2>&1 | Out-File -FilePath 
+api_test_result.txt ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo         
+     : NotSpecified: ((no  
+  de:20640) Wa... 'verif   
+ y-full'.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+In the next major version 
+(pg-connection-string 
+v3.0.0 and pg v9.0.0), 
+these modes will adopt 
+standard libpq semantics, 
+which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current 
+behavior, explicitly use 
+'sslmode=verify-full'
+- If you want libpq 
+compatibility now, use 'use
+libpqcompat=true&sslmode=re
+quire'
+
+See https://www.postgresql.
+org/docs/current/libpq-ssl.
+html for libpq SSL mode 
+definitions.
+(Use `node 
+--trace-warnings ...` to 
+show where the warning was 
+created)
+Total users: 13
+
+Sample user JSON:
+{
+  "id": "cdd03568-2a17-495e-a194-51ff89e4b032",
+  "name": "Demo Admin",
+  "email": "demoadmin@zentrix.com",
+  "role": "admin",
+  "avatar": "DA",
+  "phone": null,
+  "department": null,
+  "is_active": true,
+  "last_login_at": "2026-04-03T20:28:41.912Z",
+  "created_at": "2026-04-02T22:32:00.781Z",
+  "reports_to": null
+}
+
+All reports_to values:
+admin          Demo Admin               reports_to=null
+agent          Agent Brown              reports_to="4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df"
+agent          Agent Johnson            reports_to="48fd9313-9243-4d4f-81ab-ccd5343a844b"
+agent          Agent Kumar              reports_to="4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df"
+agent          Agent Priya              reports_to="48fd9313-9243-4d4f-81ab-ccd5343a844b"
+agent          Agent Smith              reports_to="48fd9313-9243-4d4f-81ab-ccd5343a844b"
+agent          Agent Williams           reports_to="4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df"
+agent          Monika Mishra            reports_to="48fd9313-9243-4d4f-81ab-ccd5343a844b"
+agent          Surendra                 reports_to="48fd9313-9243-4d4f-81ab-ccd5343a844b"
+sales_manager  Sales Manager Alpha      reports_to="cdd03568-2a17-495e-a194-51ff89e4b032"
+sales_manager  Sales Manager Beta       reports_to="cdd03568-2a17-495e-a194-51ff89e4b032"
+team_leader    Team Leader One          reports_to="58fac963-252c-49a0-9caf-48feaee17f47"
+team_leader    Team Leader Two          reports_to="137b7e49-ce2c-4298-bda1-c0a3fcb6b3c8"

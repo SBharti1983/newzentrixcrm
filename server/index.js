@@ -7,6 +7,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const automationService = require('./services/automationService');
 
+const isProduction = process.env.NODE_ENV === 'production';
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
@@ -192,4 +193,4 @@ server.listen(PORT, () => {
     automationService.startBackgroundWorker(io);
 });
 
-const isProduction = process.env.NODE_ENV === 'production';
+

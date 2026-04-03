@@ -1,0 +1,62 @@
+﻿[dotenv@17.3.1] injecting env (10) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+node : (node:23172) 
+Warning: SECURITY WARNING: 
+The SSL modes 'prefer', 
+'require', and 'verify-ca' 
+are treated as aliases for 
+'verify-full'.
+At line:1 char:1
++ node verify_chain.js 
+2>&1 | Out-File -FilePath 
+chain_result.txt -Enco ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: ((no  
+  de:23172) Wa... 'verif   
+ y-full'.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+In the next major version 
+(pg-connection-string 
+v3.0.0 and pg v9.0.0), 
+these modes will adopt 
+standard libpq semantics, 
+which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current 
+behavior, explicitly use 
+'sslmode=verify-full'
+- If you want libpq 
+compatibility now, use 'use
+libpqcompat=true&sslmode=re
+quire'
+
+See https://www.postgresql.
+org/docs/current/libpq-ssl.
+html for libpq SSL mode 
+definitions.
+(Use `node 
+--trace-warnings ...` to 
+show where the warning was 
+created)
+=== HIERARCHY CHAIN VERIFICATION ===
+
+admin           Demo Admin                ID:cdd03568 -> Parent:ROOT                      Children:[Sales Manager Alpha, Sales Manager Beta]
+agent           Agent Brown               ID:8e30ff10 -> Parent:Team Leader Two           Children:[]
+agent           Agent Johnson             ID:b517b601 -> Parent:Team Leader One           Children:[]
+agent           Agent Kumar               ID:e0f568e6 -> Parent:Team Leader Two           Children:[]
+agent           Agent Priya               ID:589cd2da -> Parent:Team Leader One           Children:[]
+agent           Agent Smith               ID:d796783d -> Parent:Team Leader One           Children:[]
+agent           Agent Williams            ID:cc2d5c94 -> Parent:Team Leader Two           Children:[]
+agent           Monika Mishra             ID:996996be -> Parent:Team Leader One           Children:[]
+agent           Surendra                  ID:8933df2b -> Parent:Team Leader One           Children:[]
+sales_manager   Sales Manager Alpha       ID:58fac963 -> Parent:Demo Admin                Children:[Team Leader One]
+sales_manager   Sales Manager Beta        ID:137b7e49 -> Parent:Demo Admin                Children:[Team Leader Two]
+team_leader     Team Leader One           ID:48fd9313 -> Parent:Sales Manager Alpha       Children:[Agent Johnson, Agent Priya, Agent Smith, Monika Mishra, Surendra]
+team_leader     Team Leader Two           ID:4d5a1dde -> Parent:Sales Manager Beta        Children:[Agent Brown, Agent Kumar, Agent Williams]
+
+Roots: 1, Broken Links: 0, Total: 13

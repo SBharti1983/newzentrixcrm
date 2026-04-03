@@ -14,8 +14,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(false);
 
     const login = async (email, password, subdomain) => {
-        setLoading(true);
-        setLoginError('');
+        setLoading(true); setLoginError('');
         try {
             const data = await authApi.login(email, password, subdomain);
             setToken(data.accessToken);
@@ -25,8 +24,7 @@ export function AuthProvider({ children }) {
             setLoading(false);
             return true;
         } catch (err) {
-            console.error('[AUTH] Login Exception:', err);
-            setLoginError(err.error || 'Login failed. Please check your credentials.');
+            setLoginError(err.error || 'Login failed.');
             setLoading(false);
             return false;
         }
@@ -34,12 +32,21 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         try { await authApi.logout(); } catch { /* ignore */ }
-        clearTokens();
-        setUser(null);
+        clearTokens(); setUser(null);
     };
 
     const canAccess = (path) => {
         if (!user) return false;
+        const features = user.features || {};
+        
+        // --- FEATURE GATING ---
+        if (path === '/whatsapp-marketing' && !features.whatsapp) return false;
+        if (path === '/marketing' && !features.marketing) return false;
+        if (path === '/voice-analytics' && !features.voice_telemetry) return false;
+        if (path === '/reports' && !features.custom_reports) return false;
+        if (path === '/automations' && !features.automations) return false;
+        if (path === '/lead-scoring' && !features.ai_scoring) return false;
+
         return ROLE_ACCESS[user.role]?.pages.includes(path) ?? false;
     };
 

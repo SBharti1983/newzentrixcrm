@@ -10,9 +10,9 @@ module.exports = function auth(req, res, next) {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         req.user = payload;          // { id, tenantId, role, name, email }
 
-        // --- GLOBAL OVERRIDE FOR SUPERADMIN ACCESS ---
-        // Ensure Rohan and any authorized superadmin email maps correctly
-        if (req.user.email === 'rohan.mishra@zentrixcrm.com' || req.user.role === 'Super Admin' || req.user.role === 'super admin') {
+        // --- STRICT SUPERADMIN ACCESS ---
+        const SUPER_ADMIN_EMAILS = ['rohan.mishra@zentrixcrm.com', 'arjun@zentrix.com'];
+        if (SUPER_ADMIN_EMAILS.includes(req.user.email.toLowerCase())) {
             req.user.role = 'superadmin';
         }
 

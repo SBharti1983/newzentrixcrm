@@ -32,7 +32,7 @@ router.get('/tenants', async (req, res) => {
 
 // Create a new tenant (and their admin user)
 router.post('/tenants', async (req, res) => {
-    const { name, admin_name, admin_email, admin_password, plan = 'trial', max_users = 3, max_leads = 500 } = req.body;
+    const { name, admin_name, admin_email, admin_password, plan = 'trial', max_users = 3, max_leads = 500, settings = {} } = req.body;
     
     if (!name || !admin_name || !admin_email || !admin_password) {
         return res.status(400).json({ error: 'Company name, admin name, admin email, and admin password are required' });
@@ -54,9 +54,9 @@ router.post('/tenants', async (req, res) => {
         const uniqueSlug = slugCheck.length ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
 
         const { rows: [tenant] } = await client.query(
-            `INSERT INTO tenants (name, slug, plan, max_users, max_leads, max_projects)
-             VALUES ($1, $2, $3, $4, $5, 5) RETURNING *`,
-            [name, uniqueSlug, plan, max_users, max_leads]
+            `INSERT INTO tenants (name, slug, plan, max_users, max_leads, max_projects, settings)
+             VALUES ($1, $2, $3, $4, $5, 5, $6) RETURNING *`,
+            [name, uniqueSlug, plan, max_users, max_leads, settings]
         );
 
         const hash = await require('bcryptjs').hash(admin_password, 12);
@@ -69,8 +69,6 @@ router.post('/tenants', async (req, res) => {
         );
 
         await client.query('COMMIT');
-        
-        // Return full tenant format mirroring the GET endpoint
         res.status(201).json({ ...tenant, user_count: 1, lead_count: 0 });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -83,7 +81,7 @@ router.post('/tenants', async (req, res) => {
 
 // Update full tenant details
 router.patch('/tenants/:id', async (req, res) => {
-    const { is_active, plan, name, slug, logo_url, primary_color, max_users, max_leads } = req.body;
+    const { is_active, plan, name, slug, logo_url, primary_color, max_users, max_leads, settings } = req.body;
     try {
         const updates = [];
         const values = [];
@@ -97,6 +95,7 @@ router.patch('/tenants/:id', async (req, res) => {
         if (primary_color !== undefined) { updates.push(`primary_color = $${index++}`); values.push(primary_color); }
         if (max_users !== undefined) { updates.push(`max_users = $${index++}`); values.push(max_users); }
         if (max_leads !== undefined) { updates.push(`max_leads = $${index++}`); values.push(max_leads); }
+        if (settings !== undefined) { updates.push(`settings = $${index++}`); values.push(settings); }
 
         if (updates.length > 0) {
             values.push(req.params.id);
@@ -109,18 +108,13 @@ router.patch('/tenants/:id', async (req, res) => {
     }
 });
 
-// Delete a tenant (Cascades to all data: users, leads, projects, etc.)
+// Delete a tenant
 router.delete('/tenants/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query('DELETE FROM tenants WHERE id = $1 RETURNING name', [id]);
-        
-        if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Tenant not found' });
-        }
-        
-        console.log(`[SUPERADMIN] Tenant Deleted: ${result.rows[0].name} (ID: ${id})`);
-        res.json({ success: true, message: `Tenant ${result.rows[0].name} and all associated data deleted.` });
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Tenant not found' });
+        res.json({ success: true, message: `Tenant ${result.rows[0].name} deleted.` });
     } catch (err) {
         console.error('[SUPERADMIN] Delete error:', err);
         res.status(500).json({ error: 'Failed to delete tenant.' });
@@ -132,13 +126,10 @@ router.get('/stats', async (req, res) => {
     try {
         const tenantsCount = await pool.query('SELECT COUNT(*) FROM tenants');
         const usersCount = await pool.query('SELECT COUNT(*) FROM users');
-        const leadsCount = await pool.query('SELECT COUNT(*) FROM leads');
         const revenue = await pool.query("SELECT SUM(amount) FROM subscriptions WHERE status = 'active'");
-
         res.json({
             totalTenants: parseInt(tenantsCount.rows[0].count),
             totalUsers: parseInt(usersCount.rows[0].count),
-            totalLeads: parseInt(leadsCount.rows[0].count),
             mrr: parseFloat(revenue.rows[0].sum || 0)
         });
     } catch (_err) {

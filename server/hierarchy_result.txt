@@ -1,0 +1,97 @@
+﻿[dotenv@17.3.1] injecting env (10) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+=== HIERARCHY FIX: Diagnosing current state ===
+node : (node:19116) 
+Warning: SECURITY WARNING: 
+The SSL modes 'prefer', 
+'require', and 'verify-ca' 
+are treated as aliases for 
+'verify-full'.
+At line:1 char:1
++ node 
+fix_hierarchy_final.js 
+2>&1 | Out-File -FilePath 
+hierarchy_resul ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: ((no  
+  de:19116) Wa... 'verif   
+ y-full'.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+In the next major version 
+(pg-connection-string 
+v3.0.0 and pg v9.0.0), 
+these modes will adopt 
+standard libpq semantics, 
+which have weaker security 
+guarantees.
+
+To prepare for this change:
+- If you want the current 
+behavior, explicitly use 
+'sslmode=verify-full'
+- If you want libpq 
+compatibility now, use 'use
+libpqcompat=true&sslmode=re
+quire'
+
+See https://www.postgresql.
+org/docs/current/libpq-ssl.
+html for libpq SSL mode 
+definitions.
+(Use `node 
+--trace-warnings ...` to 
+show where the warning was 
+created)
+Admin: Demo Admin ID: cdd03568-2a17-495e-a194-51ff89e4b032 Tenant: 6f023c0a-a505-4ae4-962a-038a944d500e
+
+--- BEFORE FIX ---
+  admin           Demo Admin                reports_to: NULL
+  agent           Agent Brown               reports_to: 56ecc69d-1eee-4887-a82f-6a84b369c172
+  agent           Agent Johnson             reports_to: 225020e6-e8c6-4820-b363-b3fa7be8b9c6
+  agent           Agent Kumar               reports_to: 56ecc69d-1eee-4887-a82f-6a84b369c172
+  agent           Agent Priya               reports_to: 225020e6-e8c6-4820-b363-b3fa7be8b9c6
+  agent           Agent Smith               reports_to: 225020e6-e8c6-4820-b363-b3fa7be8b9c6
+  agent           Agent Williams            reports_to: 56ecc69d-1eee-4887-a82f-6a84b369c172
+  agent           Monika Mishra             reports_to: 44c6d748-bca6-47ff-a56b-602c423e4d7e
+  agent           Surendra                  reports_to: 44c6d748-bca6-47ff-a56b-602c423e4d7e
+  sales_manager   Sales Manager Alpha       reports_to: cdd03568-2a17-495e-a194-51ff89e4b032
+  sales_manager   Sales Manager Beta        reports_to: cdd03568-2a17-495e-a194-51ff89e4b032
+  team_leader     Team Leader One           reports_to: 3be6fcdb-8de5-4a86-9451-b097a50cccdf
+  team_leader     Team Leader Two           reports_to: 7cb0b8d8-692c-45ad-8270-af7e0227859a
+
+--- Cleaning old demo seed data ---
+
+--- Creating fresh hierarchy ---
+  Created: sales_manager   Sales Manager Alpha       reports_to: cdd03568-2a17-495e-a194-51ff89e4b032
+  Created: team_leader     Team Leader One           reports_to: 58fac963-252c-49a0-9caf-48feaee17f47
+  Created: agent           Agent Smith               reports_to: 48fd9313-9243-4d4f-81ab-ccd5343a844b
+  Created: agent           Agent Johnson             reports_to: 48fd9313-9243-4d4f-81ab-ccd5343a844b
+  Created: agent           Agent Priya               reports_to: 48fd9313-9243-4d4f-81ab-ccd5343a844b
+  Created: sales_manager   Sales Manager Beta        reports_to: cdd03568-2a17-495e-a194-51ff89e4b032
+  Created: team_leader     Team Leader Two           reports_to: 137b7e49-ce2c-4298-bda1-c0a3fcb6b3c8
+  Created: agent           Agent Williams            reports_to: 4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df
+  Created: agent           Agent Brown               reports_to: 4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df
+  Created: agent           Agent Kumar               reports_to: 4d5a1dde-042d-419c-8b7f-7cd0c0f0e1df
+
+--- AFTER FIX ---
+  admin           Demo Admin                -> ROOT
+  agent           Agent Brown               -> Team Leader Two
+  agent           Agent Johnson             -> Team Leader One
+  agent           Agent Kumar               -> Team Leader Two
+  agent           Agent Priya               -> Team Leader One
+  agent           Agent Smith               -> Team Leader One
+  agent           Agent Williams            -> Team Leader Two
+  agent           Monika Mishra             -> UNKNOWN
+  agent           Surendra                  -> UNKNOWN
+  sales_manager   Sales Manager Alpha       -> Demo Admin
+  sales_manager   Sales Manager Beta        -> Demo Admin
+  team_leader     Team Leader One           -> Sales Manager Alpha
+  team_leader     Team Leader Two           -> Sales Manager Beta
+
+  Roots: 1, With parent: 12, Total: 13
+
+=== HIERARCHY FIX COMPLETE ===

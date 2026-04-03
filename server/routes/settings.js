@@ -7,7 +7,17 @@ router.use(auth);
 // GET /api/settings — get workspace settings including role permissions
 router.get('/', async (req, res) => {
     try {
-        const { rows } = await pool.query("SELECT settings FROM tenants WHERE id = $1", [req.tenantId]);
+        let targetTenantId = req.tenantId;
+        
+        // If superadmin has no tenantId, fallback to the first available tenant for management
+        if (!targetTenantId && req.user.role === 'superadmin') {
+            const firstTenant = await pool.query("SELECT id FROM tenants LIMIT 1");
+            targetTenantId = firstTenant.rows[0]?.id;
+        }
+
+        if (!targetTenantId) return res.status(404).json({ error: 'Tenant context missing' });
+
+        const { rows } = await pool.query("SELECT settings FROM tenants WHERE id = $1", [targetTenantId]);
         if (!rows[0]) return res.status(404).json({ error: 'Tenant record not found' });
         
         // Default permissions if not set in DB
@@ -36,9 +46,19 @@ router.patch('/', async (req, res) => {
         if (!['admin', 'superadmin'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
+        let targetTenantId = req.tenantId;
+
+        // If superadmin has no tenantId, fallback to the first available tenant
+        if (!targetTenantId && req.user.role === 'superadmin') {
+            const firstTenant = await pool.query("SELECT id FROM tenants LIMIT 1");
+            targetTenantId = firstTenant.rows[0]?.id;
+        }
+
+        if (!targetTenantId) return res.status(404).json({ error: 'Tenant context missing' });
+
         const { role_permissions, ...otherSettings } = req.body;
         
-        const { rows } = await pool.query("SELECT settings FROM tenants WHERE id = $1", [req.tenantId]);
+        const { rows } = await pool.query("SELECT settings FROM tenants WHERE id = $1", [targetTenantId]);
         const currentSettings = rows[0]?.settings || {};
         
         const updatedSettings = {
