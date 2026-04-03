@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../hooks/useAuth';
 import { PageLoader, PageError } from '../components/Feedback';
-import { usersApi, projectsApi } from '../api/client';
+import { usersApi, projectsApi, settingsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Check, Save, Palette, Globe } from 'lucide-react';
 
 const ROLE_LABELS = {
     superadmin: 'Super Admin',
@@ -21,72 +21,110 @@ const ROLE_BADGE = {
     agent: 'badge-emerald',
 };
 
-const ROLE_PERMISSIONS = {
-    superadmin: ['Full System Access', 'Tenant Management', 'Role Management', 'Global Analytics', 'BillingControl'],
-    admin: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 'Billing Access'],
-    sales_manager: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Assign Agents', 'Export Data'],
-    team_leader: ['View Team Dashboard', 'Manage Team Leads', 'View Analytics', 'Lead Distribution', 'Daily Tracking'],
-    agent: ['View Dashboard', 'Manage Own Leads', 'View Projects', 'Schedule Visits', 'Update Bookings'],
-};
+const ALL_AVAILABLE_PERMISSIONS = [
+    'View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 
+    'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 
+    'Billing Access', 'Full System Access', 'Tenant Management', 
+    'Role Management', 'Global Analytics', 'BillingControl',
+    'Assign Agents', 'View Team Dashboard', 'Manage Team Leads',
+    'Lead Distribution', 'Daily Tracking', 'View Own Leads', 
+    'Schedule Visits', 'Update Bookings'
+];
 
-const DEFAULT_FORM = { name: '', email: '', role: 'agent', department: 'Sales', phone: '', password: 'Zentrix@123' };
+const DEFAULT_USER_FORM = { name: '', email: '', role: 'agent', department: 'Sales', phone: '', password: 'Zentrix@123' };
+const DEFAULT_PROJECT_FORM = { name: '', location: '', status: 'Active', total_units: 0, available_units: 0, price_range: '', possession_date: '' };
 
 export default function Admin() {
     const { showToast } = useToast();
-    const { data: usersRaw, loading, error, refetch } = useApi(() => usersApi.list());
-    const { data: projectsRaw } = useApi(() => projectsApi.list());
-    const usersRawList = usersRaw || [];
-    const PROJECTS_DATA = projectsRaw || [];
     const { user: currentUser } = useAuth();
+    
+    const [tab, setTab] = useState('users');
+    const { data: usersRaw, loading: usersLoading, error: usersError, refetch: refetchUsers } = useApi(() => usersApi.list());
+    const { data: projectsRaw, loading: projectsLoading, refetch: refetchProjects } = useApi(() => projectsApi.list());
+    const { data: settingsRaw, loading: settingsLoading, refetch: refetchSettings } = useApi(() => settingsApi.get());
 
-    // Filter users based on current user role
-    const users = usersRawList.filter(u => {
-        if (currentUser.role === 'sales_manager') {
-             return u.id === currentUser.id || u.role === 'agent' || u.role === 'team_leader';
-        }
-        if (currentUser.role === 'team_leader') {
-             return u.id === currentUser.id || u.role === 'agent';
-        }
-        return true; // Superadmins and Admins see everyone
+    const users = (usersRaw || []).filter(u => {
+        if (currentUser.role === 'sales_manager') return u.id === currentUser.id || u.role === 'agent' || u.role === 'team_leader';
+        if (currentUser.role === 'team_leader') return u.id === currentUser.id || u.role === 'agent';
+        return true;
     });
 
-    const [tab, setTab] = useState('users');
-    const [showModal, setShowModal] = useState(false);
+    const [showUserModal, setShowUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [form, setForm] = useState(DEFAULT_FORM);
-    const [saving, setSaving] = useState(false);
+    const [userForm, setUserForm] = useState(DEFAULT_USER_FORM);
 
-    const openAdd = () => { setForm(DEFAULT_FORM); setEditingUser(null); setShowModal(true); };
-    const openEdit = (u) => { setForm({ ...u, new_password: '' }); setEditingUser(u.id); setShowModal(true); };
-    const save = async () => {
-        if (!form.name || !form.email) { showToast('Name and email required', 'error'); return; }
-        setSaving(true);
-        try {
-            if (editingUser) {
-                const payload = { name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone };
-                if (form.new_password) payload.new_password = form.new_password;
-                await usersApi.update(editingUser, payload);
-            } else {
-                await usersApi.create({ name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone, password: form.password || 'Zentrix@123' });
-            }
-            showToast(editingUser ? 'User updated!' : 'User added!', 'success');
-            setShowModal(false); refetch();
-        } catch (err) { showToast(err.error || 'Failed', 'error'); } finally { setSaving(false); }
-    };
-    const deleteUser = async (id) => {
-        if (id === currentUser.id) { showToast('Cannot delete yourself', 'error'); return; }
-        if (!window.confirm('Are you sure you want to disable this user?')) return;
-        try {
-            await usersApi.update(id, { is_active: false });
-            showToast('User deactivated successfully', 'success');
-            refetch();
-        } catch (err) {
-            showToast(err?.error || err?.message || 'Failed to deactivate user', 'error');
+    const [showProjectModal, setShowProjectModal] = useState(false);
+    const [editingProject, setEditingProject] = useState(null);
+    const [projectForm, setProjectForm] = useState(DEFAULT_PROJECT_FORM);
+
+    const [localPermissions, setLocalPermissions] = useState({});
+    const [workspaceName, setWorkspaceName] = useState('');
+    const [primaryColor, setPrimaryColor] = useState('#1e3a73');
+    const [savingSettings, setSavingSettings] = useState(false);
+
+    useEffect(() => {
+        if (settingsRaw) {
+            setLocalPermissions(settingsRaw.role_permissions || {});
+            setWorkspaceName(settingsRaw.workspace_name || currentUser.tenantName || 'My Workspace');
+            setPrimaryColor(settingsRaw.primary_color || '#1e3a73');
         }
+    }, [settingsRaw, currentUser]);
+
+    // Permissions logic
+    const togglePermission = (role, perm) => {
+        setLocalPermissions(prev => {
+            const current = prev[role] || [];
+            const next = current.includes(perm) ? current.filter(p => p !== perm) : [...current, perm];
+            return { ...prev, [role]: next };
+        });
     };
 
-    if (loading) return <PageLoader />;
-    if (error) return <PageError message={error} onRetry={refetch} />;
+    const saveSettings = async () => {
+        setSavingSettings(true);
+        try {
+            await settingsApi.update({ 
+                role_permissions: localPermissions,
+                workspace_name: workspaceName,
+                primary_color: primaryColor
+            });
+            showToast('Settings updated successfully!', 'success');
+            refetchSettings();
+        } catch (err) { showToast('Failed to save settings', 'error'); }
+        finally { setSavingSettings(false); }
+    };
+
+    // User actions
+    const saveUser = async () => {
+        try {
+            if (editingUser) await usersApi.update(editingUser, userForm);
+            else await usersApi.create(userForm);
+            showToast(editingUser ? 'User updated' : 'User created', 'success');
+            setShowUserModal(false); refetchUsers();
+        } catch (err) { showToast(err.error || 'Operation failed', 'error'); }
+    };
+
+    // Project actions
+    const openAddProject = () => { setProjectForm(DEFAULT_PROJECT_FORM); setEditingProject(null); setShowProjectModal(true); };
+    const openEditProject = (p) => { setProjectForm(p); setEditingProject(p.id); setShowProjectModal(true); };
+    const saveProject = async () => {
+        try {
+            if (editingProject) await projectsApi.update(editingProject, projectForm);
+            else await projectsApi.create(projectForm);
+            showToast(editingProject ? 'Project updated' : 'Project created', 'success');
+            setShowProjectModal(false); refetchProjects();
+        } catch (err) { showToast(err.error || 'Failed to save project', 'error'); }
+    };
+    const deleteProject = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this project? All associated data will be removed.')) return;
+        try {
+            await projectsApi.delete(id);
+            showToast('Project deleted successfully', 'success');
+            refetchProjects();
+        } catch (err) { showToast(err.error || 'Delete failed', 'error'); }
+    };
+
+    if (usersLoading || projectsLoading || settingsLoading) return <PageLoader />;
+    if (usersError) return <PageError message={usersError} onRetry={refetchUsers} />;
 
     return (
         <div className="animate-fadeIn">
@@ -106,52 +144,32 @@ export default function Admin() {
                 ))}
             </div>
 
+            {/* TAB: USERS */}
             {tab === 'users' && (
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{users.length} team members</span>
-                        <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-sm font-semibold text-muted">{users.length} Team Members</span>
+                        <button className="btn btn-primary btn-sm" onClick={() => { setUserForm(DEFAULT_USER_FORM); setEditingUser(null); setShowUserModal(true); }}>
                             <Plus size={14} /> Add User
                         </button>
                     </div>
                     <div className="grid grid-2">
                         {users.map(u => (
-                            <div key={u.id} className="card" style={{ padding: '18px 20px' }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                                    <div className="avatar avatar-lg" style={{
-                                        background: `hsl(${u.id.length * 60 + 180}, 60%, 50%)`,
-                                        width: 50, height: 50, fontSize: '1rem',
-                                    }}>{u.avatar}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{u.name}</span>
-                                            {u.id === currentUser.id && (
-                                                <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>You</span>
-                                            )}
-                                        </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 8 }}>{u.email}</div>
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            <span className={`badge ${ROLE_BADGE[u.role]}`}>{ROLE_LABELS[u.role] || u.role}</span>
-                                            <span className="badge badge-slate">{u.department || 'Sales'}</span>
-                                        </div>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                                        <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEdit(u)}><Edit2 size={13} /></button>
-                                        <button
-                                            className="btn btn-ghost btn-sm btn-icon"
-                                            style={{ color: u.id === currentUser.id ? 'var(--text-muted)' : 'var(--accent-rose)' }}
-                                            onClick={() => deleteUser(u.id)}
-                                            disabled={u.id === currentUser.id}
-                                        ><Trash2 size={13} /></button>
+                            <div key={u.id} className="card p-4 flex gap-4">
+                                <div className="avatar avatar-lg" style={{ background: `hsl(${u.id.length * 40}, 50%, 50%)` }}>{u.avatar}</div>
+                                <div className="flex-1">
+                                    <h3 className="font-bold">{u.name} {u.id === currentUser.id && <span className="badge badge-emerald text-xs ml-1">You</span>}</h3>
+                                    <p className="text-xs text-muted mb-2">{u.email}</p>
+                                    <div className="flex gap-2">
+                                        <span className={`badge ${ROLE_BADGE[u.role]}`}>{ROLE_LABELS[u.role] || u.role}</span>
+                                        <span className="badge badge-slate">{u.department || 'Sales'}</span>
                                     </div>
                                 </div>
-                                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border-light)' }}>
-                                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Permissions</div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                        {(ROLE_PERMISSIONS[u.role] || []).map(p => (
-                                            <span key={p} className="badge badge-slate" style={{ fontSize: '0.65rem' }}>{p}</span>
-                                        ))}
-                                    </div>
+                                <div className="flex gap-1 h-fit">
+                                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setUserForm(u); setEditingUser(u.id); setShowUserModal(true); }}><Edit2 size={13} /></button>
+                                    <button className="btn btn-ghost btn-sm btn-icon text-rose" onClick={async () => {
+                                        if (confirm('Deactivate user?')) { await usersApi.update(u.id, { is_active: false }); refetchUsers(); }
+                                    }} disabled={u.id === currentUser.id}><Trash2 size={13} /></button>
                                 </div>
                             </div>
                         ))}
@@ -159,33 +177,35 @@ export default function Admin() {
                 </div>
             )}
 
+            {/* TAB: PROJECTS */}
             {tab === 'projects' && (
                 <div>
+                    <div className="flex justify-between items-center mb-4">
+                        <span className="text-sm font-semibold text-muted">Active Project Inventory</span>
+                        <button className="btn btn-primary btn-sm" onClick={openAddProject}><Plus size={14} /> New Project</button>
+                    </div>
                     <div className="table-wrapper">
                         <table>
                             <thead>
                                 <tr>
-                                    {['Project', 'Type', 'Location', 'Units', 'Available', 'Status', 'Completion'].map(h => <th key={h}>{h}</th>)}
+                                    {['Project', 'Location', 'Units', 'Available', 'Status', 'Possession', 'Actions'].map(h => <th key={h}>{h}</th>)}
                                 </tr>
                             </thead>
                             <tbody>
-                                {PROJECTS_DATA.map(p => (
+                                {(projectsRaw || []).map(p => (
                                     <tr key={p.id}>
+                                        <td className="font-bold">{p.name}</td>
+                                        <td>{p.location}</td>
+                                        <td>{p.total_units}</td>
+                                        <td className="text-emerald font-semibold">{p.available_units}</td>
+                                        <td><span className={`badge ${p.status === 'Active' ? 'badge-green' : 'badge-slate'}`}>{p.status}</span></td>
+                                        <td>{p.possession_date || 'TBD'}</td>
                                         <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <span style={{ fontWeight: 600 }}>{p.name}</span>
+                                            <div className="flex gap-2">
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEditProject(p)}><Edit2 size={13} /></button>
+                                                <button className="btn btn-ghost btn-sm btn-icon text-rose" onClick={() => deleteProject(p.id)}><Trash2 size={13} /></button>
                                             </div>
                                         </td>
-                                        <td><span className="badge badge-blue">{p.type}</span></td>
-                                        <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{p.location}</td>
-                                        <td style={{ fontWeight: 600 }}>{p.total_units}</td>
-                                        <td style={{ fontWeight: 600, color: 'var(--accent-emerald)' }}>{p.available_units}</td>
-                                        <td>
-                                            <span className={`badge ${p.status === 'Active' ? 'badge-green' : p.status === 'Pre-launch' ? 'badge-violet' : 'badge-slate'}`}>
-                                                {p.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ fontSize: '0.85rem' }}>{p.possession_date || 'TBD'}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -194,29 +214,130 @@ export default function Admin() {
                 </div>
             )}
 
+            {/* TAB: PERMISSIONS */}
             {tab === 'permissions' && (
-                <div className="grid grid-3">
-                    {Object.entries(ROLE_PERMISSIONS).map(([role, perms]) => (
-                        <div key={role} className="card" style={{ overflow: 'visible' }}>
-                            <div style={{
-                                background: role === 'superadmin' ? 'var(--accent-rose)' : role === 'admin' ? 'var(--accent-violet)' : 'var(--navy-600)',
-                                padding: '20px 22px', borderRadius: '16px 16px 0 0'
-                            }}>
-                                <div style={{ fontSize: '1.2rem', color: 'white', fontWeight: 800 }}>{ROLE_LABELS[role]}</div>
-                            </div>
-                            <div style={{ padding: '18px 20px' }}>
-                                {perms.map(p => (
-                                    <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border-light)' }}>
-                                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem' }}>✓</div>
-                                        <span style={{ fontSize: '0.85rem' }}>{p}</span>
-                                    </div>
-                                ))}
-                            </div>
+                <div>
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            <h2 className="font-bold text-lg">Edit Role Permissions</h2>
+                            <p className="text-xs text-muted">Customize what each role can see and do in your workspace.</p>
                         </div>
-                    ))}
+                        <button className="btn btn-emerald btn-sm" onClick={saveSettings} disabled={savingSettings}>
+                            {savingSettings ? 'Saving...' : <><Save size={14} /> Deploy Permissions</>}
+                        </button>
+                    </div>
+                    <div className="grid grid-3">
+                        {Object.keys(ROLE_LABELS).map(role => (
+                            <div key={role} className="card overflow-visible">
+                                <div className={`p-4 rounded-t-2xl text-white font-black ${ROLE_BADGE[role].replace('badge', 'bg')}`} 
+                                     style={{ backgroundColor: role === 'superadmin' ? 'var(--accent-rose)' : role === 'admin' ? 'var(--accent-violet)' : 'var(--navy-600)' }}>
+                                    {ROLE_LABELS[role]}
+                                </div>
+                                <div className="p-4 flex flex-col gap-1 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                    {ALL_AVAILABLE_PERMISSIONS.map(perm => {
+                                        const isActive = localPermissions[role]?.includes(perm);
+                                        return (
+                                            <div key={perm} className="flex items-center justify-between p-2 hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer"
+                                                 onClick={() => togglePermission(role, perm)}>
+                                                <span className={`text-xs ${isActive ? 'font-bold text-navy-900' : 'text-slate-400'}`}>{perm}</span>
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${isActive ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-300'}`}>
+                                                    {isActive ? <Check size={12} strokeWidth={4} /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
-            {/* User Modal omitted for brevity, but functional */}
+
+            {/* TAB: SETTINGS */}
+            {tab === 'settings' && (
+                <div style={{ maxWidth: 600 }}>
+                    <div className="card p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-2 bg-navy-50 text-navy-600 rounded-lg"><Settings size={20} /></div>
+                            <div>
+                                <h3 className="font-bold">Workspace Configuration</h3>
+                                <p className="text-xs text-muted">Brand and identity settings for this tenant</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="form-group">
+                                <label className="form-label flex items-center gap-2"><Globe size={14} /> Workspace Name</label>
+                                <input className="form-input" value={workspaceName} onChange={e => setWorkspaceName(e.target.value)} placeholder="e.g. Zentrix Real Estate" />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label flex items-center gap-2"><Palette size={14} /> Brand Primary Color</label>
+                                <div className="flex gap-3 items-center">
+                                    <input type="color" className="w-10 h-10 rounded cursor-pointer border-0 p-0" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} />
+                                    <input className="form-input font-mono flex-1" value={primaryColor} onChange={e => setPrimaryColor(e.target.value)} />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 border-top">
+                                <button className="btn btn-primary w-full" onClick={saveSettings} disabled={savingSettings}>
+                                    {savingSettings ? 'Saving...' : 'Save Workspace Settings'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL: PROJECT EDIT */}
+            {showProjectModal && (
+                <div className="modal-backdrop">
+                    <div className="modal-content" style={{ maxWidth: 500 }}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">{editingProject ? 'Edit Project' : 'Add Project'}</h2>
+                            <button className="btn-icon" onClick={() => setShowProjectModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="modal-body flex flex-col gap-4">
+                            <div className="form-group">
+                                <label className="form-label">Project Name</label>
+                                <input className="form-input" value={projectForm.name} onChange={e => setProjectForm({...projectForm, name: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Location</label>
+                                <input className="form-input" value={projectForm.location} onChange={e => setProjectForm({...projectForm, location: e.target.value})} />
+                            </div>
+                            <div className="grid grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Total Units</label>
+                                    <input type="number" className="form-input" value={projectForm.total_units} onChange={e => setProjectForm({...projectForm, total_units: parseInt(e.target.value) || 0})} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Available Units</label>
+                                    <input type="number" className="form-input" value={projectForm.available_units} onChange={e => setProjectForm({...projectForm, available_units: parseInt(e.target.value) || 0})} />
+                                </div>
+                            </div>
+                            <div className="grid grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <select className="form-input" value={projectForm.status} onChange={e => setProjectForm({...projectForm, status: e.target.value})}>
+                                        <option value="Active">Active</option>
+                                        <option value="Pre-launch">Pre-launch</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Possession Date</label>
+                                    <input type="date" className="form-input" value={projectForm.possession_date} onChange={e => setProjectForm({...projectForm, possession_date: e.target.value})} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setShowProjectModal(false)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={saveProject}>Save Project</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

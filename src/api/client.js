@@ -132,6 +132,7 @@ export const projectsApi = {
     get: (id) => api(`/projects/${id}`),
     create: (data) => api('/projects', { method: 'POST', body: data }),
     update: (id, data) => api(`/projects/${id}`, { method: 'PATCH', body: data }),
+    delete: (id) => api(`/projects/${id}`, { method: 'DELETE' }),
     inventory: (id, params = {}) => api(`/projects/${id}/inventory?` + new URLSearchParams(params)),
     addUnit: (id, data) => api(`/projects/${id}/inventory`, { method: 'POST', body: data }),
     updateUnit: (projectId, unitId, data) => api(`/projects/${projectId}/inventory/${unitId}`, { method: 'PATCH', body: data }),
@@ -280,6 +281,12 @@ export const superAdminApi = {
     updateTenant: (id, data) => api(`/superadmin/tenants/${id}`, { method: 'PATCH', body: data }),
     deleteTenant: (id) => api(`/superadmin/tenants/${id}`, { method: 'DELETE' }),
     getStats: () => api('/superadmin/stats'),
+};
+
+// ─── Settings ─────────────────────────────────────────────────────
+export const settingsApi = {
+    get: () => api('/settings'),
+    update: (data) => api('/settings', { method: 'PATCH', body: data }),
 };
 
 // ─── Billing ──────────────────────────────────────────────────────

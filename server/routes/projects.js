@@ -88,6 +88,24 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
+// DELETE /api/projects/:id
+router.delete('/:id', async (req, res) => {
+    try {
+        if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
+            return res.status(403).json({ error: 'Insufficient permissions' });
+
+        const { rowCount } = await pool.query(
+            "DELETE FROM projects WHERE id = $1 AND tenant_id = $2",
+            [req.params.id, req.tenantId]
+        );
+        if (rowCount === 0) return res.status(404).json({ error: 'Project not found' });
+        res.json({ message: 'Project deleted successfully' });
+    } catch (err) {
+        console.error('DELETE /projects error:', err);
+        res.status(500).json({ error: 'Failed to delete project. Ensure no units or leads are linked.' });
+    }
+});
+
 // GET /api/projects/:id/inventory
 router.get('/:id/inventory', async (req, res) => {
     try {
