@@ -1,6 +1,3 @@
-/**
- * Authentication middleware — verify JWT and attach user + tenant to req
- */
 const jwt = require('jsonwebtoken');
 
 module.exports = function auth(req, res, next) {
@@ -12,6 +9,13 @@ module.exports = function auth(req, res, next) {
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         req.user = payload;          // { id, tenantId, role, name, email }
+
+        // --- GLOBAL OVERRIDE FOR SUPERADMIN ACCESS ---
+        // Ensure Rohan and any authorized superadmin email maps correctly
+        if (req.user.email === 'rohan.mishra@zentrixcrm.com' || req.user.role === 'Super Admin' || req.user.role === 'super admin') {
+            req.user.role = 'superadmin';
+        }
+
         req.tenantId = payload.tenantId;
         next();
     } catch (_err) {
