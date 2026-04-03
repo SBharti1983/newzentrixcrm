@@ -7,10 +7,10 @@ router.use(auth);
 
 // GET /api/users — list team members (admin/manager only)
 router.get('/', async (req, res) => {
-    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
+    if (!['admin', 'sales_manager'].includes(req.user.role))
         return res.status(403).json({ error: 'Insufficient permissions' });
     const { rows } = await pool.query(
-        `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at
+        `SELECT id, name, email, role, avatar, phone, department, is_active, last_login_at, created_at, reports_to
          FROM users WHERE tenant_id=$1 AND is_active=TRUE ORDER BY role, name`, [req.tenantId]
     );
     res.json(rows);
@@ -18,14 +18,18 @@ router.get('/', async (req, res) => {
 
 // POST /api/users — add new team member (admin/manager only)
 router.post('/', async (req, res) => {
-    // Managers can add members, but only Agents
-    if (!['superadmin', 'admin', 'sales_manager'].includes(req.user.role))
-        return res.status(403).json({ error: 'Admin/Manager only' });
+    // Admin, Sales Manager, and Team Leader can add members
+    if (!['admin', 'sales_manager', 'team_leader'].includes(req.user.role))
+        return res.status(403).json({ error: 'Admin/Manager/Team Leader only' });
 
-    const { name, email, password, role, phone, department } = req.body;
+    const { name, email, password, role, phone, department, reports_to } = req.body;
 
-    if (req.user.role === 'sales_manager' && role !== 'agent') {
-        return res.status(403).json({ error: 'Managers can only add Sales Agents' });
+    // Hierarchy validation
+    if (req.user.role === 'sales_manager' && !['team_leader', 'agent'].includes(role)) {
+        return res.status(403).json({ error: 'Managers can only add Team Leaders or Agents' });
+    }
+    if (req.user.role === 'team_leader' && role !== 'agent') {
+        return res.status(403).json({ error: 'Team Leaders can only add Sales Agents' });
     }
 
     if (!name || !email || !password) return res.status(400).json({ error: 'name, email, password required' });
@@ -48,18 +52,21 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'A team member with this email already exists in your workspace.' });
 
     const hash = await bcrypt.hash(password, 10);
+    // Auto-set reports_to if not provided and creator is not admin
+    const finalReportsTo = reports_to || (['sales_manager', 'team_leader'].includes(req.user.role) ? req.user.id : null);
+
     const { rows } = await pool.query(
-        `INSERT INTO users (tenant_id, name, email, password_hash, role, phone, department, avatar)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id, name, email, role, avatar, created_at`,
+        `INSERT INTO users (tenant_id, name, email, password_hash, role, phone, department, avatar, reports_to)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, name, email, role, avatar, created_at, reports_to`,
         [req.tenantId, name, email, hash, role || 'agent', phone || null, department || null,
-        (name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2))]
+        (name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)), finalReportsTo]
     );
     res.status(201).json(rows[0]);
 });
 
 // PATCH /api/users/:id
 router.patch('/:id', async (req, res) => {
-    const isAdmin = ['superadmin', 'admin'].includes(req.user.role);
+    const isAdmin = req.user.role === 'admin';
     const id = req.params.id;
 
     // Determine target user's role first (scoped to tenant)
@@ -68,12 +75,15 @@ router.patch('/:id', async (req, res) => {
     const targetRole = trows[0].role;
 
     // Use String() to avoid type mismatch (JWT id is number, params id is string)
+    // Use String() to avoid type mismatch (JWT id is number, params id is string)
     const isSelf = String(req.user.id) === String(id);
-    const canEdit = isAdmin || isSelf || (req.user.role === 'sales_manager' && targetRole === 'agent');
+    const isManagerOfTarget = req.user.role === 'sales_manager' && ['team_leader', 'agent'].includes(targetRole);
+    const isTLOfTarget = req.user.role === 'team_leader' && targetRole === 'agent';
+    const canEdit = isAdmin || isSelf || isManagerOfTarget || isTLOfTarget;
 
     if (!canEdit)
         return res.status(403).json({ error: 'Insufficient permissions' });
-    const allowed = ['name', 'email', 'phone', 'department', 'role', 'is_active'];
+    const allowed = ['name', 'email', 'phone', 'department', 'role', 'is_active', 'reports_to'];
     const updates = Object.fromEntries(Object.entries(req.body).filter(([k]) => allowed.includes(k)));
 
     // Change password separately
@@ -85,7 +95,7 @@ router.patch('/:id', async (req, res) => {
     if (!Object.keys(updates).length) return res.status(400).json({ error: 'No valid fields' });
     const set = Object.keys(updates).map((k, i) => `${k}=$${i + 3}`).join(',');
     const { rows } = await pool.query(
-        `UPDATE users SET ${set} WHERE id=$1 AND tenant_id=$2 RETURNING id, name, email, role, avatar, is_active`,
+        `UPDATE users SET ${set} WHERE id=$1 AND tenant_id=$2 RETURNING id, name, email, role, avatar, is_active, reports_to`,
         [req.params.id, req.tenantId, ...Object.values(updates)]
     );
     res.json(rows[0]);

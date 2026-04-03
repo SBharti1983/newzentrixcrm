@@ -9,13 +9,34 @@ router.use(auth);
 router.get('/', async (req, res) => {
     const tid = req.tenantId;
     const uid = req.user.id;
-    const isManager = ['superadmin', 'admin', 'sales_manager'].includes(req.user.role);
+    const isManager = ['admin', 'sales_manager', 'team_leader'].includes(req.user.role);
     const filterPersonal = req.query.personal === 'true' || req.user.role === 'agent';
+
+    // Get downline user IDs for hierarchy filtering
+    let downlineIds = [];
+    if (req.user.role === 'team_leader') {
+        const { rows: agents } = await pool.query('SELECT id FROM users WHERE reports_to = $1', [uid]);
+        downlineIds = [uid, ...agents.map(a => a.id)];
+    } else if (req.user.role === 'sales_manager') {
+        const { rows: members } = await pool.query(`
+            SELECT id FROM users WHERE reports_to = $1
+            UNION
+            SELECT id FROM users WHERE reports_to IN (SELECT id FROM users WHERE reports_to = $1)
+        `, [uid]);
+        downlineIds = [uid, ...members.map(m => m.id)];
+    }
 
     try {
         // If a manager specifies a member_id, we show that specific agent's dashboard
         const targetUserId = (isManager && req.query.member_id && req.query.member_id !== 'undefined' && req.query.member_id !== 'null') ? req.query.member_id : uid;
         const effectivePersonal = filterPersonal || (req.query.member_id && req.query.member_id !== 'undefined' && req.query.member_id !== 'null');
+
+        // Access check for impersonation
+        if (targetUserId !== uid && req.user.role !== 'admin') {
+            if (!downlineIds.includes(targetUserId)) {
+                return res.status(403).json({ error: 'Access denied: User is not in your downline' });
+            }
+        }
 
         const leadParams = effectivePersonal ? [tid, targetUserId] : [tid];
         const bookingParams = effectivePersonal ? [tid, targetUserId] : [tid];
@@ -32,19 +53,19 @@ router.get('/', async (req, res) => {
                     COUNT(*) FILTER (WHERE stage = 'Lost') as lost,
                     COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW())) as new_this_month,
                     COALESCE(ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1), 0) as win_rate
-                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : ''}`, leadParams),
+                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? leadParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Booking summary
             pool.query(`
                 SELECT COUNT(*) as total, COALESCE(SUM(total_amount), 0) as total_value
-                FROM bookings WHERE tenant_id = $1 AND status != 'Cancelled'${effectivePersonal ? ' AND assigned_agent_id = $2' : ''}`, bookingParams),
+                FROM bookings WHERE tenant_id = $1 AND status != 'Cancelled'${effectivePersonal ? ' AND assigned_agent_id = $2' : (downlineIds.length ? ' AND assigned_agent_id = ANY($2)' : '')}`, effectivePersonal ? bookingParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Overdue installments
             pool.query(`
                 SELECT COUNT(i.id) as overdue_count, COALESCE(SUM(i.amount),0) as overdue_amount
                 FROM installments i
                 JOIN bookings b ON i.booking_id = b.id
-                WHERE i.tenant_id = $1 AND i.status = 'Overdue'${effectivePersonal ? ' AND b.assigned_agent_id = $2' : ''}`, overdueParams),
+                WHERE i.tenant_id = $1 AND i.status = 'Overdue'${effectivePersonal ? ' AND b.assigned_agent_id = $2' : (downlineIds.length ? ' AND b.assigned_agent_id = ANY($2)' : '')}`, effectivePersonal ? overdueParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Pipeline value
             pool.query(`
@@ -58,13 +79,13 @@ router.get('/', async (req, res) => {
                             COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0)
                     END
                 ), 0) as pipeline_value
-                FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : ''}`, leadParams),
+                FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? leadParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Leads by stage
             pool.query(`
                 SELECT stage, COUNT(*) as count FROM leads
-                WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : ''}
-                GROUP BY stage`, leadParams),
+                WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}
+                GROUP BY stage`, effectivePersonal ? leadParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Upcoming follow-ups
             pool.query(`
@@ -72,8 +93,8 @@ router.get('/', async (req, res) => {
                 FROM followups f
                 LEFT JOIN leads l ON f.lead_id = l.id
                 LEFT JOIN users u ON f.assigned_to = u.id
-                WHERE f.tenant_id = $1 AND f.status = 'Pending'${effectivePersonal ? ' AND f.assigned_to = $2' : ''}
-                ORDER BY f.scheduled_at LIMIT 10`, followupParams),
+                WHERE f.tenant_id = $1 AND f.status = 'Pending'${effectivePersonal ? ' AND f.assigned_to = $2' : (downlineIds.length ? ' AND f.assigned_to = ANY($2)' : '')}
+                ORDER BY f.scheduled_at LIMIT 10`, effectivePersonal ? followupParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Nurture Summary
             pool.query(`
@@ -88,9 +109,9 @@ router.get('/', async (req, res) => {
                           AND (old_data->>'stage' ILIKE 'Nurture%')
                           AND (new_data->>'stage' NOT ILIKE 'Nurture%' OR new_data->>'stage' IS NULL)
                           AND created_at >= date_trunc('month', NOW())
-                          ${effectivePersonal ? ' AND user_id = $2' : ''}
+                    ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')}
                     ) as reactivated_this_month
-                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : ''}`, nurtureParams)
+                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? nurtureParams : (downlineIds.length ? [tid, downlineIds] : [tid]))
         ];
 
         // Only fetch members list in global mode
@@ -102,7 +123,8 @@ router.get('/', async (req, res) => {
                        (SELECT ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1) FROM leads WHERE assigned_to = u.id) as win_rate
                 FROM users u
                 WHERE u.tenant_id = $1 AND u.is_active = TRUE
-                ORDER BY active_leads DESC`, [tid]));
+                ${downlineIds.length ? ' AND u.id = ANY($2)' : ''}
+                ORDER BY active_leads DESC`, downlineIds.length ? [tid, downlineIds] : [tid]));
         }
 
         const results = await Promise.all(queries);

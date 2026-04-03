@@ -53,6 +53,7 @@ import WhatsAppMarketing from './pages/WhatsAppMarketing';
 import PartnerReferral from './pages/public/PartnerReferral';
 import CommandCenter from './pages/CommandCenter';
 import Reports from './pages/Reports';
+import TeamHierarchy from './pages/TeamHierarchy';
 import './index.css';
 
 // ─── Role-based access guard ────────────────────────────────────────
@@ -173,6 +174,7 @@ function ProtectedApp() {
             <Route path="/notifications" element={<RoleGuard path="/notifications"><Notifications /></RoleGuard>} />
             <Route path="/channel-partners" element={<RoleGuard path="/channel-partners"><ChannelPartners /></RoleGuard>} />
             <Route path="/analytics" element={<RoleGuard path="/analytics"><Analytics /></RoleGuard>} />
+            <Route path="/team-hierarchy" element={<RoleGuard path="/team-hierarchy"><TeamHierarchy /></RoleGuard>} />
             <Route path="/leaderboard" element={<RoleGuard path="/leaderboard"><Leaderboard /></RoleGuard>} />
             <Route path="/reports" element={<RoleGuard path="/reports"><Reports /></RoleGuard>} />
             <Route path="/admin" element={<RoleGuard path="/admin"><Admin /></RoleGuard>} />

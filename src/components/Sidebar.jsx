@@ -56,6 +56,7 @@ const NAV_SECTIONS = [
         label: 'Analytics',
         items: [
             { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+            { path: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
             { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
             { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
             { path: '/reports', label: 'Custom Reports', icon: FileCheck },
@@ -100,6 +101,7 @@ const ROLE_LABELS = {
     superadmin: 'Super Admin',
     admin: 'Admin',
     sales_manager: 'Manager',
+    team_leader: 'Team Leader',
     agent: 'Agent',
     customer: 'Customer',
 };
@@ -107,7 +109,8 @@ const ROLE_LABELS = {
 const ROLE_COLORS = {
     superadmin: { color: '#f43f5e', bg: 'rgba(244,63,94,0.15)' },
     admin: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
-    sales_manager: { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)' },
+    sales_manager: { color: '#0070f3', bg: 'rgba(0,112,243,0.1)' },
+    team_leader: { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)' },
     agent: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
     customer: { color: '#64748b', bg: 'rgba(100,116,139,0.15)' },
 };

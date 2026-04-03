@@ -109,18 +109,36 @@ router.patch('/tenants/:id', async (req, res) => {
     }
 });
 
+// Delete a tenant (Cascades to all data: users, leads, projects, etc.)
+router.delete('/tenants/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query('DELETE FROM tenants WHERE id = $1 RETURNING name', [id]);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Tenant not found' });
+        }
+        
+        console.log(`[SUPERADMIN] Tenant Deleted: ${result.rows[0].name} (ID: ${id})`);
+        res.json({ success: true, message: `Tenant ${result.rows[0].name} and all associated data deleted.` });
+    } catch (err) {
+        console.error('[SUPERADMIN] Delete error:', err);
+        res.status(500).json({ error: 'Failed to delete tenant.' });
+    }
+});
+
 // Get system stats
 router.get('/stats', async (req, res) => {
     try {
-        const tenants = await pool.query('SELECT COUNT(*) FROM tenants');
-        const users = await pool.query('SELECT COUNT(*) FROM users');
-        const leads = await pool.query('SELECT COUNT(*) FROM leads');
+        const tenantsCount = await pool.query('SELECT COUNT(*) FROM tenants');
+        const usersCount = await pool.query('SELECT COUNT(*) FROM users');
+        const leadsCount = await pool.query('SELECT COUNT(*) FROM leads');
         const revenue = await pool.query("SELECT SUM(amount) FROM subscriptions WHERE status = 'active'");
 
         res.json({
-            totalTenants: parseInt(tenants.rows[0].count),
-            totalUsers: parseInt(users.rows[0].count),
-            totalLeads: parseInt(leads.rows[0].count),
+            totalTenants: parseInt(tenantsCount.rows[0].count),
+            totalUsers: parseInt(usersCount.rows[0].count),
+            totalLeads: parseInt(leadsCount.rows[0].count),
             mrr: parseFloat(revenue.rows[0].sum || 0)
         });
     } catch (_err) {

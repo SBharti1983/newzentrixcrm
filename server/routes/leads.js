@@ -102,7 +102,31 @@ router.get('/:id', async (req, res) => {
              WHERE l.id = $1 AND l.tenant_id = $2`, [req.params.id, req.tenantId]
         );
         if (!rows[0]) return res.status(404).json({ error: 'Lead not found' });
-        res.json(rows[0]);
+        const lead = rows[0];
+
+        // Access check for non-admins
+        if (req.user.role !== 'admin') {
+            const isAssigned = lead.assigned_to === req.user.id;
+            if (!isAssigned) {
+                if (req.user.role === 'agent') return res.status(403).json({ error: 'Access denied' });
+                
+                // Check if lead belongs to someone in their downline
+                const { rows: ownerR } = await pool.query('SELECT reports_to FROM users WHERE id = $1', [lead.assigned_to]);
+                const ownerReportsTo = ownerR[0]?.reports_to;
+                
+                if (req.user.role === 'team_leader') {
+                    if (ownerReportsTo !== req.user.id) return res.status(403).json({ error: 'Access denied' });
+                } else if (req.user.role === 'sales_manager') {
+                    // Check if owner reports to manager OR reports to a TL who reports to manager
+                    const { rows: tlR } = await pool.query('SELECT reports_to FROM users WHERE id = $1', [ownerReportsTo]);
+                    const managerOfTL = tlR[0]?.reports_to;
+                    if (ownerReportsTo !== req.user.id && managerOfTL !== req.user.id && lead.assigned_to !== null) {
+                        return res.status(403).json({ error: 'Access denied' });
+                    }
+                }
+            }
+        }
+        res.json(lead);
     } catch (_err) {
         res.status(500).json({ error: 'Failed to fetch lead' });
     }
@@ -143,6 +167,31 @@ router.get('/', async (req, res) => {
         params.push(req.query.reconnect_date);
     }
     if (q) { conditions.push(`(l.name ILIKE $${i} OR l.city ILIKE $${i} OR l.phone ILIKE $${i} OR l.email ILIKE $${i})`); params.push(`%${q}%`); i++; }
+
+    // Hierarchy Filter
+    if (req.user.role === 'agent') {
+        conditions.push(`l.assigned_to = $${i++}`);
+        params.push(req.user.id);
+    } else if (req.user.role === 'team_leader') {
+        // Team Leader sees leads assigned to them OR their team members
+        conditions.push(`(l.assigned_to = $${i} OR l.assigned_to IN (SELECT id FROM users WHERE reports_to = $${i}))`);
+        params.push(req.user.id);
+        i++;
+    } else if (req.user.role === 'sales_manager') {
+        // Sales Manager sees leads assigned to them OR their downline (TLs and Agents)
+        // We use a CTE or IN clause to find all users reporting to them directly or reporting to someone who reports to them
+        conditions.push(`(
+            l.assigned_to = $${i} 
+            OR l.assigned_to IN (
+                SELECT id FROM users WHERE reports_to = $${i}
+                UNION
+                SELECT id FROM users WHERE reports_to IN (SELECT id FROM users WHERE reports_to = $${i})
+            )
+            OR l.assigned_to IS NULL
+        )`);
+        params.push(req.user.id);
+        i++;
+    }
 
     const where = conditions.join(' AND ');
 
@@ -412,6 +461,28 @@ router.patch('/:id', async (req, res) => {
         // Get old data for audit log
         const old = await pool.query(`SELECT * FROM leads WHERE id=$1 AND tenant_id=$2`, [req.params.id, req.tenantId]);
         if (!old.rows[0]) return res.status(404).json({ error: 'Lead not found' });
+        const lead = old.rows[0];
+
+        // Access check for non-admins
+        if (req.user.role !== 'admin') {
+            const isAssigned = lead.assigned_to === req.user.id;
+            if (!isAssigned) {
+                if (req.user.role === 'agent') return res.status(403).json({ error: 'Access denied' });
+                
+                const { rows: ownerR } = await pool.query('SELECT reports_to FROM users WHERE id = $1', [lead.assigned_to]);
+                const ownerReportsTo = ownerR[0]?.reports_to;
+                
+                if (req.user.role === 'team_leader') {
+                    if (ownerReportsTo !== req.user.id) return res.status(403).json({ error: 'Access denied' });
+                } else if (req.user.role === 'sales_manager') {
+                    const { rows: tlR } = await pool.query('SELECT reports_to FROM users WHERE id = $1', [ownerReportsTo]);
+                    const managerOfTL = tlR[0]?.reports_to;
+                    if (ownerReportsTo !== req.user.id && managerOfTL !== req.user.id && lead.assigned_to !== null) {
+                        return res.status(403).json({ error: 'Access denied' });
+                    }
+                }
+            }
+        }
 
         const { rows } = await pool.query(
             `UPDATE leads SET ${setClauses} WHERE id=$1 AND tenant_id=$2 RETURNING *`,

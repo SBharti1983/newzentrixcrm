@@ -7,22 +7,22 @@ import { useToast } from '../hooks/useToast';
 import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings } from 'lucide-react';
 
 const ROLE_LABELS = {
-    superadmin: 'Super Administrator',
     admin: 'Administrator',
     sales_manager: 'Sales Manager',
+    team_leader: 'Team Leader',
     agent: 'Sales Agent',
 };
 const ROLE_BADGE = {
-    superadmin: 'badge-rose',
     admin: 'badge-violet',
     sales_manager: 'badge-blue',
-    agent: 'badge-cyan',
+    team_leader: 'badge-cyan',
+    agent: 'badge-emerald',
 };
 
 const ROLE_PERMISSIONS = {
-    superadmin: ['Full System Access', 'Manage Tenants', 'View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 'Billing Access'],
-    admin: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data'],
+    admin: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 'Billing Access'],
     sales_manager: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Assign Agents', 'Export Data'],
+    team_leader: ['View Team Dashboard', 'Manage Team Leads', 'View Analytics', 'Lead Distribution', 'Daily Tracking'],
     agent: ['View Dashboard', 'Manage Own Leads', 'View Projects', 'Schedule Visits', 'Update Bookings'],
 };
 
@@ -40,10 +40,12 @@ export default function Admin() {
     // Filter users based on current user role: Managers only see Agents and themselves
     const users = usersRawList.filter(u => {
         if (currentUser.role === 'sales_manager') {
-             // Manager sees themselves and Agents
+             return u.id === currentUser.id || u.role === 'agent' || u.role === 'team_leader';
+        }
+        if (currentUser.role === 'team_leader') {
              return u.id === currentUser.id || u.role === 'agent';
         }
-        return true; // Admins and SuperAdmins see everyone
+        return true; // Admins see everyone
     });
 
     const [tab, setTab] = useState('users');
@@ -207,17 +209,19 @@ export default function Admin() {
                                     : role === 'admin'
                                         ? 'linear-gradient(135deg, var(--accent-violet-dark), var(--accent-violet))'
                                         : role === 'sales_manager'
-                                            ? 'linear-gradient(135deg, var(--navy-700), var(--navy-50))'
-                                            : 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))',
+                                            ? 'linear-gradient(135deg, var(--navy-700), var(--navy-500))'
+                                            : role === 'team_leader'
+                                                ? 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))'
+                                                : 'linear-gradient(135deg, var(--accent-emerald-dark), var(--accent-emerald))',
                                 padding: '20px 22px',
                                 borderRadius: 'var(--border-radius-lg) var(--border-radius-lg) 0 0',
                             }}>
                                 <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>
-                                    {role === 'admin' ? '👑' : role === 'sales_manager' ? '🎯' : '💼'}
+                                    {role === 'admin' ? '👑' : role === 'sales_manager' ? '🎯' : role === 'team_leader' ? '🚀' : '💼'}
                                 </div>
                                 <div style={{ fontWeight: 800, color: 'white', fontSize: '1rem' }}>{ROLE_LABELS[role]}</div>
                                 <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', marginTop: 2 }}>
-                                    {users.filter(u => u.role === role).length} users
+                                    {users.filter(u => u.role === role).length} members
                                 </div>
                             </div>
                             <div style={{ padding: '18px 20px' }}>
@@ -305,12 +309,15 @@ export default function Admin() {
                                 <div className="form-group">
                                     <label className="form-label">Role</label>
                                     <select className="form-control" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                        {currentUser.role !== 'sales_manager' && (
+                                        {currentUser.role === 'admin' && (
                                             <>
-                                                <option value="superadmin">Super Administrator</option>
                                                 <option value="admin">Administrator</option>
                                                 <option value="sales_manager">Sales Manager</option>
+                                                <option value="team_leader">Team Leader</option>
                                             </>
+                                        )}
+                                        {currentUser.role === 'sales_manager' && (
+                                            <option value="team_leader">Team Leader</option>
                                         )}
                                         <option value="agent">Sales Agent</option>
                                     </select>

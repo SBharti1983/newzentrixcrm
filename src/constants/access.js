@@ -1,17 +1,11 @@
 export const ROLE_ACCESS = {
-    superadmin: {
-        label: 'Super Admin',
-        color: 'var(--accent-rose)',
-        bg: 'rgba(244,63,94,0.1)',
-        pages: ['/', '/superadmin', '/billing', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers', '/bookings', '/payment-tracker', '/agreements', '/followups', '/site-visits', '/notifications', '/channel-partners', '/analytics', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
-    },
     admin: {
         label: 'Administrator',
         color: 'var(--accent-violet)',
         bg: 'rgba(139,92,246,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
     },
     sales_manager: {
         label: 'Manager',
@@ -19,14 +13,21 @@ export const ROLE_ACCESS = {
         bg: 'var(--navy-50)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
+    },
+    team_leader: {
+        label: 'Team Leader',
+        color: 'var(--accent-cyan)',
+        bg: 'rgba(6,182,212,0.1)',
+        pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/followups', '/site-visits',
+            '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/command-center', '/leaderboard', '/analytics', '/team-hierarchy'],
     },
     agent: {
         label: 'Agent',
         color: 'var(--accent-emerald)',
         bg: 'rgba(16,185,129,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/followups', '/site-visits',
-            '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/command-center', '/leaderboard', '/analytics'],
+            '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/command-center', '/leaderboard', '/analytics', '/team-hierarchy'],
     },
     customer: {
         label: 'Customer',

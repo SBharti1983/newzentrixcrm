@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { superAdminApi } from '../api/client';
 import { PageLoader } from '../components/Feedback';
 import { useToast } from '../hooks/useToast';
-import { Users, Building2, TrendingUp, DollarSign, CheckCircle, XCircle, Plus, Edit2, X, Shield } from 'lucide-react';
+import { Users, Building2, TrendingUp, DollarSign, CheckCircle, XCircle, Plus, Edit2, X, Shield, Trash2 } from 'lucide-react';
 
 export default function SuperAdmin() {
     const { showToast } = useToast();
@@ -45,6 +45,20 @@ export default function SuperAdmin() {
             fetchData();
         } catch (_err) {
             showToast('Failed to update status', 'error');
+        }
+    };
+
+    const handleDelete = async (t) => {
+        const confirmMsg = `CRITICAL: Are you absolutely sure you want to PERMANENTLY DELETE "${t.name}"?\n\nThis will instantly wipe:\n- All Users\n- All Leads and Customers\n- All Projects and Inventory\n- All Analytics and History\n\nThis action cannot be undone.`;
+        
+        if (window.confirm(confirmMsg)) {
+            try {
+                await superAdminApi.deleteTenant(t.id);
+                showToast(`Tenant "${t.name}" has been purged from the system.`, 'success');
+                fetchData();
+            } catch (err) {
+                showToast(err.error || 'Failed to delete workspace', 'error');
+            }
         }
     };
 
@@ -204,9 +218,14 @@ export default function SuperAdmin() {
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right', borderRadius: '0 14px 14px 0' }}>
-                                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEditModal(t)}>
-                                                <Edit2 size={16} />
-                                            </button>
+                                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => openEditModal(t)} title="Edit Configuration">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => handleDelete(t)} style={{ color: 'var(--accent-rose)' }} title="Terminate Tenant">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

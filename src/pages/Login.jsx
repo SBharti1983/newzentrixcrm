@@ -158,7 +158,7 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPwd, setShowPwd] = useState(false);
-    const [selectedRole, setSelectedRole] = useState('Admin');
+    const [selectedRole, setSelectedRole] = useState('Agent');
     const [mounted, setMounted] = useState(false);
 
     const [subdomain] = useState(getSubdomain());
@@ -190,7 +190,7 @@ export default function Login() {
         if (subdomain) {
             authApi.getTenant(subdomain).then(data => {
                 setTenantName(data.name);
-                setTenantLogo(data.logo_url ? <img src={data.logo_url} alt="Logo" style={{width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14}}/> : data.name[0]);
+                setTenantLogo(data.logo_url ? <img src={data.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : data.name[0]);
                 if (data.primary_color) {
                     setTenantColor(data.primary_color);
                     // For enterprise emerald branding, use a deep navy/charcoal base with emerald glow
@@ -325,7 +325,7 @@ export default function Login() {
 
             {/* ═══ RIGHT PANEL — Login Form ═══ */}
             <div style={{
-                width: '100%', maxWidth: 480, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: 'clamp(24px, 5vw, 48px)',
                 background: 'rgba(255,255,255,0.98)',
                 borderLeft: '1px solid rgba(255,255,255,0.06)',
@@ -339,7 +339,7 @@ export default function Login() {
                     background: 'linear-gradient(90deg, #6366f1, #06b6d4, #8b5cf6)',
                 }} />
 
-                <div style={{ width: '100%', maxWidth: 370 }}>
+                <div style={{ width: '100%', maxWidth: 420 }}>
                     {/* Sign in header */}
                     <div style={{ marginBottom: 28 }}>
                         <h2 style={{
@@ -360,7 +360,8 @@ export default function Login() {
                     }}>
                         {[
                             { name: 'Admin', color: '#6366f1', lightBg: 'rgba(99,102,241,0.08)' },
-                            { name: 'Manager', color: '#3b82f6', lightBg: 'rgba(59,130,246,0.08)' },
+                            { name: 'Manager', color: '#4f46e5', lightBg: 'rgba(79,70,229,0.08)' },
+                            { name: 'Team Lead', color: '#06b6d4', lightBg: 'rgba(6,182,212,0.08)' },
                             { name: 'Agent', color: '#10b981', lightBg: 'rgba(16,185,129,0.08)' },
                         ].map(role => {
                             const isActive = selectedRole === role.name;
@@ -373,7 +374,7 @@ export default function Login() {
                                         setSelectedRole(role.name);
                                     }}
                                     style={{
-                                        flex: 1, padding: '9px 4px', fontSize: '0.74rem', fontWeight: 700,
+                                        flex: 1, padding: '9px 2px', fontSize: '0.7rem', fontWeight: 700,
                                         borderRadius: 9, border: 'none',
                                         background: isActive ? role.color : 'transparent',
                                         color: isActive ? 'white' : 'var(--text-muted)',
@@ -382,6 +383,7 @@ export default function Login() {
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.04em',
                                         transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        whiteSpace: 'nowrap',
                                     }}
                                 >
                                     {role.name}
