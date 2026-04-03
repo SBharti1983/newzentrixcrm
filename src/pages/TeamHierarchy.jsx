@@ -15,13 +15,13 @@ import { PageLoader, PageError } from '../components/Feedback';
 
 /* ─── Role Visual Config ─── */
 const ROLE_CONFIG = {
-    admin:         { icon: Shield,    color: '#6366f1', bg: 'rgba(99, 102, 241, 0.08)', label: 'Administrator',  depth: 0 },
-    sales_manager: { icon: Briefcase, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.08)', label: 'Sales Manager',   depth: 1 },
-    team_leader:   { icon: UserCheck, color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'Team Leader',    depth: 2 },
-    agent:         { icon: User,      color: '#10b981', bg: 'rgba(16, 185, 129, 0.08)', label: 'Sales Agent',    depth: 3 },
+    admin:         { icon: Shield,    color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.08)', label: 'Administrator',  depth: 0, shadow: 'rgba(59, 130, 246, 0.1)' },
+    sales_manager: { icon: Briefcase, color: '#6366f1', bg: 'rgba(99, 102, 241, 0.08)', label: 'Sales Manager',   depth: 1, shadow: 'rgba(99, 102, 241, 0.1)' },
+    team_leader:   { icon: UserCheck, color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.08)', label: 'Team Leader',    depth: 2, shadow: 'rgba(6, 182, 212, 0.1)' },
+    agent:         { icon: User,      color: '#10b981', bg: 'rgba(16, 185, 129, 0.08)', label: 'Sales Agent',    depth: 3, shadow: 'rgba(16, 185, 129, 0.1)' },
 };
 
-const INDENT_PX = 56; 
+const INDENT_PX = 48; 
 
 /* ─── Action Dropdown ─── */
 const ActionMenu = ({ user, onEdit }) => {
@@ -46,9 +46,9 @@ const ActionMenu = ({ user, onEdit }) => {
                 <MoreVertical size={16} />
             </button>
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-56 py-2 rounded-2xl bg-white border border-slate-200 shadow-2xl z-[100] animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 mt-2 w-56 py-2 rounded-xl bg-white border border-slate-200 shadow-xl z-[100] animate-in fade-in zoom-in-95 duration-200">
                     <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Node Management</div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Node Management</div>
                     </div>
                     {[
                         { label: 'Performance View', icon: LayoutDashboard, color: 'text-slate-600 hover:text-blue-600', fn: () => navigate(`/?member_id=${user.id}`) },
@@ -56,7 +56,7 @@ const ActionMenu = ({ user, onEdit }) => {
                         { label: 'Copy Email/ID', icon: Copy, color: 'text-slate-600 hover:text-emerald-600', fn: () => { navigator.clipboard.writeText(user.email); showToast('Identifier copied', 'success'); } },
                     ].map((a, i) => (
                         <button key={i} onClick={(e) => { e.stopPropagation(); a.fn(); setIsOpen(false); }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 text-[13px] hover:bg-slate-50 transition-all text-left border-none cursor-pointer bg-transparent font-bold ${a.color}`}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-[13px] hover:bg-slate-50 transition-all text-left border-none cursor-pointer bg-transparent ${a.color}`}
                         >
                             <a.icon size={14} /> {a.label}
                         </button>
@@ -77,110 +77,77 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
 
     return (
         <div className="relative">
-            {/* Vertical continuation lines - Rounded & Subtle */}
+            {/* Vertical continuation lines */}
             {parentLines.map((showLine, idx) => showLine && (
-                <div key={idx} className="absolute top-0 bottom-0 border-l border-slate-200/50"
-                     style={{ left: idx * INDENT_PX + 28, position: 'absolute' }} />
+                <div key={idx} className="absolute top-0 bottom-0 border-l border-slate-300"
+                     style={{ left: idx * INDENT_PX + 24, position: 'absolute' }} />
             ))}
 
-            {/* Horizontal rounded connector */}
+            {/* Horizontal connector */}
             {depth > 0 && (
                 <>
-                    <div className="absolute border-l border-slate-200/50"
-                         style={{ 
-                            left: (depth - 1) * INDENT_PX + 28, 
-                            top: 0, 
-                            height: 38, 
-                            position: 'absolute' 
-                         }} />
-                    <div className="absolute border-t border-l border-slate-200/50"
-                         style={{ 
-                            left: (depth - 1) * INDENT_PX + 28, 
-                            top: 38, 
-                            width: INDENT_PX - 22, 
-                            height: 12,
-                            borderTopLeftRadius: '14px',
-                            position: 'absolute' 
-                         }} />
+                    <div className="absolute border-l border-slate-300"
+                         style={{ left: (depth - 1) * INDENT_PX + 24, top: 0, height: 32, position: 'absolute' }} />
+                    <div className="absolute border-t border-slate-300 rounded-tl-lg"
+                         style={{ left: (depth - 1) * INDENT_PX + 24, top: 32, width: INDENT_PX - 20, position: 'absolute' }} />
                 </>
             )}
 
             {/* ─── Node Card ─── */}
             <div 
-                className="group relative flex items-center gap-4 py-4 px-6 mb-4 rounded-[20px] border border-slate-100 bg-white hover:border-blue-100 hover:shadow-lg transition-all duration-300"
-                style={{ 
-                    marginLeft: depth * INDENT_PX, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    position: 'relative'
-                }}
+                className="group relative flex items-center gap-4 py-3.5 px-5 mb-2 rounded-xl border border-slate-100 bg-white hover:border-blue-100 hover:shadow-md"
+                style={{ marginLeft: depth * INDENT_PX, display: 'flex', alignItems: 'center', transition: 'all 0.2s', position: 'relative' }}
             >
-                {/* Expand Toggle */}
-                <div className="flex items-center justify-center w-6 h-6 flex-shrink-0 z-10" style={{ display: 'flex' }}>
+                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition-all`}
+                     style={{ backgroundColor: config.color, position: 'absolute' }} />
+
+                <div className="flex items-center justify-center w-8 h-8 flex-shrink-0 z-10" style={{ display: 'flex' }}>
                     {hasChildren ? (
                         <button 
-                            onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
-                            className={`flex items-center justify-center w-6 h-6 rounded-lg transition-all duration-300 border ${
-                                isExpanded 
-                                    ? 'bg-slate-50 text-slate-900 border-slate-200' 
-                                    : 'bg-white text-slate-400 border-slate-100 hover:border-slate-300'
-                            }`}
-                            style={{ cursor: 'pointer', padding: 0, outline: 'none' }}
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className={`flex items-center justify-center w-7 h-7 rounded-lg transition-all ${
+                                isExpanded ? 'bg-slate-100 text-slate-900 border-slate-200' : 'bg-slate-50 text-slate-400 border-transparent'
+                            } hover:bg-slate-200`}
+                            style={{ cursor: 'pointer', border: '1px solid', padding: 0, outline: 'none' }}
                         >
-                            <ChevronRight size={12} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} strokeWidth={3} />
+                            <ChevronRight size={14} className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`} strokeWidth={3} />
                         </button>
                     ) : (
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200/60" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />
                     )}
                 </div>
 
-                {/* User Avatar - Professional Circular Design */}
                 <div className="relative flex-shrink-0" style={{ flexShrink: 0 }}>
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-[15px] font-black text-white shadow-md"
-                         style={{ 
-                            background: `linear-gradient(135deg, ${config.color}, ${config.color}cc)`, 
-                            display: 'flex' 
-                         }}>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shadow-sm"
+                         style={{ background: `linear-gradient(135deg, ${config.color}, ${config.color}dd)`, display: 'flex' }}>
                         {user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                     </div>
-                    {/* Status Orb */}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full shadow-sm" />
                 </div>
 
-                {/* Content Area */}
                 <div className="flex-1 min-w-0" style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-2.5 overflow-hidden" style={{ display: 'flex', alignItems: 'center' }}>
-                        <h4 className="text-[15px] font-black text-slate-800 truncate tracking-tight m-0">
-                            {user.name}
-                        </h4>
-                        <div className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-[0.03em] flex items-center gap-1 border"
-                              style={{ 
-                                backgroundColor: config.bg, 
-                                borderColor: config.color + '25', 
-                                color: config.color, 
-                                display: 'flex' 
-                              }}>
-                            <Icon size={10} strokeWidth={3.5} /> {config.label}
+                    <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="text-sm font-bold text-slate-900 truncate">{user.name}</span>
+                        <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tight flex items-center gap-1.5 border"
+                              style={{ backgroundColor: config.bg, borderColor: config.color + '20', color: config.color, display: 'flex', marginLeft: '6px' }}>
+                            <Icon size={10} strokeWidth={3} /> {config.label}
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1" style={{ display: 'flex' }}>
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-bold truncate m-0" style={{ display: 'flex', alignItems: 'center' }}>
-                            <Mail size={10} className="text-slate-300" /> {user.email}
-                        </div>
+                    <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-medium truncate" style={{ display: 'flex' }}>
+                        <span className="flex items-center gap-1.5" style={{ display: 'flex', alignItems: 'center' }}><Mail size={10} /> {user.email}</span>
+                        {user.phone && <span className="flex items-center gap-1.5 border-l border-slate-100 pl-3" style={{ display: 'flex', alignItems: 'center' }}><Phone size={10} /> {user.phone}</span>}
                     </div>
                 </div>
 
-                {/* IQ Badge - Desktop Only */}
-                <div className="hidden lg:flex items-center gap-2.5 mr-3 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-100" style={{ display: 'flex' }}>
-                    <Zap size={12} className="text-orange-500" fill="currentColor" />
-                    <div className="text-[10px] font-black text-slate-600 uppercase tracking-tight">Performance Strategic IQ</div>
+                <div className="hidden md:flex items-center gap-2 mr-4 px-3 py-1.5 rounded-lg bg-orange-50/50 border border-orange-100/50" style={{ display: 'flex' }}>
+                    <Zap size={11} className="text-orange-500 fill-orange-500/20" />
+                    <span className="text-[10px] font-bold text-orange-600/80 uppercase tracking-tighter">Performance IQ</span>
                 </div>
 
                 <ActionMenu user={user} onEdit={onEdit} />
             </div>
 
             {isExpanded && hasChildren && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <div style={{ transition: 'all 0.3s' }}>
                     {children.map((child, idx) => (
                         <TreeNode 
                             key={child.id} 
@@ -200,21 +167,19 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
 
 /* ─── Stat Card ─── */
 const StatCard = ({ label, value, gradient, iconBg, icon: Icon, change }) => (
-    <div className="dash-stat-card hover-lift shadow-sm hover:shadow-md transition-all duration-300" style={{ flex: 1, minWidth: '220px', borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: gradient }} />
-        <div className="dash-stat-top p-6" style={{ padding: '24px' }}>
-            <div style={{ flex: 1 }}>
-                <div className="dash-stat-label text-slate-400 font-black text-[10px] uppercase tracking-widest mb-1">{label}</div>
-                <div className="dash-stat-value text-3xl font-black text-slate-800">{value}</div>
+    <div className="dash-stat-card hover-lift" style={{ flex: 1, minWidth: '180px' }}>
+        <div className="dash-stat-accent" style={{ background: gradient }} />
+        <div className="dash-stat-top">
+            <div>
+                <div className="dash-stat-label">{label}</div>
+                <div className="dash-stat-value">{value}</div>
             </div>
-            <div className="dash-stat-icon w-11 h-11 rounded-2xl flex items-center justify-center shadow-inner" style={{ background: `${iconBg}10`, color: iconBg }}>
-                <Icon size={20} strokeWidth={2.5} />
+            <div className="dash-stat-icon" style={{ background: `${iconBg}12`, color: iconBg }}>
+                <Icon size={18} strokeWidth={2} />
             </div>
         </div>
-        <div className="px-6 pb-5 flex items-center gap-1.5 text-[11px] font-black text-slate-400" style={{ padding: '0 24px 20px' }}>
-            <div className="w-4 h-4 rounded-full bg-slate-50 flex items-center justify-center">
-                <ArrowUpRight size={10} strokeWidth={3} />
-            </div>
+        <div className="dash-stat-change">
+            <ArrowUpRight size={12} strokeWidth={2.5} />
             {change}
         </div>
     </div>
@@ -267,14 +232,14 @@ export default function TeamHierarchy() {
         const pool = searchTerm 
             ? users.filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase()))
             : users;
-        if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
+        if (currentUser.role === 'admin') {
             return pool.filter(u => !u.reports_to || !users.find(p => p.id === u.reports_to));
         }
         return pool.filter(u => u.id === currentUser.id);
     }, [users, searchTerm, currentUser]);
 
     const roleCounts = useMemo(() => ({
-        admin: users.filter(u => u.role === 'admin' || u.role === 'superadmin').length,
+        admin: users.filter(u => u.role === 'admin').length,
         sales_manager: users.filter(u => u.role === 'sales_manager').length,
         team_leader: users.filter(u => u.role === 'team_leader').length,
         agent: users.filter(u => u.role === 'agent').length,
@@ -283,80 +248,93 @@ export default function TeamHierarchy() {
     if (loading) return <PageLoader />;
 
     return (
-        <div className="animate-fadeIn p-8" style={{ background: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 32 }}>
+        <div className="animate-fadeIn" style={{ background: '#f8fafc', padding: '24px', minHeight: '100vh', margin: '-24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             
             {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-200/50">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-light)', paddingBottom: 20 }}>
                 <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight m-0 mb-1">
-                        Corporate Hierarchy
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--navy-950)', marginBottom: 4 }}>
+                        Team Hierarchy & Governance
                     </h1>
-                    <p className="text-[13px] text-slate-400 font-bold m-0 tracking-wide uppercase">
-                        Enterprise Node Network & Governance Matrix
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                        Manage corporate reporting matrix and organizational node density.
                     </p>
                 </div>
 
-                <div className="relative group" style={{ width: '100%', maxWidth: 400 }}>
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-blue-500 transition-colors" size={16} />
+                <div style={{ width: 400 }} className="search-bar">
+                    <Search size={16} />
                     <input 
                         type="text" 
-                        placeholder="Search by node name or identifier..."
-                        className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pl-11 pr-4 text-[13px] font-bold text-slate-700 shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 placeholder:text-slate-300 transition-all outline-none"
+                        placeholder="Identify node email or name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            {/* ── Insight Grid ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard label="Executive Root" value={roleCounts.admin} gradient="var(--accent-violet)" iconBg="#6366f1" icon={Shield} change="Master Control" />
-                <StatCard label="Global Managers" value={roleCounts.sales_manager} gradient="var(--accent-blue)" iconBg="#3b82f6" icon={Briefcase} change={`${roleCounts.sales_manager} node units`} />
-                <StatCard label="Ops Leadership" value={roleCounts.team_leader} gradient="var(--accent-cyan)" iconBg="#06b6d4" icon={UserCheck} change={`${roleCounts.team_leader} node units`} />
-                <StatCard label="Field Operations" value={roleCounts.agent} gradient="var(--accent-emerald)" iconBg="#10b981" icon={User} change={`${roleCounts.agent} node units`} />
+            {/* ── Insight Matrix (FORCED SINGLE ROW) ── */}
+            <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+                <StatCard label="EXECUTIVE ADMINS" value={roleCounts.admin} gradient="linear-gradient(135deg, #3b82f6, #2563eb)" iconBg="#3b82f6" icon={Shield} change="Org Root" />
+                <StatCard label="GLOBAL MANAGERS" value={roleCounts.sales_manager} gradient="linear-gradient(135deg, #6366f1, #4f46e5)" iconBg="#6366f1" icon={Briefcase} change={`${roleCounts.sales_manager} units`} />
+                <StatCard label="OPERATIONAL LEADS" value={roleCounts.team_leader} gradient="linear-gradient(135deg, #06b6d4, #0891b2)" iconBg="#06b6d4" icon={UserCheck} change={`${roleCounts.team_leader} units`} />
+                <StatCard label="FIELD SPECIALISTS" value={roleCounts.agent} gradient="linear-gradient(135deg, #10b981, #059669)" iconBg="#10b981" icon={User} change={`${roleCounts.agent} units`} />
             </div>
 
             {/* ── Main Tree Layout ── */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
-                <div className="px-8 py-6 border-b border-slate-50 flex flex-wrap items-center justify-between gap-6 bg-slate-50/30">
-                    <div className="flex items-center gap-10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-blue-500 flex items-center justify-center text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)]">
-                                <Network size={18} strokeWidth={2.5} />
-                            </div>
-                            <span className="text-[14px] font-black text-slate-800 tracking-tight">Active Matrix Repository</span>
+            <div style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-light)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <Network size={18} style={{ color: '#3b82f6' }} />
+                            <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--navy-900)' }}>Organizational Matrix</span>
                         </div>
                         
-                        {/* ── Premium Legend ── */}
-                        <div className="hidden xl:flex items-center gap-4">
-                            {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
-                                <div key={role} className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-100 shadow-sm">
-                                    <div className="w-5 h-5 rounded-lg flex items-center justify-center text-white shadow-sm" style={{ background: cfg.color }}>
-                                        <cfg.icon size={11} strokeWidth={3} />
+                        {/* ── BEAUTIFUL PILL LEGEND ── */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', tracking: '0.05em' }}>Legend:</span>
+                            {Object.entries(ROLE_CONFIG).map(([role, cfg]) => {
+                                const Icon = cfg.icon;
+                                return (
+                                    <div key={role} style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        gap: 8, 
+                                        padding: '6px 12px', 
+                                        background: cfg.bg, 
+                                        borderRadius: '100px', 
+                                        border: `1px solid ${cfg.color}15`
+                                    }}>
+                                        <div style={{ 
+                                            width: 18, 
+                                            height: 18, 
+                                            borderRadius: '6px', 
+                                            background: cfg.color, 
+                                            color: 'white', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center' 
+                                        }}>
+                                            <Icon size={10} strokeWidth={3} />
+                                        </div>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-600)' }}>{cfg.label}</span>
                                     </div>
-                                    <span className="text-[11px] font-black text-slate-600 tracking-tight">{cfg.label}</span>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{users.length} Active Node Instances</span>
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-400)' }}>{users.length} Active Nodes Syncing</span>
+                        <div className="dash-live-dot" style={{ background: '#10b981' }} />
                     </div>
                 </div>
 
-                <div className="p-12 min-h-[600px] relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #fff 0%, #fafafa 100%)' }}>
-                    {/* Abstract grid pattern background */}
-                    <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-                    
-                    <div className="max-w-[1000px] mx-auto relative">
+                <div style={{ padding: '40px', minHeight: '500px' }}>
+                    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
                         {roots.length === 0 ? (
-                            <div className="text-center py-24">
-                                <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-6 text-slate-200">
-                                    <Users size={32} />
-                                </div>
-                                <div className="text-lg font-black text-slate-300 uppercase tracking-widest">No Node Data Detected</div>
+                            <div style={{ textAlign: 'center', padding: '60px', opacity: 0.2 }}>
+                                <Users size={48} style={{ marginBottom: 16 }} />
+                                <div style={{ fontSize: '1rem', fontWeight: 700 }}>No nodes detected</div>
                             </div>
                         ) : (
                             roots.map((root, idx) => (
@@ -376,30 +354,22 @@ export default function TeamHierarchy() {
 
             {/* Sync Modal */}
             {showEditModal && selectedUser && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-md" onClick={() => setShowEditModal(false)} />
-                    <div className="relative w-full max-w-[540px] bg-white rounded-[32px] p-10 shadow-2xl overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500" />
-                        
-                        <div className="flex justify-between items-start mb-8">
-                            <div>
-                                <h3 className="text-2xl font-black text-slate-900 tracking-tight m-0 mb-1">Node Governance</h3>
-                                <p className="text-[12px] text-slate-400 font-bold uppercase tracking-wider">Configure Reporting Matrix Entry</p>
-                            </div>
-                            <button onClick={() => setShowEditModal(false)} className="w-10 h-10 rounded-xl hover:bg-slate-50 text-slate-300 hover:text-slate-900 transition-colors flex items-center justify-center border-none bg-transparent cursor-pointer">
-                                <X size={24}/>
-                            </button>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)' }} onClick={() => setShowEditModal(false)} />
+                    <div style={{ position: 'relative', width: '100%', maxWidth: '500px', background: 'white', borderRadius: '24px', padding: '40px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', margin: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Governance Node Sync</h3>
+                            <button onClick={() => setShowEditModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--slate-400)' }}><X size={24}/></button>
                         </div>
-
-                        <form onSubmit={handleUpdate} className="flex flex-col gap-6">
-                            <div className="grid grid-cols-2 gap-5">
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Legal Entity Name</label>
-                                    <input name="name" defaultValue={selectedUser.name} className="w-full bg-slate-50 border-none rounded-xl p-4 text-[13px] font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" />
+                        <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Entity Name</label>
+                                    <input name="name" defaultValue={selectedUser.name} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700 }} />
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Structure Role</label>
-                                    <select name="role" defaultValue={selectedUser.role} className="w-full bg-slate-50 border-none rounded-xl p-4 text-[13px] font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none cursor-pointer">
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Security Role</label>
+                                    <select name="role" defaultValue={selectedUser.role} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700 }}>
                                         <option value="admin">Administrator</option>
                                         <option value="sales_manager">Sales Manager</option>
                                         <option value="team_leader">Team Leader</option>
@@ -407,17 +377,16 @@ export default function TeamHierarchy() {
                                     </select>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Reporting Anchor (Immediate Parent)</label>
-                                <select name="reports_to" defaultValue={selectedUser.reports_to || ''} className="w-full bg-slate-50 border-none rounded-xl p-4 text-[13px] font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all outline-none cursor-pointer">
-                                    <option value="">Primary Organization Root</option>
-                                    {users.filter(u => u.id !== selectedUser.id).map(u => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Reporting Root</label>
+                                <select name="reports_to" defaultValue={selectedUser.reports_to || ''} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700 }}>
+                                    <option value="">Primary Root</option>
+                                    {users.filter(u => u.id !== selectedUser.id).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                                 </select>
                             </div>
-                            
-                            <div className="flex gap-4 mt-4">
-                                <button type="button" onClick={() => setShowEditModal(false)} className="flex-1 py-4 rounded-xl border-none bg-slate-50 text-slate-500 font-black text-[13px] uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors">Discard</button>
-                                <button disabled={saving} className="flex-1 py-4 rounded-xl border-none bg-blue-600 text-white font-black text-[13px] uppercase tracking-wider cursor-pointer shadow-[0_8px_20px_rgba(37,99,235,0.3)] hover:bg-blue-700 transition-all hover:scale-[1.02] active:scale-[0.98]">{saving ? 'Syncing...' : 'Commit Node'}</button>
+                            <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+                                <button type="button" onClick={() => setShowEditModal(false)} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#f1f5f9', color: 'var(--slate-500)', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+                                <button disabled={saving} style={{ flex: 1, padding: '14px', borderRadius: '12px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' }}>{saving ? 'Syncing...' : 'Commit Node'}</button>
                             </div>
                         </form>
                     </div>
