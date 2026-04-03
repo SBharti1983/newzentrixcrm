@@ -275,10 +275,10 @@ export default function Login() {
                 </div>
 
                 {/* Stats */}
-                <div style={{ ...anim(0.35), display: 'flex', gap: 16, marginBottom: 28 }}>
+                <div style={{ ...anim(0.35), display: 'flex', gap: 16, marginBottom: 8 }}>
                     {STATS.map(({ label, value, icon: Icon, color, bg }) => (
                         <div key={label} className="login-stat-card" style={{
-                            flex: 1, padding: '18px 20px', borderRadius: 16,
+                            flex: 1, padding: '6px 20px', borderRadius: 16,
                             background: 'rgba(255,255,255,0.04)',
                             border: '1px solid rgba(255,255,255,0.08)',
                             backdropFilter: 'blur(12px)',
@@ -287,12 +287,12 @@ export default function Login() {
                             <div style={{
                                 width: 32, height: 32, borderRadius: 10,
                                 background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: 10,
+                                marginBottom: 4,
                             }}>
                                 <Icon size={16} style={{ color }} />
                             </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: 2, letterSpacing: '-0.5px' }}>{value}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', marginBottom: 0, letterSpacing: '-0.5px' }}>{value}</div>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
                         </div>
                     ))}
                 </div>

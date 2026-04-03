@@ -36,6 +36,117 @@ router.get('/tenant/:slug', async (req, res) => {
     }
 });
 
+// ── POST /api/auth/register ───────────────────────────────────────
+// Self-registration: creates a new tenant + admin user (14-day trial)
+router.post('/register', async (req, res) => {
+    const { company_name, name, email, password, phone, subdomain } = req.body;
+    
+    // Validation
+    if (!name || !email || !password) {
+        return res.status(400).json({ error: 'Full name, email, and password are required' });
+    }
+    // Auto-generate workspace name if company not provided
+    const workspaceName = (company_name || '').trim() || `${name.trim()}'s Workspace`;
+    if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Please enter a valid email address' });
+    }
+
+    if (subdomain) {
+        const freeDomains = [
+            'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 
+            'icloud.com', 'protonmail.com', 'mail.com', 'zoho.com', 'yandex.com'
+        ];
+        const domain = email.split('@')[1]?.toLowerCase();
+        if (freeDomains.includes(domain)) {
+            return res.status(400).json({ error: 'Personal email addresses are not allowed. Please use your company email.' });
+        }
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // Check if email already exists globally
+        const existCheck = await client.query(
+            'SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email.trim()]
+        );
+        if (existCheck.rows.length > 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'An account with this email already exists. Please sign in instead.' });
+        }
+
+        // Generate a unique slug from workspace name
+        const baseSlug = workspaceName
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-|-$/g, '');
+        
+        // Check slug uniqueness, append random suffix if needed
+        let slug = baseSlug || 'workspace';
+        const slugCheck = await client.query('SELECT id FROM tenants WHERE slug = $1', [slug]);
+        if (slugCheck.rows.length > 0) {
+            slug = `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
+        // Create the tenant with a 14-day trial plan
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 14);
+
+        const tenantRes = await client.query(
+            `INSERT INTO tenants (name, slug, primary_color, plan, plan_expires_at, max_users, max_leads, max_projects, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+            [workspaceName, slug, '#1e3a73', 'trial', trialExpiry, 3, 500, 5, true]
+        );
+        const tenant = tenantRes.rows[0];
+
+        // Hash password and create the admin user
+        const passwordHash = await bcrypt.hash(password, 12);
+        const userRes = await client.query(
+            `INSERT INTO users (tenant_id, name, email, password_hash, phone, role, is_active)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+            [tenant.id, name.trim(), email.trim().toLowerCase(), passwordHash, phone || null, 'admin', true]
+        );
+        const user = userRes.rows[0];
+
+        await client.query('COMMIT');
+
+        // Auto-login: generate JWT tokens
+        const { accessToken, refreshToken } = signTokens({ ...user, tenant_id: tenant.id });
+
+        // Store refresh token
+        const refreshHash = await bcrypt.hash(refreshToken, 8);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+        await pool.query(
+            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)`,
+            [user.id, refreshHash, expiresAt]
+        );
+
+        console.log(`[AUTH] New workspace registered: "${company_name}" (${slug}) by ${email}`);
+
+        res.status(201).json({
+            accessToken,
+            refreshToken,
+            user: {
+                id: user.id, name: user.name, email: user.email,
+                role: user.role, avatar: user.avatar,
+                tenantId: tenant.id, tenantName: tenant.name,
+                tenantSlug: tenant.slug, plan: tenant.plan,
+            },
+        });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[AUTH] Registration error:', err);
+        res.status(500).json({ error: 'Registration failed. Please try again.' });
+    } finally {
+        client.release();
+    }
+});
+
 // ── POST /api/auth/login ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
     let { email, password, subdomain } = req.body;

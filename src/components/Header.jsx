@@ -312,7 +312,11 @@ export default function Header({ collapsed, isMobile, onToggle }) {
                         boxShadow: 'var(--shadow-sm)'
                     }}
                 >
-                    {user?.avatar || getInitials(user?.name)}
+                    {user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? (
+                        <img src={user.avatar} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                        user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'
+                    )}
                 </div>
             </div>
 

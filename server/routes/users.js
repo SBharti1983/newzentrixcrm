@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
         `SELECT COUNT(*) FROM users WHERE tenant_id=$1 AND is_active=TRUE`, [req.tenantId]
     );
     const { rows: [tenant] } = await pool.query(`SELECT max_users FROM tenants WHERE id=$1`, [req.tenantId]);
-    
+
     if (!tenant) return res.status(404).json({ error: 'Tenant record not found' });
 
     if (parseInt(count.count) >= tenant.max_users) {

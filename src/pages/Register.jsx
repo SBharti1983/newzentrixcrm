@@ -3,6 +3,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Building2, User, Mail, Lock, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 import { authApi, setToken } from '../api/client';
 
+const getSubdomain = () => {
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 3) {
+        if (parts[0] === 'www' && parts.length > 3) return parts[1];
+        if (parts[0] !== 'www') return parts[0];
+    }
+    if (parts.length === 2 && parts[1] === 'localhost') return parts[0];
+    return null;
+};
+
 export default function Register() {
     const navigate = useNavigate();
     const [form, setForm] = useState({ company_name: '', name: '', email: '', password: '', phone: '' });
@@ -12,8 +23,8 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        if (!form.company_name || !form.name || !form.email || !form.password) {
-            setError('All required fields must be filled');
+        if (!form.name || !form.email || !form.password) {
+            setError('Name, email and password are required');
             return;
         }
         if (form.password.length < 8) {
@@ -22,7 +33,8 @@ export default function Register() {
         }
         setLoading(true);
         try {
-            const res = await authApi.register(form);
+            const payload = { ...form, subdomain: getSubdomain() };
+            const res = await authApi.register(payload);
             setToken(res.accessToken);
             sessionStorage.setItem('zentrix_refresh_token', res.refreshToken);
             sessionStorage.setItem('zentrix_user', JSON.stringify(res.user));
@@ -120,10 +132,10 @@ export default function Register() {
                     <form onSubmit={handleSubmit}>
                         <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : 'row', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company *</label>
+                                <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.4)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Company <span style={{ opacity: 0.5, fontWeight: 500, textTransform: 'none' }}>(optional)</span></label>
                                 <div style={{ position: 'relative' }}>
                                     <Building2 size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.3)' }} />
-                                    <input type="text" placeholder="Zentrix RE" value={form.company_name} onChange={e => update('company_name', e.target.value)}
+                                    <input type="text" placeholder="e.g. MM Properties" value={form.company_name} onChange={e => update('company_name', e.target.value)}
                                         style={{ width: '100%', padding: '11px 11px 11px 36px', borderRadius: 10, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '0.9rem', outline: 'none' }}
                                     />
                                 </div>

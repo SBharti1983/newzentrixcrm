@@ -107,7 +107,7 @@ export const searchApi = {
     global: (q) => api(`/search?q=${encodeURIComponent(q)}`),
 };
 export const dashboardApi = {
-    get: () => api('/dashboard'),
+    get: (params = {}) => api('/dashboard?' + new URLSearchParams(params)),
 };
 
 // ─── Leads ───────────────────────────────────────────────────────

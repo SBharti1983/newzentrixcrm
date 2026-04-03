@@ -32,6 +32,8 @@ export default function ContactDetails() {
     const [showAIReport, setShowAIReport] = useState(false);
     const [enriching, setEnriching] = useState(false);
     const [interactions, setInteractions] = useState([]);
+    const [editingInteraction, setEditingInteraction] = useState(null);
+    const [editNote, setEditNote] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -132,17 +134,7 @@ export default function ContactDetails() {
             const data = await leadsApi.get(id);
             setContact(data);
             const rawInteractions = Array.isArray(data.interactions) ? data.interactions.filter(i => i && i.id) : [];
-            if (rawInteractions.length === 0) {
-                const now = new Date();
-                setInteractions([
-                    { id: 'd1', type: 'Call', entry_type: 'log', note: 'Outbound call successful. Client is interested in the 4BHK layout in Signature Tower. Asked to send the floor plans via WhatsApp.', date: new Date(now - 1000 * 60 * 60 * 2).toISOString(), agent_name: 'Siddharth M.' },
-                    { id: 'd2', type: 'system', entry_type: 'system', note: 'Lead score increased from 64 to 92 based on high engagement with project walkthrough.', date: new Date(now - 1000 * 60 * 60 * 5).toISOString() },
-                    { id: 'd3', type: 'Note', entry_type: 'log', note: 'Met with client at project site. Preferred high-floor units with North-East facing balcony.', date: new Date(now - 1000 * 60 * 60 * 24).toISOString(), agent_name: 'Priya Singh' },
-                    { id: 'd4', type: 'Meeting', entry_type: 'log', note: 'Initial discovery session completed. Budget confirmed at ₹1.1 Cr - ₹1.4 Cr range.', date: new Date(now - 1000 * 60 * 60 * 24 * 3).toISOString(), agent_name: 'Siddharth M.' }
-                ]);
-            } else {
-                setInteractions(rawInteractions);
-            }
+            setInteractions(rawInteractions);
         } catch (err) {
             setError(err.error || 'Failed to load contact');
         } finally {
@@ -217,6 +209,43 @@ export default function ContactDetails() {
             loadData();
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    const handleDeleteInteraction = async (interactionId) => {
+        if (!window.confirm('Delete this interaction?')) return;
+        try {
+            const token = sessionStorage.getItem('zentrix_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+            const res = await fetch(`${apiUrl}/leads/${id}/interactions/${interactionId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Failed to delete');
+            showToast('Interaction deleted', 'success');
+            loadData();
+        } catch (e) {
+            showToast('Failed to delete interaction', 'error');
+        }
+    };
+
+    const handleEditInteraction = async (interactionId) => {
+        if (!editNote.trim()) return;
+        try {
+            const token = sessionStorage.getItem('zentrix_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+            const res = await fetch(`${apiUrl}/leads/${id}/interactions/${interactionId}`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: editNote })
+            });
+            if (!res.ok) throw new Error('Failed to update');
+            showToast('Interaction updated', 'success');
+            setEditingInteraction(null);
+            setEditNote('');
+            loadData();
+        } catch (e) {
+            showToast('Failed to update interaction', 'error');
         }
     };
 
@@ -782,7 +811,13 @@ export default function ContactDetails() {
                                         </button>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        {interactions.slice(0, 3).map((item, idx) => {
+                                        {interactions.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '20px 10px' }}>
+                                                <div style={{ fontSize: '20px', marginBottom: 4 }}>📭</div>
+                                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--slate-400)' }}>No interactions yet</div>
+                                                <div style={{ fontSize: '9px', color: 'var(--slate-300)', marginTop: 2 }}>Log a call, note or meeting to start tracking</div>
+                                            </div>
+                                        ) : interactions.slice(0, 3).map((item, idx) => {
                                             const typeColor = item.type === 'Call' ? '#10b981' : item.type === 'Email' ? '#3b82f6' : item.type === 'WhatsApp' ? '#25D366' : '#f59e0b';
                                             return (
                                                 <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
@@ -1042,9 +1077,37 @@ export default function ContactDetails() {
                                                         <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)' }}>{item.type} Interaction</div>
                                                         <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                     </div>
+                                                    <div style={{ display: 'flex', gap: 6 }}>
+                                                        <button
+                                                            onClick={() => { setEditingInteraction(item.id); setEditNote(item.note || ''); }}
+                                                            style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                            title="Edit"
+                                                        >
+                                                            <Edit2 size={13} color="#3b82f6" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteInteraction(item.id)}
+                                                            style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                            title="Delete"
+                                                        >
+                                                            <X size={13} color="#ef4444" />
+                                                        </button>
+                                                    </div>
                                                 </div>
 
-                                                {item.note && item.note.includes('[Automated AI Transcript') ? (() => {
+                                                {editingInteraction === item.id ? (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                                        <textarea
+                                                            value={editNote}
+                                                            onChange={e => setEditNote(e.target.value)}
+                                                            style={{ width: '100%', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0', background: '#fcfdfe', minHeight: 80, fontSize: '13px', fontWeight: 600, fontFamily: 'inherit', resize: 'vertical', outline: 'none' }}
+                                                        />
+                                                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                                            <button onClick={() => { setEditingInteraction(null); setEditNote(''); }} style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: 'var(--slate-500)' }}>Cancel</button>
+                                                            <button onClick={() => handleEditInteraction(item.id)} style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: 'var(--navy-900)', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}>Save Changes</button>
+                                                        </div>
+                                                    </div>
+                                                ) : item.note && item.note.includes('[Automated AI Transcript') ? (() => {
                                                     const lines = item.note.split('\n');
                                                     const headerLine = lines[0];
                                                     const sentimentMatch = headerLine.match(/Sentiment: (.*?)]/);

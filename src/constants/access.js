@@ -26,7 +26,7 @@ export const ROLE_ACCESS = {
         color: 'var(--accent-emerald)',
         bg: 'rgba(16,185,129,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/followups', '/site-visits',
-            '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/command-center', '/leaderboard'],
+            '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/command-center', '/leaderboard', '/analytics'],
     },
     customer: {
         label: 'Customer',

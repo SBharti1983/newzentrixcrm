@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { leadsApi, projectsApi, usersApi, notificationsApi, channelPartnersApi } from '../api/client';
-import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw } from 'lucide-react';
+import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
 import { dialerEvents } from '../constants/events';
@@ -80,6 +80,8 @@ export default function Leads() {
     const [form, setForm] = useState(DEFAULT_FORM);
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(50);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [saving, setSaving] = useState(false);
     const [hoveredRow, setHoveredRow] = useState(null);
     const [previewLeadId, setPreviewLeadId] = useState(null);
@@ -99,9 +101,11 @@ export default function Leads() {
         if (filterSource !== 'All') p.source = filterSource;
         if (filterStatus !== 'All') p.status = filterStatus;
         if (filterNurtureDue) p.nurture_due = 'true';
+        if (startDate) p.startDate = startDate;
+        if (endDate) p.endDate = endDate;
         if (search.trim()) p.q = search.trim();
         return p;
-    }, [limit, page, filterStage, filterSource, filterStatus, search, filterNurtureDue]);
+    }, [limit, page, filterStage, filterSource, filterStatus, search, filterNurtureDue, startDate, endDate]);
 
     const { data: leadsRes, loading, error, refetch } = useApi(
         useCallback(() => leadsApi.list(params), [params]),
@@ -112,7 +116,7 @@ export default function Leads() {
     useEffect(() => {
         setSelectedIds(new Set());
         setPage(1);
-    }, [filterStage, filterSource, filterStatus, search, filterNurtureDue]);
+    }, [filterStage, filterSource, filterStatus, search, filterNurtureDue, startDate, endDate]);
     const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
     const { data: users } = useApi(useCallback(() => usersApi.list(), []));
     const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
@@ -298,42 +302,98 @@ export default function Leads() {
             </div>
 
             {/* Filters */}
-            <div className="card mb-4" style={{ padding: '12px 20px', borderRadius: 12 }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div className="search-bar" style={{ width: 340, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
+            <div className="card mb-4" style={{ padding: '10px 16px', borderRadius: 12 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                    <div className="search-bar" style={{ width: 220, minWidth: 180, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
                         <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads by name, city, budget..." style={{ background: 'transparent' }} />
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads..." style={{ background: 'transparent' }} />
                     </div>
                     
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <select className="form-control form-control-sm" style={{ width: 130 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
-                            <option value="All">All Stages</option>
-                            {STAGES.map(s => <option key={s}>{s}</option>)}
-                        </select>
-                        <select className="form-control form-control-sm" style={{ width: 130 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                            <option value="All">All Statuses</option>
-                            <option value="Active">Active</option>
-                            <option value="Nurture">Nurture</option>
-                            <option value="Won">Won</option>
-                            <option value="Lost">Lost</option>
-                        </select>
-                        <select className="form-control form-control-sm" style={{ width: 160 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
-                            <option value="All">All Sources</option>
-                            {SOURCES.map(s => <option key={s}>{s}</option>)}
-                        </select>
-                    </div>
+                    <select className="form-control form-control-sm" style={{ width: 120, minWidth: 100 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+                        <option value="All">All Stages</option>
+                        {STAGES.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                    <select className="form-control form-control-sm" style={{ width: 115, minWidth: 95 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Nurture">Nurture</option>
+                        <option value="Won">Won</option>
+                        <option value="Lost">Lost</option>
+                    </select>
+                    <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
+                        <option value="All">All Sources</option>
+                        {SOURCES.map(s => <option key={s}>{s}</option>)}
+                    </select>
 
                     <button 
                         className={`btn btn-sm ${filterNurtureDue ? 'btn-primary' : 'btn-ghost'}`} 
-                        style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700 }}
+                        style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
                         onClick={() => setFilterNurtureDue(!filterNurtureDue)}
                     >
                         🎯 Nurture Due
                     </button>
                     
-                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }}>
+                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         <Filter size={14} /> Filters
                     </button>
+
+                    <div style={{ 
+                        display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0,
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+                        borderRadius: 10, 
+                        border: '1px solid #e2e8f0',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                        overflow: 'hidden',
+                        height: 32
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px' }}>
+                            <Calendar size={13} color="#3b82f6" />
+                            <input 
+                                type="date" 
+                                style={{ 
+                                    border: 'none', background: 'transparent', fontSize: '0.72rem', 
+                                    padding: 0, color: startDate ? '#1e293b' : '#94a3b8', width: 85,
+                                    fontWeight: startDate ? 700 : 500, cursor: 'pointer', outline: 'none'
+                                }} 
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                            />
+                        </div>
+                        <div style={{ 
+                            background: 'linear-gradient(135deg, #3b82f6, #6366f1)', 
+                            color: 'white', fontSize: '0.6rem', fontWeight: 800, 
+                            padding: '0 8px', height: '100%', display: 'flex', alignItems: 'center',
+                            letterSpacing: '0.05em', textTransform: 'uppercase'
+                        }}>
+                            to
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px' }}>
+                            <input 
+                                type="date" 
+                                style={{ 
+                                    border: 'none', background: 'transparent', fontSize: '0.72rem', 
+                                    padding: 0, color: endDate ? '#1e293b' : '#94a3b8', width: 85,
+                                    fontWeight: endDate ? 700 : 500, cursor: 'pointer', outline: 'none'
+                                }} 
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                            />
+                            {(startDate || endDate) && (
+                                <button 
+                                    onClick={() => { setStartDate(''); setEndDate(''); }}
+                                    style={{ 
+                                        border: 'none', background: 'rgba(239,68,68,0.1)', cursor: 'pointer', 
+                                        display: 'flex', alignItems: 'center', padding: '2px', borderRadius: 4,
+                                        transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
+                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                                >
+                                    <X size={10} color="#ef4444" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -467,18 +527,20 @@ export default function Leads() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '4px 8px' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0 }}>
+                                        <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                                                     <span style={{ 
-                                                        color: 'var(--text-secondary)', 
+                                                        color: lead.email ? 'var(--text-secondary)' : '#ef4444', 
                                                         overflowWrap: 'anywhere',
                                                         lineHeight: 1,
                                                         whiteSpace: 'nowrap',
                                                         overflow: 'hidden',
-                                                        textOverflow: 'ellipsis'
-                                                    }}>{lead.email || '—'}</span>
+                                                        textOverflow: 'ellipsis',
+                                                        fontSize: lead.email ? 'inherit' : '0.65rem',
+                                                        fontWeight: lead.email ? 'inherit' : 700
+                                                    }}>{lead.email || 'Email missing'}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Phone size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -544,7 +606,43 @@ export default function Leads() {
                             </tbody>
                         </table>
 
-                        {/* Pagination removed per request */}
+                        {/* Pagination Section */}
+                        <div style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '12px 20px', borderTop: '1px solid var(--border-light)',
+                            position: 'sticky', bottom: 0, background: 'var(--slate-50)', zIndex: 40,
+                            borderRadius: '0 0 12px 12px'
+                        }}>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, leadsRes?.total || 0)} of {leadsRes?.total || 0} leads
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    disabled={page === 1}
+                                    style={{ background: 'white', borderRadius: 8, height: 32, padding: '0 12px' }}
+                                >
+                                    Previous
+                                </button>
+                                <div style={{ 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                    background: 'white', height: 32, borderRadius: 8, 
+                                    border: '1px solid var(--border-light)', fontSize: '0.75rem', 
+                                    fontWeight: 700, padding: '0 12px' 
+                                }}>
+                                    Page {page}
+                                </div>
+                                <button
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={() => setPage(p => p + 1)}
+                                    disabled={leads.length < limit || (page * limit) >= (leadsRes?.total || 0)}
+                                    style={{ background: 'white', borderRadius: 8, height: 32, padding: '0 12px' }}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
                 </>

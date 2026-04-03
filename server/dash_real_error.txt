@@ -1,0 +1,25 @@
+error: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 0)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\nerror: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 2)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\nerror: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 2)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\nerror: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 1)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\nerror: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 4)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\nerror: invalid input syntax for type uuid: "null"\nerror: invalid input syntax for type uuid: "null"
+    at C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Promise.all (index 6)
+    at async C:\Users\Sikandar Bharti\Desktop\ZentrixCRM\server\routes\dashboard.js:108:25\n\n

@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, Users, Building2, UserCheck, Calendar,
@@ -7,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { ROLE_ACCESS } from '../constants/access';
+import { leadsApi } from '../api/client';
 
 const NAV_SECTIONS = [
     {
@@ -21,7 +23,7 @@ const NAV_SECTIONS = [
         label: 'Sales',
         items: [
             { path: '/leads', label: 'Leads', icon: Users, badge: '10' },
-            { path: '/pipeline', label: 'Pipeline', icon: BarChart3 },
+            { path: '/pipeline', label: 'Deals', icon: BarChart3 },
             { path: '/nurture-leads', label: 'Nurture Leads', icon: RotateCw },
             { path: '/lead-scoring', label: 'Lead Scoring', icon: Target },
         ],
@@ -115,8 +117,17 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     const location = useLocation();
     const { user, canAccess } = useAuth();
     const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
+    const [realLeadCount, setRealLeadCount] = useState(null);
 
     const isMainDomain = window.location.hostname === 'zentrixcrm.com' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    useEffect(() => {
+        if (canAccess('/leads')) {
+            leadsApi.list({ limit: 1 })
+                .then(res => setRealLeadCount(res.total))
+                .catch(err => console.error('Failed to update sidebar lead count', err));
+        }
+    }, [canAccess]);
 
     const filteredSections = NAV_SECTIONS.map(section => ({
         ...section,
@@ -175,18 +186,24 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                 {filteredSections.map(section => (
                     <div key={section.label}>
                         <div className="nav-section-label">{section.label}</div>
-                        {section.items.map(({ path, label, icon: Icon, badge }) => (
-                            <button
-                                key={path}
-                                className={`nav-item${location.pathname === path ? ' active' : ''}`}
-                                onClick={() => handleNav(path)}
-                                data-tooltip={collapsed ? label : undefined}
-                            >
-                                <Icon className="nav-item-icon" size={18} />
-                                <span className="nav-item-text">{label}</span>
-                                {badge && <span className="nav-badge">{badge}</span>}
-                            </button>
-                        ))}
+                        {section.items.map(({ path, label, icon: Icon, badge }) => {
+                            let displayBadge = badge;
+                            if (label === 'Leads' && realLeadCount !== null) {
+                                displayBadge = realLeadCount;
+                            }
+                            return (
+                                <button
+                                    key={path}
+                                    className={`nav-item${location.pathname === path ? ' active' : ''}`}
+                                    onClick={() => handleNav(path)}
+                                    data-tooltip={collapsed ? label : undefined}
+                                >
+                                    <Icon className="nav-item-icon" size={18} />
+                                    <span className="nav-item-text">{label}</span>
+                                    {displayBadge ? <span className="nav-badge">{displayBadge > 999 ? '999+' : displayBadge}</span> : null}
+                                </button>
+                            );
+                        })}
                     </div>
                 ))}
 

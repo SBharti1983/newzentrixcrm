@@ -112,7 +112,7 @@ router.get('/:id', async (req, res) => {
 router.get('/', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
-    const { stage, source, priority, agent, q, channel_partner_id, status } = req.query;
+    const { stage, source, priority, agent, q, channel_partner_id, status, startDate, endDate } = req.query;
     const offset = (page - 1) * limit;
     const conditions = [`l.tenant_id = $1`];
     const params = [req.tenantId];
@@ -124,6 +124,16 @@ router.get('/', async (req, res) => {
     if (agent) { conditions.push(`l.assigned_to = $${i++}`); params.push(agent); }
     if (channel_partner_id) { conditions.push(`l.channel_partner_id = $${i++}`); params.push(channel_partner_id); }
     if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
+
+    if (startDate) {
+        conditions.push(`l.created_at::date >= $${i++}`);
+        params.push(startDate);
+    }
+    if (endDate) {
+        conditions.push(`l.created_at::date <= $${i++}`);
+        params.push(endDate);
+    }
+
     if (req.query.nurture_due === 'true') {
         conditions.push(`l.status = 'Nurture' AND l.reconnect_date <= CURRENT_DATE`);
     } else if (req.query.nurture_overdue === 'true') {
@@ -285,7 +295,7 @@ router.post('/', validateLead, async (req, res) => {
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18) RETURNING *`,
             [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
             priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
-            safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active', nurture_reason || null, emptyToNull(reconnect_date)]
+                safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active', nurture_reason || null, emptyToNull(reconnect_date)]
         );
 
         const newLead = rows[0];
@@ -350,6 +360,37 @@ router.post('/:id/interactions', async (req, res) => {
     } catch (err) {
         console.error('Failed to add interaction', err);
         res.status(500).json({ error: 'Failed to add interaction' });
+    }
+});
+
+// PATCH /api/leads/:leadId/interactions/:interactionId
+router.patch('/:leadId/interactions/:interactionId', async (req, res) => {
+    const { note } = req.body;
+    try {
+        const { rows } = await pool.query(
+            `UPDATE interactions SET note = $1 WHERE id = $2 AND lead_id = $3 AND tenant_id = $4 RETURNING *`,
+            [note, req.params.interactionId, req.params.leadId, req.tenantId]
+        );
+        if (!rows[0]) return res.status(404).json({ error: 'Interaction not found' });
+        res.json(rows[0]);
+    } catch (err) {
+        console.error('Failed to update interaction:', err);
+        res.status(500).json({ error: 'Failed to update interaction' });
+    }
+});
+
+// DELETE /api/leads/:leadId/interactions/:interactionId
+router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
+    try {
+        const { rowCount } = await pool.query(
+            `DELETE FROM interactions WHERE id = $1 AND lead_id = $2 AND tenant_id = $3`,
+            [req.params.interactionId, req.params.leadId, req.tenantId]
+        );
+        if (rowCount === 0) return res.status(404).json({ error: 'Interaction not found' });
+        res.json({ message: 'Interaction deleted' });
+    } catch (err) {
+        console.error('Failed to delete interaction:', err);
+        res.status(500).json({ error: 'Failed to delete interaction' });
     }
 });
 
@@ -491,15 +532,15 @@ router.post('/:id/ai-score', async (req, res) => {
             if (lead.notes && lead.notes.length > 20) { score += 5; reasons.push("Detailed notes exist indicating conversation"); }
             if (lead.source === 'Referral') { score += 10; reasons.push("Referral source carries higher conversion probability"); }
             if (lead.stage === 'Site Visit' || lead.stage === 'Negotiation') { score += 15; reasons.push(`Late pipeline stage (${lead.stage}) indicates high intent`); }
-            
+
             // New factors
-            if (completedVisits > 0) { 
-                score += (completedVisits * 15); 
-                reasons.push(`${completedVisits} completed site visit(s) - Strong physical intent`); 
+            if (completedVisits > 0) {
+                score += (completedVisits * 15);
+                reasons.push(`${completedVisits} completed site visit(s) - Strong physical intent`);
             }
-            if (totalPaid > 0) { 
-                score += 25; 
-                reasons.push(`Commitment shown via payments (₹${totalPaid.toLocaleString()})`); 
+            if (totalPaid > 0) {
+                score += 25;
+                reasons.push(`Commitment shown via payments (₹${totalPaid.toLocaleString()})`);
             }
 
             if (lead.stage === 'Lost') { score = 10; reasons.push("Lead marked as lost"); }
