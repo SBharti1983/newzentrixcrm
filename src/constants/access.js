@@ -41,4 +41,12 @@ export const ROLE_ACCESS = {
         bg: 'rgba(6,182,212,0.1)',
         pages: ['/', '/broker-portal'],
     },
+    superadmin: {
+        label: 'Super Administrator',
+        color: 'var(--accent-violet)',
+        bg: 'rgba(139,92,246,0.1)',
+        pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
+            '/bookings', '/payment-tracker', '/agreements', '/followups',
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard', '/superadmin'],
+    },
 };
