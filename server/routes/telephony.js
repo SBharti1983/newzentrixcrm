@@ -12,6 +12,11 @@ const upload = multer({
     limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for longer calls
 });
 
+router.use((req, res, next) => {
+    console.log(`[Telephony Router] ${req.method} ${req.path}`);
+    next();
+});
+
 // Specialized middleware for Android WTI app authentication via X-Zapier-Token
 async function authenticateHandset(req, res, next) {
     const token = req.headers['x-zapier-token'] || req.query.token;
@@ -316,23 +321,44 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
             noteContent += `\n\nRecording Link: ${audioUrl}`;
         }
 
-        // Persist to Database
+        // Persist to Database with safety wrapping
         let savedInteractionId = interactionId;
-        if (interactionId) {
-            await pool.query(
-                `UPDATE interactions 
-                 SET note = $1, recording_url = $2, transcript = $3, sentiment = $4, updated_at = NOW() 
-                 WHERE id = $5 AND tenant_id = $6`,
-                [noteContent, audioUrl, transcriptLines, aiResult.sentiment, interactionId, req.tenantId]
-            );
-        } else if (finalLeadId) {
-            const insertRes = await pool.query(
-                `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment)
-                 VALUES ($1, $2, $3, 'Call', NOW(), $4, 'Connected', $5, $6, $7)
-                 RETURNING id`,
-                [req.tenantId, finalLeadId, req.user.id, noteContent, audioUrl, transcriptLines, aiResult.sentiment]
-            );
-            savedInteractionId = insertRes.rows[0]?.id;
+        
+        // Safety check for valid UUID format if interactionId is provided
+        const isValidUUID = (id) => id && id.length >= 32; 
+
+        if (isValidUUID(savedInteractionId)) {
+            try {
+                await pool.query(
+                    `UPDATE interactions 
+                     SET note = $1, recording_url = $2, transcript = $3, sentiment = $4, updated_at = NOW() 
+                     WHERE id = $5 AND tenant_id = $6`,
+                    [noteContent, audioUrl, transcriptLines, aiResult.sentiment, savedInteractionId, req.tenantId]
+                );
+            } catch (updateErr) {
+                console.warn(`[Telephony] Failed to update existing interaction ${savedInteractionId}, falling back to new insertion. Error: ${updateErr.message}`);
+                // Fallback to insertion if update fails
+                savedInteractionId = null;
+            }
+        } else {
+            savedInteractionId = null; // Mark as invalid to trigger insert
+        }
+
+        // If insert is needed (no valid interactionId or update failed)
+        if (!savedInteractionId && finalLeadId) {
+            try {
+                const insertRes = await pool.query(
+                    `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment)
+                     VALUES ($1, $2, $3, 'Call', NOW(), $4, 'Connected', $5, $6, $7)
+                     RETURNING id`,
+                    [req.tenantId, finalLeadId, req.user.id, noteContent, audioUrl, transcriptLines, aiResult.sentiment]
+                );
+                savedInteractionId = insertRes.rows[0]?.id;
+                console.log(`[Telephony] Created fresh interaction ${savedInteractionId} for Lead ${finalLeadId}`);
+            } catch (insertErr) {
+                console.error('[Telephony] Database insertion failed CRITICAL:', insertErr.message);
+                return res.status(500).json({ error: 'Database persistence failure' });
+            }
         }
 
         // ─── PUSH TRANSCRIPT TO FIREBASE RTDB ───
