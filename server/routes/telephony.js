@@ -6,6 +6,7 @@ const pool = require('../db/pool');
 const { generateAudioTranscription, transcribeFromUrl, isAiEnabled } = require('../utils/ai');
 const { uploadToFirebase } = require('../utils/cloudStorage');
 const { isStorageEnabled } = require('../utils/firebase');
+const crypto = require('crypto');
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -48,6 +49,8 @@ async function authenticateHandset(req, res, next) {
 
         req.tenantId = tenantId;
         req.isHandset = true;
+        // Default mock user for database consistency
+        req.user = req.user || { id: null, name: 'GSM Handset' };
         next();
     } catch (err) {
         console.error('[Telephony] Auth system error:', err);
@@ -149,7 +152,7 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
                 const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
                 const folderPath = `recordings/${tenantSlug}/${yearMonth}`;
 
-                const agentNameStr = (req.user.name || 'Agent').replace(/[^a-zA-Z0-9]/g, '');
+                const agentNameStr = (req.user?.name || 'Handset').replace(/[^a-zA-Z0-9]/g, '');
                 const phoneLast4 = leadPhone.length >= 4 ? leadPhone.slice(-4) : leadPhone;
                 const timeStr = dateObj.toISOString().replace(/[:.]/g, '-');
                 const customFileName = `${leadName}_${agentNameStr}_${phoneLast4}_${timeStr}`;
@@ -347,17 +350,19 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
         // If insert is needed (no valid interactionId or update failed)
         if (!savedInteractionId && finalLeadId) {
             try {
+                const newId = crypto.randomUUID();
                 const insertRes = await pool.query(
-                    `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment)
-                     VALUES ($1, $2, $3, 'Call', NOW(), $4, 'Connected', $5, $6, $7)
+                    `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment)
+                     VALUES ($1, $2, $3, $4, 'Call', NOW(), $5, 'Connected', $6, $7, $8)
                      RETURNING id`,
-                    [req.tenantId, finalLeadId, req.user.id, noteContent, audioUrl, transcriptLines, aiResult.sentiment]
+                    [newId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, audioUrl, transcriptLines, aiResult.sentiment]
                 );
                 savedInteractionId = insertRes.rows[0]?.id;
                 console.log(`[Telephony] Created fresh interaction ${savedInteractionId} for Lead ${finalLeadId}`);
             } catch (insertErr) {
                 console.error('[Telephony] Database insertion failed CRITICAL:', insertErr.message);
-                return res.status(500).json({ error: 'Database persistence failure' });
+                console.error('[Telephony] Failed Payload Params:', [req.tenantId, finalLeadId, req.user?.id || null]);
+                return res.status(500).json({ error: `DB Error: ${insertErr.message}` });
             }
         }
 
