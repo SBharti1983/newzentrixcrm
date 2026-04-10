@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ProFormaInvoice from '../components/ProFormaInvoice';
 
 const STATUS_BADGE = {
     Confirmed: 'badge-green',
@@ -98,6 +99,7 @@ export default function Bookings() {
     const [step, setStep] = useState(1);
     const [selectedPlan, setSelectedPlan] = useState(PAYMENT_PLANS[1]);
     const [saving, setSaving] = useState(false);
+    const [showProForma, setShowProForma] = useState(null);
 
     const { data: unitsRaw } = useApi(() => form.projectId ? projectsApi.inventory(form.projectId) : Promise.resolve([]), [form.projectId]);
     const units = unitsRaw || [];
@@ -380,6 +382,10 @@ export default function Bookings() {
                                         <CheckCircle size={12} /> Confirm
                                     </button>
                                 )}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                    onClick={() => setShowProForma(b)}>
+                                    <FileText size={12} /> Pro-Forma
+                                </button>
                                 <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
                                     onClick={() => navigate('/payment-tracker')}>
                                     <CreditCard size={12} /> Payments

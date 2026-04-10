@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_margin="32dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="@color/primary">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:gravity="center">
+
+        <ImageView
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/logo"
+            android:layout_marginBottom="16dp"
+            app:tint="@color/surface" />
+
+        <TextView
+            android:id="@+id/txtCallerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Incoming Call"
+            android:textColor="@color/surface"
+            android:textSize="22sp"
+            android:fontFamily="sans-serif-black"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/txtCallerNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+1 000 000 0000"
+            android:textColor="#B3FFFFFF"
+            android:textSize="18sp"
+            android:layout_marginBottom="32dp"/>
+
+        <Button
+            android:id="@+id/btnDismissPop"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dismiss"
+            android:textColor="@color/surface"
+            app:strokeColor="@color/surface"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

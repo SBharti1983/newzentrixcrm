@@ -89,7 +89,7 @@ router.get('/', async (req, res) => {
 
             // Upcoming follow-ups
             pool.query(`
-                SELECT f.id, f.type, f.priority, f.scheduled_at, l.name as lead_name, u.name as agent_name, u.avatar
+                SELECT f.id, f.type, f.priority, f.scheduled_at, f.is_ai_generated, l.name as lead_name, u.name as agent_name, u.avatar
                 FROM followups f
                 LEFT JOIN leads l ON f.lead_id = l.id
                 LEFT JOIN users u ON f.assigned_to = u.id
@@ -111,7 +111,73 @@ router.get('/', async (req, res) => {
                           AND created_at >= date_trunc('month', NOW())
                     ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')}
                     ) as reactivated_this_month
-                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? nurtureParams : (downlineIds.length ? [tid, downlineIds] : [tid]))
+                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? nurtureParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
+
+            // AI Sentiment Intelligence
+            pool.query(`
+                SELECT 
+                    sentiment,
+                    COUNT(*) as count
+                FROM interactions 
+                WHERE tenant_id = $1 AND sentiment IS NOT NULL
+                ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')}
+                GROUP BY sentiment`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
+
+            // High Friction Risk Alerts
+            pool.query(`
+                SELECT 
+                    i.id, i.sentiment, i.note, i.date, 
+                    l.name as lead_name, l.id as lead_id,
+                    u.name as agent_name
+                FROM interactions i
+                JOIN leads l ON i.lead_id = l.id
+                JOIN users u ON i.user_id = u.id
+                WHERE i.tenant_id = $1 AND i.sentiment = 'Cold'
+                ORDER BY i.date DESC LIMIT 5`, [tid]),
+
+            // Property Popularity Index (Trending)
+            pool.query(`
+                SELECT 
+                    p as name, 
+                    COUNT(*) as mentions
+                FROM interactions i, unnest(i.projects_discussed) p
+                WHERE i.tenant_id = $1 AND i.date >= NOW() - INTERVAL '30 days'
+                GROUP BY p
+                ORDER BY mentions DESC LIMIT 6`, [tid]),
+
+            // Agent Telephony Quick Stats
+            pool.query(`
+                SELECT 
+                    COUNT(*) filter (where created_at >= current_date) as calls_today,
+                    COUNT(*) filter (where note ILIKE '%Recording Link%') as synced_recordings
+                FROM interactions
+                WHERE tenant_id = $1 AND user_id = $2 AND type = 'Call'
+            `, [tid, effectivePersonal ? targetUserId : uid]),
+
+            // 🔥 Sentiment Heatmap: By Project
+            pool.query(`
+                SELECT 
+                    p as project_name,
+                    COUNT(*) filter (where sentiment = 'Positive') as positive,
+                    COUNT(*) filter (where sentiment = 'Neutral') as neutral,
+                    COUNT(*) filter (where sentiment = 'Concerned') as concerned,
+                    COUNT(*) filter (where sentiment = 'Negative') as negative
+                FROM interactions i, unnest(i.projects_discussed) p
+                WHERE i.tenant_id = $1 AND i.sentiment IS NOT NULL
+                GROUP BY p`, [tid]),
+
+            // 🔥 Sentiment Heatmap: By Agent
+            pool.query(`
+                SELECT 
+                    u.name as agent_name,
+                    COUNT(*) filter (where i.sentiment = 'Positive') as positive,
+                    COUNT(*) filter (where i.sentiment = 'Neutral') as neutral,
+                    COUNT(*) filter (where i.sentiment = 'Concerned') as concerned,
+                    COUNT(*) filter (where i.sentiment = 'Negative') as negative
+                FROM interactions i
+                JOIN users u ON i.user_id = u.id
+                WHERE i.tenant_id = $1 AND i.sentiment IS NOT NULL
+                GROUP BY u.id, u.name`, [tid])
         ];
 
         // Only fetch members list in global mode
@@ -120,16 +186,43 @@ router.get('/', async (req, res) => {
                 SELECT u.id, u.name, u.avatar, u.role,
                        (SELECT COUNT(*) FROM leads WHERE assigned_to = u.id AND stage NOT IN ('Won','Lost')) as active_leads,
                        (SELECT COUNT(*) FROM bookings WHERE assigned_agent_id = u.id AND status != 'Cancelled') as bookings,
-                       (SELECT ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1) FROM leads WHERE assigned_to = u.id) as win_rate
+                       COALESCE((SELECT SUM(total_amount) FROM bookings WHERE assigned_agent_id = u.id AND status != 'Cancelled'), 0) as total_value,
+                       (SELECT ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1) FROM leads WHERE assigned_to = u.id) as win_rate,
+                       (SELECT ROUND(AVG(rapport_score), 1) FROM interactions WHERE user_id = u.id AND rapport_score IS NOT NULL) as rapport_avg,
+                       (SELECT ROUND(AVG(closing_score), 1) FROM interactions WHERE user_id = u.id AND closing_score IS NOT NULL) as closing_avg
                 FROM users u
                 WHERE u.tenant_id = $1 AND u.is_active = TRUE
                 ${downlineIds.length ? ' AND u.id = ANY($2)' : ''}
                 ORDER BY active_leads DESC`, downlineIds.length ? [tid, downlineIds] : [tid]));
         }
 
-        const results = await Promise.all(queries);
-        const [leads, bookings, installs, pipeline, stages, followups, nurture] = results;
-        const members = (!effectivePersonal && isManager) ? results[7] : { rows: [] };
+        const executeQuery = async (p, label) => {
+            try {
+                return await p;
+            } catch (e) {
+                console.error(`[DASHBOARD SUB-QUERY ERROR] ${label}:`, e.message);
+                return { rows: label === 'Members' ? [] : [{}] }; // Fallback to empty data
+            }
+        };
+
+        const results = await Promise.all([
+            executeQuery(queries[0], 'Leads'),
+            executeQuery(queries[1], 'Bookings'),
+            executeQuery(queries[2], 'Overdue'),
+            executeQuery(queries[3], 'Pipeline'),
+            executeQuery(queries[4], 'Stages'),
+            executeQuery(queries[5], 'Followups'),
+            executeQuery(queries[6], 'Nurture'),
+            executeQuery(queries[7], 'Sentiment'),
+            executeQuery(queries[8], 'Alerts'),
+            executeQuery(queries[9], 'Trends'),
+            executeQuery(queries[10], 'AgentStats'), 
+            executeQuery(queries[11], 'ProjectSentimentHeatmap'),
+            executeQuery(queries[12], 'AgentSentimentHeatmap'),
+            queries[13] ? executeQuery(queries[13], 'Members') : Promise.resolve({ rows: [] })
+        ]);
+        
+        const [leads, bookings, installs, pipeline, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, membersResult] = results;
 
         res.json({
             meta: {
@@ -145,10 +238,18 @@ router.get('/', async (req, res) => {
             stages: stages.rows,
             upcoming_followups: followups.rows,
             nurture: nurture.rows[0],
-            members: members.rows
+            sentiment: sentiment.rows,
+            alerts: alerts.rows,
+            trends: trends.rows,
+            telephony_stats: agentStats.rows[0],
+            heatmap: {
+                projects: projectHeatmap.rows,
+                agents: agentHeatmap.rows
+            },
+            members: membersResult.rows
         });
     } catch (err) {
-        require('fs').appendFileSync('dash_real_error.txt', err.toString() + '\\n' + (err.stack || '') + '\\n\\n');
+        require('fs').appendFileSync('dash_real_error.txt', err.toString() + '\n' + (err.stack || '') + '\n\n');
         console.error('[DASHBOARD ERROR]', err);
         res.status(500).json({ error: 'Failed to load dashboard' });
     }

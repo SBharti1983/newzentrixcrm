@@ -96,17 +96,52 @@ router.post('/transcribe-call', upload.single('audio'), async (req, res) => {
             }
         `;
 
+        const { uploadToFirebase } = require('../utils/cloudStorage');
+        const { isStorageEnabled } = require('../utils/firebase');
+
+        let audioUrl = null;
+        if (isStorageEnabled) {
+            try {
+                audioUrl = await uploadToFirebase(req.file.buffer, req.file.originalname, 'call-recordings');
+                console.log('[ZAPIER] Audio uploaded to cloud:', audioUrl);
+            } catch (cloudErr) {
+                console.error('[ZAPIER] Cloud storage failed, continuing with local only:', cloudErr.message);
+            }
+        }
+
         const base64Audio = req.file.buffer.toString('base64');
         const mimeType = req.file.mimetype || 'audio/wav';
 
         const result = await generateAudioTranscription(prompt, base64Audio, mimeType, true);
 
-        // Tie transcript to lead profile if leadId is passed
-        const { leadId } = req.body;
-        if (leadId) {
-            const transcriptSnippet = result.transcript.map(t => `${t.speaker === 'AGt' ? 'Agent' : 'Client'}: ${t.text}`).join('\n');
-            const noteContent = `[Automated AI Transcript | Sentiment: ${result.sentiment}]\n\n${transcriptSnippet}`;
+        // Tie transcript to lead profile if leadId or interactionId is passed
+        const { leadId, interactionId } = req.body;
+        
+        const transcriptSnippet = result.transcript.map(t => `${t.speaker === 'AGt' ? 'Agent' : 'Client'}: ${t.text}`).join('\n');
+        let noteContent = `[Automated AI Transcript | Sentiment: ${result.sentiment}]\n\n${transcriptSnippet}`;
+        
+        if (audioUrl) {
+            noteContent += `\n\nRecording: ${audioUrl}`;
+        }
+
+        if (interactionId) {
+            // Update existing interaction
+            await pool.query(
+                `UPDATE interactions SET note = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3`,
+                [noteContent, interactionId, req.tenantId]
+            );
             
+            const updated = await pool.query(
+                `SELECT i.*, l.name as lead_name, l.phone as lead_phone, u.name as agent_name
+                 FROM interactions i
+                 JOIN leads l ON i.lead_id = l.id
+                 JOIN users u ON i.user_id = u.id
+                 WHERE i.id = $1`,
+                [interactionId]
+            );
+            
+            return res.json({ ...result, savedInteraction: updated.rows[0] });
+        } else if (leadId) {
             await pool.query(
                 `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note)
                  VALUES ($1, $2, $3, 'Call', NOW(), $4)`,

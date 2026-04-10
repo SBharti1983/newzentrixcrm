@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+// removed unused imports
 import { 
     Phone, Clock, BarChart3, TrendingUp, Users, 
     ArrowUpRight, ArrowDownRight, Smartphone, Activity,

@@ -1,5 +1,6 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+// ZentrixCRM Main Entry Point
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -163,16 +164,21 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/telephony', require('./routes/telephony'));
+app.use('/api/copilot', require('./routes/copilot'));
 app.use('/api/superadmin', require('./routes/superadmin'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api/automations', require('./routes/automations'));
 app.use('/api/zapier', require('./routes/zapier'));
+app.use('/api/telephony', require('./routes/telephony'));
 app.use('/api/automation', require('./routes/automation'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/marketing', require('./routes/marketing'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/search', require('./routes/search'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/ai', require('./routes/ai'));
+app.use('/api/broker', require('./routes/broker'));
 
 app.get('/', (req, res) => { res.json({ message: 'ZentrixCRM API Running', health: '/api/health' }); });
 
@@ -191,6 +197,10 @@ const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`ZentrixCRM API Cluster Ready on Port ${PORT}`);
     automationService.startBackgroundWorker(io);
+    
+    // Start 30-day recording retention auto-cleanup
+    const { startRetentionScheduler } = require('./services/recordingRetention');
+    startRetentionScheduler();
 });
 
 

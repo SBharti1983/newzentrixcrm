@@ -11,19 +11,24 @@ class IntegrationService {
         const message = payload.message || payload.text || payload.body || payload.content;
         const name = payload.name || payload.chat_name || payload.contact_name;
 
-        if (!phone) {
-            console.warn('[Integration] WhatsApp payload missing phone/sender field', payload);
-            // Fallback to generic parsing if specific fields aren't found
-            return await this.handleGenericLead(tenantId, payload, 'WhatsApp', io);
-        }
-
-        return await this.createLeadFromIntegration({
+        const lead = await this.createLeadFromIntegration({
             tenant_id: tenantId,
             name: name || `WA-${String(phone).slice(-4)}`,
             phone: phone,
             notes: message ? `WhatsApp: ${message}` : 'New contact from WhatsApp',
             source: 'WhatsApp'
         }, io);
+
+        // 🤖 ACTIVATE AUTONOMOUS RESPONDER 🤖
+        if (message) {
+            const chatbotService = require('./chatbotService');
+            // We run this non-blocking to ensure the webhook returns immediately
+            chatbotService.handleIncomingMessage(tenantId, phone, message).catch(err => {
+                console.error('[Integration Chatbot Hook] Failed:', err);
+            });
+        }
+
+        return lead;
     }
 
     /**
@@ -38,13 +43,17 @@ class IntegrationService {
             });
         }
 
+        // Project identification logic (Adsets often pass project_name or campaign_name)
+        const projectName = data.project_name || data.project || payload.campaign_name || 'General Inquiry';
+
         return await this.createLeadFromIntegration({
             tenant_id: tenantId,
-            name: data.full_name || data.first_name + ' ' + data.last_name || 'FB Lead',
-            phone: data.phone_number,
+            name: data.full_name || data.first_name + (data.last_name ? ' ' + data.last_name : '') || 'Meta Lead',
+            phone: data.phone_number || data.phone,
             email: data.email,
             city: data.city,
-            source: 'Facebook Ads'
+            source: 'Facebook Ads',
+            notes: `Project: ${projectName}${data.city ? ' | Location: ' + data.city : ''}`
         }, io);
     }
 
@@ -89,6 +98,7 @@ class IntegrationService {
      */
     async createLeadFromIntegration(leadData, io) {
         const { tenant_id, name, phone, email, city, notes, source } = leadData;
+        const { sendWhatsappMessage } = require('../utils/whatsapp');
 
         try {
             // Check for duplicates within tenant
@@ -100,9 +110,9 @@ class IntegrationService {
 
             const { rows } = await pool.query(
                 `INSERT INTO leads (tenant_id, name, phone, email, city, notes, source, stage, score, priority)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'New', 50, 'Medium')
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'New', 70, 'High')
                  RETURNING *`,
-                [tenant_id, name, phone, email || null, city || null, notes || null, source]
+                 [tenant_id, name, phone, email || null, city || null, notes || null, source]
             );
 
             const newLead = rows[0];
@@ -111,6 +121,17 @@ class IntegrationService {
             automationService.handleLeadCreate(newLead, io).catch(err => {
                 console.error('[Integration Automation] Failed:', err);
             });
+
+            // 🔥 ZERO-SECOND FOLLOW-UP 🔥
+            // If it's a fresh lead with a valid phone, send a welcome WhatsApp immediately.
+            if (phone && phone.length >= 10) {
+                const projectHint = notes?.match(/Project: (.*?)($| \|)/)?.[1] || "";
+                const welcomeMsg = `Hi ${name.split(' ')[0]}! 👋 Thank you for inquiring${projectHint ? ' about *' + projectHint + '*' : ''}. One of our property experts will contact you shortly. 
+
+In the meantime, feel free to ask any questions here!`;
+                
+                sendWhatsappMessage(tenant_id, phone, welcomeMsg).catch(e => console.error('[Webhook Auto-WA] Failed:', e));
+            }
 
             return { status: 'created', id: newLead.id };
         } catch (err) {
@@ -121,11 +142,16 @@ class IntegrationService {
 
     /**
      * Fetch existing contacts from WhatsApp API and import them
+     * Primary: Whapi Cloud (gate.whapi.cloud)
+     * Fallback: WhatAPI.in endpoints
      */
     async syncContacts(tenantId, apiKey) {
         console.log(`[Integration Sync] Starting sync for tenant ${tenantId}...`);
 
-        // If no key provided, try to fetch it from DB
+        // If no key provided, try env first, then DB
+        if (!apiKey) {
+            apiKey = process.env.WHAPI_TOKEN;
+        }
         if (!apiKey) {
             const { rows } = await pool.query('SELECT api_key FROM integrations WHERE tenant_id = $1 AND provider = $2', [tenantId, 'whatsapp']);
             apiKey = rows[0]?.api_key;
@@ -133,27 +159,23 @@ class IntegrationService {
 
         if (!apiKey) throw new Error('API Key missing. Please configure WhatsApp first.');
 
-        const authBasic = Buffer.from(`${apiKey}:`).toString('base64');
+        const whapiBase = process.env.WHAPI_API_URL || 'https://gate.whapi.cloud';
         const authBearer = `Bearer ${apiKey}`;
 
         const endpoints = [
-            // CRM ListAll (POST)
-            { url: 'https://crmapi.whatapi.in/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: authBearer },
-            { url: 'https://crmapi.whatapi.in/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: `Basic ${authBasic}` },
-            { url: 'https://crmapi1.whatapi.in/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: authBearer },
-            { url: 'https://mapi.1automations.com/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: authBearer },
+            // Whapi Cloud — primary
+            { url: `${whapiBase}/contacts`, method: 'GET', auth: authBearer },
+            { url: `${whapiBase}/contacts?count=500`, method: 'GET', auth: authBearer },
 
-            // Standard Contacts (GET)
-            { url: 'https://crmapi.whatapi.in/contacts', method: 'GET', auth: authBearer },
-            { url: 'https://crmapi1.whatapi.in/contacts', method: 'GET', auth: authBearer },
-            { url: 'https://crmapi1.whatapi.in/api/contacts', method: 'GET', auth: authBearer },
-            { url: 'https://gate.whapi.cloud/contacts', method: 'GET', auth: authBearer }
+            // WhatAPI.in fallbacks
+            { url: 'https://crmapi.whatapi.in/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: authBearer },
+            { url: 'https://crmapi1.whatapi.in/api/chat_panel/chat/listall', method: 'POST', body: { isSearch: false, isFilter: false, page: 0, rows: 100 }, auth: authBearer },
         ];
 
         let lastError = null;
         for (const ep of endpoints) {
             try {
-                console.log(`[Integration Sync] Attempting ${ep.method} ${ep.url} with ${ep.auth.split(' ')[0]}...`);
+                console.log(`[Integration Sync] Attempting ${ep.method} ${ep.url}...`);
                 const response = await fetch(ep.url, {
                     method: ep.method,
                     headers: {
@@ -172,8 +194,7 @@ class IntegrationService {
 
                 const data = await response.json();
                 // Handle various response structures
-                // WhatAPI.in listall usually returns { list: [...], totalCount: ... } or results directly
-                const contacts = data.list || data.contacts || data.data || (Array.isArray(data) ? data : []);
+                const contacts = data.contacts || data.list || data.data || (Array.isArray(data) ? data : []);
                 console.log(`[Integration Sync] Success! Found ${contacts.length} items.`);
 
                 let imported = 0;
@@ -183,8 +204,8 @@ class IntegrationService {
                     let phone = '';
                     let name = '';
 
-                    // WhatAPI.in specific fields
-                    const id = contact.waNumber || contact.phoneNumber || contact.id || contact.jid || contact.phone || contact.number;
+                    // Whapi Cloud fields + WhatAPI.in fields
+                    const id = contact.id || contact.waNumber || contact.phoneNumber || contact.jid || contact.phone || contact.number;
                     if (!id) continue;
 
                     phone = String(id).split('@')[0].replace(/\D/g, ''); // Extract digits only
@@ -198,7 +219,7 @@ class IntegrationService {
                         phone: phone,
                         source: 'WhatsApp',
                         notes: 'Imported via Contact Sync'
-                    }, null); // Pass null for io if not available here
+                    }, null);
 
                     if (res.status === 'created') imported++;
                     else skipped++;

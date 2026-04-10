@@ -6,6 +6,7 @@ const PresenceContext = createContext(null);
 
 export const PresenceProvider = ({ children }) => {
     const { user } = useAuth();
+    const [_showNumpad, _setShowNumpad] = useState(true);
     const [socket, setSocket] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [viewers, setViewers] = useState({}); // { 'path': [user1, user2] }
@@ -62,6 +63,7 @@ export const PresenceProvider = ({ children }) => {
         </PresenceContext.Provider>
     );
 };
+// eslint-disable-next-line react-refresh/only-export-components
 
 export const usePresence = () => {
     const context = useContext(PresenceContext);

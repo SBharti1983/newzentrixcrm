@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">zentrixWTI</string>
+    <string name="label_firebase_url">Firebase Database URL</string>
+    <string name="label_agent_name">Telephony Agent ID</string>
+    <string name="label_bridge_number">Bridge Number</string>
+    <string name="label_storage_server">Storage Server URL</string>
+    <string name="label_folder_name">Folder Name</string>
+    <string name="label_availability">Agent Availability</string>
+    <string name="label_recording">Call Recording</string>
+    <string name="label_sim_selection">SIM Selection</string>
+    <string name="label_own_number">Device Identity</string>
+    <string name="label_activity_log">System Activity Log</string>
+
+    <string name="label_mobile">Mobile Number</string>
+    <string name="label_otp">OTP</string>
+    <string name="action_get_otp">Get OTP</string>
+    <string name="action_verify_login">Verify &amp; Login</string>
+    <string name="error_invalid_mobile">Enter a valid 10-digit mobile number</string>
+    <string name="error_invalid_otp">Invalid OTP</string>
+    <string name="label_login">Login</string>
+    <string name="msg_login_failed">Login Failed</string>
+    <string name="msg_otp_sent">OTP Sent to %1$s</string>
+    <string name="label_incoming_call">Incoming Call</string>
+    <string name="label_loading">Loading...</string>
+    <string name="msg_call_ended_with">Call ended with: %1$s</string>
+
+    <string name="action_save_url">Save &amp; Refresh</string>
+    <string name="action_connect">Connect Integration</string>
+    <string name="action_hangup">Stop &amp; Hangup</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_test_connection">Test Connection</string>
+    <string name="action_stop_service">STOP SERVICE</string>
+
+    <string name="status_connected">INTEGRATION ACTIVE</string>
+    <string name="status_disconnected">INTEGRATION OFFLINE</string>
+    <string name="status_available">Available for Calls</string>
+    <string name="status_dnd">Do Not Disturb</string>
+    <string name="status_recording_on">Recording Enabled</string>
+    <string name="status_recording_off">Recording Disabled</string>
+    <string name="status_synced">Cloud Synced</string>
+    <string name="status_sync_pending">%1$d calls pending sync</string>
+
+    <string name="hint_bridge_number">Optional Bridge Prefix</string>
+    <string name="sim_default">Default SIM (System)</string>
+    <string name="sim_slot_format">SIM %1$d - %2$s</string>
+    <string name="sim_slot_with_number_format">SIM %1$d - %2$s (%3$s)</string>
+
+    <string name="msg_url_saved">Configuration updated</string>
+    <string name="msg_url_error">Invalid URL format</string>
+    <string name="msg_overlay_permission">Please enable \'Appear on top\' for call popups</string>
+    <string name="msg_settings_locked_admin">Settings LOCKED by Admin.</string>
+    <string name="msg_settings_locked">Settings locked.</string>
+    <string name="msg_settings_unlocked">Settings unlocked for editing.</string>
+    <string name="msg_permission_denied">Permission Denied</string>
+    <string name="msg_missing_permissions">Missing permissions.</string>
+    <string name="msg_config_updated_remote">Config updated remotely by Admin.</string>
+    <string name="msg_testing_connection">Testing connection...</string>
+    <string name="msg_connection_success">Connection Successful!</string>
+    <string name="msg_connection_failed">Connection Failed: %1$s</string>
+
+    <string name="update_available_title">Update Available</string>
+    <string name="update_available_msg">A new version (%1$s) of zentrixWTI is available. Please update to continue using the latest features.</string>
+    <string name="action_update_now">Update Now</string>
+    <string name="action_later">Later</string>
+
+    <string name="error_agent_not_found">Agent mobile number not registered.</string>
+    <string name="msg_verifying">Verifying...</string>
+
+    <string name="log_sim_set">Preferred SIM set.</string>
+    <string name="log_availability_format">Availability: %1$s</string>
+    <string name="log_recording_format">Recording: %1$s</string>
+    <string name="log_integration_active">Integration Active</string>
+    <string name="log_integration_offline">Integration Offline</string>
+
+    <string name="stat_talk_time_format">%1$dm</string>
+    <string name="enterprise_footer">zentrixWTI Enterprise Integration v1.2</string>
+</resources>

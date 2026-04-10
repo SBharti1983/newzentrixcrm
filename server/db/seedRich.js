@@ -440,4 +440,8 @@ async function seedRich() {
     }
 }
 
-seedRich().catch(process.exit);
+seedRich().catch(err => {
+    console.error('SEED ERROR:', err);
+    process.exit(1);
+});
+

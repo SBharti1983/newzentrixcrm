@@ -26,3 +26,23 @@ dist-ssr
 # Server
 server/.env
 server/uploads/
+
+# Scratch & Temporary
+.gemini/
+scratch/
+server/scratch/
+tmp/
+*.json
+!package.json
+!package-lock.json
+!server/package.json
+!server/package-lock.json
+*.txt
+*.hprof
+WTIApp/build/
+WTIApp/.gradle/
+WTIApp/wti-app/build/
+**/bin/
+**/obj/
+.gradle/
+build/

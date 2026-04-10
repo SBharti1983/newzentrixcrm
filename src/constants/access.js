@@ -5,7 +5,7 @@ export const ROLE_ACCESS = {
         bg: 'rgba(139,92,246,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
     },
     sales_manager: {
         label: 'Manager',
@@ -13,7 +13,7 @@ export const ROLE_ACCESS = {
         bg: 'var(--navy-50)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard'],
     },
     team_leader: {
         label: 'Team Leader',
@@ -47,6 +47,6 @@ export const ROLE_ACCESS = {
         bg: 'rgba(139,92,246,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard', '/superadmin'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/integrations', '/command-center', '/leaderboard', '/superadmin'],
     },
 };

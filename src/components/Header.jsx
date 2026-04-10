@@ -26,6 +26,7 @@ const PAGE_TITLES = {
     '/channel-partners': { title: 'Channel Partners', subtitle: 'Manage broker partnerships' },
     '/calendar': { title: 'Calendar', subtitle: 'Schedule and view events' },
     '/search': { title: 'Search Results', subtitle: 'Global exploration' },
+    '/superadmin': { title: 'Network Command Center', subtitle: 'Monitoring Workspaces across Zentrix Global Network' },
 };
 
 export default function Header({ collapsed, isMobile, onToggle }) {

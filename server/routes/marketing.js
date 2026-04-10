@@ -151,17 +151,52 @@ router.get('/broadcasts', async (req, res) => {
 });
 
 router.post('/broadcasts', async (req, res) => {
-    const { name, message_body, lead_ids } = req.body;
+    const { name: campaignName, message_body, lead_ids } = req.body;
+    const { sendWhatsappMessage } = require('../utils/whatsapp');
+
     try {
-        const { rows } = await pool.query(
+        // 1. Log the campaign creation
+        const { rows: campaign } = await pool.query(
             `INSERT INTO whatsapp_campaigns (tenant_id, name, message_body, recipients_count, status, sent_at) 
-             VALUES ($1, $2, $3, $4, 'Completed', NOW()) RETURNING *`,
-            [req.tenantId, name, message_body, lead_ids.length]
+             VALUES ($1, $2, $3, $4, 'Sending', NOW()) RETURNING *`,
+            [req.tenantId, campaignName, message_body, lead_ids.length]
         );
         
-        // In a real high-frequency implementation, we'd queue these to a worker.
-        // For now, we simulate the broadcast.
-        res.status(201).json(rows[0]);
+        // 2. Begin Background Dispatch (Non-blocking)
+        (async () => {
+            let successCount = 0;
+            const { rows: leads } = await pool.query(
+                `SELECT id, name, phone FROM leads WHERE id = ANY($1)`,
+                [lead_ids]
+            );
+
+            for (const lead of leads) {
+                if (!lead.phone) continue;
+
+                // Personalize message
+                const personalizedMsg = message_body.replace(/\{\{name\}\}/gi, lead.name.split(' ')[0]);
+                
+                // Dispatch
+                const sent = await sendWhatsappMessage(req.tenantId, lead.phone, personalizedMsg);
+                if (sent) successCount++;
+                
+                // Log individual interaction
+                await pool.query(
+                    `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note, outcome)
+                     VALUES ($1, $2, $3, 'Message', NOW(), $4, 'Delivered')`,
+                    [req.tenantId, lead.id, req.user.id, `Bulk Campaign: ${campaignName}\nMessage: ${personalizedMsg}`]
+                );
+            }
+
+            // 3. Mark campaign as completed
+            await pool.query(
+                `UPDATE whatsapp_campaigns SET status = 'Completed', updated_at = NOW() WHERE id = $1`,
+                [campaign[0].id]
+            );
+            console.log(`[Bulk WA] Campaign '${campaignName}' finished. (${successCount}/${lead_ids.length} success)`);
+        })();
+
+        res.status(201).json(campaign[0]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to initiate broadcast' });

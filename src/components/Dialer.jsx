@@ -1,41 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
     Phone, PhoneOff, Mic, MicOff, Volume2, User, 
     X, History, Maximize2, Minimize2, Clock, Zap,
-    MoreVertical, Settings, Smartphone
+    MoreVertical, Settings, Smartphone, ShieldCheck, ShieldAlert,
+    Signal, SignalLow, SignalHigh
 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set } from 'firebase/database';
+import { useAuth } from '../hooks/useAuth';
 import { useApi } from '../hooks/useApi';
 import { leadsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 
+const firebaseConfig = {
+    databaseURL: "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app/"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const database = getDatabase(firebaseApp);
+
 export default function Dialer() {
     const { showToast } = useToast();
+    const { user, refreshUser } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
-    const [callState, setCallState] = useState('idle'); // idle | dialing | active
+    const [callState, setCallState] = useState('idle');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [activeLead, setActiveLead] = useState(null);
     const [duration, setDuration] = useState(0);
     const [activeInteractionId, setActiveInteractionId] = useState(null);
-    const [showNumpad, setShowNumpad] = useState(true);
-
-    // Fetch recent leads for quick select
+    const [isDeviceOnline, setIsDeviceOnline] = useState(false);
+    
+    const agentId = user?.telephony_agent_id || null; 
     const { data: leads } = useApi(() => leadsApi.list({ limit: 5 }));
+    const handleDialRef = useRef(null);
 
-    // Listen for global dial events (e.g. from Lead Profile "Call" button)
     useEffect(() => {
-        const handleExternalDial = (data) => {
-            if (data.isInbound) {
-                // Handle inbound (mocked for now)
-                showToast(`Incoming SIM Call: ${data.name}`, 'info');
-                return;
-            }
-            handleDial(data, data.number);
-        };
-        dialerEvents.subscribe(handleExternalDial);
-        return () => dialerEvents.unsubscribe(handleExternalDial);
-    }, []);
+        if (isOpen) refreshUser();
+    }, [isOpen]);
 
     useEffect(() => {
         let timer;
@@ -47,10 +50,40 @@ export default function Dialer() {
         return () => clearInterval(timer);
     }, [callState]);
 
-    const handleDial = async (lead = null, manualPhone = null) => {
-        const phoneToDial = manualPhone || lead?.phone || lead?.number;
-        if (!phoneToDial) return showToast('No phone number provided', 'error');
+    useEffect(() => {
+        if (!isOpen || !agentId) return;
+        const sid = agentId;
+        const statusRef = ref(database, `agents/${sid}/connected`);
+        const unsubStatus = onValue(statusRef, (snapshot) => setIsDeviceOnline(!!snapshot.val()));
 
+        const callRef = ref(database, `agents/${sid}/incoming_call`);
+        const unsubCall = onValue(callRef, async (snapshot) => {
+            const num = snapshot.val();
+            if (num) {
+                setPhoneNumber(num);
+                if (callState === 'idle') {
+                    setCallState('ringing');
+                    setIsOpen(true);
+                    setIsMinimized(false);
+                    try {
+                        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/leads/search?q=${num}`, {
+                            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
+                        });
+                        const leadData = await res.json();
+                        if (leadData && leadData.length > 0) setActiveLead(leadData[0]);
+                    } catch (err) { console.error('Lookup failed', err); }
+                }
+            } else if (callState === 'ringing' || callState === 'active') {
+                setCallState('idle');
+            }
+        });
+
+        return () => { unsubStatus(); unsubCall(); };
+    }, [isOpen, agentId, callState]);
+
+    const handleDial = useCallback(async (lead = null, manualPhone = null) => {
+        const phoneToDial = manualPhone || lead?.phone || lead?.number;
+        if (!phoneToDial) return showToast('No number', 'error');
         setCallState('dialing');
         setActiveLead(lead);
         setPhoneNumber(phoneToDial);
@@ -58,53 +91,40 @@ export default function Dialer() {
         setIsMinimized(false);
 
         try {
-            // Trigger GSM SIM Bridge on backend
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/initiate`, {
+            if (!agentId) return showToast('No Agent ID', 'error');
+            const sid = agentId;
+            const makeCallRef = ref(database, `agents/${sid}/outgoing_call`);
+            const logRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/initiate`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}`
-                },
-                body: JSON.stringify({ leadId: lead?.id, phoneNumber: phoneToDial })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
+                body: JSON.stringify({ leadId: lead?.id, phoneNumber: phoneToDial, method: 'GSM' })
             });
-            const data = await res.json();
-            
-            if (res.ok) {
-                // Simulate GSM connection lag
-                setTimeout(() => {
-                    setCallState('active');
-                    setActiveInteractionId(data.interactionId);
-                    showToast('Direct SIM Bridge Established', 'success');
-                }, 1200);
-            } else {
-                throw new Error(data.error);
-            }
-        } catch (err) {
-            showToast(err.message || 'Dialer Error', 'error');
-            setCallState('idle');
-        }
-    };
+            const logData = await logRes.json();
+            if (logRes.ok) setActiveInteractionId(logData.interactionId);
+            await set(makeCallRef, { number: phoneToDial, interaction_id: logData.interactionId || null, timestamp: Date.now() });
+            showToast('Command sent', 'success');
+            if (isDeviceOnline) setTimeout(() => setCallState('active'), 1500);
+        } catch (err) { setCallState('idle'); }
+    }, [agentId, isDeviceOnline, showToast]);
+
+    useEffect(() => { handleDialRef.current = handleDial; }, [handleDial]);
+
+    useEffect(() => {
+        const handleExternalDial = (data) => handleDialRef.current(data, data.number);
+        dialerEvents.subscribe(handleExternalDial);
+        return () => dialerEvents.unsubscribe(handleExternalDial);
+    }, []);
 
     const handleHangup = async (outcome = 'Connected') => {
-        if (!activeInteractionId) {
-            setCallState('idle');
-            return;
+        if (activeInteractionId) {
+            try {
+                await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/${activeInteractionId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
+                    body: JSON.stringify({ duration, outcome, note: `GSM Call completed.` })
+                });
+            } catch (err) {}
         }
-
-        try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/${activeInteractionId}`, {
-                method: 'PATCH',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}`
-                },
-                body: JSON.stringify({ duration, outcome, note: `GSM-SIM integrated call completed. Duration: ${duration}s` })
-            });
-            showToast(`Call recorded: ${duration}s`, 'info');
-        } catch (_err) {
-            showToast('Stats synced locally', 'info');
-        }
-
         setCallState('idle');
         setDuration(0);
         setActiveLead(null);
@@ -119,48 +139,18 @@ export default function Dialer() {
     };
 
     if (!isOpen) return (
-        <button 
-            onClick={() => setIsOpen(true)}
-            className="hover-lift"
-            style={{
-                position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
-                width: 56, height: 56, borderRadius: '18px',
-                background: 'linear-gradient(135deg, #0a1628, #00122e)',
-                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'
-            }}
-        >
+        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
             <Smartphone size={28} />
-            <div style={{ position: 'absolute', top: -2, right: -2, width: 14, height: 14, background: '#10b981', borderRadius: '50%', border: '3px solid #f8fafc' }} />
         </button>
     );
 
     return (
-        <div 
-            style={{
-                position: 'fixed', bottom: 8, right: 8, zIndex: 9999,
-                width: isMinimized ? 240 : 380, 
-                maxHeight: isMinimized ? 72 : 600,
-                background: '#0a1a2e', 
-                borderRadius: 32, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)',
-                overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                display: 'flex', flexDirection: 'column', border: '1px solid rgba(255,255,255,0.08)'
-            }}
-        >
-            {/* Header */}
-            <div style={{ 
-                padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', 
-                justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)',
-                borderBottom: '1px solid rgba(255,255,255,0.05)' 
-            }}>
+        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 380, maxHeight: isMinimized ? 72 : 'calc(100vh - 32px)', height: isMinimized ? 72 : 'auto', background: '#0a1a2e', borderRadius: 24, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '72px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ 
-                        width: 10, height: 10, borderRadius: '50%', 
-                        background: callState === 'active' ? '#f43f5e' : '#10b981',
-                        animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' 
-                    }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' }} />
                     <span style={{ fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>
-                        {callState === 'idle' ? 'GSM Dialer' : `Sim Bridge: ${callState}`}
+                        {agentId ? (isDeviceOnline ? `ONLINE: ${agentId}` : `OFFLINE`) : 'NO HANDSET'}
                     </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -170,139 +160,67 @@ export default function Dialer() {
             </div>
 
             {!isMinimized && (
-                <div style={{ flex: 1, padding: 24, display: 'flex', flexDirection: 'column', gap: 24, background: 'linear-gradient(180deg, transparent, rgba(0,180,216,0.03))' }}>
-                    
+                <>
                     {callState === 'idle' ? (
                         <>
-                            {/* Dialer Input */}
-                            <div style={{ position: 'relative' }}>
-                                <input 
-                                    className="dialer-input-main"
-                                    placeholder="+91 Number..."
-                                    value={phoneNumber}
-                                    onChange={e => setPhoneNumber(e.target.value)}
-                                    style={{
-                                        width: '100%', height: 68, background: 'rgba(255,255,255,0.04)', borderRadius: 24,
-                                        border: '1px solid rgba(255,255,255,0.08)', paddingLeft: 64, color: 'white',
-                                        fontSize: '1.6rem', fontWeight: 900, outline: 'none', textAlign: 'center'
-                                    }}
-                                />
-                                <Phone size={24} style={{ position: 'absolute', left: 24, top: 22, color: '#00b4d8' }} />
-                            </div>
-
-                            {/* Numpad */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                                {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
-                                    <button 
-                                        key={n}
-                                        onClick={() => setPhoneNumber(p => p + n)}
-                                        className="numpad-btn"
-                                    >
-                                        {n}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Recent Leads */}
-                            <div>
-                                <h4 style={{ fontSize: '0.7rem', fontWeight: 900, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: 16 }}>Fast-Dial Leads</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                <div style={{ position: 'relative' }}>
+                                    <input placeholder="+91 Number..." value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} style={{ width: '100%', height: 68, background: 'rgba(255,255,255,0.04)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)', paddingLeft: 64, paddingRight: 64, color: 'white', fontSize: '1.3rem', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+                                    <Phone size={24} style={{ position: 'absolute', left: 24, top: 22, color: '#00b4d8' }} />
+                                    {phoneNumber.length > 0 && (
+                                        <button onClick={() => setPhoneNumber(p => p.slice(0, -1))} onDoubleClick={() => setPhoneNumber('')} style={{ position: 'absolute', right: 12, top: 12, width: 44, height: 44, borderRadius: '16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20} /></button>
+                                    )}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+                                    {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
+                                        <button key={n} onClick={() => setPhoneNumber(p => p + n)} className="numpad-btn">{n}</button>
+                                    ))}
+                                </div>
+                                <div>
                                     {(leads?.data || []).map(lead => (
-                                        <div key={lead.id} onClick={() => handleDial(lead)} className="dialer-lead-card">
+                                        <div key={lead.id} onClick={() => handleDial(lead)} className="dialer-lead-card" style={{ marginBottom: 10 }}>
                                             <div>
-                                                <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 2 }}>{lead.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>{lead.property_type || 'General Lead'}</div>
+                                                <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{lead.name}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{lead.property_type || 'Lead'}</div>
                                             </div>
-                                            <div style={{ padding: 8, borderRadius: 12, background: 'rgba(0,180,216,0.1)', color: '#00b4d8' }}>
-                                                <Phone size={14} />
-                                            </div>
+                                            <Phone size={14} color="#00b4d8" />
                                         </div>
                                     ))}
                                 </div>
                             </div>
+                            <div style={{ padding: '20px 24px 28px', background: 'rgba(15,23,42,0.8)', borderTop: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
+                                <button onClick={() => handleDial(null, phoneNumber)} style={{ width: '100%', height: 64, borderRadius: 20, background: isDeviceOnline ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #334155, #000000)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontWeight: 900, cursor: 'pointer' }}>
+                                    <Phone size={20} /> {isDeviceOnline ? 'INITIATE GSM CALL' : 'OFFLINE: INITIATE CALL'}
+                                </button>
+                            </div>
                         </>
                     ) : (
-                        /* Active GSM Call View */
-                        <div style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                            <div style={{ marginBottom: 40 }}>
-                                <div style={{ 
-                                    width: 110, height: 110, borderRadius: '35px', background: 'rgba(255,255,255,0.03)',
-                                    margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    border: '1px solid rgba(0,180,216,0.3)', position: 'relative'
-                                }}>
-                                    <User size={54} color="#00b4d8" strokeWidth={1.5} />
-                                    <div className="pulse-ring" />
+                        <div style={{ flex: 1, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                            <div style={{ position: 'relative', marginBottom: 32 }}>
+                                <div style={{ width: 120, height: 120, borderRadius: '40%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${callState === 'ringing' ? '#f59e0b' : '#00b4d8'}` }}>
+                                    <User size={60} color={callState === 'ringing' ? '#f59e0b' : '#00b4d8'} />
                                 </div>
-                                <h2 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: 8, letterSpacing: '-0.02em' }}>{activeLead?.name || phoneNumber}</h2>
-                                <div style={{ color: '#00b4d8', fontWeight: 900, fontSize: '1.4rem', fontFamily: 'monospace' }}>{formatDuration(duration)}</div>
-                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', marginTop: 12, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>SIM 1 • GSM NETWORK</div>
+                                <div className="pulse-ring" style={{ borderColor: callState === 'ringing' ? '#f59e0b' : '#00b4d8' }} />
                             </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginBottom: 48 }}>
-                                <div className="call-btn-circle"><Mic size={22} /></div>
-                                <div className="call-btn-circle"><Volume2 size={22} /></div>
-                                <div className="call-btn-circle"><Zap size={22} /></div>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: 8 }}>{activeLead?.name || phoneNumber}</h2>
+                            <div style={{ color: callState === 'active' ? '#00b4d8' : '#f59e0b', fontWeight: 900, fontSize: '1.4rem' }}>{callState === 'active' ? formatDuration(duration) : 'RINGING...'}</div>
+                            <div style={{ marginTop: 40, display: 'flex', gap: 24 }}>
+                                <button onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><PhoneOff size={32} /></button>
+                                {callState === 'ringing' && <button onClick={() => setCallState('active')} style={{ width: 72, height: 72, borderRadius: '24px', background: '#10b981', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Phone size={32} /></button>}
                             </div>
-
-                            <button 
-                                onClick={() => handleHangup()}
-                                style={{
-                                    width: 84, height: 84, borderRadius: '30px', background: '#f43f5e',
-                                    border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto', cursor: 'pointer', boxShadow: '0 20px 40px rgba(244,63,94,0.3)',
-                                    transform: 'rotate(135deg)', transition: '0.3s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'rotate(135deg) scale(1.05)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'rotate(135deg) scale(1)'}
-                            >
-                                <Phone size={36} />
-                            </button>
                         </div>
                     )}
-                    
-                    {/* Manual Call Trigger */}
-                    {callState === 'idle' && (
-                        <button 
-                            onClick={() => handleDial(null, phoneNumber)}
-                            style={{
-                                height: 64, borderRadius: 24, background: 'linear-gradient(90deg, #00b4d8, #0077b6)',
-                                border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                gap: 12, fontWeight: 900, cursor: 'pointer', boxShadow: '0 15px 35px rgba(0,180,216,0.25)',
-                                fontSize: '1rem', letterSpacing: '0.02em'
-                            }}
-                        >
-                            <Phone size={20} /> INITIATE SIM CALL
-                        </button>
-                    )}
-                </div>
+                </>
             )}
 
             <style>{`
-                .dialer-input-main::placeholder { color: rgba(255,255,255,0.1); }
                 .btn-icon-tiny-d { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 6px; border-radius: 10px; transition: 0.2s; }
                 .btn-icon-tiny-d:hover { background: rgba(255,255,255,0.06); color: white; }
-                .numpad-btn { 
-                    height: 56px; borderRadius: 18px; background: rgba(255,255,255,0.03); 
-                    border: 1px solid rgba(255,255,255,0.04); color: white; 
-                    fontSize: 1.3rem; fontWeight: 800; cursor: pointer; transition: 0.2s; 
-                }
-                .numpad-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); border-color: rgba(255,255,255,0.1); }
-                .dialer-lead-card { 
-                    padding: 14px 18px; background: rgba(255,255,255,0.02); borderRadius: 20px;
-                    border: 1px solid rgba(255,255,255,0.03); display: flex; justifyContent: space-between;
-                    alignItems: center; cursor: pointer; transition: 0.2s;
-                }
+                .numpad-btn { height: 56px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: white; font-size: 1.3rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+                .numpad-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+                .dialer-lead-card { padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
                 .dialer-lead-card:hover { background: rgba(255,255,255,0.06); transform: translateX(4px); }
-                .call-btn-circle { 
-                    width: 58px; height: 58px; borderRadius: 22px; background: rgba(255,255,255,0.04); 
-                    display: flex; alignItems: center; justifyContent: center; cursor: pointer; 
-                    color: rgba(255,255,255,0.5); transition: 0.2s; border: 1px solid rgba(255,255,255,0.02);
-                }
-                .call-btn-circle:hover { background: rgba(255,255,255,0.1); color: white; transform: translateY(-3px); }
-                .pulse-ring {
-                    position: absolute; width: 100%; height: 100%; borderRadius: 35px; border: 2px solid #00b4d8;
-                    animation: ring-pulse 2s infinite; opacity: 0;
-                }
+                .pulse-ring { position: absolute; width: 100%; height: 100%; border-radius: 35px; border: 2px solid #00b4d8; animation: ring-pulse 2s infinite; opacity: 0; }
                 @keyframes ring-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.6); opacity: 0; } }
                 @keyframes pulse-dialer { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
             `}</style>

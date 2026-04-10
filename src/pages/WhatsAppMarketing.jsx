@@ -20,7 +20,7 @@ export default function WhatsAppMarketing() {
 
     // Chatbot State
     const [chatbot, setChatbot] = useState(null);
-    const [savingBot, setSavingBot] = useState(false);
+    const [_savingBot, setSavingBot] = useState(false);
 
     useEffect(() => {
         marketingApi.getChatbot().then(setChatbot).catch(console.error);
@@ -31,15 +31,29 @@ export default function WhatsAppMarketing() {
             return showToast('Please fill in all fields', 'error');
         }
 
-        const leadIds = (leads?.leads || []).map(l => l.id);
+        // Apply segmentation logic
+        let targetLeads = leads?.leads || [];
+        if (broadcastForm.segment === 'New Leads ONLY') {
+            targetLeads = targetLeads.filter(l => l.stage === 'New');
+        } else if (broadcastForm.segment === 'Site Visit Completed') {
+            targetLeads = targetLeads.filter(l => l.stage === 'Site Visit Done' || l.stage === 'Follow-up');
+        } else if (broadcastForm.segment === 'Hot Leads (Score > 80)') {
+            targetLeads = targetLeads.filter(l => l.score > 80);
+        }
+
+        if (targetLeads.length === 0) {
+            return showToast('No leads found in this segment', 'warning');
+        }
+
+        const leadIds = targetLeads.map(l => l.id);
         
         try {
             await marketingApi.createBroadcast({ ...broadcastForm, lead_ids: leadIds });
-            showToast('WhatsApp Broadcast initiated successfully!', 'success');
+            showToast(`Broadcast for ${leadIds.length} leads initiated!`, 'success');
             setIsCreating(false);
             setBroadcastForm({ name: '', message_body: '', segment: 'All' });
             refreshBroadcasts();
-        } catch (err) {
+        } catch (_err) {
             showToast('Failed to send broadcast', 'error');
         }
     };
@@ -50,7 +64,7 @@ export default function WhatsAppMarketing() {
             const res = await marketingApi.updateChatbot(updates);
             setChatbot(res);
             showToast('Chatbot settings updated', 'success');
-        } catch (err) {
+        } catch (_err) {
             showToast('Update failed', 'error');
         } finally {
             setSavingBot(false);

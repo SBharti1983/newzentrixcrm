@@ -15,11 +15,18 @@ export default function Leaderboard() {
         
         let merged = analyticsData.agentPerformance.map(agent => {
             const callData = analyticsData.agentCalls?.find(c => c.name === agent.name);
+            const rawRevenue = parseFloat(agent.revenue.replace(/[^0-9.]/g, '')) || 0;
+            const revNum = agent.revenue.includes('Cr') ? rawRevenue * 10000000 : agent.revenue.includes('L') ? rawRevenue * 100000 : rawRevenue;
+            
+            // Assume an average 1.5% commission cut for gamification bounds
+            const estimatedCommission = revNum * 0.015;
+
             return {
                 ...agent,
                 calls: callData ? callData.calls : 0,
-                // Parse revenue string "₹1.50Cr" to a number for sorting
-                revenueNum: parseFloat(agent.revenue.replace(/[^0-9.]/g, '')) || 0
+                revenueNum: revNum,
+                commissionVal: estimatedCommission,
+                commissionFormatted: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(estimatedCommission)
             };
         });
         
@@ -52,12 +59,12 @@ export default function Leaderboard() {
                 gap: '16px'
             }}>
                 <div>
-                    <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--navy-900)', margin: 0 }}>
+                    <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--navy-900)', margin: 0, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
                         <Trophy size={28} color="var(--accent-violet)" /> 
-                        Sales Leaderboard
+                        Commission Gamification Engine
                     </h1>
-                    <p className="page-subtitle" style={{ color: 'var(--navy-600)', marginTop: '6px', marginBottom: 0 }}>
-                        Track and celebrate top performing agents across the organization
+                    <p className="page-subtitle" style={{ color: 'var(--navy-600)', marginTop: '6px', marginBottom: 0, fontWeight: 600 }}>
+                        Translate your pipeline into personal payouts. Compete. Close. Cash out.
                     </p>
                 </div>
                 
@@ -104,10 +111,10 @@ export default function Leaderboard() {
                                 <th style={{ width: '80px', textAlign: 'center' }}>Rank</th>
                                 <th>Agent Name</th>
                                 <th>Conversions</th>
-                                <th>Revenue Generated</th>
-                                <th>Leads Handled</th>
+                                <th>Revenue Vault</th>
+                                <th>Est. Commissions</th>
                                 <th>Site Visits</th>
-                                <th>Total Calls</th>
+                                <th>Milestone Target</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -144,23 +151,26 @@ export default function Leaderboard() {
                                         </div>
                                     </td>
                                     <td>
-                                        <div className="badge badge-green" style={{ fontSize: '0.9rem', padding: '4px 10px' }}>
-                                            {agent.revenue}
+                                        <div style={{ fontWeight: 900, color: 'var(--slate-400)', fontSize: '0.85rem' }}>
+                                            {agent.revenue} Closed
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-emerald-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <TrendingUp size={16} /> {agent.commissionFormatted}
                                         </div>
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                                            <Users size={14} /> {agent.leads}
+                                            <MapPin size={14} /> {agent.site_visits} Conducted
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                                            <MapPin size={14} /> {agent.site_visits}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
-                                            <Phone size={14} /> {agent.calls}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-800)' }}>Next Tier: ₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0}).format(((agent.commissionVal || 100000) * 1.5) + 50000)}</div>
+                                            <div style={{ width: '100px', height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                <div style={{ width: '75%', height: '100%', background: 'var(--accent-amber)', borderRadius: '3px' }}></div>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -276,10 +286,16 @@ function Podium({ agent, rank, height }) {
                     #{rank}
                 </span>
                 <span style={{
-                    fontSize: '0.85rem', fontWeight: 700, color: 'rgba(255,255,255,0.95)',
-                    marginTop: 'auto', marginBottom: '16px', zIndex: 2
+                    fontSize: '0.85rem', fontWeight: 800, color: 'rgba(255,255,255,0.7)',
+                    marginTop: 'auto', marginBottom: '2px', zIndex: 2, textTransform: 'uppercase'
                 }}>
-                    {agent.revenue}
+                    Take Home Pay
+                </span>
+                <span style={{
+                    fontSize: '1.2rem', fontWeight: 900, color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    marginBottom: '16px', zIndex: 2
+                }}>
+                    {agent.commissionFormatted}
                 </span>
             </div>
         </div>

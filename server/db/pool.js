@@ -16,9 +16,9 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool({
     ...poolConfig,
-    max: 20,
+    max: 40,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 30000,
     ssl: (isProduction || process.env.DATABASE_URL) ? { rejectUnauthorized: false } : false,
 });
 

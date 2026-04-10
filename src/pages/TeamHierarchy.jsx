@@ -95,11 +95,11 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
 
             {/* ─── Node Card ─── */}
             <div 
-                className="group relative flex items-center gap-4 py-3.5 px-5 mb-2 rounded-xl border border-slate-100 bg-white hover:border-blue-100 hover:shadow-md"
-                style={{ marginLeft: depth * INDENT_PX, display: 'flex', alignItems: 'center', transition: 'all 0.2s', position: 'relative' }}
+                className="group relative flex items-center gap-5 py-3 px-5 mb-4 rounded-[28px] border border-slate-200/80 bg-white hover:border-blue-400 hover:shadow-[0_12px_40px_rgba(0,0,0,0.06)] transition-all duration-300"
+                style={{ marginLeft: depth * INDENT_PX, minHeight: '88px', position: 'relative' }}
             >
-                <div className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full opacity-0 group-hover:opacity-100 transition-all`}
-                     style={{ backgroundColor: config.color, position: 'absolute' }} />
+                <div className="absolute left-[-1px] top-4 bottom-4 w-[4px] rounded-r-full opacity-0 group-hover:opacity-100 transition-all duration-300"
+                     style={{ backgroundColor: config.color }} />
 
                 <div className="flex items-center justify-center w-8 h-8 flex-shrink-0 z-10" style={{ display: 'flex' }}>
                     {hasChildren ? (
@@ -118,18 +118,39 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
                 </div>
 
                 <div className="relative flex-shrink-0" style={{ flexShrink: 0 }}>
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-[13px] font-bold text-white shadow-sm"
-                         style={{ background: `linear-gradient(135deg, ${config.color}, ${config.color}dd)`, display: 'flex' }}>
-                        {user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                    <div 
+                        className="w-16 h-16 flex items-center justify-center text-[17px] font-black shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
+                        style={{ 
+                            background: `linear-gradient(135deg, ${config.color} 0%, ${config.color}dd 50%, ${config.color}aa 100%)`, 
+                            display: 'flex',
+                            borderRadius: '50%',
+                            color: '#ffffff',
+                            border: '3px solid rgba(255,255,255,1)',
+                            boxShadow: `0 12px 25px -8px ${config.color}60`,
+                            textShadow: '0 2px 4px rgba(0,0,0,0.25)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}
+                    >
+                        {/* Subtle Mesh Glow Overlay */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(255,255,255,0.25), transparent)', pointerEvents: 'none' }} />
+                        <span style={{ position: 'relative', zIndex: 1 }}>
+                            {user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                        </span>
                     </div>
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white bg-emerald-500 shadow-md" title="Active Node" />
                 </div>
 
                 <div className="flex-1 min-w-0" style={{ flex: 1, minWidth: 0 }}>
-                    <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="text-sm font-bold text-slate-900 truncate">{user.name}</span>
-                        <div className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-tight flex items-center gap-1.5 border"
-                              style={{ backgroundColor: config.bg, borderColor: config.color + '20', color: config.color, display: 'flex', marginLeft: '6px' }}>
-                            <Icon size={10} strokeWidth={3} /> {config.label}
+                    <div className="flex items-center" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 900, color: '#1e293b', letterSpacing: '-0.3px' }}>{user.name}</span>
+                        <div style={{ 
+                            display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 10px', 
+                            background: '#ffffff', borderRadius: '8px', border: '1px solid #d1d5db',
+                            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05)'
+                        }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: config.color, boxShadow: `0 0 8px ${config.color}80` }} />
+                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{config.label}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-medium truncate" style={{ display: 'flex' }}>
@@ -138,9 +159,11 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
                     </div>
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 mr-4 px-3 py-1.5 rounded-lg bg-orange-50/50 border border-orange-100/50" style={{ display: 'flex' }}>
-                    <Zap size={11} className="text-orange-500 fill-orange-500/20" />
-                    <span className="text-[10px] font-bold text-orange-600/80 uppercase tracking-tighter">Performance IQ</span>
+                <div className="hidden md:flex items-center gap-2 mr-6 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/50 shadow-sm" style={{ display: 'flex' }}>
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/10 text-amber-600">
+                        <Zap size={12} strokeWidth={3} />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Performance IQ</span>
                 </div>
 
                 <ActionMenu user={user} onEdit={onEdit} />
@@ -329,8 +352,8 @@ export default function TeamHierarchy() {
                     </div>
                 </div>
 
-                <div style={{ padding: '40px', minHeight: '500px' }}>
-                    <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                <div style={{ padding: '40px', minHeight: '500px', background: '#f1f5f9' }}>
+                    <div style={{ maxWidth: '940px', margin: '0 auto' }}>
                         {roots.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px', opacity: 0.2 }}>
                                 <Users size={48} style={{ marginBottom: 16 }} />

@@ -86,8 +86,45 @@ class AutomationService {
                     await this.logExecution(tenant_id, wf.id, lead_id, 'error', { error: err.message });
                 }
             }
+
+            // --- HARDCODED AI CORE AUTOMATIONS ---
+            if (newStage === 'Site Visit Done') {
+                this.handlePostSiteVisitFeedback(lead, io).catch(err => console.error('[AI Feedback Loop] Failed:', err));
+            }
+
         } catch (err) {
             console.error('[Automation Service] Stage change trigger failed:', err);
+        }
+    }
+
+    /**
+     * AI-Powered Post-Site Visit Feedback Loop
+     */
+    async handlePostSiteVisitFeedback(lead, io) {
+        const { tenant_id, id: lead_id, name, phone } = lead;
+        if (!phone) return;
+
+        // In a real app, we might wait 2 hours. For demo, we send immediately or log it.
+        const message = `Hi ${name}, it was a pleasure showing you around today! 🏠 How did you find the experience? Did the project meet your expectations, or is there something specific we can improve? We value your honest feedback!`;
+
+        try {
+            // 1. Send via WhatsApp (using the notifications table)
+            await pool.query(
+                `INSERT INTO notifications (tenant_id, lead_id, channel, recipient, body, status)
+                 VALUES ($1, $2, 'WhatsApp', $3, $4, 'Sent')`,
+                [tenant_id, lead_id, phone, message]
+            );
+
+            // 2. Broadcast to UI so agent sees the auto-sent message
+            if (io) {
+                io.to(`tenant_${tenant_id}`).emit('notification', {
+                    title: 'AI Follow-up Sent',
+                    message: `Automated feedback request sent to ${name}.`,
+                    type: 'whatsapp_sent'
+                });
+            }
+        } catch (err) {
+            console.error('[Automation] Feedback message failed:', err);
         }
     }
 

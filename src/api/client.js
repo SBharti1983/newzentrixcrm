@@ -3,10 +3,11 @@
  * Centralized HTTP layer — all API calls go through here
  */
 
-const isProd = typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const isProd = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.PROD : false;
 const defaultApiUrl = isProd 
     ? 'https://zentrixcrm-production-cd2d.up.railway.app/api'
-    : 'http://localhost:5050/api';
+    : `http://${hostname}:5050/api`;
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
 
@@ -251,7 +252,19 @@ export const enquiriesApi = {
     update: (id, data) => api(`/enquiries/${id}`, { method: 'PATCH', body: data }),
 };
 
-// ─── Documents / Agreements ───────────────────────────────────────
+// ─── Telephony / MDM ──────────────────────────────────────────────
+export const telephonyApi = {
+    pushConfig: (data) => api('/telephony/push-config', { method: 'POST', body: data }),
+    getAnalytics: () => api('/telephony/analytics'),
+    getAgentActivity: () => api('/telephony/agent-activity'),
+    broadcastAlert: (data) => api('/telephony/broadcast-alert', { method: 'POST', body: data }),
+    getBridgeConfig: () => api('/telephony/bridge-config'),
+    updateBridgeConfig: (data) => api('/telephony/bridge-config', { method: 'PUT', body: data }),
+};
+
+export const copilotApi = {
+    ask: (data) => api('/copilot/ask', { method: 'POST', body: data })
+};
 export const documentsApi = {
     list: (params = {}) => api('/documents?' + new URLSearchParams(params)),
     get: (id) => api(`/documents/${id}`),
@@ -289,4 +302,15 @@ export const billingApi = {
     subscribe: (data) => api('/billing/subscribe', { method: 'POST', body: data }),
     razorpayOrder: (data) => api('/billing/razorpay/order', { method: 'POST', body: data }),
     razorpayVerify: (data) => api('/billing/razorpay/verify', { method: 'POST', body: data }),
+};
+
+export const aiApi = {
+    generatePitch: (data) => api('/ai/generate-pitch', { method: 'POST', body: data }),
+};
+
+export const brokerApi = {
+    getStats: () => api('/broker/stats'),
+    getLeads: () => api('/broker/leads'),
+    createLead: (data) => api('/broker/leads', { method: 'POST', body: data }),
+    getCommissions: () => api('/broker/commissions'),
 };

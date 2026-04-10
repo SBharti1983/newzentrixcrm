@@ -5,6 +5,9 @@ import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shie
 
 const getSubdomain = () => {
     const host = window.location.hostname;
+    // return null if host is an IP address
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
+    
     const parts = host.split('.');
     if (parts.length >= 3) {
         if (parts[0] === 'www' && parts.length > 3) return parts[1];

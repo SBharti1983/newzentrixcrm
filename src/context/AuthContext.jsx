@@ -50,8 +50,21 @@ export function AuthProvider({ children }) {
         return ROLE_ACCESS[user.role]?.pages.includes(path) ?? false;
     };
 
+    const refreshUser = async () => {
+        try {
+            const data = await authApi.me();
+            const updatedUser = { ...user, ...data };
+            sessionStorage.setItem('zentrix_user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+            return updatedUser;
+        } catch (err) {
+            console.error('[AUTH] Failed to refresh user profile:', err);
+            return null;
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, loginError, loading, canAccess }}>
+        <AuthContext.Provider value={{ user, login, logout, refreshUser, canAccess, loginError, loading }}>
             {children}
         </AuthContext.Provider>
     );

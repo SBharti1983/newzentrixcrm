@@ -74,6 +74,7 @@ export default function Leads() {
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
+    const [filterAgent, setFilterAgent] = useState('All');
     const [filterNurtureDue, setFilterNurtureDue] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [editingId, setEditingId] = useState(null);
@@ -100,23 +101,24 @@ export default function Leads() {
         if (filterStage !== 'All') p.stage = filterStage;
         if (filterSource !== 'All') p.source = filterSource;
         if (filterStatus !== 'All') p.status = filterStatus;
+        if (filterAgent !== 'All') p.agent = filterAgent;
         if (filterNurtureDue) p.nurture_due = 'true';
         if (startDate) p.startDate = startDate;
         if (endDate) p.endDate = endDate;
         if (search.trim()) p.q = search.trim();
         return p;
-    }, [limit, page, filterStage, filterSource, filterStatus, search, filterNurtureDue, startDate, endDate]);
+    }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, search, filterNurtureDue, startDate, endDate]);
 
     const { data: leadsRes, loading, error, refetch } = useApi(
         useCallback(() => leadsApi.list(params), [params]),
-        [filterStage, filterSource, filterStatus, search, page, limit, filterNurtureDue]
+        [filterStage, filterSource, filterStatus, filterAgent, search, page, limit, filterNurtureDue, startDate, endDate]
     );
 
     // Reset selection and page when filtering changes
     useEffect(() => {
         setSelectedIds(new Set());
         setPage(1);
-    }, [filterStage, filterSource, filterStatus, search, filterNurtureDue, startDate, endDate]);
+    }, [filterStage, filterSource, filterStatus, filterAgent, search, filterNurtureDue, startDate, endDate]);
     const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
     const { data: users } = useApi(useCallback(() => usersApi.list(), []));
     const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
@@ -260,7 +262,7 @@ export default function Leads() {
         formData.append('file', file);
         try {
             setBulkLoading(true);
-            const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:4000/api') + '/leads/import', {
+            const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5050/api') + '/leads/import', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${sessionStorage.getItem('zentrix_token')}` },
                 body: formData
@@ -325,6 +327,14 @@ export default function Leads() {
                         {SOURCES.map(s => <option key={s}>{s}</option>)}
                     </select>
 
+                    {agents && agents.length > 0 && (
+                        <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
+                            <option value="All">All Agents</option>
+                            <option value="Unassigned">Unassigned</option>
+                            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                    )}
+
                     <button 
                         className={`btn btn-sm ${filterNurtureDue ? 'btn-primary' : 'btn-ghost'}`} 
                         style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
@@ -333,9 +343,24 @@ export default function Leads() {
                         🎯 Nurture Due
                     </button>
                     
-                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        <Filter size={14} /> Filters
-                    </button>
+                    {(filterStage !== 'All' || filterStatus !== 'All' || filterSource !== 'All' || filterAgent !== 'All' || filterNurtureDue || startDate || endDate || search) && (
+                        <button 
+                            className="btn btn-ghost btn-sm" 
+                            style={{ color: 'var(--accent-rose)', whiteSpace: 'nowrap', flexShrink: 0 }}
+                            onClick={() => {
+                                setFilterStage('All');
+                                setFilterStatus('All');
+                                setFilterSource('All');
+                                setFilterAgent('All');
+                                setFilterNurtureDue(false);
+                                setStartDate('');
+                                setEndDate('');
+                                setSearch('');
+                            }}
+                        >
+                            <X size={14} /> Clear Active Filters
+                        </button>
+                    )}
 
                     <div style={{ 
                         display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0,

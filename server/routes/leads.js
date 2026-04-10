@@ -145,7 +145,13 @@ router.get('/', async (req, res) => {
     if (stage) { conditions.push(`l.stage = $${i++}`); params.push(stage); }
     if (source) { conditions.push(`l.source = $${i++}`); params.push(source); }
     if (priority) { conditions.push(`l.priority = $${i++}`); params.push(priority); }
-    if (agent) { conditions.push(`l.assigned_to = $${i++}`); params.push(agent); }
+    if (agent) { 
+        if (agent === 'Unassigned') {
+            conditions.push(`l.assigned_to IS NULL`);
+        } else {
+            conditions.push(`l.assigned_to = $${i++}`); params.push(agent);
+        }
+    }
     if (channel_partner_id) { conditions.push(`l.channel_partner_id = $${i++}`); params.push(channel_partner_id); }
     if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
 
@@ -643,10 +649,23 @@ router.post('/:id/ai-score', async (req, res) => {
             Example format: {"score": 85, "reasons": ["Good budget", "Contact info present"]}
             `;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-1.5-flash',
-                contents: prompt,
-            });
+            let response;
+            try {
+                response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                });
+            } catch (firstErr) {
+                if (firstErr?.status === 503 || firstErr?.status === 429) {
+                    console.warn("[AI] High demand on 2.5-flash scoring, falling back to 2.0-flash...");
+                    response = await ai.models.generateContent({
+                        model: 'gemini-2.0-flash',
+                        contents: prompt,
+                    });
+                } else {
+                    throw firstErr;
+                }
+            }
 
             try {
                 // Try parsing the text output, remove potential markdown code block wrappers
@@ -697,6 +716,15 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
             return res.status(400).json({ error: 'Empty file or invalid format' });
         }
 
+        // Pre-fetch all users to map 'assigned_to'
+        const { rows: allUsers } = await pool.query('SELECT id, email, name FROM users WHERE tenant_id=$1', [req.tenantId]);
+        const userMap = new Map();
+        allUsers.forEach(u => {
+            userMap.set(u.id, u.id);
+            userMap.set(u.email.toLowerCase(), u.id);
+            userMap.set(u.name.toLowerCase(), u.id);
+        });
+
         let importedCount = 0;
         let duplicateCount = 0;
         let skippedLimit = 0;
@@ -708,6 +736,12 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
             const email = row['Email'] || row['email'];
             const city = row['City'] || row['city'];
             const source = row['Source'] || row['source'] || 'Import';
+            
+            const assignedToRaw = row['Assigned To'] || row['assigned_to'] || row['Assigned'] || row['Agent'] || row['agent'] || null;
+            let assignedTo = null;
+            if (assignedToRaw) {
+               assignedTo = userMap.get(String(assignedToRaw).trim().toLowerCase()) || null;
+            }
 
             if (!name || !phone || phone === 'undefined' || phone === '') continue;
 
@@ -723,9 +757,9 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
             }
 
             await pool.query(
-                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score)
-                 VALUES ($1, $2, $3, $4, $5, $6, 'New', 'Medium', 50)`,
-                [req.tenantId, name, phone, email || null, city || null, source]
+                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, assigned_to)
+                 VALUES ($1, $2, $3, $4, $5, $6, 'New', 'Medium', 50, $7)`,
+                [req.tenantId, name, phone, email || null, city || null, source, assignedTo]
             );
             importedCount++;
         }

@@ -8,7 +8,7 @@ import {
     Phone, Calendar, MapPin, CalendarCheck, ChevronDown, 
     Bell, Search, MessageSquare, Flame, TrendingUp, Clock, UserCheck, 
     ChevronRight, Users, LayoutDashboard, Briefcase, 
-    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus
+    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone
 } from 'lucide-react';
 
 // --- DEMO DATA ---
@@ -161,7 +161,7 @@ const PriorityItem = ({ icon: Icon, color, bg, label, count, onClick, isLast }) 
     </div>
 );
 
-const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor, badgeBg, img, icon: Icon, isLast, onClick }) => (
+const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor, badgeBg, img, icon: Icon, isLast, onClick, isAi }) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -176,22 +176,25 @@ const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor,
             {TimeIcon && <TimeIcon size={12} style={{ color: COLORS.slate400, marginTop: '2px' }} />}
         </div>
         
-        <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {img ? <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Icon size={14} color={COLORS.blue} />}
+        <div style={{ width: 36, height: 36, borderRadius: '50%', overflow: 'hidden', background: isAi ? 'rgba(139, 92, 246, 0.1)' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: isAi ? '1.5px solid rgba(139, 92, 246, 0.4)' : 'none' }}>
+            {img ? <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : isAi ? <Sparkles size={16} color="#8b5cf6" /> : <Icon size={14} color={COLORS.blue} />}
         </div>
 
         <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.slate950 }}>{title}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.slate950, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {title} {isAi && <div style={{ fontSize: '0.6rem', color: '#8b5cf6', fontWeight: 900, background: 'rgba(139, 92, 246, 0.1)', padding: '1px 5px', borderRadius: '4px' }}>AI</div>}
+            </div>
             <div style={{ fontSize: '0.7rem', color: COLORS.slate600, marginTop: '2px' }}>{sub}</div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ 
-                fontSize: '0.65rem', fontWeight: 800, color: badgeColor, background: badgeBg, 
+                fontSize: '0.65rem', fontWeight: 800, color: isAi ? '#8b5cf6' : badgeColor, background: isAi ? 'rgba(139, 92, 246, 0.05)' : badgeBg, 
                 padding: '4px 10px', borderRadius: '12px', whiteSpace: 'nowrap',
-                display: 'flex', alignItems: 'center', gap: '4px'
+                display: 'flex', alignItems: 'center', gap: '4px',
+                border: isAi ? '1px solid rgba(139, 92, 246, 0.1)' : 'none'
             }}>
-                {title.toLowerCase().includes('call') && <Flame size={10} />} {badge}
+                {title.toLowerCase().includes('call') && <Flame size={10} />} {isAi ? 'Smart Task' : badge}
             </span>
             <ChevronRight size={14} color={COLORS.slate400} />
         </div>
@@ -218,8 +221,8 @@ const LeadListItem = ({ name, type, time, info, details, img, isAvatar, onClick,
         }}
         className="hover-lift"
     >
-        <div style={{ width: 70, height: 70, borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}>
-            <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div style={{ width: 70, height: 70, borderRadius: '12px', overflow: 'hidden', flexShrink: 0, background: `hsl(${(String(name || '#')).charCodeAt(0) * 47 % 360}, 60%, 55%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 'bold' }}>
+            {img ? <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : name?.charAt(0)?.toUpperCase()}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
@@ -254,24 +257,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
     const [showPerfDropdown, setShowPerfDropdown] = useState(false);
     
     // --- DATA MAPPING ---
-    const stats = useMemo(() => {
-        if (performancePeriod === 'This Month') return data;
-        // Mock data for different months
-        const monthMap = {
-            'Jan': { totalLeads: 120, callsMade: 850, followups: 45, siteVisits: 12, won: 5, revenue: 12500000 },
-            'Feb': { totalLeads: 145, callsMade: 920, followups: 52, siteVisits: 18, won: 8, revenue: 18500000 },
-            'Mar': { totalLeads: 180, callsMade: 1100, followups: 70, siteVisits: 25, won: 12, revenue: 28000000 },
-            'Apr': { totalLeads: 160, callsMade: 980, followups: 62, siteVisits: 20, won: 10, revenue: 22000000 },
-            'This Year': { totalLeads: 850, callsMade: 5600, followups: 450, siteVisits: 120, won: 65, revenue: 145000000 }
-        };
-        const mData = monthMap[performancePeriod] || data;
-        return {
-            leads: { active_leads: mData.totalLeads, calls: mData.callsMade },
-            bookings: { total: mData.won, total_value: mData.revenue },
-            upcoming_followups: Array(mData.followups || 0).fill({}),
-            stages: [{ stage: 'Site Visit Done', count: mData.siteVisits }]
-        };
-    }, [performancePeriod, data]);
+    const stats = data || {};
     const leads = stats.leads || {};
     const bookings = stats.bookings || {};
     const stages = stats.stages || [];
@@ -281,11 +267,12 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
     
     const kpiData = {
         totalLeads: leads.active_leads || 0,
-        callsMade: leads.calls || 0,
+        pipelineValue: stats.pipeline?.value || 0,
         followups: followups.length || 0,
         siteVisits: stageCounts['Site Visit Done'] || 0,
-        won: bookings.total || 0,
-        revenue: bookings.total_value || 0
+        won: leads.won || bookings.total || 0,
+        revenue: bookings.total_value || 0,
+        winRate: leads.win_rate || 0
     };
 
     const formatCurrency = (val) => {
@@ -392,14 +379,56 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                 </div>
             </div>
 
+            {/* 🔥 WTI Agent Quick Stats Dashboard 🔥 */}
+            <div style={{ background: 'linear-gradient(to right, var(--navy-900), #1e293b)', borderRadius: '20px', padding: '24px', color: 'white', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 30px rgba(15,23,42,0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: 50, height: 50, borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <Smartphone size={24} color="#60a5fa" />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Handset Activity Panel</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '2px' }}>Your Live Telemetry</div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '40px' }}>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Calls Logged Today</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {stats.telephony_stats?.calls_today || 0}
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800, padding: '4px 10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', borderRadius: '12px' }}>Tracked</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Approx. Talk Time</div>
+                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff' }}>
+                            {((stats.telephony_stats?.calls_today || 0) * 1.5).toFixed(0)} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>min</span>
+                        </div>
+                    </div>
+
+                    <div style={{ paddingLeft: '20px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Device Sync Health</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {((stats.telephony_stats?.calls_today || 0) - (stats.telephony_stats?.synced_recordings || 0)) <= 0 ? (
+                                <><span style={{ color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckSquare size={18} /> 100% Synced</span></>
+                            ) : (
+                                <><span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>⚠️ Waiting Wi-Fi ({((stats.telephony_stats?.calls_today || 0) - (stats.telephony_stats?.synced_recordings || 0))} Pending)</span></>
+                            )}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '6px', fontWeight: 600 }}>Audio uploads pause on mobile data</div>
+                    </div>
+                </div>
+            </div>
+
             {/* KPI Cards Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
-                <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc="77%" isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
-                <KPI onClick={() => navigate('/call-records')} title="Calls Made" value={kpiData.callsMade || 72} perc="12%" isUp icon={Phone} color={COLORS.green} sparkData={sparkLines[1]} sparkColor={COLORS.green} />
-                <KPI onClick={() => navigate('/followups')} title="Follow-ups" value={kpiData.followups} perc="18%" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" />
-                <KPI onClick={() => navigate('/site-visits')} title="Site Visits" value={kpiData.siteVisits} perc="20%" isUp icon={MapPin} color={COLORS.cyan} sparkData={sparkLines[3]} sparkColor={COLORS.cyan} />
-                <KPI onClick={() => navigate('/bookings')} title="Bookings" value={`${kpiData.won} / 10`} target={10} curr={kpiData.won} icon={CalendarCheck} color={COLORS.blue} />
-                <KPI onClick={() => navigate('/analytics')} dark title="Revenue" value={formatCurrency(kpiData.revenue)} perc="10%" isUp sparkData={sparkLines[4]} sparkColor={COLORS.blue} />
+                <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
+                <KPI onClick={() => navigate('/pipeline')} title="Pipeline Value" value={formatCurrency(kpiData.pipelineValue)} perc={`${kpiData.totalLeads} Active`} isUp icon={Briefcase} color={COLORS.orange} sparkData={sparkLines[1]} sparkColor={COLORS.orange} />
+                <KPI onClick={() => navigate('/followups')} title="Follow-ups Due" value={kpiData.followups} perc="Pending" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" />
+                <KPI onClick={() => navigate('/site-visits')} title="Site Visits" value={kpiData.siteVisits} perc="Completed" isUp icon={MapPin} color={COLORS.cyan} sparkData={sparkLines[3]} sparkColor={COLORS.cyan} />
+                <KPI onClick={() => navigate('/bookings')} title="Bookings" value={kpiData.won} target={0} curr={kpiData.won} icon={CalendarCheck} color={COLORS.blue} />
+                <KPI onClick={() => navigate('/analytics')} dark title="Revenue" value={formatCurrency(kpiData.revenue)} perc={`${kpiData.winRate}% Win Rate`} isUp sparkData={sparkLines[4]} sparkColor={COLORS.blue} />
             </div>
 
             {/* Main Content Grid */}
@@ -468,11 +497,11 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         <h3 style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '16px', whiteSpace: 'nowrap' }}>Conversion Funnel</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                             {[
-                                { label: 'Leads', val: '85%', color: COLORS.blue, growth: '8%' },
-                                { label: 'Calls', val: '65%', color: COLORS.green, growth: '12%' },
-                                { label: 'Follow-ups', val: '45%', color: COLORS.green, growth: '18%' },
-                                { label: 'Site Visits', val: '35%', color: COLORS.green, growth: '20%' },
-                                { label: 'Bookings', val: '20%', color: COLORS.blue, growth: '10%', count: kpiData.won }
+                                { label: 'Total Leads', val: '100%', color: COLORS.blue, growth: kpiData.totalLeads },
+                                { label: 'Qualified', val: '75%', color: COLORS.green, growth: stageCounts['Qualified'] || 0 },
+                                { label: 'Site Visits', val: '45%', color: COLORS.green, growth: kpiData.siteVisits },
+                                { label: 'Negotiation', val: '30%', color: COLORS.green, growth: stageCounts['Negotiation'] || 0 },
+                                { label: 'Bookings', val: '20%', color: COLORS.blue, growth: 'Closed', count: kpiData.won }
                             ].map(item => (
                                 <div key={item.label}>
                                     <div style={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.slate950, marginBottom: '6px' }}>{item.label}</div>
@@ -481,7 +510,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                                             <div style={{ height: '100%', width: item.val, background: item.color, borderRadius: '4px' }} />
                                         </div>
                                         <span style={{ fontSize: '0.75rem', fontWeight: 800, color: item.label === 'Bookings' ? COLORS.slate600 : COLORS.green, whiteSpace: 'nowrap' }}>
-                                            {item.label === 'Bookings' ? `${item.count} ${item.growth}` : `↑ ${item.growth}`}
+                                            {item.label === 'Bookings' ? `${item.count} ${item.growth}` : `${item.growth}`}
                                         </span>
                                     </div>
                                 </div>
@@ -566,37 +595,25 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <TimelineItem 
-                            time="12:30 PM" 
-                            title="Site Visit - Mahesh S. Tiwari" 
-                            sub="Aviation Sky Villa • 3 BHK" 
-                            badge="In 15 min" 
-                            badgeColor={COLORS.green} 
-                            badgeBg="#ecfdf5" 
-                            img="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=64&q=80" 
-                            onClick={() => navigate('/site-visits')}
-                        />
-                        <TimelineItem 
-                            time="3:00 PM" 
-                            title="Call - Anil Wadhwa" 
-                            sub="3 BHK • Interested in 3 BHK" 
-                            badge="High Priority" 
-                            badgeColor="#f97316" 
-                            badgeBg="#fff7ed" 
-                            icon={Phone} 
-                            onClick={() => navigate('/call-records')}
-                        />
-                        <TimelineItem 
-                            time="4:30 PM" 
-                            title="Follow-up - Meera Talwar" 
-                            sub="Elan Epic • Budget: ₹1.2 Cr" 
-                            badge="Today" 
-                            badgeColor={COLORS.blue} 
-                            badgeBg="#eff6ff" 
-                            img="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=64&q=80" 
-                            isLast
-                            onClick={() => navigate('/followups')}
-                        />
+                        {followups && followups.length > 0 ? followups.slice(0, 3).map((f, i) => (
+                            <TimelineItem 
+                                icon={Calendar}
+                                isAi={f.is_ai_generated}
+                                isLast={i === Math.min(followups.length - 1, 2)}
+                                onClick={() => navigate('/followups')}
+                                sub={`Priority: ${f.priority || 'Normal'}`} 
+                                title={`${f.type} - ${f.lead_name || 'Unknown'}`} 
+                                badge="Upcoming" 
+                                badgeColor={COLORS.blue} 
+                                badgeBg="#eff6ff" 
+                                time={new Date(f.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} 
+                                key={f.id}
+                            />
+                        )) : (
+                            <div style={{ padding: '20px', fontSize: '0.85rem', color: COLORS.slate500, textAlign: 'center' }}>
+                                No upcoming activities scheduled.
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -658,9 +675,22 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <LeadListItem name="Preeti Sharma" type="Hot" time="3:00 PM" info="Jan Wilgy" details="3 BHK • ₹1.25 Cr • Elan Epic" img="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" onClick={() => navigate('/leads/1')} />
-                        <LeadListItem name="Sunita Yadav" type="Warm" time="4:30 PM" info="Call back" details="2 BHK • ₹85 L • Elan Epic" img="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80" onClick={() => navigate('/leads/2')} />
-                        <LeadListItem isLast name="Ravi Malhotra" type="Cold" time="Tomorrow" info="Site Visit" details="4 BHK • ₹2.10 Cr • Alpine Heights" img="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" onClick={() => navigate('/leads/3')} />
+                        {recentLeads && recentLeads.length > 0 ? recentLeads.slice(0, 3).map((lead, i) => (
+                            <LeadListItem 
+                                key={lead.id}
+                                name={lead.name} 
+                                type={['Negotiation', 'Interested'].includes(lead.stage) ? 'Hot' : ['Qualified', 'Connected'].includes(lead.stage) ? 'Warm' : 'Cold'} 
+                                time={lead.stage} 
+                                info={lead.source} 
+                                details={`${lead.property_type || 'Any'} • ${lead.budget || 'N/A'} • ${lead.project_name || 'No Project'}`} 
+                                onClick={() => navigate(`/leads/${lead.id}`)} 
+                                isLast={i === Math.min(recentLeads.length - 1, 2)}
+                            />
+                        )) : (
+                            <div style={{ padding: '20px', fontSize: '0.85rem', color: COLORS.slate500, textAlign: 'center' }}>
+                                No recent leads found.
+                            </div>
+                        )}
                     </div>
                 </div>
 

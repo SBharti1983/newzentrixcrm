@@ -8,6 +8,7 @@ import { ToastProvider } from './components/ToastProvider';
 import { useToast } from './hooks/useToast';
 import Dialer from './components/Dialer';
 import ZapierAssistant from './components/ZapierAssistant';
+import AgentCopilotWidget from './components/AgentCopilotWidget';
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import Login from './pages/Login';
@@ -199,6 +200,7 @@ function ProtectedApp() {
           </Routes>
         </main>
       </div>
+      {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
       <Dialer />
     </div>
   );

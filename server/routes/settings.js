@@ -32,6 +32,22 @@ router.get('/', async (req, res) => {
         const settings = rows[0].settings || {};
         const permissions = settings.role_permissions || defaultPermissions;
         
+        if (['admin', 'superadmin'].includes(req.user.role)) {
+            // Priority: DB Setting > Environment Variable > Default
+            settings.telephony_secret = settings.telephony_secret || process.env.ZAPIER_WEBHOOK_SECRET || 'missing_secret';
+            
+            // Storage URL is usually generated but can be overridden
+            if (!settings.android_storage_url) {
+                settings.android_storage_url = `${process.env.VITE_API_URL || 'http://localhost:5050/api'}/zapier/transcribe-call?token=${settings.telephony_secret}:${targetTenantId}`;
+            }
+            
+            settings.firebase_project_id = settings.firebase_project_id || process.env.FIREBASE_PROJECT_ID || 'Not Configured';
+            settings.firebase_database_url = settings.firebase_database_url || process.env.FIREBASE_DATABASE_URL || 'Not Configured';
+            
+            // Allow Gemini API Key override via DB settings
+            settings.gemini_api_key = settings.gemini_api_key || process.env.GEMINI_API_KEY || '';
+        }
+
         res.json({ ...settings, role_permissions: permissions });
     } catch (err) {
         console.error('GET /settings error:', err);

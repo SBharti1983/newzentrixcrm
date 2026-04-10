@@ -10,6 +10,7 @@ import {
 import { leadsApi, notificationsApi } from '../api/client';
 import { PageLoader } from '../components/Feedback';
 import { useToast } from '../hooks/useToast';
+import AIPitchModal from '../components/AIPitchModal';
 
 export default function CommandCenter() {
     const { addToast } = useToast();
@@ -22,6 +23,7 @@ export default function CommandCenter() {
     const [searchTerm, setSearchTerm] = useState('');
     const [messagesLoading, setMessagesLoading] = useState(false);
     const [isDrafting, setIsDrafting] = useState(false);
+    const [showPitchModal, setShowPitchModal] = useState(false);
 
     // Mock intelligence data for demonstration
     const getLeadIntelligence = (lead) => {
@@ -142,7 +144,7 @@ export default function CommandCenter() {
             {/* Strategic Command Header */}
             <div className="command-center-header glass-panel">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div className="ai-pulse" style={{ width: 48, height: 48, borderRadius: '16px', background: 'var(--navy-900)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(10,22,40,0.2)' }}>
+                    <div className="ai-pulse" style={{ width: 48, height: 48, borderRadius: '16px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 24px rgba(99, 102, 241, 0.25)' }}>
                         <Brain size={24} />
                     </div>
                     <div>
@@ -159,11 +161,11 @@ export default function CommandCenter() {
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--navy-800)' }}>Sync: 2m</span>
                     </div>
                     <button onClick={handleSimulateInbound} style={{ 
-                        padding: '10px 18px', borderRadius: '12px', background: '#0a1628', color: 'white', 
-                        border: 'none', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', 
-                        gap: 8, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 10px 20px rgba(10,22,40,0.2)'
+                        padding: '10px 18px', borderRadius: '12px', background: 'white', color: 'var(--navy-900)', 
+                        border: '1.5px solid #e2e8f0', fontSize: '12px', fontWeight: 800, display: 'flex', alignItems: 'center', 
+                        gap: 8, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
                     }} className="hover-lift">
-                        <Phone size={14} /> Simulate IVR Call
+                        <Phone size={14} color="#6366f1" /> Simulate IVR Call
                     </button>
                 </div>
             </div>
@@ -274,10 +276,8 @@ export default function CommandCenter() {
                                     <button className="icon-btn" onClick={() => dialerEvents.call(activeLead.id, activeLead.phone, activeLead.name)} title="Call Lead">
                                         <Phone size={18} color="var(--accent-emerald)" />
                                     </button>
-                                    <button className="icon-btn" onClick={() => window.open(`https://wa.me/${activeLead.phone?.replace(/[^0-9]/g, '')}`, '_blank')} title="WhatsApp Lead">
-                                        <MessageSquare size={18} color="#25D366" />
-                                    </button>
-                                    <button className="icon-btn" title="Send Email"><Mail size={18} /></button>
+
+                                    <button className="icon-btn" onClick={() => activeLead.email && window.open(`mailto:${activeLead.email}`, '_blank')} title="Send Email"><Mail size={18} /></button>
                                     <button className="btn btn-primary btn-sm" onClick={() => navigate(`/leads/${activeLead.id}`)}>View Profile</button>
                                 </div>
                             </div>
@@ -296,20 +296,20 @@ export default function CommandCenter() {
                                     {messages.map(m => (
                                         <div key={m.id} style={{ display: 'flex', justifyContent: m.sent_by ? 'flex-end' : 'flex-start' }}>
                                             <div style={{
-                                                maxWidth: '80%', padding: '14px 20px', borderRadius: '24px',
-                                                background: m.sent_by ? 'var(--navy-900)' : 'white',
-                                                color: m.sent_by ? 'white' : 'var(--navy-900)',
-                                                border: !m.sent_by ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                                                boxShadow: m.sent_by ? '0 8px 20px rgba(10,22,40,0.15)' : '0 4px 12px rgba(0,0,0,0.03)',
+                                                maxWidth: '85%', padding: '14px 20px', borderRadius: '24px',
+                                                background: m.sent_by ? '#dcfce7' : '#f8fafc',
+                                                color: m.sent_by ? '#166534' : '#1e293b',
+                                                border: '1px solid #e2e8f0',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                                 borderBottomLeftRadius: !m.sent_by ? 4 : 24,
                                                 borderBottomRightRadius: m.sent_by ? 4 : 24,
                                                 position: 'relative'
                                             }}>
                                                 {!m.sent_by && (
-                                                    <div style={{ position: 'absolute', top: -18, left: 4, fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{activeLead.name}</div>
+                                                    <div style={{ position: 'absolute', top: -18, left: 4, fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>{activeLead.name}</div>
                                                 )}
-                                                <p style={{ margin: 0, fontSize: '0.94rem', lineHeight: 1.6, fontWeight: 500 }}>{m.body}</p>
-                                                <div style={{ textAlign: 'right', marginTop: 8, fontSize: '0.65rem', opacity: 0.6, fontWeight: 700 }}>
+                                                <p style={{ margin: 0, fontSize: '0.94rem', lineHeight: 1.6, fontWeight: 600, color: 'inherit', whiteSpace: 'pre-wrap' }}>{m.body}</p>
+                                                <div style={{ textAlign: 'right', marginTop: 8, fontSize: '0.65rem', opacity: 0.8, fontWeight: 700, color: 'inherit' }}>
                                                     {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </div>
                                             </div>
@@ -359,19 +359,19 @@ export default function CommandCenter() {
 
                 {/* Right Panel: AI Intelligence */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
-                    <div className="glass-panel" style={{ padding: '28px', border: 'none', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, var(--navy-900), var(--navy-800))' }}>
-                        <div style={{ position: 'absolute', bottom: -20, right: -20, opacity: 0.15 }}>
-                            <Zap size={140} color="white" />
+                    <div className="glass-panel" style={{ padding: '28px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white' }}>
+                        <div style={{ position: 'absolute', bottom: -20, right: -20, opacity: 0.03 }}>
+                            <Zap size={140} color="var(--navy-900)" />
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-                            <div className="ai-pulse" style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--accent-cyan)' }} />
-                            <h4 style={{ margin: 0, color: 'white', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Index</h4>
+                            <div className="ai-pulse" style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--accent-violet)' }} />
+                            <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Index</h4>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '4rem', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.05em' }}>{intel?.closingProbability}%</div>
-                            <div style={{ marginTop: 20, padding: '10px', background: 'rgba(255,255,255,0.05)', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ fontSize: '4.5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.1em' }}>{intel?.closingProbability}%</div>
+                            <div style={{ marginTop: 20, padding: '10px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                                 <TrendingUp size={16} color="var(--accent-emerald)" />
-                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 700 }}>Peak Velocity Reached</span>
+                                <span style={{ color: 'var(--slate-500)', fontSize: '0.8rem', fontWeight: 700 }}>Peak Velocity Reached</span>
                             </div>
                         </div>
                     </div>
@@ -409,16 +409,26 @@ export default function CommandCenter() {
                             </div>
                         </div>
 
-                        <div style={{ marginTop: 'auto', padding: '20px', background: 'var(--navy-900)', borderRadius: '20px', boxShadow: '0 12px 24px rgba(10,22,40,0.2)' }}>
-                            <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: 16 }}>AI Recommendation</label>
-                            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'space-between', padding: '14px 20px', background: 'white', color: 'var(--navy-900)', border: 'none', fontWeight: 900, fontSize: '0.85rem' }}>
-                                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Sparkles size={16} color="var(--accent-violet)" /> {intel?.nextAction}</span>
-                                <ChevronRight size={18} />
+                        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <button className="btn btn-secondary" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', fontWeight: 800, fontSize: '0.8rem' }}>
+                                <Sparkles size={14} style={{ marginRight: 8 }} /> Generate Personal Pitch
                             </button>
+                            
+                            <div style={{ padding: '20px', background: 'var(--navy-900)', borderRadius: '20px', boxShadow: '0 12px 24px rgba(10,22,40,0.2)' }}>
+                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', display: 'block', marginBottom: 16 }}>AI Recommendation</label>
+                                <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'space-between', padding: '14px 20px', background: 'white', color: 'var(--navy-900)', border: 'none', fontWeight: 900, fontSize: '0.85rem' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Sparkles size={16} color="var(--accent-violet)" /> {intel?.nextAction}</span>
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {showPitchModal && activeLead && (
+                <AIPitchModal lead={activeLead} onClose={() => setShowPitchModal(false)} />
+            )}
         </div>
     );
 }

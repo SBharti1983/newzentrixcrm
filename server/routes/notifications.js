@@ -77,6 +77,10 @@ router.get('/', async (req, res) => {
 // ─── POST /api/notifications/send — log + (optionally) send ───────
 router.post('/send', async (req, res) => {
     try {
+        const fs = require('fs');
+        const debugInfo = `\n[DEBUG ${new Date().toISOString()}] Payload: ${JSON.stringify(req.body)}\n`;
+        fs.appendFileSync('debug_notifications.log', debugInfo);
+        
         const { channels, recipient_name, recipient_phone, recipient_email, lead_id, subject, body } = req.body;
         if (!body || !channels?.length)
             return res.status(400).json({ error: 'Body and at least one channel are required' });
@@ -95,6 +99,19 @@ router.post('/send', async (req, res) => {
                 recipient || recipient_name, subject || null, body, 'Sent']
             );
             inserted.push(rows[0]);
+
+            // Also log directly to the lead's timeline
+            if (lead_id) {
+                try {
+                    await pool.query(
+                        `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note)
+                         VALUES ($1, $2, $3, $4, NOW(), $5)`,
+                        [req.tenantId, lead_id, req.user.id, channel, `Outbound ${channel} Message:\n\n${body}`]
+                    );
+                } catch (interactionErr) {
+                    console.error('Failed to log notification to timeline:', interactionErr.message);
+                }
+            }
 
             // 2. Attempt real send (graceful — if env vars missing, just log)
             try {
@@ -144,9 +161,7 @@ router.post('/draft-reply', async (req, res) => {
         const histRes = await pool.query('SELECT body, channel, sent_at FROM notifications WHERE lead_id=$1 ORDER BY sent_at DESC LIMIT 5', [lead_id]);
         const history = histRes.rows.map(h => `${h.channel}: ${h.body}`).join('\n');
 
-        const { GoogleGenerativeAI } = require("@google/generative-ai");
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const { generateAIResponse } = require('../utils/ai');
 
         const prompt = `
             You are a senior real estate sales assistant at Zentrix Realty.
@@ -167,8 +182,7 @@ router.post('/draft-reply', async (req, res) => {
             - No placeholders like [Agent Name], sign off as "Team Zentrix".
         `;
 
-        const result = await model.generateContent(prompt);
-        const draft = result.response.text();
+        const draft = await generateAIResponse(prompt, false);
 
         res.json({ draft });
     } catch (err) {
@@ -209,6 +223,18 @@ router.post('/bulk-send', async (req, res) => {
                     target || recipient.name, resolvedSubject || null, resolvedBody, 'Sent']
                 );
                 inserted.push(rows[0]);
+
+                if (recipient.id) {
+                    try {
+                        await pool.query(
+                            `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note)
+                             VALUES ($1, $2, $3, $4, NOW(), $5)`,
+                            [req.tenantId, recipient.id, req.user.id, channel, `Outbound ${channel} Message (Bulk):\n\n${resolvedBody}`]
+                        );
+                    } catch (interactionErr) {
+                        console.error('Failed to log bulk notification to timeline:', interactionErr.message);
+                    }
+                }
 
                 try {
                     if (channel === 'Email' && recipient.email) {
@@ -293,16 +319,48 @@ async function sendSMS({ to, body }) {
 }
 
 async function sendWhatsApp({ to, body }) {
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_WHATSAPP_FROM)
-        throw new Error('Twilio WhatsApp not configured');
+    if (!process.env.WHAPI_TOKEN)
+        throw new Error('Whapi Cloud WhatsApp not configured — set WHAPI_TOKEN in .env');
 
-    const twilio = require('twilio');
-    const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-    await client.messages.create({
-        body,
-        from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-        to: `whatsapp:${to}`,
+    // 1. Precise Normalization for Indian Numbers
+    let digits = String(to).replace(/[^0-9]/g, '');
+    if (digits.length === 10) {
+        digits = '91' + digits; // Add India country code if missing
+    }
+    
+    // Whapi Cloud generally prefers just digits with country code for individuals.
+    // If it fails, the error log below will capture the exact reason.
+    const recipientId = digits; 
+
+    console.log(`[WhatsApp] Attempting send to ${recipientId}...`);
+
+    const res = await fetch(`${process.env.WHAPI_API_URL || 'https://gate.whapi.cloud'}/messages/text`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${process.env.WHAPI_TOKEN}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+            to: recipientId, 
+            body: body,
+            typing_time: 0
+        }),
     });
+
+    const resText = await res.text();
+    const fs = require('fs');
+    const path = require('path');
+    const logPath = path.join(__dirname, '..', 'whatsapp_delivery.log');
+    
+    // Production-ready logging
+    if (!res.ok) {
+        fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] FAILED | TO: ${recipientId} | STATUS: ${res.status} | ERR: ${resText}\n`);
+        console.error(`[WhatsApp] Delivery Error:`, resText);
+        throw new Error(`Whapi send failed: ${resText}`);
+    } else {
+        fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] SUCCESS | TO: ${recipientId} | MSG_ID: ${JSON.parse(resText).message?.id}\n`);
+        console.log(`[WhatsApp] Delivered to ${recipientId}`);
+    }
 }
 
 module.exports = router;

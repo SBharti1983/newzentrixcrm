@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { leadsApi } from '../api/client';
 import { PageLoader, PageError } from '../components/Feedback';
-import { Phone, Download, Search, Calendar, User, Clock, FileText, ExternalLink, CheckCircle2, TrendingUp, Filter, BarChart3, Play, Pause, X, Mic, AudioLines, ShieldAlert } from 'lucide-react';
+import { Phone, Download, Search, Calendar, User, Clock, FileText, ExternalLink, CheckCircle2, TrendingUp, Filter, BarChart3, Play, Pause, X, Mic, AudioLines, ShieldAlert, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -375,38 +375,37 @@ export default function CallRecords() {
                         <div style={{ padding: 32 }}>
                             {qaCall.outcome === 'Connected' ? (
                                 <>
-                                    {/* Call Recording Player Mock */}
-                                    <div style={{ background: 'var(--slate-50)', padding: 24, borderRadius: 20, marginBottom: 24, border: '1px solid var(--border-light)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-600)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                                Recording File: ZTRX-{qaCall.id || '2948'}.wav
-                                            </span>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-600)' }}>
-                                                Duration: {qaCall.duration || '0:00'}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                            <button onClick={() => setIsPlaying(!isPlaying)} className="btn hover-lift" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--navy-900)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', flexShrink: 0 }}>
-                                                {isPlaying ? <Pause size={24} /> : <Play size={24} style={{ marginLeft: 4 }} />}
-                                            </button>
-                                            <div style={{ flex: 1, position: 'relative' }}>
-                                                {/* Fake Waveform */}
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, height: 32 }}>
-                                                    {Array.from({ length: 48 }).map((_, i) => (
-                                                        <div key={i} style={{
-                                                            width: '100%',
-                                                            height: isPlaying ? `${Math.max(10, Math.random() * 100)}%` : `${Math.sin(i) * 30 + 40}%`,
-                                                            background: i < (isPlaying ? 12 : 0) ? 'var(--accent-cyan)' : 'var(--slate-300)',
-                                                            borderRadius: 4,
-                                                            transition: 'height 0.1s ease'
-                                                        }} />
-                                                    ))}
-                                                </div>
-                                                <div style={{ height: 4, background: 'var(--slate-200)', marginTop: 8, borderRadius: 2 }}>
-                                                    <div style={{ width: isPlaying ? '35%' : '0%', height: '100%', background: 'var(--accent-cyan)', borderRadius: 2, transition: 'width 1s linear' }} />
-                                                </div>
+                                    {/* Real Call Recording Player */}
+                                    <div style={{ background: 'var(--slate-50)', padding: '24px 32px', borderRadius: 24, marginBottom: 24, border: '1px solid var(--border-light)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-cyan)', animation: isPlaying ? 'pulse 2s infinite' : 'none' }} />
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--navy-600)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                                    Voice Data Stream: ZTRX-{qaCall.id.slice(0,8)}
+                                                </span>
                                             </div>
+                                            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-600)', background: 'white', padding: '2px 10px', borderRadius: 8, border: '1px solid var(--border-light)' }}>
+                                                {qaCall.duration || '0:00'}
+                                            </span>
                                         </div>
+                                        
+                                        {qaCall.recording_url ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                                                <audio 
+                                                    id="qa-player"
+                                                    src={qaCall.recording_url} 
+                                                    onPlay={() => setIsPlaying(true)}
+                                                    onPause={() => setIsPlaying(false)}
+                                                    style={{ width: '100%', height: 40, borderRadius: 12 }}
+                                                    controls
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div style={{ padding: '20px', textAlign: 'center', background: 'white', borderRadius: 16, border: '1px dashed var(--border-medium)' }}>
+                                                <ShieldAlert size={20} style={{ margin: '0 auto 8px', color: 'var(--text-muted)' }} />
+                                                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>Recording data not yet synced from Mobile Gateway</div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* AI Transcript */}
@@ -451,40 +450,37 @@ export default function CallRecords() {
                                                 );
                                             })() : (
                                                 <>
-                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                            AGt
-                                                        </div>
-                                                        <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                            Hi {qaCall.lead_name}, this is {qaCall.agent_name} from Zentrix Properties. I saw you were looking at our new prime inventory layout. Do you have a quick 2 minutes?
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexDirection: 'row-reverse' }}>
-                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-violet)', color: 'white', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                            CLI
-                                                        </div>
-                                                        <div style={{ background: 'white', border: '1px solid var(--border-light)', padding: '12px 16px', borderRadius: '16px 0 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                            Yes, I am interested, but I am currently comparing it with another property across the street. What are the ROI margins looking like?
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
-                                                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-100)', color: 'var(--navy-900)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 900 }}>
-                                                            AGt
-                                                        </div>
-                                                        <div style={{ background: 'var(--slate-50)', padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                                                            Great question. Our historical appreciation in that specific block is hovering around 14.5% year-over-year. Let me schedule a site visit and we can walk through the exact financial models.
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <div style={{ borderTop: '1px dashed var(--border-light)', margin: '24px 0', position: 'relative' }}>
-                                                        <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: 'white', padding: '0 12px', color: 'var(--accent-emerald)', fontSize: '10px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                            <ShieldAlert size={12} /> SENTIMENT ANALYSIS: POSITIVE (MOCK)
-                                                        </div>
-                                                    </div>
+                                                    {/* Default Mock Content if note is empty */}
                                                 </>
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Recommended Action: WhatsApp Follow-up */}
+                                    {qaCall.note && qaCall.note.includes('--- AI WHATSAPP FOLLOW-UP ---') && (
+                                        <div style={{ marginTop: 24, padding: 20, background: '#f0fdf4', borderRadius: 20, border: '1px solid #bbf7d0' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#15803d', fontWeight: 900, fontSize: '0.85rem' }}>
+                                                    <MessageCircle size={18} /> SMART FOLLOW-UP READY
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        const parts = qaCall.note.split('--- AI WHATSAPP FOLLOW-UP ---');
+                                                        const msg = parts[1].split('Recording Link:')[0].trim();
+                                                        const phone = qaCall.lead_phone.replace(/\D/g, '');
+                                                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                    }}
+                                                    className="btn hover-lift" 
+                                                    style={{ background: '#25D366', color: 'white', border: 'none', padding: '10px 20px', borderRadius: 12, fontWeight: 900, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 8 }}
+                                                >
+                                                    <MessageCircle size={16} /> Send via WhatsApp
+                                                </button>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#166534', fontStyle: 'italic', lineHeight: 1.5 }}>
+                                                "{qaCall.note.split('--- AI WHATSAPP FOLLOW-UP ---')[1].split('Recording Link:')[0].trim()}"
+                                            </p>
+                                        </div>
+                                    )}
                                 </>
                             ) : (
                                 <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>

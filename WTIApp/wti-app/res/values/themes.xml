@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ZentrixWTI" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimaryVariant">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/surface</item>
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorSecondaryVariant">@color/accent</item>
+        <item name="colorOnSecondary">@color/surface</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+
+        <!-- Background color. -->
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+
+    <style name="Zentrix.Button" parent="Widget.MaterialComponents.Button">
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.Zentrix.Button.Rounded</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.1</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="Zentrix.Button.Connect" parent="Zentrix.Button">
+        <item name="backgroundTint">@color/primary</item>
+    </style>
+
+    <style name="Zentrix.Button.HangUp" parent="Zentrix.Button">
+        <item name="backgroundTint">@color/status_offline</item>
+    </style>
+
+    <style name="ShapeAppearanceOverlay.Zentrix.Button.Rounded" parent="">
+        <item name="cornerSize">8dp</item>
+    </style>
+</resources>

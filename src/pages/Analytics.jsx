@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import {
     AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line
 } from 'recharts';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { analyticsApi } from '../api/client';
-import { TrendingUp, Users, Home, BarChart3, Target, Award, Calendar, Phone, Sparkles, MessageSquare, MapPin, Zap, ChevronRight, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, Home, Phone, Sparkles, MessageSquare, MapPin, Zap, AlertCircle } from 'lucide-react';
 import { leadsApi } from '../api/client';
 import { useCallback, useMemo } from 'react';
 
@@ -587,7 +587,7 @@ export default function Analytics() {
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Velocity</div>
-                                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-cyan)' }}>+{Math.floor(Math.random() * 15) + 5}%</div>
+                                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-cyan)' }}>+{(i * 3 + 7) % 15 + 5}%</div>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)' }}>{a.revenue}</div>

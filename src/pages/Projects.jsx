@@ -205,7 +205,7 @@ export default function Projects() {
             {/* Project Insight Modal (Modernized) */}
             {viewProject && (
                 <div className="modal-overlay" onClick={() => setViewProject(null)} style={{ background: 'rgba(10,22,40,0.4)', backdropFilter: 'blur(16px)' }}>
-                    <div className="modal animate-fadeIn" onClick={e => e.stopPropagation()} style={{ maxWidth: 840, width: '95%', background: 'white', borderRadius: '44px', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.3)' }}>
+                    <div className="modal animate-fadeIn" onClick={e => e.stopPropagation()} style={{ maxWidth: 840, width: '95%', maxHeight: '90vh', overflowY: 'auto', background: 'white', borderRadius: '44px', boxShadow: '0 40px 100px rgba(0,0,0,0.3)' }}>
                         <div style={{ padding: '54px', position: 'relative' }}>
                             <button onClick={() => setViewProject(null)} style={{ position: 'absolute', top: 32, right: 32, width: 44, height: 44, borderRadius: '16px', border: '1px solid #f1f5f9', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 <X size={24} />
@@ -235,7 +235,7 @@ export default function Projects() {
                                 ))}
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 48 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 48, marginBottom: 40 }}>
                                 <div>
                                     <h4 style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 24, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Asset Strategic Brief</h4>
                                     <p style={{ margin: 0, color: 'var(--slate-600)', lineHeight: 1.9, fontSize: '16px', fontWeight: 500 }}>{viewProject.description || "This institutional-grade residential asset features high-fidelity architectural specifications and a curated suite of premium amenities. Strategically located to maximize capital appreciation and rental yield for executive stakeholders."}</p>
@@ -249,6 +249,54 @@ export default function Projects() {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Visual Inventory Matrix */}
+                            {viewProject.total_units > 0 && (
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                       <h4 style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>Visual Inventory Matrix</h4>
+                                       <div style={{ display: 'flex', gap: 16 }}>
+                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', fontWeight: 700, color: 'var(--slate-500)' }}><div style={{ width: 10, height: 10, borderRadius: 3, background: 'var(--accent-emerald)' }}></div> Available</div>
+                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', fontWeight: 700, color: 'var(--slate-500)' }}><div style={{ width: 10, height: 10, borderRadius: 3, background: '#ef4444' }}></div> Sold out</div>
+                                       </div>
+                                    </div>
+                                    
+                                    <div style={{ padding: 30, background: '#f8fafc', borderRadius: 36, border: '1px solid #f1f5f9', maxHeight: 380, overflowY: 'auto', boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.02)' }}>
+                                         <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: 8 }}>
+                                            {Array.from({ length: Math.ceil(viewProject.total_units / 4) }).map((_, floorIdx) => {
+                                                 const unitsOnFloor = Math.min(4, viewProject.total_units - (floorIdx * 4));
+                                                 return (
+                                                     <div key={floorIdx} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                                         <div style={{ width: 40, fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textAlign: 'right', paddingRight: 10 }}>F{floorIdx + 1}</div>
+                                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, flex: 1 }}>
+                                                             {Array.from({ length: unitsOnFloor }).map((_, unitIdx) => {
+                                                                 const unitNum = (floorIdx + 1) * 100 + (unitIdx + 1);
+                                                                 // Deterministic availability based on modulo to ensure UI consistency before actual DB unit mapping
+                                                                 const isAvailable = (Math.abs(Math.sin(unitNum)) * viewProject.total_units) < viewProject.available_units;
+                                                                 return (
+                                                                      <div 
+                                                                          key={unitNum} 
+                                                                          onClick={() => isAvailable ? showToast(`Unit ${unitNum} selected for express booking!`, 'success') : showToast('Unit already sold', 'error')}
+                                                                          style={{ 
+                                                                              padding: '16px', background: isAvailable ? 'var(--accent-emerald)' : '#ef4444', 
+                                                                              borderRadius: '14px', color: 'white', fontWeight: 900, fontSize: '14px', textAlign: 'center',
+                                                                              cursor: isAvailable ? 'pointer' : 'not-allowed', opacity: isAvailable ? 1 : 0.4,
+                                                                              transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                                                      }}
+                                                                      className={isAvailable ? 'hover-lift' : ''}
+                                                                      >
+                                                                           {unitNum}
+                                                                      </div>
+                                                                 );
+                                                             })}
+                                                         </div>
+                                                     </div>
+                                                 );
+                                            })}
+                                         </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -257,7 +305,7 @@ export default function Projects() {
             {/* Add Project Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ background: 'rgba(10,22,40,0.4)', backdropFilter: 'blur(16px)' }}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, background: 'white', borderRadius: '36px', overflow: 'hidden' }}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 680, width: '95%', maxHeight: '90vh', overflowY: 'auto', background: 'white', borderRadius: '36px' }}>
                         <div className="modal-header" style={{ padding: '28px 40px', background: 'var(--slate-50)', borderBottom: '1px solid #f1f5f9' }}>
                             <h3 className="modal-title" style={{ fontWeight: 900, color: 'var(--navy-900)' }}>Register New Asset</h3>
                             <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setShowModal(false)}><X size={24} /></button>

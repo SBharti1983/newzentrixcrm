@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageLoader, PageError } from '../components/Feedback';
-import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw } from 'lucide-react';
-import { leadsApi, zapierApi } from '../api/client';
+import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw, Volume2 } from 'lucide-react';
+import { leadsApi, zapierApi, notificationsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
@@ -203,12 +203,26 @@ export default function ContactDetails() {
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
         try {
-            await leadsApi.addInteraction(id, { type: activityType, note: newNote });
+            if (activityType === 'WhatsApp' || activityType === 'Email') {
+                await notificationsApi.send({
+                    channels: [activityType],
+                    recipient_phone: activityType === 'WhatsApp' ? contact.phone : undefined,
+                    recipient_email: activityType === 'Email' ? contact.email : undefined,
+                    lead_id: id,
+                    body: newNote
+                });
+                showToast(`${activityType} Message Sent successfully!`, 'success');
+            } else {
+                await leadsApi.addInteraction(id, { type: activityType, note: newNote });
+                showToast('Interaction logged successfully', 'success');
+            }
             setNewNote('');
             setShowActivityBox(false);
             loadData();
         } catch (e) {
-            console.error(e);
+            console.error('Send Error:', e);
+            const msg = e.message || e.error || JSON.stringify(e);
+            showToast(`Failed to process ${activityType}`, 'error');
         }
     };
 
@@ -216,7 +230,7 @@ export default function ContactDetails() {
         if (!window.confirm('Delete this interaction?')) return;
         try {
             const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
             const res = await fetch(`${apiUrl}/leads/${id}/interactions/${interactionId}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` }
@@ -233,7 +247,7 @@ export default function ContactDetails() {
         if (!editNote.trim()) return;
         try {
             const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
             const res = await fetch(`${apiUrl}/leads/${id}/interactions/${interactionId}`, {
                 method: 'PATCH',
                 headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -260,6 +274,46 @@ export default function ContactDetails() {
             showToast('Failed to enrich record', 'error');
         } finally {
             setEnriching(false);
+        }
+    };
+
+    const downloadTranscript = async (interactionId) => {
+        try {
+            const token = sessionStorage.getItem('zentrix_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+            const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to download');
+            
+            // Read text manually and construct standard Text Blob
+            const textData = await response.text();
+            const blob = new Blob([textData], { type: 'text/plain;charset=utf-8' });
+            
+            const disposition = response.headers.get('Content-Disposition');
+            const filenameMatch = disposition?.match(/filename="(.+?)"/);
+            const fallbackName = `Transcript_${interactionId}.txt`;
+            const filename = (filenameMatch && filenameMatch[1]) ? filenameMatch[1] : fallbackName;
+            
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.setAttribute('download', filename); // Forcing the attribute directly
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            // Allow ample time for the OS download manager to capture the filename
+            setTimeout(() => {
+                if (document.body.contains(a)) document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            }, 1000);
+            
+            showToast('Transcript downloaded!', 'success');
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to download transcript', 'error');
         }
     };
 
@@ -977,13 +1031,22 @@ export default function ContactDetails() {
                                                 />
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => handleUpdateStatus('Nurture', { nurture_reason: newNote, reconnect_date: window._tmpReconnectDate })}
-                                            className="btn btn-primary"
-                                            style={{ width: '100%', height: 48, borderRadius: '16px', background: '#7c3aed', fontWeight: 900 }}
-                                        >
-                                            Confirm Move to Nurture
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            <button
+                                                onClick={() => setShowActivityBox(false)}
+                                                className="hover-lift"
+                                                style={{ flex: 1, padding: '0 16px', height: 48, borderRadius: '16px', background: '#f1f5f9', color: 'var(--slate-600)', fontWeight: 800, fontSize: '13px', cursor: 'pointer', border: '1px solid #e2e8f0' }}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={() => handleUpdateStatus('Nurture', { nurture_reason: newNote, reconnect_date: window._tmpReconnectDate })}
+                                                className="hover-lift"
+                                                style={{ flex: 2, height: 48, borderRadius: '16px', background: '#7c3aed', color: 'white', border: 'none', fontWeight: 900, fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(124, 58, 237, 0.2)' }}
+                                            >
+                                                Confirm Move to Nurture
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -1001,33 +1064,33 @@ export default function ContactDetails() {
                                                 color: 'var(--navy-900)'
                                             }}
                                         />
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, flexWrap: 'wrap', gap: 16 }}>
-                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, flexWrap: 'wrap', gap: 8 }}>
+                                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                                 <button onClick={handleVoice} className="hover-lift" style={{
-                                                    width: 44, height: 44, borderRadius: '14px', border: '1px solid #f1f5f9',
+                                                    width: 36, height: 36, borderRadius: '10px', border: '1px solid #f1f5f9',
                                                     background: isListening ? '#fee2e2' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}>
-                                                    <Mic size={18} color={isListening ? '#ef4444' : 'var(--navy-600)'} />
+                                                    <Mic size={16} color={isListening ? '#ef4444' : 'var(--navy-600)'} />
                                                 </button>
                                                 <button onClick={handleSummarize} disabled={summarizing} className="hover-lift" style={{
-                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9',
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                                                    height: 36, padding: '0 10px', borderRadius: '10px', border: '1px solid #f1f5f9',
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
                                                 }}>
                                                     {summarizing ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} color="#8b5cf6" />}
-                                                    AI Summarize
+                                                    Summarize
                                                 </button>
                                                 {['Email', 'WhatsApp'].includes(activityType) && (
                                                     <button onClick={handleAIGenerate} disabled={generatingContent} className="hover-lift" style={{
-                                                        height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #e2e8f0',
-                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                                                        height: 36, padding: '0 10px', borderRadius: '10px', border: '1px solid #e2e8f0',
+                                                        background: 'linear-gradient(to right, rgba(139,92,246,0.1), rgba(6,182,212,0.1))', color: 'var(--navy-900)', fontWeight: 900, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
                                                     }}>
                                                         {generatingContent ? <RefreshCw size={12} className="animate-spin" /> : <Wand2 size={12} color="#8b5cf6" />}
                                                         Auto-Draft
                                                     </button>
                                                 )}
                                                 <label className="hover-lift" style={{
-                                                    height: 40, padding: '0 12px', borderRadius: '12px', border: '1px solid #f1f5f9',
-                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                                                    height: 36, padding: '0 10px', borderRadius: '10px', border: '1px solid #f1f5f9',
+                                                    background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
                                                 }}>
                                                     {uploadingAudio ? <RefreshCw size={12} className="animate-spin" /> : <UploadCloud size={12} color="#10b981" />}
                                                     {uploadingAudio ? 'Transcribing...' : 'Upload'}
@@ -1040,13 +1103,22 @@ export default function ContactDetails() {
                                                     />
                                                 </label>
                                             </div>
-                                            <button
-                                                onClick={handleAddNote}
-                                                className="hover-lift"
-                                                style={{ padding: '0 16px', height: 34, borderRadius: '10px', background: 'var(--navy-900)', color: 'white', fontWeight: 800, fontSize: '12px', boxShadow: '0 4px 12px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
-                                            >
-                                                Log Interaction
-                                            </button>
+                                            <div style={{ display: 'flex', gap: 6 }}>
+                                                <button
+                                                    onClick={() => setShowActivityBox(false)}
+                                                    className="hover-lift"
+                                                    style={{ padding: '0 12px', height: 36, borderRadius: '8px', background: '#f1f5f9', color: 'var(--slate-600)', fontWeight: 800, fontSize: '11px', cursor: 'pointer', border: '1px solid #e2e8f0' }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={handleAddNote}
+                                                    className="hover-lift"
+                                                    style={{ padding: '0 14px', height: 36, borderRadius: '8px', background: 'var(--navy-900)', color: 'white', fontWeight: 800, fontSize: '12px', boxShadow: '0 4px 12px rgba(10,22,40,0.15)', cursor: 'pointer', border: 'none' }}
+                                                >
+                                                    {['Email', 'WhatsApp'].includes(activityType) ? `Send ${activityType}` : 'Log Interaction'}
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -1107,51 +1179,160 @@ export default function ContactDetails() {
                                                             <button onClick={() => handleEditInteraction(item.id)} style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: 'var(--navy-900)', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: 800 }}>Save Changes</button>
                                                         </div>
                                                     </div>
-                                                ) : item.note && item.note.includes('[Automated AI Transcript') ? (() => {
-                                                    const lines = item.note.split('\n');
-                                                    const headerLine = lines[0];
-                                                    const sentimentMatch = headerLine.match(/Sentiment: (.*?)]/);
-                                                    const sentimentBadge = sentimentMatch ? sentimentMatch[1] : null;
-                                                    const transcriptLines = lines.slice(2).filter(l => l.trim().length > 0);
+                                                ) : (item.transcript || (item.note && item.note.includes('[Automated AI Transcript'))) ? (() => {
+                                                    let summaryText = null;
+                                                    let highlightsText = null;
+                                                    let whatsappText = null;
+                                                    let draftStatus = null;
+                                                    let transcriptText = item.transcript || ''; 
+                                                    let sentimentBadge = item.sentiment;
+
+                                                    if (item.note && item.note.includes('[Automated AI Transcript')) {
+                                                        const lines = item.note.split('\n');
+                                                        if (!sentimentBadge) {
+                                                            const sentimentMatch = lines[0].match(/Sentiment: (.*?)]/);
+                                                            if (sentimentMatch) sentimentBadge = sentimentMatch[1];
+                                                        }
+
+                                                        const summaryMatch = item.note.match(/--- AI SUMMARY ---\n([\s\S]*?)(?=\nHighlights:|\n---|\n$)/);
+                                                        if (summaryMatch) summaryText = summaryMatch[1].trim();
+
+                                                        const highlightsMatch = item.note.match(/Highlights:\n([\s\S]*?)(?=\n---|\n$)/);
+                                                        if (highlightsMatch) highlightsText = highlightsMatch[1].trim();
+
+                                                        const whatsappMatch = item.note.match(/--- AI WHATSAPP FOLLOW-UP (.*?)(?: ---)\n([\s\S]*?)(?=\n---|\n✅|$)/);
+                                                        if (whatsappMatch) {
+                                                            draftStatus = whatsappMatch[1].trim();
+                                                            whatsappText = whatsappMatch[2].trim();
+                                                        }
+
+                                                        if (!transcriptText) {
+                                                            const verbatimMatch = item.note.match(/--- VERBATIM TRANSCRIPT ---\n([\s\S]*?)(?=\n---|\n✅|$)/);
+                                                            if (verbatimMatch) {
+                                                                transcriptText = verbatimMatch[1].trim();
+                                                            } else if (item.note.includes('Agent:') || item.note.includes('Client:')) {
+                                                                 const tMatch = item.note.match(/(Agent|Client):[\s\S]*/);
+                                                                 if (tMatch) transcriptText = tMatch[0].trim();
+                                                            }
+                                                        }
+                                                    }
 
                                                     return (
-                                                        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px dashed #cbd5e1' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '12px' }}><Sparkles size={12} /> AI Audio Parser</div>
+                                                        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.1)', padding: '6px 12px', borderRadius: '12px' }}>
+                                                                    <Sparkles size={12} /> Gemini 2.5 Analysis
+                                                                </div>
                                                                 {sentimentBadge && (
-                                                                    <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: sentimentBadge === 'Positive' ? '#10b981' : sentimentBadge === 'Negative' || sentimentBadge === 'Concerned' ? '#ef4444' : '#64748b', background: 'white', padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>Sentiment: {sentimentBadge}</div>
+                                                                    <div style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: sentimentBadge === 'Positive' ? '#10b981' : sentimentBadge === 'Negative' || sentimentBadge === 'Concerned' ? '#ef4444' : '#64748b', background: 'white', padding: '6px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: sentimentBadge === 'Positive' ? '#10b981' : sentimentBadge === 'Negative' || sentimentBadge === 'Concerned' ? '#ef4444' : '#94a3b8', display: 'inline-block', marginRight: 4 }} />
+                                                                        {sentimentBadge} Intent
+                                                                    </div>
+                                                                )}
+                                                                {item.recording_url && (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto', background: 'white', padding: '4px 8px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                                        <audio controls preload="metadata" style={{ height: 28, width: 220, outline: 'none' }}>
+                                                                            <source src={item.recording_url} type="audio/mp4" />
+                                                                        </audio>
+                                                                        {(() => {
+                                                                            const expireDate = new Date(new Date(item.date).getTime() + 30 * 24 * 60 * 60 * 1000);
+                                                                            const diffDays = Math.ceil((expireDate - new Date()) / (1000 * 60 * 60 * 24));
+                                                                            if (diffDays > 0) {
+                                                                                return (
+                                                                                    <div style={{ fontSize: '9px', fontWeight: 800, color: diffDays <= 5 ? '#ef4444' : '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                                        <Clock size={10} /> Exp in {diffDays}d
+                                                                                    </div>
+                                                                                );
+                                                                            }
+                                                                            return null;
+                                                                        })()}
+                                                                    </div>
+                                                                )}
+                                                                {transcriptText && (
+                                                                    <button
+                                                                        onClick={() => downloadTranscript(item.id)}
+                                                                        style={{
+                                                                            marginLeft: item.recording_url ? 0 : 'auto', fontSize: '10px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.08)',
+                                                                            border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '5px 10px',
+                                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
+                                                                        }}
+                                                                    >
+                                                                        <FileText size={11} /> Download .txt
+                                                                    </button>
                                                                 )}
                                                             </div>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                                                {transcriptLines.map((line, i) => {
-                                                                    const isAgent = line.startsWith('Agent:');
-                                                                    const text = line.replace(/^(Agent|Client):\s*/, '');
-                                                                    return (
-                                                                        <div key={i} style={{
-                                                                            alignSelf: isAgent ? 'flex-end' : 'flex-start',
-                                                                            background: isAgent ? 'var(--navy-900)' : 'white',
-                                                                            color: isAgent ? 'white' : 'var(--navy-900)',
-                                                                            border: isAgent ? '1px solid var(--navy-900)' : '1px solid #e2e8f0',
-                                                                            padding: '12px 16px',
-                                                                            borderRadius: '20px',
-                                                                            borderBottomRightRadius: isAgent ? '4px' : '20px',
-                                                                            borderBottomLeftRadius: !isAgent ? '4px' : '20px',
-                                                                            maxWidth: '85%',
-                                                                            fontSize: '13px',
-                                                                            fontWeight: 600,
-                                                                            lineHeight: 1.5,
-                                                                            boxShadow: '0 6px 16px rgba(10,22,40,0.04)'
-                                                                        }}>
-                                                                            <div style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', color: isAgent ? 'rgba(255,255,255,0.5)' : 'var(--slate-400)', marginBottom: 4, letterSpacing: '0.05em' }}>{isAgent ? 'Agent' : 'Client'}</div>
-                                                                            {text}
+
+                                                            {summaryText && (
+                                                                <div style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+                                                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)' }}>Call Summary</h4>
+                                                                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--slate-600)', lineHeight: 1.6, fontWeight: 500 }}>{summaryText}</p>
+                                                                    
+                                                                    {highlightsText && (
+                                                                        <div style={{ marginTop: 12 }}>
+                                                                            <h4 style={{ margin: '0 0 6px 0', fontSize: '11px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Key Highlights</h4>
+                                                                            <div style={{ fontSize: '13px', color: 'var(--navy-800)', fontWeight: 600, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                                                                {highlightsText}
+                                                                            </div>
                                                                         </div>
-                                                                    );
-                                                                })}
-                                                            </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {whatsappText && (
+                                                                <div style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(37, 211, 102, 0.05)', padding: '12px 16px', borderRadius: '16px', border: '1px dashed rgba(37, 211, 102, 0.4)', marginBottom: 16 }}>
+                                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                                        <MessageSquare size={16} />
+                                                                    </div>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div style={{ fontSize: '11px', fontWeight: 900, color: '#166534', marginBottom: 4, textTransform: 'uppercase' }}>{draftStatus || 'Drafted WhatsApp Follow-up'}</div>
+                                                                        <div style={{ fontSize: '12px', color: 'var(--navy-900)', fontWeight: 700, whiteSpace: 'pre-wrap' }}>{whatsappText}</div>
+                                                                    </div>
+                                                                    <button
+                                                                        onClick={() => { setNewNote(whatsappText); setActivityType('WhatsApp'); setShowActivityBox(true); }}
+                                                                        className="hover-lift"
+                                                                        style={{ padding: '8px 12px', borderRadius: '10px', background: 'white', border: '1px solid #25D366', color: '#166534', fontWeight: 900, fontSize: '11px', cursor: 'pointer' }}
+                                                                    >
+                                                                        Use Draft
+                                                                    </button>
+                                                                </div>
+                                                            )}
+
+                                                            {transcriptText && (
+                                                                <details style={{ background: 'white', padding: '12px 16px', borderRadius: '16px', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
+                                                                    <summary style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', outline: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                        <ClipboardCheck size={14} color="var(--slate-400)" /> View Full Verbatim Transcript
+                                                                    </summary>
+                                                                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 300, overflowY: 'auto' }}>
+                                                                        {transcriptText.split('\n').filter(l => l.trim()).map((line, i) => {
+                                                                            const isAgent = line.startsWith('Agent:');
+                                                                            const text = line.replace(/^(Agent|Client):\s*/, '');
+                                                                            if (!isAgent && !line.startsWith('Client:')) {
+                                                                                return <div key={i} style={{ fontSize: '12px', color: 'var(--slate-500)', fontStyle: 'italic' }}>{line}</div>;
+                                                                            }
+                                                                            return (
+                                                                                <div key={i} style={{
+                                                                                    alignSelf: isAgent ? 'flex-end' : 'flex-start',
+                                                                                    background: isAgent ? 'var(--navy-900)' : '#f8fafc',
+                                                                                    color: isAgent ? 'white' : 'var(--navy-900)',
+                                                                                    border: isAgent ? '1px solid var(--navy-900)' : '1px solid #e2e8f0',
+                                                                                    padding: '10px 14px', borderRadius: '16px',
+                                                                                    borderBottomRightRadius: isAgent ? '4px' : '16px',
+                                                                                    borderBottomLeftRadius: !isAgent ? '4px' : '16px',
+                                                                                    maxWidth: '85%', fontSize: '12px', fontWeight: 600, lineHeight: 1.5,
+                                                                                    boxShadow: '0 4px 12px rgba(10,22,40,0.04)'
+                                                                                }}>
+                                                                                    <div style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', color: isAgent ? 'rgba(255,255,255,0.5)' : 'var(--slate-400)', marginBottom: 2, letterSpacing: '0.05em' }}>{isAgent ? 'Agent' : 'Client'}</div>
+                                                                                    {text}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </details>
+                                                            )}
                                                         </div>
                                                     );
                                                 })() : (
-                                                    <div style={{ fontSize: '14px', color: 'var(--navy-800)', fontWeight: 600, lineHeight: 1.6, background: '#fcfdfe', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                                                    <div style={{ fontSize: '14px', color: 'var(--navy-900)', fontWeight: 600, lineHeight: 1.6, background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #eef2f6', whiteSpace: 'pre-wrap' }}>
                                                         {item.note}
                                                     </div>
                                                 )}

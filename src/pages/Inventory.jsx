@@ -195,7 +195,7 @@ export default function Inventory() {
                 </div>
             </div>
 
-            {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={refetch} /> : (
+            {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={() => { refetchProjects(); refetchUnits(); }} /> : (
                 viewMode === 'map' ? (
                     <div style={{ background: 'white', padding: '16px', borderRadius: '32px', border: '1px solid #f1f5f9', boxShadow: '0 20px 40px rgba(0,0,0,0.03)' }}>
                         <InventoryMap units={filtered} onUnitClick={(u) => setSelectedUnit(u)} />

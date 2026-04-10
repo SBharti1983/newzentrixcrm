@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, X, Check, ExternalLink, Info, AlertTriangle, CheckCircle2, MessageSquare, UserPlus, Calendar } from 'lucide-react';
 
 export default function NotificationDropdown({ onClose }) {
@@ -6,33 +6,47 @@ export default function NotificationDropdown({ onClose }) {
     const [loading, setLoading] = useState(true);
     const dropdownRef = useRef(null);
 
-    // Mock initial notifications if DB is empty
-    const mockNotifications = [
-        {
-            id: '1',
-            title: 'New Lead Assigned',
-            message: 'A new lead "John Doe" has been assigned to you.',
-            type: 'lead',
-            is_read: false,
-            created_at: new Date().toISOString()
-        },
-        {
-            id: '2',
-            title: 'Site Visit Scheduled',
-            message: 'Site visit for "Silver Oaks" project is scheduled for tomorrow at 10 AM.',
-            type: 'task',
-            is_read: false,
-            created_at: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-            id: '3',
-            title: 'Payment Received',
-            message: 'Booking #BK-902 payment of ₹5,00,000 has been verified.',
-            type: 'success',
-            is_read: true,
-            created_at: new Date(Date.now() - 86400000).toISOString()
+    const fetchNotifications = useCallback(async () => {
+        // Generate mock data inside the function to avoid impure render
+        const mockNotifications = [
+            {
+                id: '1',
+                title: 'New Lead Assigned',
+                message: 'A new lead "John Doe" has been assigned to you.',
+                type: 'lead',
+                is_read: false,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: '2',
+                title: 'Site Visit Scheduled',
+                message: 'Site visit for "Silver Oaks" project is scheduled for tomorrow at 10 AM.',
+                type: 'task',
+                is_read: false,
+                created_at: new Date(Date.now() - 3600000).toISOString()
+            },
+            {
+                id: '3',
+                title: 'Payment Received',
+                message: 'Booking #BK-902 payment of ₹5,00,000 has been verified.',
+                type: 'success',
+                is_read: true,
+                created_at: new Date(Date.now() - 86400000).toISOString()
+            }
+        ];
+
+        try {
+            // For now, use mock
+            setTimeout(() => {
+                setNotifications(mockNotifications);
+                setLoading(false);
+            }, 500);
+        } catch (err) {
+            console.error('Fetch notifications error:', err);
+            setNotifications(mockNotifications);
+            setLoading(false);
         }
-    ];
+    }, []);
 
     useEffect(() => {
         fetchNotifications();
@@ -45,28 +59,7 @@ export default function NotificationDropdown({ onClose }) {
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const fetchNotifications = async () => {
-        try {
-            // Uncomment when backend is ready and you have a token
-            // const res = await fetch('/api/system-notifications', {
-            //     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            // });
-            // const data = await res.json();
-            // setNotifications(data.length > 0 ? data : mockNotifications);
-            
-            // For now, use mock
-            setTimeout(() => {
-                setNotifications(mockNotifications);
-                setLoading(false);
-            }, 500);
-        } catch (err) {
-            console.error('Fetch notifications error:', err);
-            setNotifications(mockNotifications);
-            setLoading(false);
-        }
-    };
+    }, [fetchNotifications, onClose]);
 
     const markAsRead = async (id) => {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));

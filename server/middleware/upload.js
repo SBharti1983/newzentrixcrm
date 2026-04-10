@@ -34,6 +34,7 @@ const fileFilter = (req, file, cb) => {
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/csv',
+        'audio/wav', 'audio/mpeg', 'audio/x-wav', 'audio/mp3', 'audio/ogg', 'audio/m4a'
     ];
     if (allowed.includes(file.mimetype)) {
         cb(null, true);

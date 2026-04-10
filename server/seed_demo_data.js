@@ -58,7 +58,7 @@ async function run() {
             // Create a follow-up for active leads
             if (!['Won', 'Lost'].includes(lead.stage)) {
                 await pool.query(
-                    `INSERT INTO followups(tenant_id, lead_id, assigned_to, type, priority, status, scheduled_at, notes)
+                    `INSERT INTO followups(tenant_id, lead_id, assigned_to, type, priority, status, scheduled_at, note)
                      VALUES($1, $2, $3, $4, $5, 'Pending', NOW() + interval '${Math.floor(Math.random() * 48) + 1} hours', $6)`,
                     [tid, res.rows[0].id, lead.assigned_to, 
                      ['Call', 'Site Visit', 'WhatsApp', 'Email'][Math.floor(Math.random() * 4)],

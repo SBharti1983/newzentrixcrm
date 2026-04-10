@@ -9,6 +9,7 @@ function signTokens(user) {
     const payload = {
         id: user.id, tenantId: user.tenant_id,
         role: user.role, name: user.name, email: user.email, avatar: user.avatar,
+        telephony_agent_id: user.telephony_agent_id,
         features: user.settings?.features || {},
     };
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
@@ -135,6 +136,7 @@ router.post('/register', async (req, res) => {
             user: {
                 id: user.id, name: user.name, email: user.email,
                 role: user.role, avatar: user.avatar,
+                telephony_agent_id: user.telephony_agent_id,
                 tenantId: tenant.id, tenantName: tenant.name,
                 tenantSlug: tenant.slug, plan: tenant.plan,
             },
@@ -150,6 +152,7 @@ router.post('/register', async (req, res) => {
 
 // ── POST /api/auth/login ──────────────────────────────────────────
 router.post('/login', async (req, res) => {
+    if (!req.body) return res.status(400).json({ error: 'Request body is missing' });
     let { email, password, subdomain } = req.body;
     if (!email || !password)
         return res.status(400).json({ error: 'Email and password are required' });
@@ -217,6 +220,7 @@ router.post('/login', async (req, res) => {
             user: {
                 id: user.id, name: user.name, email: user.email,
                 role: user.role, avatar: user.avatar,
+                telephony_agent_id: user.telephony_agent_id,
                 tenantId: user.tenant_id, tenantName: user.tenant_name,
                 tenantSlug: user.tenant_slug, plan: user.plan,
                 features: user.settings?.features || {},
@@ -294,7 +298,7 @@ router.post('/logout', async (req, res) => {
 router.get('/me', require('../middleware/auth'), async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT u.id, u.name, u.email, u.role, u.avatar, u.phone, u.department, u.last_login_at,
+            `SELECT u.id, u.name, u.email, u.role, u.avatar, u.phone, u.department, u.last_login_at, u.telephony_agent_id,
                     t.name as tenant_name, t.slug, t.plan, t.primary_color
              FROM users u JOIN tenants t ON u.tenant_id = t.id
              WHERE u.id = $1`, [req.user.id]
