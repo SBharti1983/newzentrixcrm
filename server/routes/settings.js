@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
             
             // Storage URL is usually generated but can be overridden
             if (!settings.android_storage_url) {
-                settings.android_storage_url = `${process.env.VITE_API_URL || 'http://localhost:5050/api'}/zapier/transcribe-call?token=${settings.telephony_secret}:${targetTenantId}`;
+                settings.android_storage_url = `${process.env.VITE_API_URL || 'https://api.zentrixcrm.com/api'}/telephony/upload-recording?token=${settings.telephony_secret}:${targetTenantId}`;
             }
             
             settings.firebase_project_id = settings.firebase_project_id || process.env.FIREBASE_PROJECT_ID || 'Not Configured';

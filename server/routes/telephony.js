@@ -12,13 +12,49 @@ const upload = multer({
     limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for longer calls
 });
 
-router.use(auth);
+// Specialized middleware for Android WTI app authentication via X-Zapier-Token
+async function authenticateHandset(req, res, next) {
+    const token = req.headers['x-zapier-token'] || req.query.token;
+    if (!token) {
+        console.log('[Telephony] Auth failed: No token provided');
+        return res.status(401).json({ error: 'Unauthorized: No token' });
+    }
+
+    const [secret, tenantId] = token.split(':');
+    if (!secret || !tenantId) {
+        console.log('[Telephony] Auth failed: Invalid token format');
+        return res.status(401).json({ error: 'Unauthorized: Invalid token format' });
+    }
+
+    try {
+        const tenantRes = await pool.query('SELECT settings FROM tenants WHERE id = $1', [tenantId]);
+        if (tenantRes.rows.length === 0) {
+            console.log(`[Telephony] Auth failed: Tenant ${tenantId} not found`);
+            return res.status(401).json({ error: 'Unauthorized: Tenant not found' });
+        }
+
+        const settings = tenantRes.rows[0].settings || {};
+        const dbSecret = settings.telephony_secret;
+        
+        if (!dbSecret || dbSecret !== secret) {
+            console.log(`[Telephony] Auth failed: Secret mismatch for Tenant ${tenantId}`);
+            return res.status(401).json({ error: 'Unauthorized: Invalid secret' });
+        }
+
+        req.tenantId = tenantId;
+        req.isHandset = true;
+        next();
+    } catch (err) {
+        console.error('[Telephony] Auth system error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
 
 /**
  * GET /api/telephony/health
  * Health check endpoint for Android WTI app to verify connectivity.
  */
-router.get('/health', (req, res) => {
+router.get('/health', authenticateHandset, (req, res) => {
     res.json({ status: 'ok', service: 'zentrix-telephony', storageEnabled: isStorageEnabled, aiEnabled: isAiEnabled, tenant: req.tenantId });
 });
 
@@ -30,7 +66,7 @@ router.get('/health', (req, res) => {
  *   - A recordingUrl from Firebase Storage (preferred, much faster)
  * Along with: interactionId, disposition, phoneNumber, timestamp
  */
-router.post('/upload-recording', upload.single('audio'), async (req, res) => {
+router.post('/upload-recording', authenticateHandset, upload.single('audio'), async (req, res) => {
     const { interactionId, leadId, disposition, phoneNumber, timestamp, recordingUrl } = req.body;
 
     console.log(`[Telephony] ──── INCOMING UPLOAD ────`);
@@ -540,7 +576,7 @@ router.put('/bridge-config', async (req, res) => {
  * POST /api/telephony/push-config
  * Sends a silent configuration payload to all connected Android bridges via Firebase RTDB
  */
-router.post('/push-config', async (req, res) => {
+router.post('/push-config', auth, async (req, res) => {
     // We require admin access to push configuration to the fleet
     if (!['admin', 'superadmin'].includes(req.user.role)) {
         return res.status(403).json({ error: 'Requires admin privileges' });
@@ -567,23 +603,47 @@ router.post('/push-config', async (req, res) => {
             }
         } catch (e) { /* settings fetch failed, use defaults */ }
 
-        // Push a global config command to the tenant's device cluster
-        const pushRef = db.ref(`telephony_mdm_config/${req.tenantId}`);
-        await pushRef.set({
+        // Push configuration to EVERY active agent's node so handsets react instantly
+        const usersRes = await pool.query('SELECT name, telephony_agent_id FROM users WHERE tenant_id = $1 AND is_active = true', [req.tenantId]);
+        const agents = usersRes.rows;
+
+        const pushPromises = agents.map(async (agent) => {
+            const agentKey = agent.telephony_agent_id || agent.name.replace(/[^a-zA-Z0-9]/g, '');
+            const agentConfigRef = db.ref(`agents/${agentKey}/config`);
+            
+            // The Android app appends '/api/telephony/upload-recording' automatically, 
+            // so we only push the base URL. We use a robust split to avoid 
+            // truncating domains that contain 'api' (like api.zentrixcrm.com)
+            let baseUrl = storageUrl;
+            if (storageUrl.includes('/api/telephony')) {
+                baseUrl = storageUrl.split('/api/telephony')[0];
+            } else if (storageUrl.includes('/api/')) {
+                baseUrl = storageUrl.split('/api/')[0];
+            }
+
+            return agentConfigRef.update({
+                storage_server: baseUrl, 
+                recording_enabled: bridgeConfig.recording_enabled !== false,
+                pushed_at: Date.now(),
+                pushed_by: req.user.name
+            });
+        });
+
+        // Also update the global tenant-level config for redundancy/new joins
+        const globalPushRef = db.ref(`telephony_mdm_config/${req.tenantId}`);
+        pushPromises.push(globalPushRef.set({
             storageUrl: storageUrl,
             firebaseDatabaseUrl: firebaseDatabaseUrl || process.env.FIREBASE_DATABASE_URL,
             firebaseProject: firebaseProjectId || process.env.FIREBASE_PROJECT_ID,
-            recording_policy: {
-                bridge_number: bridgeConfig.bridge_number || '',
-                recording_enabled: bridgeConfig.recording_enabled !== false,
-                recording_mode: bridgeConfig.recording_mode || 'device_local'
-            },
+            recording_policy: bridgeConfig,
             timestamp: Date.now(),
             forceUpdate: true
-        });
+        }));
 
-        console.log(`[Telephony] Remote config pushed to fleet for tenant: ${req.tenantId}`);
-        res.json({ success: true, message: 'Configuration pushed to all connected handsets' });
+        await Promise.all(pushPromises);
+
+        console.log(`[Telephony] Remote config pushed to ${agents.length} agents for tenant: ${req.tenantId}`);
+        res.json({ success: true, message: `Configuration pushed to ${agents.length} active handsets` });
     } catch (err) {
         console.error('[Telephony] Failed to push MDM config:', err);
         res.status(500).json({ error: 'Failed to push configuration' });

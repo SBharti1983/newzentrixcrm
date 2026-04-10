@@ -484,6 +484,14 @@ export default function Admin() {
                 'Gemini AI Key': 'gemini_api_key'
             };
             const settingKey = keyMap[editingSetting] || editingSetting;
+            
+            // SECURITY FIX: Do not save masked values back to the DB
+            if (settingValue === '••••••••') {
+                setEditingSetting(null);
+                setSaving(false);
+                return;
+            }
+
             await settingsApi.update({ [settingKey]: settingValue });
             showToast('Setting updated', 'success');
             setEditingSetting(null);
@@ -765,11 +773,21 @@ export default function Admin() {
                                         {k === 'Storage Server URL' && (
                                             <button 
                                                 className="btn btn-primary btn-sm" 
-                                                style={{ padding: '0 8px', fontSize: '0.7rem', height: 24, marginLeft: 8 }} 
+                                                style={{ 
+                                                    padding: '0 12px', 
+                                                    fontSize: '0.75rem', 
+                                                    height: 28, 
+                                                    marginLeft: 12,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
+                                                }} 
                                                 onClick={handlePushConfig}
                                                 disabled={saving}
-                                                title="Push to connected Android devices"
+                                                title="Push this configuration URL to all connected Android handsets via Firebase"
                                             >
+                                                <Zap size={12} className={saving ? 'animate-pulse' : ''} />
                                                 {saving ? 'Pushing...' : 'Push to Handsets'}
                                             </button>
                                         )}
