@@ -85,9 +85,9 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
     console.log(`[Telephony]   Firebase URL: ${recordingUrl || 'None (file upload mode)'}`);
     console.log(`[Telephony]   File: ${req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE'}`);
 
-    // Accept either a pre-uploaded Firebase URL or a file upload
+    // Acceptance logic: We prefer a file or URL, but we permit call-logs-only if storage failed
     if (!req.file && !recordingUrl) {
-        return res.status(400).json({ error: 'No audio recording or recording URL provided' });
+        console.warn('[Telephony] Syncing call log only (no recording data provided by handset)');
     }
 
     try {
