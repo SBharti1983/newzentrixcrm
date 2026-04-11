@@ -382,33 +382,38 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
         // If insert is needed (no valid interactionId or update failed)
         if (!savedInteractionId && finalLeadId) {
             try {
-                const newId = crypto.randomUUID();
+                const finalId = interactionId || crypto.randomUUID();
                 const insertRes = await pool.query(
                     `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment, duration)
                      VALUES ($1, $2, $3, $4, 'Call', NOW(), $5, $6, $7, $8, $9, $10)
+                     ON CONFLICT (id) DO UPDATE SET 
+                        recording_url = COALESCE(interactions.recording_url, EXCLUDED.recording_url),
+                        updated_at = NOW()
                      RETURNING id`,
-                    [newId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
+                    [finalId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
                 );
                 savedInteractionId = insertRes.rows[0]?.id;
-                console.log(`[Telephony] Created fresh interaction ${savedInteractionId} for Lead ${finalLeadId}`);
+                console.log(`[Telephony] Created/Updated interaction ${savedInteractionId} for Lead ${finalLeadId}`);
             } catch (insertErr) {
                 console.error('[Telephony] Database insertion failed CRITICAL:', insertErr.message);
-                console.error('[Telephony] Failed Payload Params:', [req.tenantId, finalLeadId, req.user?.id || null]);
                 return res.status(500).json({ error: `DB Error: ${insertErr.message}` });
             }
         } else if (!savedInteractionId && !finalLeadId) {
-            // No lead found and no existing interaction — create an orphan interaction with phone number in note
+            // No lead found and no existing interaction — create an orphan interaction
             try {
-                const newId = crypto.randomUUID();
+                const finalId = interactionId || crypto.randomUUID();
                 const orphanNote = `[Unmatched Call] Phone: ${phoneNumber || 'Unknown'}\n${noteContent}`;
                 const insertRes = await pool.query(
                     `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment, duration)
                      VALUES ($1, $2, NULL, $3, 'Call', NOW(), $4, $5, $6, $7, $8, $9)
+                     ON CONFLICT (id) DO UPDATE SET 
+                        recording_url = COALESCE(interactions.recording_url, EXCLUDED.recording_url),
+                        updated_at = NOW()
                      RETURNING id`,
-                    [newId, req.tenantId, req.user?.id || null, orphanNote, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
+                    [finalId, req.tenantId, req.user?.id || null, orphanNote, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
                 );
                 savedInteractionId = insertRes.rows[0]?.id;
-                console.log(`[Telephony] Created orphan interaction ${savedInteractionId} (no matching lead for ${phoneNumber})`);
+                console.log(`[Telephony] Created/Updated orphan interaction ${savedInteractionId} for ${phoneNumber}`);
             } catch (orphanErr) {
                 console.error('[Telephony] Orphan interaction insert failed:', orphanErr.message);
             }
