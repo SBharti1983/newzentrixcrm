@@ -54,6 +54,10 @@ public class FirebaseService {
 
     private void initializeDatabase(String baseUrl) {
         if (baseUrl == null || baseUrl.isEmpty()) return;
+        
+        // Ensure URL is correctly formatted
+        if (!baseUrl.endsWith("/")) baseUrl += "/";
+        
         try {
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setDatabaseUrl(baseUrl)
@@ -67,7 +71,6 @@ public class FirebaseService {
                 List<FirebaseApp> apps = FirebaseApp.getApps(context);
                 for (FirebaseApp existingApp : apps) {
                     if (existingApp.getName().equals("zentrixWTI")) {
-                        // Check if the URL is different
                         if (!existingApp.getOptions().getDatabaseUrl().equals(baseUrl)) {
                             existingApp.delete();
                         } else {
@@ -88,8 +91,7 @@ public class FirebaseService {
             try {
                 database.setPersistenceEnabled(true);
             } catch (Exception e) {
-                // Persistence already enabled or already in use, which is fine
-                Log.d(TAG, "Persistence already active or instance running");
+                Log.d(TAG, "Persistence already active");
             }
             
             if (userLogService != null) {
@@ -97,7 +99,7 @@ public class FirebaseService {
             }
         } catch (Exception e) {
             Log.e(TAG, "Firebase init error: " + e.getMessage());
-            if (userLogService != null) userLogService.log("Firebase init error: " + e.getMessage());
+            if (userLogService != null) userLogService.log("Init error: " + e.getMessage());
         }
     }
 
@@ -113,6 +115,19 @@ public class FirebaseService {
     }
 
     public void testConnection(String url, final TestConnectionCallback callback) {
+        if (url == null || url.isEmpty() || !url.startsWith("https://")) {
+            if (userLogService != null) userLogService.log("Test: Invalid URL protocol.");
+            callback.onResult(false);
+            return;
+        }
+
+        // Validate Hostname
+        if (!url.contains(".firebaseio.com") && !url.contains(".firebasedatabase.app")) {
+            if (userLogService != null) userLogService.log("Test: Invalid Firebase hostname.");
+            callback.onResult(false);
+            return;
+        }
+
         try {
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setDatabaseUrl(url)
@@ -133,7 +148,7 @@ public class FirebaseService {
                     if (connected) {
                         callback.onResult(true);
                         tempDb.getReference(".info/connected").removeEventListener(this);
-                        tempApp.delete();
+                        try { tempApp.delete(); } catch (Exception ignored) {}
                     }
                 }
 
@@ -141,22 +156,22 @@ public class FirebaseService {
                 public void onCancelled(@NonNull DatabaseError error) {
                     callback.onResult(false);
                     tempDb.getReference(".info/connected").removeEventListener(this);
-                    tempApp.delete();
+                    try { tempApp.delete(); } catch (Exception ignored) {}
                 }
             };
 
             tempDb.getReference(".info/connected").addValueEventListener(testListener);
 
-            // Timeout after 4 seconds
+            // Timeout after 5 seconds
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
                 tempDb.getReference(".info/connected").removeEventListener(testListener);
-                try {
-                    tempApp.delete();
-                } catch (Exception ignored) {}
+                try { tempApp.delete(); } catch (Exception ignored) {}
+                // If we haven't succeeded yet, return failure
                 callback.onResult(false);
-            }, 4000);
+            }, 5000);
 
         } catch (Exception e) {
+            if (userLogService != null) userLogService.log("Test error: " + e.getMessage());
             callback.onResult(false);
         }
     }
@@ -178,10 +193,10 @@ public class FirebaseService {
                     if (isConnected) {
                         statusRef.setValue(true);
                         statusRef.onDisconnect().setValue(false);
-                        if (userLogService != null) userLogService.log("Integration connected.");
+                        if (userLogService != null) userLogService.log("Connection active.");
                         startLatencyMonitoring();
                     } else {
-                        if (userLogService != null) userLogService.log("Integration offline.");
+                        if (userLogService != null) userLogService.log("Offline - check URL/Network.");
                     }
                     broadcastStatus(isConnected);
                 }
@@ -300,7 +315,6 @@ public class FirebaseService {
                     String number = null;
                     String interactionId = null;
 
-                    // Flexible parsing: support object {number: "..."} or simple string "..."
                     if (snapshot.hasChild("number")) {
                         number = snapshot.child("number").getValue(String.class);
                         interactionId = snapshot.child("interaction_id").getValue(String.class);
@@ -313,17 +327,15 @@ public class FirebaseService {
                         if (outgoingHandler != null) {
                             outgoingHandler.doCall(number, interactionId);
                         }
-                        // Remove value to prevent repeated dialing
+                        // Important: Remove the request after triggering so it doesn't redial
                         outgoingRef.removeValue();
-                    } else {
-                        if (userLogService != null) userLogService.log("Empty web dial request received.");
                     }
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (userLogService != null) userLogService.log("Dial listener error: " + error.getMessage());
+                if (userLogService != null) userLogService.log("Dial error: " + error.getMessage());
             }
         };
         outgoingRef.addValueEventListener(outgoingListener);

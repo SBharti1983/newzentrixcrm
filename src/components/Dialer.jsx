@@ -61,25 +61,30 @@ export default function Dialer() {
             const num = snapshot.val();
             if (num) {
                 setPhoneNumber(num);
-                if (callState === 'idle') {
-                    setCallState('ringing');
-                    setIsOpen(true);
-                    setIsMinimized(false);
-                    try {
-                        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/leads/search?q=${num}`, {
+                setCallState(prev => {
+                    if (prev === 'idle') {
+                        setIsOpen(true);
+                        setIsMinimized(false);
+                        // Trigger search asynchronously
+                        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/leads/search?q=${num}`, {
                             headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
-                        });
-                        const leadData = await res.json();
-                        if (leadData && leadData.length > 0) setActiveLead(leadData[0]);
-                    } catch (err) { console.error('Lookup failed', err); }
-                }
-            } else if (callState === 'ringing' || callState === 'active') {
-                setCallState('idle');
+                        }).then(res => res.json()).then(leadData => {
+                            if (leadData && leadData.length > 0) setActiveLead(leadData[0]);
+                        }).catch(err => console.error('Lookup failed', err));
+                        return 'ringing';
+                    }
+                    return prev;
+                });
+            } else {
+                setCallState(prev => {
+                    if (prev === 'ringing' || prev === 'active') return 'idle';
+                    return prev;
+                });
             }
         });
 
         return () => { unsubStatus(); unsubCall(); };
-    }, [isOpen, agentId, callState]);
+    }, [isOpen, agentId]); // Removed callState to prevent listener thrashing
 
     const handleDial = useCallback(async (lead = null, manualPhone = null) => {
         const phoneToDial = manualPhone || lead?.phone || lead?.number;
@@ -103,9 +108,14 @@ export default function Dialer() {
             if (logRes.ok) setActiveInteractionId(logData.interactionId);
             await set(makeCallRef, { number: phoneToDial, interaction_id: logData.interactionId || null, timestamp: Date.now() });
             showToast('Command sent', 'success');
-            if (isDeviceOnline) setTimeout(() => setCallState('active'), 1500);
-        } catch (err) { setCallState('idle'); }
-    }, [agentId, isDeviceOnline, showToast]);
+            
+            // Assume the handset places the call immediately
+            setTimeout(() => setCallState('active'), 1500);
+        } catch (err) { 
+            console.error(err);
+            setCallState('idle'); 
+        }
+    }, [agentId, showToast]);
 
     useEffect(() => { handleDialRef.current = handleDial; }, [handleDial]);
 
