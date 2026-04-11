@@ -40,7 +40,7 @@ router.get('/stats', async (req, res) => {
 router.post('/initiate', async (req, res) => {
     const { leadId, phoneNumber, method } = req.body;
     const tid = req.tenantId;
-    const uid = req.userId;
+    const uid = req.user?.id || null;
 
     try {
         // Find lead

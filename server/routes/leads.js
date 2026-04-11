@@ -439,11 +439,14 @@ router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
     try {
         console.log(`[Interaction Delete] Request: Lead ${req.params.leadId}, Interaction ${req.params.interactionId}, Tenant ${req.tenantId}`);
         const { rowCount } = await pool.query(
-            `DELETE FROM interactions WHERE id = $1 AND lead_id = $2 AND tenant_id = $3`,
-            [req.params.interactionId, req.params.leadId, req.tenantId]
+            `DELETE FROM interactions WHERE id = $1 AND tenant_id = $2`,
+            [req.params.interactionId, req.tenantId]
         );
         console.log(`[Interaction Delete] Result: ${rowCount} rows deleted`);
-        if (rowCount === 0) return res.status(404).json({ error: 'Interaction not found' });
+        if (rowCount === 0) {
+            console.warn(`[Interaction Delete] FAILED: Interaction ${req.params.interactionId} not found with Lead ${req.params.leadId} and Tenant ${req.tenantId}`);
+            return res.status(404).json({ error: 'Interaction not found with provided lead/tenant context' });
+        }
         res.json({ message: 'Interaction deleted' });
     } catch (err) {
         console.error('Failed to delete interaction:', err);

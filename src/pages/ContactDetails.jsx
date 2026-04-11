@@ -239,7 +239,8 @@ export default function ContactDetails() {
             loadData();
         } catch (e) {
             console.error('Delete error:', e);
-            showToast('Failed to delete interaction', 'error');
+            const msg = e.error || e.message || 'Failed to delete';
+            showToast(`Delete failed: ${msg}`, 'error');
         }
     };
 
