@@ -660,6 +660,7 @@ export default function Admin() {
 
             {/* Projects Config Tab */}
             {tab === 'projects' && (
+                <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                         <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{PROJECTS_DATA.length} active projects</span>
                         <button className="btn btn-primary btn-sm" onClick={() => {
@@ -970,8 +971,6 @@ export default function Admin() {
                         </div>
                     </div>
                 </div>
-            ) : (
-                null
             )}
 
             {/* User Modal */}
