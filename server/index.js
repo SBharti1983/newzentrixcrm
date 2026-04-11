@@ -170,7 +170,6 @@ app.use('/api/superadmin', require('./routes/superadmin'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api/automations', require('./routes/automations'));
 app.use('/api/zapier', require('./routes/zapier'));
-app.use('/api/telephony', require('./routes/telephony'));
 app.use('/api/automation', require('./routes/automation'));
 app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/marketing', require('./routes/marketing'));

@@ -8,6 +8,24 @@ const { uploadToFirebase } = require('../utils/cloudStorage');
 const { isStorageEnabled } = require('../utils/firebase');
 const crypto = require('crypto');
 
+/**
+ * Hybrid auth middleware: accepts EITHER a standard JWT Bearer token (web dashboard)
+ * OR the X-Zapier-Token handset auth. This lets routes like transcript, bridge-config,
+ * analytics etc. work for both logged-in users and Android handsets.
+ */
+function hybridAuth(req, res, next) {
+    const hasBearer = req.headers.authorization && req.headers.authorization.startsWith('Bearer ');
+    const hasHandsetToken = req.headers['x-zapier-token'] || req.query.token;
+
+    if (hasBearer) {
+        return auth(req, res, next);
+    } else if (hasHandsetToken) {
+        return authenticateHandset(req, res, next);
+    } else {
+        return res.status(401).json({ error: 'Unauthorized: No credentials provided' });
+    }
+}
+
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for longer calls
@@ -75,13 +93,15 @@ router.get('/health', authenticateHandset, (req, res) => {
  * Along with: interactionId, disposition, phoneNumber, timestamp
  */
 router.post('/upload-recording', authenticateHandset, upload.single('audio'), async (req, res) => {
-    const { interactionId, leadId, disposition, phoneNumber, timestamp, recordingUrl } = req.body;
+    const { interactionId, leadId, disposition, phoneNumber, timestamp, recordingUrl, duration, callType } = req.body;
 
     console.log(`[Telephony] ──── INCOMING UPLOAD ────`);
     console.log(`[Telephony]   Tenant: ${req.tenantId}`);
     console.log(`[Telephony]   Interaction ID: ${interactionId || 'None'}`);
     console.log(`[Telephony]   Phone: ${phoneNumber || 'Unknown'}`);
     console.log(`[Telephony]   Disposition: ${disposition || 'None'}`);
+    console.log(`[Telephony]   Duration: ${duration || 'Unknown'}s`);
+    console.log(`[Telephony]   Call Type: ${callType || 'Unknown'}`);
     console.log(`[Telephony]   Firebase URL: ${recordingUrl || 'None (file upload mode)'}`);
     console.log(`[Telephony]   File: ${req.file ? `${req.file.originalname} (${req.file.size} bytes)` : 'NO FILE'}`);
 
@@ -327,17 +347,29 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
         // Persist to Database with safety wrapping
         let savedInteractionId = interactionId;
         
+        // Parse duration from Android SyncWorker (sent as string or number)
+        const parsedDuration = duration ? parseInt(duration, 10) : null;
+        // Determine call outcome from callType/disposition
+        const callOutcome = disposition || (callType === 'INCOMING' ? 'Incoming' : 'Connected');
+        
         // Safety check for valid UUID format if interactionId is provided
         const isValidUUID = (id) => id && id.length >= 32; 
 
         if (isValidUUID(savedInteractionId)) {
             try {
-                await pool.query(
+                const updateResult = await pool.query(
                     `UPDATE interactions 
-                     SET note = $1, recording_url = $2, transcript = $3, sentiment = $4, updated_at = NOW() 
-                     WHERE id = $5 AND tenant_id = $6`,
-                    [noteContent, audioUrl, transcriptLines, aiResult.sentiment, savedInteractionId, req.tenantId]
+                     SET note = $1, recording_url = $2, transcript = $3, sentiment = $4, 
+                         duration = COALESCE($7, duration), outcome = COALESCE($8, outcome),
+                         updated_at = NOW() 
+                     WHERE id = $5 AND tenant_id = $6
+                     RETURNING id`,
+                    [noteContent, audioUrl, transcriptLines, aiResult.sentiment, savedInteractionId, req.tenantId, parsedDuration, callOutcome]
                 );
+                if (updateResult.rowCount === 0) {
+                    console.warn(`[Telephony] Interaction ${savedInteractionId} not found for tenant ${req.tenantId}, will create new`);
+                    savedInteractionId = null;
+                }
             } catch (updateErr) {
                 console.warn(`[Telephony] Failed to update existing interaction ${savedInteractionId}, falling back to new insertion. Error: ${updateErr.message}`);
                 // Fallback to insertion if update fails
@@ -352,10 +384,10 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
             try {
                 const newId = crypto.randomUUID();
                 const insertRes = await pool.query(
-                    `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment)
-                     VALUES ($1, $2, $3, $4, 'Call', NOW(), $5, 'Connected', $6, $7, $8)
+                    `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment, duration)
+                     VALUES ($1, $2, $3, $4, 'Call', NOW(), $5, $6, $7, $8, $9, $10)
                      RETURNING id`,
-                    [newId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, audioUrl, transcriptLines, aiResult.sentiment]
+                    [newId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
                 );
                 savedInteractionId = insertRes.rows[0]?.id;
                 console.log(`[Telephony] Created fresh interaction ${savedInteractionId} for Lead ${finalLeadId}`);
@@ -363,6 +395,22 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
                 console.error('[Telephony] Database insertion failed CRITICAL:', insertErr.message);
                 console.error('[Telephony] Failed Payload Params:', [req.tenantId, finalLeadId, req.user?.id || null]);
                 return res.status(500).json({ error: `DB Error: ${insertErr.message}` });
+            }
+        } else if (!savedInteractionId && !finalLeadId) {
+            // No lead found and no existing interaction — create an orphan interaction with phone number in note
+            try {
+                const newId = crypto.randomUUID();
+                const orphanNote = `[Unmatched Call] Phone: ${phoneNumber || 'Unknown'}\n${noteContent}`;
+                const insertRes = await pool.query(
+                    `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment, duration)
+                     VALUES ($1, $2, NULL, $3, 'Call', NOW(), $4, $5, $6, $7, $8, $9)
+                     RETURNING id`,
+                    [newId, req.tenantId, req.user?.id || null, orphanNote, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]
+                );
+                savedInteractionId = insertRes.rows[0]?.id;
+                console.log(`[Telephony] Created orphan interaction ${savedInteractionId} (no matching lead for ${phoneNumber})`);
+            } catch (orphanErr) {
+                console.error('[Telephony] Orphan interaction insert failed:', orphanErr.message);
             }
         }
 
@@ -410,7 +458,7 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
  * Generates and serves a downloadable .txt transcript file for a given interaction.
  * The transcript is built on-the-fly from the DB — no separate file storage needed.
  */
-router.get('/transcript/:interactionId', async (req, res) => {
+router.get('/transcript/:interactionId', hybridAuth, async (req, res) => {
     try {
         const { interactionId } = req.params;
 
@@ -511,7 +559,7 @@ router.get('/transcript/:interactionId', async (req, res) => {
  * Returns the tenant's centralized bridge number and recording policy.
  * The Android WTI app polls this on startup to auto-configure itself.
  */
-router.get('/bridge-config', async (req, res) => {
+router.get('/bridge-config', hybridAuth, async (req, res) => {
     try {
         const result = await pool.query(
             `SELECT settings FROM tenants WHERE id = $1`,
@@ -556,7 +604,7 @@ router.get('/bridge-config', async (req, res) => {
  * Admin endpoint to set the tenant's bridge number and recording policy.
  * After saving to DB, it also pushes the config to all connected handsets via Firebase RTDB.
  */
-router.put('/bridge-config', async (req, res) => {
+router.put('/bridge-config', hybridAuth, async (req, res) => {
     if (!['admin', 'superadmin'].includes(req.user.role)) {
         return res.status(403).json({ error: 'Requires admin privileges' });
     }
@@ -686,7 +734,7 @@ router.post('/push-config', auth, async (req, res) => {
  * GET /api/telephony/analytics
  * Returns aggregated AI telemetry (sentiment distribution, agent leaderboard) for the Admin Dashboard
  */
-router.get('/analytics', async (req, res) => {
+router.get('/analytics', hybridAuth, async (req, res) => {
     try {
         // We only allow admins and managers to view fleet telemetry
         if (!['admin', 'superadmin', 'sales_manager'].includes(req.user.role)) {
@@ -741,7 +789,7 @@ router.get('/analytics', async (req, res) => {
  * POST /api/telephony/broadcast-alert
  * Triggers a Flash Alert popup on all connected Android handsets for this tenant.
  */
-router.post('/broadcast-alert', async (req, res) => {
+router.post('/broadcast-alert', hybridAuth, async (req, res) => {
     try {
         if (!['admin', 'superadmin', 'sales_manager'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Only managers can trigger broadcast alerts' });
@@ -776,7 +824,7 @@ router.post('/broadcast-alert', async (req, res) => {
  * GET /api/telephony/agent-activity
  * Retrieves daily/weekly call performance and WiFi sync pending status for the Admin AgentActivity page.
  */
-router.get('/agent-activity', async (req, res) => {
+router.get('/agent-activity', hybridAuth, async (req, res) => {
     try {
         if (!['admin', 'superadmin', 'sales_manager'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
@@ -796,6 +844,7 @@ router.get('/agent-activity', async (req, res) => {
                 COUNT(*) filter (where created_at >= current_date) as calls_today,
                 COUNT(*) filter (where created_at >= date_trunc('week', current_date)) as calls_this_week,
                 COUNT(*) filter (where outcome = 'Interested' OR sentiment = 'Positive') as success_calls,
+                COUNT(*) filter (where recording_url IS NOT NULL AND created_at >= current_date) as synced_recordings_today,
                 COUNT(*) filter (where recording_url IS NOT NULL) as synced_recordings
             FROM interactions
             WHERE tenant_id = $1 AND type = 'Call'
@@ -822,10 +871,12 @@ router.get('/agent-activity', async (req, res) => {
         console.log(`[MDM Debug] STEP 8: Mapping report...`);
 
         const activityReport = agents.map(agent => {
-            const m = metricMap[agent.id] || { calls_today: 0, calls_this_week: 0, success_calls: 0, synced_recordings: 0 };
+            const m = metricMap[agent.id] || { calls_today: 0, calls_this_week: 0, success_calls: 0, synced_recordings: 0, synced_recordings_today: 0 };
 
-            // Assume if calls_today > synced_recordings, there are pending Wi-Fi uploads offline on device
-            const pendingUploads = parseInt(m.calls_today) - parseInt(m.synced_recordings);
+            // Compare today's calls vs today's synced recordings to determine pending uploads
+            const callsToday = parseInt(m.calls_today) || 0;
+            const syncedToday = parseInt(m.synced_recordings_today) || 0;
+            const pendingUploads = Math.max(0, callsToday - syncedToday);
             const isSyncPending = pendingUploads > 0;
 
             return {
@@ -834,10 +885,10 @@ router.get('/agent-activity', async (req, res) => {
                 role: agent.role,
                 department: agent.department || 'General',
                 telephonyId: agent.telephony_agent_id || 'Not Mapped',
-                callsToday: parseInt(m.calls_today),
-                callsThisWeek: parseInt(m.calls_this_week),
-                successCount: parseInt(m.success_calls),
-                syncedRecordings: parseInt(m.synced_recordings),
+                callsToday: callsToday,
+                callsThisWeek: parseInt(m.calls_this_week) || 0,
+                successCount: parseInt(m.success_calls) || 0,
+                syncedRecordings: parseInt(m.synced_recordings) || 0,
                 syncStatus: isSyncPending ? `Waiting Wi-Fi (${pendingUploads} pending)` : 'Up to Date',
                 isOnline: activeSnap && activeSnap[agent.telephony_agent_id || ''] === 'Online'
             };

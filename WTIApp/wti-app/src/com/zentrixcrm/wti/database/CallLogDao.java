@@ -16,6 +16,9 @@ public interface CallLogDao {
     @Query("SELECT * FROM call_logs WHERE isSynced = 0")
     List<CallLogEntity> getUnsyncedLogs();
 
+    @Query("SELECT * FROM call_logs WHERE id = :id")
+    CallLogEntity getLogById(int id);
+
     @Query("SELECT COUNT(*) FROM call_logs WHERE isSynced = 0")
     LiveData<Integer> getUnsyncedCount();
 

@@ -53,7 +53,6 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
                 break;
                 
             case TelephonyManager.CALL_STATE_OFFHOOK:
-                // Delayed start to ensure audio routing is ready
                 mainHandler.postDelayed(this::handleOffHook, 1000);
                 break;
                 
@@ -84,7 +83,7 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
     }
 
     private void handleOffHook() {
-        if (lastState == TelephonyManager.CALL_STATE_IDLE) return; // Prevent late execution after hangup
+        if (lastState == TelephonyManager.CALL_STATE_IDLE) return; 
 
         if (isIncoming) {
             userLogService.log("Incoming Call Answered: " + lastNumber);
@@ -104,10 +103,12 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
     }
 
     private void handleIdle() {
-        mainHandler.removeCallbacksAndMessages(null); // Cancel any pending offhook starts
+        mainHandler.removeCallbacksAndMessages(null); 
 
         if (lastState != TelephonyManager.CALL_STATE_IDLE) {
             long duration = System.currentTimeMillis() - callStartTime;
+            String currentLastNumber = lastNumber;
+            String interactionId = currentInteractionId;
             
             String recordingPath = callRecorder.stopRecording();
             
@@ -115,12 +116,12 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
                 String type = isIncoming ? "INCOMING" : "OUTGOING";
                 int activeSimSlot = getActiveSimSlot();
                 
-                if (duration > 3000) { // Reduced threshold slightly for better UX
+                if (duration > 3000) { 
                     userLogService.log("Call Ended (" + type + "). Saving log.");
-                    firebaseService.logCallHistory(type, lastNumber, duration, activeSimSlot, recordingPath, currentInteractionId);
+                    firebaseService.logCallHistory(type, currentLastNumber, duration, activeSimSlot, recordingPath, interactionId);
                     
                     Intent intent = new Intent(context, CallDispositionActivity.class);
-                    intent.putExtra("extra_number", lastNumber);
+                    intent.putExtra(CallDispositionActivity.EXTRA_NUMBER, currentLastNumber);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     context.startActivity(intent);
                 } else {
@@ -142,7 +143,7 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
         isIncoming = false; 
         callStartTime = 0;
         currentInteractionId = null;
-        lastNumber = ""; // Reset for next call
+        lastNumber = "";
     }
 
     private boolean isRecordingEnabled() {

@@ -145,17 +145,17 @@ export default function Dialer() {
     );
 
     return (
-        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 380, maxHeight: isMinimized ? 72 : 'calc(100vh - 32px)', height: isMinimized ? 72 : 'auto', background: '#0a1a2e', borderRadius: 24, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '72px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ padding: '0 24px', height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 'calc(100vw - 24px)', maxWidth: isMinimized ? 240 : 320, maxHeight: isMinimized ? 48 : 480, height: isMinimized ? 48 : 'auto', background: '#0a1a2e', borderRadius: 20, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '48px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' }} />
                     <span style={{ fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>
                         {agentId ? (isDeviceOnline ? `ONLINE: ${agentId}` : `OFFLINE`) : 'NO HANDSET'}
                     </span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn-icon-tiny-d" onClick={() => setIsMinimized(!isMinimized)}>{isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}</button>
-                    <button className="btn-icon-tiny-d" onClick={() => (callState === 'idle' ? setIsOpen(false) : setIsMinimized(true))}><X size={18} /></button>
+                    <button type="button" className="btn-icon-tiny-d" onClick={() => setIsMinimized(!isMinimized)}>{isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}</button>
+                    <button type="button" className="btn-icon-tiny-d" onClick={() => (callState === 'idle' ? setIsOpen(false) : setIsMinimized(true))}><X size={18} /></button>
                 </div>
             </div>
 
@@ -163,34 +163,38 @@ export default function Dialer() {
                 <>
                     {callState === 'idle' ? (
                         <>
-                            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '12px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 <div style={{ position: 'relative' }}>
-                                    <input placeholder="+91 Number..." value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} style={{ width: '100%', height: 68, background: 'rgba(255,255,255,0.04)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)', paddingLeft: 64, paddingRight: 64, color: 'white', fontSize: '1.3rem', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
-                                    <Phone size={24} style={{ position: 'absolute', left: 24, top: 22, color: '#00b4d8' }} />
+                                    <input type="text" inputMode="tel" placeholder="+91 Number..." value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} style={{ width: '100%', height: 38, background: 'rgba(255,255,255,0.04)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)', paddingLeft: 36, paddingRight: 36, color: 'white', fontSize: '1rem', fontWeight: 900, textAlign: 'center', outline: 'none' }} />
+                                    <Phone size={16} style={{ position: 'absolute', left: 12, top: 11, color: '#00b4d8' }} />
                                     {phoneNumber.length > 0 && (
-                                        <button onClick={() => setPhoneNumber(p => p.slice(0, -1))} onDoubleClick={() => setPhoneNumber('')} style={{ position: 'absolute', right: 12, top: 12, width: 44, height: 44, borderRadius: '16px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={20} /></button>
+                                        <button type="button" onClick={() => setPhoneNumber(p => (p || '').slice(0, -1))} onDoubleClick={() => setPhoneNumber('')} style={{ position: 'absolute', right: 4, top: 1, width: 36, height: 36, borderRadius: '10px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={16} /></button>
                                     )}
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                                    {[1,2,3,4,5,6,7,8,9,'*',0,'#'].map(n => (
-                                        <button key={n} onClick={() => setPhoneNumber(p => p + n)} className="numpad-btn">{n}</button>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                                    {['1','2','3','4','5','6','7','8','9','*','0','#'].map(n => (
+                                        <button type="button" key={n} onClick={() => setPhoneNumber(p => (p || '') + n)} className="numpad-btn">{n}</button>
                                     ))}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                                    <button type="button" onClick={() => setPhoneNumber(p => (p || '') + '+')} className="numpad-btn" style={{ fontSize: '1.2rem', height: '34px', borderRadius: '8px' }}>+</button>
+                                    <button type="button" onClick={() => setPhoneNumber('')} className="numpad-btn" style={{ fontSize: '0.85rem', height: '34px', borderRadius: '8px', color: '#f43f5e' }}>Clear</button>
                                 </div>
                                 <div>
                                     {(leads?.data || []).map(lead => (
-                                        <div key={lead.id} onClick={() => handleDial(lead)} className="dialer-lead-card" style={{ marginBottom: 10 }}>
+                                        <div key={lead.id} onClick={() => handleDial(lead)} className="dialer-lead-card" style={{ marginBottom: 6, padding: '8px 12px' }}>
                                             <div>
-                                                <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{lead.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{lead.property_type || 'Lead'}</div>
+                                                <div style={{ fontWeight: 800, fontSize: '0.8rem' }}>{lead.name}</div>
+                                                <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{lead.property_type || 'Lead'}</div>
                                             </div>
-                                            <Phone size={14} color="#00b4d8" />
+                                            <Phone size={12} color="#00b4d8" />
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div style={{ padding: '20px 24px 28px', background: 'rgba(15,23,42,0.8)', borderTop: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
-                                <button onClick={() => handleDial(null, phoneNumber)} style={{ width: '100%', height: 64, borderRadius: 20, background: isDeviceOnline ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #334155, #000000)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontWeight: 900, cursor: 'pointer' }}>
-                                    <Phone size={20} /> {isDeviceOnline ? 'INITIATE GSM CALL' : 'OFFLINE: INITIATE CALL'}
+                            <div style={{ padding: '10px 12px 10px', background: 'rgba(15,23,42,0.8)', borderTop: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}>
+                                <button type="button" onClick={() => handleDial(null, phoneNumber)} style={{ width: '100%', height: 40, borderRadius: 10, background: isDeviceOnline ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #334155, #000000)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 900, cursor: 'pointer', fontSize: '0.8rem' }}>
+                                    <Phone size={14} /> {isDeviceOnline ? 'INITIATE GSM CALL' : 'OFFLINE CALL'}
                                 </button>
                             </div>
                         </>
@@ -205,8 +209,8 @@ export default function Dialer() {
                             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: 8 }}>{activeLead?.name || phoneNumber}</h2>
                             <div style={{ color: callState === 'active' ? '#00b4d8' : '#f59e0b', fontWeight: 900, fontSize: '1.4rem' }}>{callState === 'active' ? formatDuration(duration) : 'RINGING...'}</div>
                             <div style={{ marginTop: 40, display: 'flex', gap: 24 }}>
-                                <button onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><PhoneOff size={32} /></button>
-                                {callState === 'ringing' && <button onClick={() => setCallState('active')} style={{ width: 72, height: 72, borderRadius: '24px', background: '#10b981', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Phone size={32} /></button>}
+                                <button type="button" onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><PhoneOff size={32} /></button>
+                                {callState === 'ringing' && <button type="button" onClick={() => setCallState('active')} style={{ width: 72, height: 72, borderRadius: '24px', background: '#10b981', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Phone size={32} /></button>}
                             </div>
                         </div>
                     )}
@@ -214,11 +218,11 @@ export default function Dialer() {
             )}
 
             <style>{`
-                .btn-icon-tiny-d { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 6px; border-radius: 10px; transition: 0.2s; }
+                .btn-icon-tiny-d { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px; border-radius: 6px; transition: 0.2s; }
                 .btn-icon-tiny-d:hover { background: rgba(255,255,255,0.06); color: white; }
-                .numpad-btn { height: 56px; border-radius: 18px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: white; font-size: 1.3rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+                .numpad-btn { height: 34px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: white; font-size: 1rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
                 .numpad-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
-                .dialer-lead-card { padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+                .dialer-lead-card { padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
                 .dialer-lead-card:hover { background: rgba(255,255,255,0.06); transform: translateX(4px); }
                 .pulse-ring { position: absolute; width: 100%; height: 100%; border-radius: 35px; border: 2px solid #00b4d8; animation: ring-pulse 2s infinite; opacity: 0; }
                 @keyframes ring-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.6); opacity: 0; } }

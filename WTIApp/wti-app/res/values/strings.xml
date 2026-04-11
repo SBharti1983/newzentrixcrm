@@ -35,6 +35,7 @@
     <string name="status_connected">INTEGRATION ACTIVE</string>
     <string name="status_disconnected">INTEGRATION OFFLINE</string>
     <string name="status_available">Available for Calls</string>
+    <string name="status_unavailable">Unavailable</string>
     <string name="status_dnd">Do Not Disturb</string>
     <string name="status_recording_on">Recording Enabled</string>
     <string name="status_recording_off">Recording Disabled</string>
@@ -72,6 +73,8 @@
     <string name="log_recording_format">Recording: %1$s</string>
     <string name="log_integration_active">Integration Active</string>
     <string name="log_integration_offline">Integration Offline</string>
+    <string name="log_integration_started">Integration Started</string>
+    <string name="log_integration_stopped">Integration Stopped</string>
 
     <string name="stat_talk_time_format">%1$dm</string>
     <string name="enterprise_footer">zentrixWTI Enterprise Integration v1.2</string>

@@ -11,6 +11,7 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.zentrixcrm.wti.database.AppDatabase;
 import com.zentrixcrm.wti.firebase.FirebaseService;
 import com.zentrixcrm.wti.log.UserLogService;
@@ -39,7 +40,7 @@ public class CallDispositionActivity extends Activity {
         final String number = getIntent().getStringExtra(EXTRA_NUMBER);
         final TextView txtInfo = findViewById(R.id.txtDispositionInfo);
         
-        if (number != null) {
+        if (number != null && !number.isEmpty()) {
             txtInfo.setText(getString(R.string.msg_call_ended_with, number));
         }
 
@@ -51,8 +52,7 @@ public class CallDispositionActivity extends Activity {
         String savedUrl = prefs.getString(KEY_FIREBASE_URL, "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app");
         final FirebaseService firebaseService = new FirebaseService(this, new UserLogService(null), savedUrl);
 
-        // REAL-TIME NAME LOOKUP
-        if (number != null) {
+        if (number != null && !number.isEmpty()) {
             firebaseService.lookupCustomerName(number, name -> {
                 if (name != null) {
                     runOnUiThread(() -> txtInfo.setText(getString(R.string.msg_call_ended_with, name + " (" + number + ")")));
@@ -61,22 +61,19 @@ public class CallDispositionActivity extends Activity {
         }
 
         if (btnClose != null) {
-            btnClose.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    finish();
-                }
-            });
+            btnClose.setOnClickListener(v -> finish());
         }
 
-        btnSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        if (btnSubmit != null) {
+            btnSubmit.setOnClickListener(v -> {
                 int selectedId = rgOptions.getCheckedRadioButtonId();
                 if (selectedId != -1) {
                     RadioButton rb = findViewById(selectedId);
                     final String outcome = rb.getText().toString();
                     
+                    btnSubmit.setEnabled(false);
+                    btnSubmit.setText("Saving...");
+
                     // 1. Update Firebase
                     firebaseService.sendDisposition(number, outcome);
 
@@ -87,10 +84,15 @@ public class CallDispositionActivity extends Activity {
                         
                         firebaseService.scheduleSync();
                         
-                        runOnUiThread(() -> finish());
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Disposition Saved", Toast.LENGTH_SHORT).show();
+                            finish();
+                        });
                     }).start();
+                } else {
+                    Toast.makeText(this, "Please select an outcome first", Toast.LENGTH_SHORT).show();
                 }
-            }
-        });
+            });
+        }
     }
 }

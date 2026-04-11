@@ -3,24 +3,53 @@ const axios = require('axios');
 
 class AIService {
     constructor() {
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        if (process.env.GEMINI_API_KEY) {
+            this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        } else {
+            this.genAI = null;
+            console.warn('[AI Service] GEMINI_API_KEY not set, transcription will be disabled');
+        }
     }
 
     /**
-     * Transcribes an audio file and analyzes sentiment via Gemini 1.5
+     * Detect MIME type from URL or filename
+     */
+    _detectMimeType(url) {
+        if (!url) return 'audio/mp4';
+        const lower = url.toLowerCase();
+        if (lower.includes('.wav')) return 'audio/wav';
+        if (lower.includes('.mp3')) return 'audio/mpeg';
+        if (lower.includes('.ogg')) return 'audio/ogg';
+        if (lower.includes('.m4a')) return 'audio/mp4';
+        // Default to mp4 since Android records in MPEG-4
+        return 'audio/mp4';
+    }
+
+    /**
+     * Transcribes an audio file and analyzes sentiment via Gemini
      * @param {string} audioUrl Public or accessible URL of the call recording
      */
     async transcribeCall(audioUrl) {
+        if (!this.genAI) {
+            return {
+                fullAnalysis: "Transcription unavailable: GEMINI_API_KEY not configured.",
+                sentiment: "Neutral"
+            };
+        }
+
         try {
             console.log(`[AI Service] Fetching audio from: ${audioUrl}`);
             
             // 1. Fetch the audio data as base64
-            const response = await axios.get(audioUrl, { responseType: 'arraybuffer' });
+            const response = await axios.get(audioUrl, { 
+                responseType: 'arraybuffer',
+                timeout: 30000 
+            });
             const base64Data = Buffer.from(response.data).toString('base64');
+            const mimeType = this._detectMimeType(audioUrl);
+            console.log(`[AI Service] Audio fetched: ${(response.data.byteLength / 1024).toFixed(1)}KB, MIME: ${mimeType}`);
 
             // 2. Prepare the prompt for Gemini
-            // We ask for transcription + professional sentiment analysis
             const prompt = `
                 Please accurately transcribe the following sales call recording.
                 After the transcription, provide a professional "Intelligence Profile":
@@ -46,18 +75,38 @@ class AIService {
                 Format your response as a clear, professional log.
             `;
 
-            // 3. Send to Gemini 1.5 Flash (optimized for speed and audio)
-            const result = await this.model.generateContent([
-                prompt,
-                {
-                    inlineData: {
-                        mimeType: "audio/wav",
-                        data: base64Data
-                    }
-                }
-            ]);
+            // 3. Try multiple models with fallback (same chain as utils/ai.js)
+            const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+            let lastError = null;
+            let analysis = null;
 
-            const analysis = result.response.text();
+            for (const modelName of modelsToTry) {
+                try {
+                    const model = this.genAI.getGenerativeModel({ model: modelName });
+                    const result = await model.generateContent([
+                        prompt,
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]);
+                    analysis = result.response.text();
+                    console.log(`[AI Service] Transcription complete via ${modelName}`);
+                    break;
+                } catch (modelErr) {
+                    lastError = modelErr;
+                    console.warn(`[AI Service] Model ${modelName} failed:`, modelErr.message);
+                    if (modelErr.status === 404 || modelErr.status === 429 || modelErr.status === 503) continue;
+                    throw modelErr;
+                }
+            }
+
+            if (!analysis) {
+                throw lastError || new Error('All models failed');
+            }
+
             console.log(`[AI Service] Transcription, Coaching, Smart Tasks & Inventory Audit Complete`);
             
             // Extract sentiment badge for the database
@@ -105,3 +154,4 @@ class AIService {
 }
 
 module.exports = new AIService();
+

@@ -83,7 +83,7 @@ router.patch('/', async (req, res) => {
             role_permissions: role_permissions || currentSettings.role_permissions
         };
 
-        await pool.query("UPDATE tenants SET settings = $1 WHERE id = $2", [updatedSettings, req.tenantId]);
+        await pool.query("UPDATE tenants SET settings = $1 WHERE id = $2", [updatedSettings, targetTenantId]);
         res.json(updatedSettings);
     } catch (err) {
         console.error('PATCH /settings error:', err);

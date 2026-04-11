@@ -51,6 +51,7 @@ public class WtiService extends Service {
         isRunning = true;
         
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean("service_enabled", true).apply();
         String savedUrl = prefs.getString(KEY_FIREBASE_URL, DEFAULT_URL);
         int subId = prefs.getInt(KEY_PREFERRED_SIM_SLOT, -1);
         
@@ -166,6 +167,8 @@ public class WtiService extends Service {
     @Override
     public void onDestroy() {
         isRunning = false;
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit().putBoolean("service_enabled", false).apply();
         if (firebaseService != null) {
             firebaseService.sendConnected(false);
             firebaseService.unregisterOutgoingCallbackHandler();

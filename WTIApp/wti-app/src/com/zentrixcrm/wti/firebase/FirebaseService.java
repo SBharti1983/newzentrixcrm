@@ -21,13 +21,17 @@ import com.zentrixcrm.wti.database.CallLogEntity;
 import com.zentrixcrm.wti.log.UserLogService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class FirebaseService {
 
     private static final String TAG = "FirebaseService";
+    public static final String ACTION_CONNECTION_STATUS = "com.zentrixcrm.wti.CONNECTION_STATUS";
+    public static final String ACTION_LATENCY_UPDATE = "com.zentrixcrm.wti.LATENCY_UPDATE";
     private String firebaseBaseUrl;
     private UserLogService userLogService;
     private ValueEventListener outgoingListener;
@@ -54,29 +58,86 @@ public class FirebaseService {
             FirebaseOptions options = new FirebaseOptions.Builder()
                     .setDatabaseUrl(baseUrl)
                     .setApplicationId("com.zentrixcrm.wti")
-                    .setProjectId("zentrix-wti")
+                    .setProjectId("zentrix-wti-default")
                     .setApiKey("unused")
                     .build();
 
-            FirebaseApp app;
+            FirebaseApp app = null;
             try {
-                app = FirebaseApp.getInstance("zentrixWTI");
-            } catch (IllegalStateException e) {
+                List<FirebaseApp> apps = FirebaseApp.getApps(context);
+                for (FirebaseApp existingApp : apps) {
+                    if (existingApp.getName().equals("zentrixWTI")) {
+                        // Check if the URL is different
+                        if (!existingApp.getOptions().getDatabaseUrl().equals(baseUrl)) {
+                            existingApp.delete();
+                        } else {
+                            app = existingApp;
+                        }
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                Log.w(TAG, "Checking existing Firebase apps", e);
+            }
+
+            if (app == null) {
                 app = FirebaseApp.initializeApp(context, options, "zentrixWTI");
             }
+            
             database = FirebaseDatabase.getInstance(app);
             database.setPersistenceEnabled(true);
+            
             if (userLogService != null) {
-                userLogService.log("Firebase initialized: " + baseUrl);
+                userLogService.log("Firebase Service ready.");
             }
         } catch (Exception e) {
             Log.e(TAG, "Firebase init error: " + e.getMessage());
+            if (userLogService != null) userLogService.log("Firebase init error: " + e.getMessage());
         }
     }
 
     public void setBaseUrl(String url) {
-        this.firebaseBaseUrl = url;
-        initializeDatabase(url);
+        if (url != null && !url.equals(this.firebaseBaseUrl)) {
+            this.firebaseBaseUrl = url;
+            initializeDatabase(url);
+        }
+    }
+
+    public interface TestConnectionCallback {
+        void onResult(boolean success);
+    }
+
+    public void testConnection(String url, final TestConnectionCallback callback) {
+        try {
+            FirebaseOptions options = new FirebaseOptions.Builder()
+                    .setDatabaseUrl(url)
+                    .setApplicationId("com.zentrixcrm.wti")
+                    .setProjectId("zentrix-wti-default")
+                    .setApiKey("unused")
+                    .build();
+
+            final FirebaseApp tempApp;
+            String appName = "testApp_" + System.currentTimeMillis();
+            tempApp = FirebaseApp.initializeApp(context, options, appName);
+            FirebaseDatabase tempDb = FirebaseDatabase.getInstance(tempApp);
+            
+            tempDb.getReference(".info/connected").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    boolean connected = snapshot.getValue(Boolean.class) != null && snapshot.getValue(Boolean.class);
+                    callback.onResult(connected);
+                    tempApp.delete();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    callback.onResult(false);
+                    tempApp.delete();
+                }
+            });
+        } catch (Exception e) {
+            callback.onResult(false);
+        }
     }
 
     public void sendConnected(boolean connected) {
@@ -96,14 +157,18 @@ public class FirebaseService {
                     if (isConnected) {
                         statusRef.setValue(true);
                         statusRef.onDisconnect().setValue(false);
-                        if (userLogService != null) userLogService.log("Integration online.");
+                        if (userLogService != null) userLogService.log("Integration connected.");
+                        startLatencyMonitoring();
                     } else {
-                        if (userLogService != null) userLogService.log("Integration connecting...");
+                        if (userLogService != null) userLogService.log("Integration offline.");
                     }
+                    broadcastStatus(isConnected);
                 }
 
                 @Override
-                public void onCancelled(@NonNull DatabaseError error) {}
+                public void onCancelled(@NonNull DatabaseError error) {
+                    broadcastStatus(false);
+                }
             };
             connectedRef.addValueEventListener(presenceListener);
             statusRef.keepSynced(true);
@@ -114,7 +179,49 @@ public class FirebaseService {
             statusRef.setValue(false);
             statusRef.keepSynced(false);
             database.goOffline();
+            broadcastStatus(false);
         }
+    }
+
+    private void startLatencyMonitoring() {
+        if (database == null) return;
+        DatabaseReference offsetRef = database.getReference(".info/serverTimeOffset");
+        offsetRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                measureRealLatency();
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void measureRealLatency() {
+        if (database == null) return;
+        long startTime = System.currentTimeMillis();
+        database.getReference(".info/connected").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                long latency = System.currentTimeMillis() - startTime;
+                broadcastLatency(latency);
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
+
+    private void broadcastLatency(long latency) {
+        Intent intent = new Intent(ACTION_LATENCY_UPDATE);
+        intent.setPackage(context.getPackageName());
+        intent.putExtra("latency", latency);
+        context.sendBroadcast(intent);
+    }
+
+    private void broadcastStatus(boolean connected) {
+        Intent intent = new Intent(ACTION_CONNECTION_STATUS);
+        intent.setPackage(context.getPackageName());
+        intent.putExtra("connected", connected);
+        context.sendBroadcast(intent);
     }
 
     public void updateRemoteConfig(String key, Object value) {
@@ -161,25 +268,41 @@ public class FirebaseService {
                 .getString("agent_name", "Agent_001");
         outgoingRef = database.getReference("agents").child(agentName).child("outgoing_call");
 
+        if (userLogService != null) {
+            userLogService.log("Dial listener active for: " + agentName);
+        }
+
         outgoingListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    String number = snapshot.child("number").getValue(String.class);
-                    String interactionId = snapshot.child("interaction_id").getValue(String.class);
+                    String number = null;
+                    String interactionId = null;
+
+                    // Flexible parsing: support object {number: "..."} or simple string "..."
+                    if (snapshot.hasChild("number")) {
+                        number = snapshot.child("number").getValue(String.class);
+                        interactionId = snapshot.child("interaction_id").getValue(String.class);
+                    } else if (snapshot.getValue() instanceof String) {
+                        number = (String) snapshot.getValue();
+                    }
+
                     if (number != null && !number.isEmpty()) {
-                        if (userLogService != null) userLogService.log("Remote call request: " + number);
+                        if (userLogService != null) userLogService.log("Web Dial Request: " + number);
                         if (outgoingHandler != null) {
                             outgoingHandler.doCall(number, interactionId);
                         }
+                        // Remove value to prevent repeated dialing
                         outgoingRef.removeValue();
+                    } else {
+                        if (userLogService != null) userLogService.log("Empty web dial request received.");
                     }
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.w(TAG, "Outgoing listener cancelled", error.toException());
+                if (userLogService != null) userLogService.log("Dial listener error: " + error.getMessage());
             }
         };
         outgoingRef.addValueEventListener(outgoingListener);
@@ -275,7 +398,8 @@ public class FirebaseService {
     }
 
     public void logCallHistory(String type, String number, long duration, int simSlot, String recordingPath, String interactionId) {
-        CallLogEntity log = new CallLogEntity(type, number, duration / 1000, System.currentTimeMillis(), String.valueOf(simSlot), recordingPath, interactionId);
+        String finalInteractionId = (interactionId == null || interactionId.isEmpty()) ? UUID.randomUUID().toString() : interactionId;
+        CallLogEntity log = new CallLogEntity(type, number, duration / 1000, System.currentTimeMillis(), String.valueOf(simSlot), recordingPath, finalInteractionId);
 
         executor.execute(() -> {
             AppDatabase.getInstance(context).callLogDao().insert(log);
@@ -311,26 +435,24 @@ public class FirebaseService {
         configListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getValue() instanceof Map) {
-                    Map<String, Object> config = (Map<String, Object>) dataSnapshot.getValue();
+                if (dataSnapshot.exists()) {
                     SharedPreferences.Editor editor = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE).edit();
                     
-                    if (config.containsKey("recording_enabled")) {
-                        editor.putBoolean("recording_enabled", (boolean) config.get("recording_enabled"));
-                    }
-                    if (config.containsKey("storage_server")) {
-                        editor.putString("storage_server", (String) config.get("storage_server"));
-                    }
-                    if (config.containsKey("lock_settings")) {
-                        boolean lock = (boolean) config.get("lock_settings");
-                        editor.putBoolean("lock_settings", lock);
+                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                        String key = child.getKey();
+                        Object value = child.getValue();
                         
-                        Intent intent = new Intent("com.zentrixcrm.wti.CONFIG_UPDATED");
-                        intent.putExtra("lock_settings", lock);
-                        context.sendBroadcast(intent);
+                        if (value instanceof Boolean) {
+                            editor.putBoolean(key, (Boolean) value);
+                        } else if (value instanceof String) {
+                            editor.putString(key, (String) value);
+                        } else if (value instanceof Long) {
+                            editor.putLong(key, (Long) value);
+                        }
                     }
                     
                     editor.apply();
+                    context.sendBroadcast(new Intent("com.zentrixcrm.wti.CONFIG_UPDATED"));
                     if (userLogService != null) userLogService.log("Config updated remotely.");
                 }
             }
@@ -338,6 +460,21 @@ public class FirebaseService {
             public void onCancelled(@NonNull DatabaseError databaseError) {}
         };
         configRef.addValueEventListener(configListener);
+        
+        database.getReference("crm_config").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    SharedPreferences.Editor editor = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE).edit();
+                    for (DataSnapshot child : snapshot.getChildren()) {
+                        editor.putString(child.getKey(), String.valueOf(child.getValue()));
+                    }
+                    editor.apply();
+                }
+            }
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
     }
 
     public void unregisterConfigListener() {
