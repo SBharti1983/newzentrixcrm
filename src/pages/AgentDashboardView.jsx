@@ -297,11 +297,29 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             background: '#f8fafc', overflowY: 'auto'
         }}>
             {/* Upper Header Segment */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: COLORS.slate950, marginTop: '4px', letterSpacing: '-0.02em' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                    <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
                         Good afternoon, {user?.name || 'Agent'} 👋
                     </h1>
+
+                    {/* Quick Stats Integrated */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: '24px', borderLeft: `1px solid ${COLORS.border}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS.green, boxShadow: `0 0 10px ${COLORS.green}80` }} />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: COLORS.slate400, textTransform: 'uppercase' }}>Logged Today</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 950, color: COLORS.slate950 }}>{stats.telephony_stats?.calls_today || 0} Calls</span>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <Clock size={16} color={COLORS.blue} />
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: COLORS.slate400, textTransform: 'uppercase' }}>Avg Talk Time</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 950, color: COLORS.slate950 }}>{((stats.telephony_stats?.calls_today || 0) * 1.5).toFixed(0)} min</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style={{ position: 'relative' }}>
@@ -378,49 +396,6 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                     )}
                 </div>
             </div>
-
-            {/* 🔥 WTI Agent Quick Stats Dashboard 🔥 */}
-            <div style={{ background: 'linear-gradient(to right, var(--navy-900), #1e293b)', borderRadius: '20px', padding: '24px', color: 'white', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 10px 30px rgba(15,23,42,0.15)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ width: 50, height: 50, borderRadius: '14px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <Smartphone size={24} color="#60a5fa" />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Handset Activity Panel</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '2px' }}>Your Live Telemetry</div>
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '40px' }}>
-                    <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Calls Logged Today</div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            {stats.telephony_stats?.calls_today || 0}
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, padding: '4px 10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', borderRadius: '12px' }}>Tracked</span>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Approx. Talk Time</div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff' }}>
-                            {((stats.telephony_stats?.calls_today || 0) * 1.5).toFixed(0)} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>min</span>
-                        </div>
-                    </div>
-
-                    <div style={{ paddingLeft: '20px', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>Device Sync Health</div>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            {((stats.telephony_stats?.calls_today || 0) - (stats.telephony_stats?.synced_recordings || 0)) <= 0 ? (
-                                <><span style={{ color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckSquare size={18} /> 100% Synced</span></>
-                            ) : (
-                                <><span style={{ color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>⚠️ Waiting Wi-Fi ({((stats.telephony_stats?.calls_today || 0) - (stats.telephony_stats?.synced_recordings || 0))} Pending)</span></>
-                            )}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '6px', fontWeight: 600 }}>Audio uploads pause on mobile data</div>
-                    </div>
-                </div>
-            </div>
-
             {/* KPI Cards Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
                 <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
