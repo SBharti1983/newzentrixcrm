@@ -375,6 +375,14 @@ public class FirebaseService {
         }
     }
 
+    public void clearOutgoingCall() {
+        if (database == null) return;
+        String agentName = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE)
+                .getString("agent_name", "Agent_001");
+        database.getReference("agents").child(agentName).child("outgoing_call").removeValue();
+        if (userLogService != null) userLogService.log("Outgoing call node cleared.");
+    }
+
     public void sendNumber(String number) {
         if (database == null) return;
         String agentName = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE)

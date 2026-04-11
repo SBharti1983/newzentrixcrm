@@ -140,6 +140,7 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
         }
         
         firebaseService.sendIncomingCall(null);
+        firebaseService.clearOutgoingCall();
         isIncoming = false; 
         callStartTime = 0;
         currentInteractionId = null;
