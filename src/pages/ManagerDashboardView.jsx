@@ -106,12 +106,12 @@ export default function ManagerDashboardView({ user, data }) {
 
             {/* KPI Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                <MetricCard title="Team Revenue" val={formatRevenue(bookings.total_value)} growth="+ 19.6%" icon={ award: Layout } color="#6366f1" />
-                <MetricCard title="Team Bookings" val={bookings.total || 0} growth="+ 16.6%" icon={ award: Award } color="#8b5cf6" />
-                <MetricCard title="Team Leads" val={leadsStat.active_leads || 0} growth="+ 13.9%" icon={ award: Users } color="#3b82f6" />
-                <MetricCard title="Avg. Conversion" val={`${leadsStat.win_rate || 0}%`} growth="+ 1.2%" icon={ award: Target } color="#f59e0b" />
-                <MetricCard title="Active Agents" val={`${members.filter(m => m.active_leads > 0).length} / ${members.length}`} detail="4 inactive" icon={ award: Users } color="#6366f1" />
-                <MetricCard title="Pipeline Value" val={formatRevenue(stats.pipeline?.value || 0)} growth="Active" icon={ award: TrendingUp } color="#06b6d4" />
+                <MetricCard title="Team Revenue" val={formatRevenue(bookings.total_value)} growth="+ 19.6%" icon={Layout} color="#6366f1" />
+                <MetricCard title="Team Bookings" val={bookings.total || 0} growth="+ 16.6%" icon={Award} color="#8b5cf6" />
+                <MetricCard title="Team Leads" val={leadsStat.active_leads || 0} growth="+ 13.9%" icon={Users} color="#3b82f6" />
+                <MetricCard title="Avg. Conversion" val={`${leadsStat.win_rate || 0}%`} growth="+ 1.2%" icon={Target} color="#f59e0b" />
+                <MetricCard title="Active Agents" val={`${members.filter(m => m.active_leads > 0).length} / ${members.length}`} detail="4 inactive" icon={Users} color="#6366f1" />
+                <MetricCard title="Pipeline Value" val={formatRevenue(stats.pipeline?.value || 0)} growth="Active" icon={TrendingUp} color="#06b6d4" />
             </div>
 
             {/* Main Content Areas */}

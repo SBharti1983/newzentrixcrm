@@ -98,12 +98,12 @@ export default function TeamLeaderDashboardView({ user, data }) {
 
             {/* KPI Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                <MetricCard title="Squad Revenue" val={formatRevenue(team_stats.total_revenue)} growth="+ 22.4%" icon={ award: Layout } color="#6366f1" />
-                <MetricCard title="Squad Bookings" val={team_stats.total_bookings || 0} growth="+ 12%" icon={ award: Award } color="#8b5cf6" />
-                <MetricCard title="Active Leads" val={team_stats.active_leads || 0} growth="+ 8.4%" icon={ award: Users } color="#3b82f6" />
-                <MetricCard title="Lead Velocity" val="High" growth="Optimal" icon={ award: TrendingUp } color="#10b981" />
-                <MetricCard title="Active Agents" val={`${members.length} Agents`} detail="All squads online" icon={ award: Users } color="#6366f1" />
-                <MetricCard title="Market Index" val="92.4" growth="+ 3.2%" icon={ award: Target } color="#06b6d4" />
+                <MetricCard title="Squad Revenue" val={formatRevenue(team_stats.total_revenue)} growth="+ 22.4%" icon={Layout} color="#6366f1" />
+                <MetricCard title="Squad Bookings" val={team_stats.total_bookings || 0} growth="+ 12%" icon={Award} color="#8b5cf6" />
+                <MetricCard title="Active Leads" val={team_stats.active_leads || 0} growth="+ 8.4%" icon={Users} color="#3b82f6" />
+                <MetricCard title="Lead Velocity" val="High" growth="Optimal" icon={TrendingUp} color="#10b981" />
+                <MetricCard title="Active Agents" val={`${members.length} Agents`} detail="All squads online" icon={Users} color="#6366f1" />
+                <MetricCard title="Market Index" val="92.4" growth="+ 3.2%" icon={Target} color="#06b6d4" />
             </div>
 
             {/* Main Content Areas */}
