@@ -437,20 +437,24 @@ router.patch('/:leadId/interactions/:interactionId', async (req, res) => {
 // DELETE /api/leads/:leadId/interactions/:interactionId
 router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
     try {
-        console.log(`[Interaction Delete] Request: Lead ${req.params.leadId}, Interaction ${req.params.interactionId}, Tenant ${req.tenantId}`);
+        const { interactionId, leadId } = req.params;
+        console.log(`[Interaction Delete] Request for ID: ${interactionId}, Lead in URL: ${leadId}, Tenant: ${req.tenantId}`);
+        
         const { rowCount } = await pool.query(
             `DELETE FROM interactions WHERE id = $1 AND tenant_id = $2`,
-            [req.params.interactionId, req.tenantId]
+            [interactionId, req.tenantId]
         );
-        console.log(`[Interaction Delete] Result: ${rowCount} rows deleted`);
+        
         if (rowCount === 0) {
-            console.warn(`[Interaction Delete] FAILED: Interaction ${req.params.interactionId} not found with Lead ${req.params.leadId} and Tenant ${req.tenantId}`);
-            return res.status(404).json({ error: 'Interaction not found with provided lead/tenant context' });
+            console.warn(`[Interaction Delete] FAILED: Interaction ${interactionId} not found for Tenant ${req.tenantId}`);
+            return res.status(404).json({ error: 'Interaction not found with provided context' });
         }
-        res.json({ message: 'Interaction deleted' });
+        
+        console.log(`[Interaction Delete] SUCCESS: Removed interaction ${interactionId}`);
+        res.json({ message: 'Interaction deleted successfully' });
     } catch (err) {
-        console.error('Failed to delete interaction:', err);
-        res.status(500).json({ error: 'Failed to delete interaction' });
+        console.error('[Interaction Delete] ERROR:', err);
+        res.status(500).json({ error: 'Failed to delete interaction', details: err.message });
     }
 });
 

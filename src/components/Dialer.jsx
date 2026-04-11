@@ -84,9 +84,15 @@ export default function Dialer() {
 
         const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
         const unsubOut = onValue(outCallRef, (snapshot) => {
+            console.log(`[DIALER] Handset node update: ${snapshot.exists() ? 'Exists' : 'Cleared'}`);
             if (!snapshot.exists()) {
                 setCallState(prev => {
-                    if (prev === 'active' || prev === 'dialing') return 'idle';
+                    // Force idle if handset clears the dial node (Hangup)
+                    if (prev !== 'idle') {
+                        console.log('[DIALER] Handset signalled END OF CALL. Resetting to IDLE.');
+                        setDuration(0);
+                        return 'idle';
+                    }
                     return prev;
                 });
             }
@@ -116,10 +122,10 @@ export default function Dialer() {
             const logData = await logRes.json();
             if (logRes.ok) setActiveInteractionId(logData.interactionId);
             await set(makeCallRef, { number: phoneToDial, interaction_id: logData.interactionId || null, timestamp: Date.now() });
-            showToast('Command sent', 'success');
+            showToast('GSM Call Initiated', 'success');
             
-            // Assume the handset places the call immediately
-            setTimeout(() => setCallState('active'), 1500);
+            // Do NOT force active here. The handset will trigger a state change.
+            // If the handset never responds, user can manually hang up or clear.
         } catch (err) { 
             console.error(err);
             setCallState('idle'); 

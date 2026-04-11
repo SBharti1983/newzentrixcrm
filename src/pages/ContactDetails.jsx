@@ -45,7 +45,8 @@ export default function ContactDetails() {
     const [uploadingAudio, setUploadingAudio] = useState(false);
     const [showComposer, setShowComposer] = useState(false);
     const [composerTrigger, setComposerTrigger] = useState(null);
-    const [generatingContent, setGeneratingContent] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -226,18 +227,22 @@ export default function ContactDetails() {
         }
     };
 
-    const handleDeleteInteraction = async (interactionId) => {
-        console.log('[DEBUG] handleDeleteInteraction initiated for ID:', interactionId);
-        if (!window.confirm('Are you sure you want to delete this interaction?')) {
-            console.log('[DEBUG] Delete cancelled by user');
-            return;
-        }
+    const handleDeleteInteraction = (interactionId) => {
+        console.log('[DEBUG] Opening local confirm modal for:', interactionId);
+        setConfirmDeleteId(interactionId);
+    };
 
+    const performDelete = async () => {
+        const interactionId = confirmDeleteId;
+        if (!interactionId) return;
+
+        setIsDeleting(true);
+        console.log('[DEBUG] performDelete initiated for:', interactionId);
+        
         try {
-            console.log(`[DEBUG] Calling deleteInteraction: Lead=${id}, Interaction=${interactionId}`);
-            
             // Optimistic update
             setInteractions(prev => prev.filter(item => item.id !== interactionId));
+            setConfirmDeleteId(null);
             
             await leadsApi.deleteInteraction(id, interactionId);
             showToast('Interaction removed', 'success');
@@ -246,8 +251,9 @@ export default function ContactDetails() {
             console.error('[DEBUG] Interaction delete failed:', e);
             const msg = e.error || e.message || 'Failed to delete';
             showToast(`Delete failed: ${msg}`, 'error');
-            // Rollback optimistic update if fail? loadData() will do it.
             loadData();
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -1409,6 +1415,48 @@ export default function ContactDetails() {
                     prefillLead={contact}
                     triggerType={composerTrigger}
                 />
+            )}
+
+            {confirmDeleteId && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)',
+                    zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 24
+                }}>
+                    <div className="animate-scaleIn" style={{
+                        maxWidth: 400, width: '100%', background: 'white', borderRadius: 24,
+                        boxShadow: '0 32px 64px rgba(10,22,40,0.2)', padding: 32, textAlign: 'center'
+                    }}>
+                        <div style={{ 
+                            width: 64, height: 64, borderRadius: 20, background: '#fef2f2', 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                            margin: '0 auto 24px', border: '1px solid #fee2e2' 
+                        }}>
+                            <X size={32} color="#ef4444" />
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 8px' }}>Security Confirmation</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', margin: '0 0 32px', lineHeight: 1.6 }}>Are you sure you want to permanently delete this interaction? This action cannot be undone.</p>
+                        <div style={{ display: 'flex', gap: 12 }}>
+                            <button 
+                                onClick={() => setConfirmDeleteId(null)}
+                                style={{ flex: 1, padding: '14px', borderRadius: 14, border: '1px solid #e2e8f0', background: 'white', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={performDelete}
+                                style={{ 
+                                    flex: 1, padding: '14px', borderRadius: 14, border: 'none', 
+                                    background: '#ef4444', color: 'white', fontWeight: 800, 
+                                    fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 8px 16px rgba(239, 68, 68, 0.25)' 
+                                }}
+                            >
+                                {isDeleting ? 'Removing...' : 'Delete Forever'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

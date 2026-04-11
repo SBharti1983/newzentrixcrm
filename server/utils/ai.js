@@ -23,7 +23,7 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
         }
 
         // Use standard models available for this API key
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
@@ -74,7 +74,7 @@ async function generateAudioTranscription(prompt, base64Audio, mimeType, isJson 
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
         }
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+        const modelsToTry = ["gemini-2.5-flash", "gemini-flash-latest"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {

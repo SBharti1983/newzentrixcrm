@@ -132,108 +132,76 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
 
         console.log(`[Telephony] Processing recording for Interaction: ${interactionId || 'New'} | Lead: ${finalLeadId || 'Unknown'}`);
 
-        // Resolve the audio URL:
-        // Priority 1: Android SyncWorker already uploaded to Firebase Storage → use the URL directly
-        // Priority 2: File was uploaded to CRM → re-upload to Firebase Storage from server
-        let audioUrl = recordingUrl || null;
-
-        if (!audioUrl && req.file && isStorageEnabled) {
-            try {
-                // Fetch tenant slug for clean folder structuring
-                let tenantSlug = 'general';
-                const tenantRes = await pool.query('SELECT slug FROM tenants WHERE id = $1', [req.tenantId]);
-                if (tenantRes.rows[0]) tenantSlug = tenantRes.rows[0].slug;
-
-                // Fetch lead details for the filename
-                let leadName = 'UnknownLead';
-                let leadPhone = phoneNumber || '0000';
-
-                if (finalLeadId) {
-                    const leadRes = await pool.query('SELECT name, phone FROM leads WHERE id = $1', [finalLeadId]);
-                    if (leadRes.rows[0]) {
-                        leadName = leadRes.rows[0].name.replace(/[^a-zA-Z0-9]/g, '');
-                        if (!phoneNumber) leadPhone = leadRes.rows[0].phone || '0000';
-                    }
-                } else if (interactionId) {
-                    const intRes = await pool.query(`
-                        SELECT l.name, l.phone 
-                        FROM interactions i 
-                        JOIN leads l ON i.lead_id = l.id 
-                        WHERE i.id = $1
-                    `, [interactionId]);
-                    if (intRes.rows[0]) {
-                        leadName = intRes.rows[0].name.replace(/[^a-zA-Z0-9]/g, '');
-                        if (!phoneNumber) leadPhone = intRes.rows[0].phone || '0000';
-                    }
-                }
-
-                // Construct Highly Structured Identity (Paths & Filenames)
-                const dateObj = new Date();
-                const yearMonth = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
-                const folderPath = `recordings/${tenantSlug}/${yearMonth}`;
-
-                const agentNameStr = (req.user?.name || 'Handset').replace(/[^a-zA-Z0-9]/g, '');
-                const phoneLast4 = leadPhone.length >= 4 ? leadPhone.slice(-4) : leadPhone;
-                const timeStr = dateObj.toISOString().replace(/[:.]/g, '-');
-                const customFileName = `${leadName}_${agentNameStr}_${phoneLast4}_${timeStr}`;
-
-                // Upload to Firebase using the enterprise folder convention
-                audioUrl = await uploadToFirebase(req.file.buffer, req.file.originalname, folderPath, customFileName);
-                console.log(`[Telephony] Recording securely written to: ${folderPath}/${customFileName}`);
-            } catch (storageErr) {
-                console.error('[Telephony] Storage upload failed:', storageErr.message);
-            }
-        } else if (audioUrl) {
-            console.log(`[Telephony] Using pre-uploaded Firebase Storage URL from Android SyncWorker`);
+        let audioUrl = null;
+        let leadName = 'UnknownLead';
+        if (finalLeadId) {
+            const leadRes = await pool.query('SELECT name FROM leads WHERE id = $1', [finalLeadId]);
+            if (leadRes.rows[0]) leadName = leadRes.rows[0].name.replace(/[^a-zA-Z0-9]/g, '');
         }
 
-        // Transcription logic — only runs when file buffer is available
-        // When SyncWorker sends a pre-uploaded Firebase URL without a file,
-        // transcription will be triggered later via PATCH /api/calls/:id
-        let aiResult = { transcript: [], sentiment: 'Neutral' };
+        if (req.file) {
+            console.log(`[Telephony] Direct file received (${req.file.buffer.length} bytes). Saving to local server...`);
+            try {
+                const fs = require('fs');
+                const path = require('path');
+                const localFolder = path.join(__dirname, '..', 'uploads', req.tenantId || 'default');
+                if (!fs.existsSync(localFolder)) fs.mkdirSync(localFolder, { recursive: true });
+                
+                const localFileName = `${Date.now()}-${req.file.originalname}`;
+                const localPath = path.join(localFolder, localFileName);
+                fs.writeFileSync(localPath, req.file.buffer);
+                
+                const baseUrl = process.env.VITE_API_URL ? process.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5050';
+                audioUrl = `${baseUrl}/uploads/${req.tenantId || 'default'}/${localFileName}`;
+                console.log(`[Telephony] Local storage successful: ${audioUrl}`);
+
+                // Secondary attempt: Firebase (only if enabled)
+                if (isStorageEnabled) {
+                    try {
+                        let tenantSlug = 'general';
+                        const tenantRes = await pool.query('SELECT slug FROM tenants WHERE id = $1', [req.tenantId]);
+                        if (tenantRes.rows[0]) tenantSlug = tenantRes.rows[0].slug;
+
+                        const agentNameStr = (req.user?.name || 'Handset').replace(/[^a-zA-Z0-9]/g, '');
+                        const phoneLast4 = leadPhone.length >= 4 ? leadPhone.slice(-4) : leadPhone;
+                        const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
+                        const customFileName = `${leadName}_${agentNameStr}_${phoneLast4}_${timeStr}`;
+
+                        const firebaseURL = await uploadToFirebase(req.file.buffer, req.file.originalname, `recordings/${tenantSlug}`, customFileName);
+                        audioUrl = firebaseURL; // Upgrade to Firebase URL if successful
+                        console.log('[Telephony] Optional Firebase backup successful.');
+                    } catch (fbErr) {
+                        console.warn('[Telephony] Firebase backup skipped (Spark quota or 404), using Local URL.');
+                    }
+                }
+            } catch (err) {
+                console.error('[Telephony] CRITICAL STORAGE FAILURE:', err.message);
+            }
+        } else if (recordingUrl) {
+            audioUrl = recordingUrl;
+            console.log(`[Telephony] Using pre-uploaded Firebase Storage URL: ${audioUrl}`);
+        }
+
+        let aiResult = { transcript: [], sentiment: 'Neutral', call_summary: 'No speech detected' };
         if (isAiEnabled && req.file) {
             const prompt = `
-                CRITICAL INSTRUCTION: You are an audio transcription AI. You must ONLY transcribe what is actually spoken in the audio file.
-                DO NOT invent, fabricate, or hallucinate a conversation.
-                If the audio is silent, unintelligible, or contains no speech, you MUST return an empty transcript array [].
-                Do not assume this is a Dubai real estate call unless the audio actually mentions it.
+                CRITICAL INSTRUCTION: You are an expert audio analyst. 
+                1. Transcribe the conversation in this Android GSM recording. The speakers may be speaking in English, Hindi, or a mix of both (Hinglish). Please translate the final transcript to English.
+                2. Be extremely sensitive to low volume, compressed audio, or background noise. DO NOT dismiss the audio as silent if there is static or muffled speaking.
+                3. If there is ANY speech, capture it in the "transcript" array.
+                4. Provide a "call_summary" capturing the main points.
+                5. Provide a "whatsapp_followup" message.
+                6. If the audio is 100% dead silence, set call_summary to "No speech detected" and transcript to [].
 
-                If speech is present:
-                Provide a detailed verbatim transcript, identifying the speakers. 
-                Also provide a single word sentiment analysis (Positive, Neutral, Negative, or Concerned).
-                
-                Provide:
-                1. A professional short follow-up message for WhatsApp (or empty string if no conversation).
-                2. A "call_summary" which is a paragraph summarizing the discussion (or "No speech detected" if silent).
-                3. A list of "key_highlights" mentioned (or empty array if silent).
-
-                Return JSON format EXACTLY like this:
-                {
-                    "transcript": [
-                        { "speaker": "Speaker 1", "text": "..." },
-                        { "speaker": "Speaker 2", "text": "..." }
-                    ],
-                    "sentiment": "Neutral",
-                    "whatsapp_followup": "...",
-                    "call_summary": "...",
-                    "key_highlights": ["..."]
-                }
+                Return ONLY raw JSON with keys: transcript, sentiment, whatsapp_followup, call_summary.
             `;
-
             const base64Audio = req.file.buffer.toString('base64');
-            const mimeType = req.file.mimetype || 'audio/wav';
-
+            const mimeType = 'audio/mp4'; 
+            
+            console.log(`[Telephony] Sending ${req.file.buffer.length} bytes to Gemini for transcription...`);
             try {
                 aiResult = await generateAudioTranscription(prompt, base64Audio, mimeType, true, tenantGeminiKey);
-                console.log('[Telephony] AI Transcription & Summary complete');
-                console.log('[Telephony] AI Result keys:', Object.keys(aiResult));
-                console.log('[Telephony] Transcript entries:', aiResult.transcript?.length || 0);
-                console.log('[Telephony] Sentiment:', aiResult.sentiment);
-                console.log('[Telephony] Summary:', aiResult.call_summary?.substring(0, 100));
-                if (aiResult.transcript?.length === 0) {
-                    console.warn('[Telephony] WARNING: AI returned empty transcript array!');
-                    console.log('[Telephony] Full AI result:', JSON.stringify(aiResult).substring(0, 500));
-                }
+                console.log('[Telephony] AI Transcription complete. Entries:', aiResult.transcript?.length || 0);
             } catch (aiErr) {
                 console.error('[Telephony] AI Transcription failed:', aiErr.message);
             }
