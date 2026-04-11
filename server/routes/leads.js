@@ -437,10 +437,12 @@ router.patch('/:leadId/interactions/:interactionId', async (req, res) => {
 // DELETE /api/leads/:leadId/interactions/:interactionId
 router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
     try {
+        console.log(`[Interaction Delete] Request: Lead ${req.params.leadId}, Interaction ${req.params.interactionId}, Tenant ${req.tenantId}`);
         const { rowCount } = await pool.query(
             `DELETE FROM interactions WHERE id = $1 AND lead_id = $2 AND tenant_id = $3`,
             [req.params.interactionId, req.params.leadId, req.tenantId]
         );
+        console.log(`[Interaction Delete] Result: ${rowCount} rows deleted`);
         if (rowCount === 0) return res.status(404).json({ error: 'Interaction not found' });
         res.json({ message: 'Interaction deleted' });
     } catch (err) {

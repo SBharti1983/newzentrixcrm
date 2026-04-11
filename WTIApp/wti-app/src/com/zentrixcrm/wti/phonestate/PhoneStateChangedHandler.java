@@ -117,9 +117,14 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
                 int activeSimSlot = getActiveSimSlot();
                 
                 if (duration > 3000) { 
-                    userLogService.log("Call Ended (" + type + "). Saving log.");
+                    userLogService.log("Call Ended (" + type + "). Triggering Auto-Sync.");
                     firebaseService.logCallHistory(type, currentLastNumber, duration, activeSimSlot, recordingPath, interactionId);
                     
+                    // Explicitly trigger sync after a short delay to ensure DB insertion is finished
+                    mainHandler.postDelayed(() -> {
+                        firebaseService.scheduleSync();
+                    }, 1500);
+
                     Intent intent = new Intent(context, CallDispositionActivity.class);
                     intent.putExtra(CallDispositionActivity.EXTRA_NUMBER, currentLastNumber);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);

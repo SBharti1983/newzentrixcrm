@@ -426,9 +426,15 @@ public class Wti extends AppCompatActivity {
                 if (count != null && count > 0) {
                     txtPendingSync.setText(count + " Pending Syncs");
                     txtPendingSync.setTextColor(ContextCompat.getColor(this, R.color.status_busy));
+                    if (imgSyncHealth != null) {
+                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_offline)); // Turn Red
+                    }
                 } else {
                     txtPendingSync.setText("Cloud Synced");
                     txtPendingSync.setTextColor(ContextCompat.getColor(this, R.color.status_online));
+                    if (imgSyncHealth != null) {
+                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_online)); // Turn Green
+                    }
                 }
             }
         });

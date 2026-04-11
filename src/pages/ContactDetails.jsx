@@ -1149,22 +1149,24 @@ export default function ContactDetails() {
                                                         <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)' }}>{item.type} Interaction</div>
                                                         <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                                                     </div>
-                                                    <div style={{ display: 'flex', gap: 6 }}>
-                                                        <button
-                                                            onClick={() => { setEditingInteraction(item.id); setEditNote(item.note || ''); }}
-                                                            style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 size={13} color="#3b82f6" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteInteraction(item.id)}
-                                                            style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                            title="Delete"
-                                                        >
-                                                            <X size={13} color="#ef4444" />
-                                                        </button>
-                                                    </div>
+                                                    {item.entry_type !== 'system' && (
+                                                        <div style={{ display: 'flex', gap: 6 }}>
+                                                            <button
+                                                                onClick={() => { setEditingInteraction(item.id); setEditNote(item.note || ''); }}
+                                                                style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title="Edit"
+                                                            >
+                                                                <Edit2 size={13} color="#3b82f6" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteInteraction(item.id)}
+                                                                style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                title="Delete"
+                                                            >
+                                                                <X size={13} color="#ef4444" />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {editingInteraction === item.id ? (
