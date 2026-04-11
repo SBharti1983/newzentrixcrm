@@ -85,7 +85,12 @@ public class FirebaseService {
             }
             
             database = FirebaseDatabase.getInstance(app);
-            database.setPersistenceEnabled(true);
+            try {
+                database.setPersistenceEnabled(true);
+            } catch (Exception e) {
+                // Persistence already enabled or already in use, which is fine
+                Log.d(TAG, "Persistence already active or instance running");
+            }
             
             if (userLogService != null) {
                 userLogService.log("Firebase Service ready.");
@@ -119,22 +124,38 @@ public class FirebaseService {
             final FirebaseApp tempApp;
             String appName = "testApp_" + System.currentTimeMillis();
             tempApp = FirebaseApp.initializeApp(context, options, appName);
-            FirebaseDatabase tempDb = FirebaseDatabase.getInstance(tempApp);
+            final FirebaseDatabase tempDb = FirebaseDatabase.getInstance(tempApp);
             
-            tempDb.getReference(".info/connected").addListenerForSingleValueEvent(new ValueEventListener() {
+            final ValueEventListener testListener = new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     boolean connected = snapshot.getValue(Boolean.class) != null && snapshot.getValue(Boolean.class);
-                    callback.onResult(connected);
-                    tempApp.delete();
+                    if (connected) {
+                        callback.onResult(true);
+                        tempDb.getReference(".info/connected").removeEventListener(this);
+                        tempApp.delete();
+                    }
                 }
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
                     callback.onResult(false);
+                    tempDb.getReference(".info/connected").removeEventListener(this);
                     tempApp.delete();
                 }
-            });
+            };
+
+            tempDb.getReference(".info/connected").addValueEventListener(testListener);
+
+            // Timeout after 4 seconds
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                tempDb.getReference(".info/connected").removeEventListener(testListener);
+                try {
+                    tempApp.delete();
+                } catch (Exception ignored) {}
+                callback.onResult(false);
+            }, 4000);
+
         } catch (Exception e) {
             callback.onResult(false);
         }
