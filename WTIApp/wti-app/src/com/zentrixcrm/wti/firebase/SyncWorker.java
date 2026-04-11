@@ -73,10 +73,17 @@ public class SyncWorker extends Worker {
         FirebaseStorage storage = null;
         if (!firebaseBaseUrl.isEmpty()) {
             try {
-                // Determine project ID from URL (zentrix-wti-default)
+                // Extract project ID more reliably from the URL
                 String projectId = "zentrix-wti-default";
-                if (firebaseBaseUrl.contains("zentrix-wti-default")) {
-                    projectId = "zentrix-wti-default";
+                try {
+                    String host = Uri.parse(firebaseBaseUrl).getHost();
+                    if (host != null && host.contains("-default-rtdb")) {
+                        projectId = host.split("-default-rtdb")[0];
+                    } else if (host != null) {
+                        projectId = host.split("\\.")[0];
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to parse projectId from URL", e);
                 }
 
                 FirebaseOptions options = new FirebaseOptions.Builder()
@@ -186,6 +193,8 @@ public class SyncWorker extends Worker {
             latch.await(60, TimeUnit.SECONDS);
             return downloadUrl[0];
         } catch (Exception e) {
+            Log.e(TAG, "Firebase upload error", e);
+            sendUserLog("Upload Error: " + e.getMessage());
             return null;
         }
     }
