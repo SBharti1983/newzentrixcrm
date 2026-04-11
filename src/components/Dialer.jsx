@@ -65,7 +65,6 @@ export default function Dialer() {
                     if (prev === 'idle') {
                         setIsOpen(true);
                         setIsMinimized(false);
-                        // Trigger search asynchronously
                         fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/leads/search?q=${num}`, {
                             headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
                         }).then(res => res.json()).then(leadData => {
@@ -77,13 +76,23 @@ export default function Dialer() {
                 });
             } else {
                 setCallState(prev => {
-                    if (prev === 'ringing' || prev === 'active') return 'idle';
+                    if (prev === 'ringing' || (prev === 'active' && !activeInteractionId)) return 'idle';
                     return prev;
                 });
             }
         });
 
-        return () => { unsubStatus(); unsubCall(); };
+        const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
+        const unsubOut = onValue(outCallRef, (snapshot) => {
+            if (!snapshot.exists()) {
+                setCallState(prev => {
+                    if (prev === 'active' || prev === 'dialing') return 'idle';
+                    return prev;
+                });
+            }
+        });
+
+        return () => { unsubStatus(); unsubCall(); unsubOut(); };
     }, [isOpen, agentId]); // Removed callState to prevent listener thrashing
 
     const handleDial = useCallback(async (lead = null, manualPhone = null) => {

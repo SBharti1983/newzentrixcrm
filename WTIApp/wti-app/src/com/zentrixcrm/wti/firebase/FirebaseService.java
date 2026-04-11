@@ -369,6 +369,7 @@ public class FirebaseService {
                 .getString("agent_name", "Agent_001");
         DatabaseReference ref = database.getReference("agents").child(agentName).child("incoming_call");
         if (number == null) {
+            if (userLogService != null) userLogService.log("Phone reached IDLE. Clearing call nodes...");
             ref.removeValue();
         } else {
             ref.setValue(number);
@@ -376,11 +377,20 @@ public class FirebaseService {
     }
 
     public void clearOutgoingCall() {
-        if (database == null) return;
+        if (database == null) {
+            if (userLogService != null) userLogService.log("Error: Database null during clearOutgoingCall");
+            return;
+        }
+        if (userLogService != null) userLogService.log("Clearing outgoing call node...");
         String agentName = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE)
                 .getString("agent_name", "Agent_001");
-        database.getReference("agents").child(agentName).child("outgoing_call").removeValue();
-        if (userLogService != null) userLogService.log("Outgoing call node cleared.");
+        database.getReference("agents").child(agentName).child("outgoing_call").removeValue()
+            .addOnSuccessListener(aVoid -> {
+                if (userLogService != null) userLogService.log("Firebase: Outgoing call node cleared successfully.");
+            })
+            .addOnFailureListener(e -> {
+                if (userLogService != null) userLogService.log("Firebase: Failed to clear outgoing call node: " + e.getMessage());
+            });
     }
 
     public void sendNumber(String number) {
