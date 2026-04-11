@@ -14,8 +14,11 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.telecom.TelecomManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -48,6 +51,7 @@ public class Wti extends AppCompatActivity {
     private static final int DEFAULT_DIALER_REQUEST_CODE = 101;
     private static final int BATTERY_OPTIMIZATION_REQUEST_CODE = 102;
     private static final String DEFAULT_URL = "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app/";
+    private static final String KEY_PREFERRED_SIM_SLOT = "preferred_sim_slot";
 
     private TelephonyManager telephonyManager;
 
@@ -86,7 +90,7 @@ public class Wti extends AppCompatActivity {
     private FirebaseService firebaseService;
     private UserLogService userLogService;
     private SharedPreferences prefs;
-    private List<Integer> simSlotIds = new ArrayList<>();
+    private List<SubscriptionInfo> availableSims = new ArrayList<>();
 
     private final BroadcastReceiver syncLogReceiver = new BroadcastReceiver() {
         @Override
@@ -166,6 +170,7 @@ public class Wti extends AppCompatActivity {
         ContextCompat.registerReceiver(this, latencyUpdateReceiver, new IntentFilter(FirebaseService.ACTION_LATENCY_UPDATE), receiverFlags);
 
         updateDialerStatus();
+        initSimSelection();
         
         new Handler(Looper.getMainLooper()).postDelayed(this::checkBatteryOptimization, 2000);
     }
@@ -183,9 +188,9 @@ public class Wti extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Check if service is actually running or connected
         updateStatusUI(WtiService.isRunning);
         applyAdminLock();
+        initSimSelection(); // Refresh SIM list in case permission was just granted
     }
 
     private void checkBatteryOptimization() {
@@ -268,6 +273,49 @@ public class Wti extends AppCompatActivity {
         if (swEditConfig != null) {
             swEditConfig.setOnCheckedChangeListener((buttonView, isChecked) -> toggleConfigEditing(isChecked));
         }
+    }
+
+    private void initSimSelection() {
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+
+        SubscriptionManager sm = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        if (sm == null) return;
+
+        availableSims = sm.getActiveSubscriptionInfoList();
+        List<String> simNames = new ArrayList<>();
+        simNames.add("Default SIM (System)");
+
+        int selectedIndex = 0;
+        int savedSubId = prefs.getInt(KEY_PREFERRED_SIM_SLOT, -1);
+
+        if (availableSims != null) {
+            for (int i = 0; i < availableSims.size(); i++) {
+                SubscriptionInfo info = availableSims.get(i);
+                String name = "SIM " + (info.getSimSlotIndex() + 1) + " - " + info.getDisplayName();
+                simNames.add(name);
+                if (info.getSubscriptionId() == savedSubId) {
+                    selectedIndex = i + 1;
+                }
+            }
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, simNames);
+        spinnerSimSelection.setAdapter(adapter);
+        spinnerSimSelection.setText(simNames.get(selectedIndex), false);
+
+        spinnerSimSelection.setOnItemClickListener((parent, view, position, id) -> {
+            if (position == 0) {
+                prefs.edit().putInt(KEY_PREFERRED_SIM_SLOT, -1).apply();
+                if (userLogService != null) userLogService.log("Preferred SIM: System Default");
+            } else {
+                int subId = availableSims.get(position - 1).getSubscriptionId();
+                prefs.edit().putInt(KEY_PREFERRED_SIM_SLOT, subId).apply();
+                if (userLogService != null) userLogService.log("Preferred SIM: " + simNames.get(position));
+            }
+            Toast.makeText(this, "SIM Preference Saved", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void updateDialerStatus() {
@@ -417,6 +465,7 @@ public class Wti extends AppCompatActivity {
         permissions.add(android.Manifest.permission.READ_PHONE_STATE);
         permissions.add(android.Manifest.permission.READ_CALL_LOG);
         permissions.add(android.Manifest.permission.RECORD_AUDIO);
+        permissions.add(android.Manifest.permission.CALL_PHONE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(android.Manifest.permission.POST_NOTIFICATIONS);
         }
