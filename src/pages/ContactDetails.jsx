@@ -227,20 +227,27 @@ export default function ContactDetails() {
     };
 
     const handleDeleteInteraction = async (interactionId) => {
-        console.log('[DEBUG] handleDeleteInteraction called for:', interactionId);
+        console.log('[DEBUG] handleDeleteInteraction initiated for ID:', interactionId);
         if (!window.confirm('Are you sure you want to delete this interaction?')) {
             console.log('[DEBUG] Delete cancelled by user');
             return;
         }
+
         try {
-            console.log('[DEBUG] Proceeding with API delete');
+            console.log(`[DEBUG] Calling deleteInteraction: Lead=${id}, Interaction=${interactionId}`);
+            
+            // Optimistic update
+            setInteractions(prev => prev.filter(item => item.id !== interactionId));
+            
             await leadsApi.deleteInteraction(id, interactionId);
             showToast('Interaction removed', 'success');
             loadData();
         } catch (e) {
-            console.error('Delete error:', e);
+            console.error('[DEBUG] Interaction delete failed:', e);
             const msg = e.error || e.message || 'Failed to delete';
             showToast(`Delete failed: ${msg}`, 'error');
+            // Rollback optimistic update if fail? loadData() will do it.
+            loadData();
         }
     };
 
