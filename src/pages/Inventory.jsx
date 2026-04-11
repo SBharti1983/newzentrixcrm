@@ -6,21 +6,141 @@ import { useToast } from '../hooks/useToast';
 import { 
     Plus, Search, X, Map as MapIcon, List, Eye, 
     CheckCircle2, Clock, TrendingUp, Building2, 
-    Layers, Maximize2, Compass, Car, History
+    Layers, Maximize2, Compass, Car, History,
+    ShieldCheck, Sparkles, Box, LayoutGrid, ChevronRight,
+    ArrowUpRight, MapPin, DollarSign, Wallet
 } from 'lucide-react';
 import InventoryMap from '../components/InventoryMap';
 
-const STATUS_BADGE = {
-    Available: 'badge-green',
-    Sold: 'badge-red',
-    Booked: 'badge-amber',
-    'On Hold': 'badge-slate',
+const COLORS = {
+    indigo: '#6366f1',
+    violet: '#8b5cf6',
+    emerald: '#10b981',
+    cyan: '#06b6d4',
+    rose: '#f43f5e',
+    amber: '#f59e0b',
+    slate950: '#040d1a',
+    slate900: '#0a1628',
+    slate800: '#1e293b',
+    slate500: '#64748b',
+    slate400: '#94a3b8',
+    slate200: '#e2e8f0',
+    slate50: '#f8fafc',
+    white: '#ffffff',
+    glass: 'rgba(255, 255, 255, 0.85)',
+    glassDark: 'rgba(15, 23, 42, 0.95)'
 };
 
-const DEFAULT_FORM = {
-    projectId: 1, unitNo: '', type: '3BHK', floor: '', area: '',
-    price: '', status: 'Available', facing: 'East', parking: 1,
-};
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+.inventory-vault {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: ${COLORS.slate900};
+    perspective: 1500px;
+}
+
+.premium-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 32px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.03), inset 0 0 0 1.5px rgba(255,255,255,0.4);
+    transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+    overflow: hidden;
+}
+
+.premium-card:hover {
+    transform: translateY(-8px) scale(1.005);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.08);
+}
+
+.unit-card-luxury {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.unit-image-placeholder {
+    height: 140px;
+    background: linear-gradient(135deg, ${COLORS.slate900}, ${COLORS.slate800});
+    position: relative;
+    overflow: hidden;
+}
+
+.unit-image-placeholder::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 100%);
+}
+
+.badge-status {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 2;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.status-Available { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.status-Sold { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+.status-Booked { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.status-OnHold { background: rgba(100, 116, 139, 0.2); color: #64748b; }
+
+.price-tag {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    color: white;
+    font-weight: 900;
+    font-size: 1.1rem;
+    z-index: 2;
+    letter-spacing: -0.5px;
+}
+
+.input-lux {
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1.5px solid ${COLORS.slate200};
+    font-family: inherit;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+.input-lux:focus {
+    outline: none;
+    border-color: ${COLORS.indigo};
+    box-shadow: 0 0 0 4px ${COLORS.indigo}15;
+}
+
+@keyframes draw-flow {
+    to { stroke-dashoffset: 0; }
+}
+
+.path-anim {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: draw-flow 4s forwards linear;
+}
+
+.shimmer-ai {
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255, 255, 255, 0.05), rgba(255,255,255,0));
+    background-size: 200% 100%;
+    animation: shimmer-anim 4s infinite linear;
+}
+
+@keyframes shimmer-anim {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+`;
 
 export default function Inventory() {
     const { showToast } = useToast();
@@ -32,6 +152,13 @@ export default function Inventory() {
     const [unitsError, setUnitsError] = useState(null);
 
     useEffect(() => {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = STYLES;
+        document.head.appendChild(styleEl);
+        return () => document.head.removeChild(styleEl);
+    }, []);
+
+    useEffect(() => {
         if (!projects.length) return;
         setLoadingUnits(true); setUnitsError(null);
         Promise.all(projects.map(p =>
@@ -39,7 +166,7 @@ export default function Inventory() {
                 .then(r => (r || []).map(u => ({ ...u, projectId: p.id, projectName: p.name })))
                 .catch(() => [])
         )).then(arr => { setUnits(arr.flat()); setLoadingUnits(false); })
-            .catch(err => { setUnitsError(err?.error || 'Failed to load units'); setLoadingUnits(false); });
+          .catch(err => { setUnitsError(err?.error || 'Failed to load units'); setLoadingUnits(false); });
     }, [projects]);
 
     const refetchUnits = () => {
@@ -50,16 +177,16 @@ export default function Inventory() {
                 .then(r => (r || []).map(u => ({ ...u, projectId: p.id, projectName: p.name })))
                 .catch(() => [])
         )).then(arr => { setUnits(arr.flat()); setLoadingUnits(false); })
-            .catch(() => setLoadingUnits(false));
+          .catch(() => setLoadingUnits(false));
     };
 
     const [search, setSearch] = useState('');
     const [filterProject, setFilterProject] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState(DEFAULT_FORM);
+    const [form, setForm] = useState({ projectId: 1, unitNo: '', type: '3BHK', floor: '', area: '', price: '', status: 'Available', facing: 'East', parking: 1 });
     const [saving, setSaving] = useState(false);
-    const [viewMode, setViewMode] = useState('list');
+    const [viewMode, setViewMode] = useState('grid');
     const [selectedUnit, setSelectedUnit] = useState(null);
     const [updatingUnit, setUpdatingUnit] = useState(false);
 
@@ -80,7 +207,7 @@ export default function Inventory() {
                 area_sqft: parseInt(form.area) || null, base_price: form.price, status: form.status,
                 facing: form.facing, parking: parseInt(form.parking) || 0,
             });
-            showToast('Unit added!', 'success'); setShowModal(false); setForm(DEFAULT_FORM); refetchUnits();
+            showToast('Unit added!', 'success'); setShowModal(false); refetchUnits();
         } catch (err) { showToast(err.error || 'Failed', 'error'); } finally { setSaving(false); }
     };
 
@@ -90,264 +217,236 @@ export default function Inventory() {
         setUpdatingUnit(true);
         try {
             await projectsApi.updateUnit(u.projectId, unitId, updates);
-            showToast('Inventory synchronized!', 'success');
-            setSelectedUnit(null);
+            showToast('Synchronized!', 'success');
+            setSelectedUnit(prev => ({...prev, ...updates}));
             refetchUnits();
-        } catch (err) {
-            showToast(err.error || 'Sync failed', 'error');
-        } finally {
-            setUpdatingUnit(false);
-        }
+        } catch (err) { showToast(err.error || 'Sync failed', 'error'); } finally { setUpdatingUnit(false); }
     };
 
     const loading = loadingProjects || loadingUnits;
     const error = projError || unitsError;
+
+    const counts = Object.fromEntries(['Available', 'Booked', 'Sold'].map(s => [s, units.filter(u => u.status === s).length]));
+
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={() => { refetchProjects(); refetchUnits(); }} />;
-    
-    const counts = Object.fromEntries(
-        ['Available', 'Booked', 'Sold'].map(s => [s, units.filter(u => u.status === s).length])
-    );
 
     return (
-        <div className="animate-fadeIn" style={{ paddingBottom: 40 }}>
-            {/* Asset Intelligence Ribbon */}
-            <div style={{ 
-                background: 'linear-gradient(135deg, var(--navy-900), #0f172a)', 
-                padding: '12px 20px', 
-                borderRadius: '18px', 
-                marginBottom: 20,
-                color: 'white',
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 16px 40px rgba(10,22,40,0.15)'
+        <div className="inventory-vault" style={{ padding: '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
+            
+            {/* 💎 Asset Intelligence Ribbon */}
+            <div className="premium-card shimmer-ai" style={{ 
+                background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate900} 100%)`, 
+                padding: '36px 40px', color: 'white', marginBottom: '40px', border: 'none'
             }}>
-                <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.03 }}>
-                    <Layers size={120} />
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: 24 }}>
-                    <div style={{ flex: '1 1 200px' }}>
-                        <div style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-cyan)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <TrendingUp size={12} /> Institutional Asset Tracking
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                             <Box size={20} color={COLORS.cyan} strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                                Institutional Asset Repository
+                             </span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 900, letterSpacing: '-0.3px' }}>Unit Inventory</h1>
-                        <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: '11px' }}>Managing {units.length} premium units across {projects.length} strategic projects.</p>
+                        <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, letterSpacing: '-2.5px', lineHeight: 1 }}>
+                            The Inventory <span style={{ color: COLORS.cyan }}>Vault</span>
+                        </h1>
+                        <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '1.2rem', fontWeight: 600, maxWidth: '600px' }}>
+                            Managing {units.length} institutional assets across {projects.length} strategic portfolios.
+                        </p>
                     </div>
-                    
-                    <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
+
+                    <div style={{ display: 'flex', gap: '32px' }}>
                         {[
-                            { label: 'Available', value: counts.Available, sub: `${((counts.Available / (units.length || 1)) * 100).toFixed(0)}% Portfolio`, color: 'var(--accent-emerald)' },
-                            { label: 'Reservations', value: counts.Booked, sub: 'Strategic Hold', color: 'var(--accent-amber)' },
-                            { label: 'Realized', value: counts.Sold, sub: 'Absorption', color: 'white' },
-                        ].map(m => (
-                          <div key={m.label} style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 1 }}>{m.label}</div>
-                              <div style={{ fontSize: '14px', fontWeight: 900, color: m.color }}>{m.value}</div>
-                              <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontWeight: 700, marginTop: 1 }}>{m.sub}</div>
-                          </div>
+                            { label: 'Available Units', val: counts.Available, color: COLORS.emerald },
+                            { label: 'Market Reservations', val: counts.Booked, color: COLORS.amber },
+                            { label: 'Portfolio Value', val: '₹142Cr', color: COLORS.white }
+                        ].map((stat, i) => (
+                            <div key={i} style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '2.4rem', fontWeight: 950, color: stat.color, letterSpacing: '-1.5px' }}>{stat.val}</div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
+                            </div>
                         ))}
-                        <button className="btn hover-lift" onClick={() => setShowModal(true)} style={{ 
-                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 34, padding: '0 14px', borderRadius: '10px', border: 'none',
-                            boxShadow: '0 8px 16px rgba(0,0,0,0.15)', fontSize: '11px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6
-                        }}>
-                             <Plus size={14} /> ADD ASSET
-                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Smart Asset Filters */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 32, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div className="search-bar" style={{ width: 300, background: 'white', border: '1px solid #f1f5f9', borderRadius: '18px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', paddingLeft: 20 }}>
-                    <Search size={18} style={{ color: 'var(--slate-400)' }} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Locate specific unit..." style={{ fontWeight: 600, height: 48 }} />
+            {/* 🔍 Global Portfolio Controls */}
+            <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', alignItems: 'center' }}>
+                <div className="premium-card" style={{ flex: 1, padding: '4px 20px', display: 'flex', alignItems: 'center', gap: '16px', background: 'white' }}>
+                    <Search size={22} color={COLORS.slate400} />
+                    <input 
+                        value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Locate specific asset or project context..."
+                        style={{ width: '100%', height: '54px', border: 'none', background: 'transparent', outline: 'none', fontWeight: 700, fontSize: '1rem' }}
+                    />
                 </div>
-                <div style={{ display: 'flex', gap: 8, background: 'white', padding: '6px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                    <select value={filterProject} onChange={e => setFilterProject(e.target.value)} style={{ padding: '0 16px', height: 40, border: 'none', background: 'transparent', fontWeight: 800, fontSize: '12px', color: 'var(--navy-600)', outline: 'none' }}>
+
+                <div className="premium-card" style={{ display: 'flex', padding: '6px', background: 'white' }}>
+                    <select 
+                        value={filterProject} onChange={e => setFilterProject(e.target.value)}
+                        style={{ padding: '0 24px', height: '44px', border: 'none', background: 'transparent', fontWeight: 850, fontSize: '0.85rem', color: COLORS.slate900, outline: 'none', cursor: 'pointer' }}
+                    >
                         <option value="All">ALL PROJECTS</option>
                         {projects.map(p => <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>)}
                     </select>
-                    <div style={{ width: 1, background: '#f1f5f9', margin: '8px 4px' }} />
-                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '0 16px', height: 40, border: 'none', background: 'transparent', fontWeight: 800, fontSize: '12px', color: 'var(--navy-600)', outline: 'none' }}>
+                    <div style={{ width: '1px', background: COLORS.slate200, margin: '8px 4px' }} />
+                    <select 
+                        value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
+                        style={{ padding: '0 24px', height: '44px', border: 'none', background: 'transparent', fontWeight: 850, fontSize: '0.85rem', color: COLORS.slate900, outline: 'none', cursor: 'pointer' }}
+                    >
                         <option value="All">ALL STATUS</option>
                         {['Available', 'Booked', 'Sold', 'On Hold'].map(s => <option key={s} value={s}>{s.toUpperCase()}</option>)}
                     </select>
                 </div>
 
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, background: 'white', padding: '6px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                    <button onClick={() => setViewMode('list')} style={{ 
-                        width: 44, height: 40, borderRadius: '12px', border: 'none', 
-                        background: viewMode === 'list' ? 'var(--navy-50)' : 'transparent',
-                        color: viewMode === 'list' ? 'var(--navy-600)' : 'var(--slate-400)',
+                <div className="premium-card" style={{ display: 'flex', padding: '6px', background: 'white' }}>
+                    <button onClick={() => setViewMode('grid')} style={{ 
+                        width: 48, height: 44, borderRadius: '14px', border: 'none',
+                        background: viewMode === 'grid' ? COLORS.slate950 : 'transparent',
+                        color: viewMode === 'grid' ? 'white' : COLORS.slate500,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
                     }}>
-                        <List size={20} />
+                        <LayoutGrid size={20} />
                     </button>
-                    <button onClick={() => setViewMode('map')} style={{ 
-                        width: 44, height: 40, borderRadius: '12px', border: 'none', 
-                        background: viewMode === 'map' ? 'var(--navy-50)' : 'transparent',
-                        color: viewMode === 'map' ? 'var(--navy-600)' : 'var(--slate-400)',
+                    <button onClick={() => setViewMode('list')} style={{ 
+                        width: 48, height: 44, borderRadius: '14px', border: 'none',
+                        background: viewMode === 'list' ? COLORS.slate950 : 'transparent',
+                        color: viewMode === 'list' ? 'white' : COLORS.slate500,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
                     }}>
-                        <MapIcon size={20} />
+                        <List size={22} />
                     </button>
                 </div>
+
+                <button onClick={() => setShowModal(true)} style={{ 
+                    background: `linear-gradient(135deg, ${COLORS.indigo}, ${COLORS.violet})`, 
+                    color: 'white', border: 'none', padding: '16px 32px', borderRadius: '22px',
+                    fontWeight: 950, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px',
+                    boxShadow: '0 12px 24px rgba(99, 102, 241, 0.3)', cursor: 'pointer', transition: 'all 0.3s ease'
+                }}>
+                    <Plus size={20} strokeWidth={3} /> ADD ASSET
+                </button>
             </div>
 
-            {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={() => { refetchProjects(); refetchUnits(); }} /> : (
-                viewMode === 'map' ? (
-                    <div style={{ background: 'white', padding: '16px', borderRadius: '32px', border: '1px solid #f1f5f9', boxShadow: '0 20px 40px rgba(0,0,0,0.03)' }}>
-                        <InventoryMap units={filtered} onUnitClick={(u) => setSelectedUnit(u)} />
-                    </div>
-                ) : (
-                    <div className="card" style={{ padding: 0, borderRadius: '32px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 20px 48px rgba(10,22,40,0.03)' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #f1f5f9' }}>
-                                    <th style={{ padding: '24px 32px', textAlign: 'left', fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Asset Identity</th>
-                                    <th style={{ padding: '24px 32px', textAlign: 'left', fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Project Context</th>
-                                    <th style={{ padding: '24px 32px', textAlign: 'left', fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Configuration</th>
-                                    <th style={{ padding: '24px 32px', textAlign: 'left', fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Market Value</th>
-                                    <th style={{ padding: '24px 32px', textAlign: 'left', fontSize: '11px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Asset Status</th>
-                                    <th style={{ padding: '24px 32px', textAlign: 'right' }}></th>
+            {/* 🏗️ Assets Display */}
+            {viewMode === 'list' ? (
+                <div className="premium-card" style={{ padding: 0, background: 'white' }}>
+                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                        <thead style={{ background: COLORS.slate50 }}>
+                            <tr style={{ textAlign: 'left', color: COLORS.slate400, fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                <th style={{ padding: '24px 32px' }}>Asset ID</th>
+                                <th style={{ padding: '24px 32px' }}>Project Portfolio</th>
+                                <th style={{ padding: '24px 32px' }}>Config / Floor</th>
+                                <th style={{ padding: '24px 32px' }}>Valuation</th>
+                                <th style={{ padding: '24px 32px' }}>Status</th>
+                                <th style={{ padding: '24px 32px' }}>Radar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filtered.map(unit => (
+                                <tr key={unit.id} style={{ borderBottom: `1px solid ${COLORS.slate50}` }}>
+                                    <td style={{ padding: '24px 32px', fontWeight: 950, fontSize: '1.1rem', color: COLORS.slate950 }}>{unit.unit_no || unit.unitNo}</td>
+                                    <td style={{ padding: '24px 32px', fontWeight: 750, color: COLORS.slate700 }}>{unit.projectName}</td>
+                                    <td style={{ padding: '24px 32px' }}>
+                                        <div style={{ fontWeight: 800 }}>{unit.property_type || unit.type}</div>
+                                        <div style={{ fontSize: '0.8rem', color: COLORS.slate400 }}>Floor {unit.floor} • {unit.facing}</div>
+                                    </td>
+                                    <td style={{ padding: '24px 32px', fontWeight: 900, color: COLORS.slate950 }}>
+                                        {unit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(unit.base_price) : unit.price}
+                                    </td>
+                                    <td style={{ padding: '24px 32px' }}>
+                                        <div className={`badge-status status-${(unit.status || 'Available').replace(' ', '')}`} style={{ position: 'relative', top: 0, left: 0 }}>
+                                            {unit.status}
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '24px 32px' }}>
+                                        <button onClick={() => setSelectedUnit(unit)} style={{ background: COLORS.slate100, border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}>
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.map(unit => {
-                                    const projectName = unit.projectName || projects.find(p => p.id === unit.projectId)?.name;
-                                    return (
-                                        <tr key={unit.id} className="hover-row glass-interactive" style={{ borderBottom: '1px solid rgba(0,0,0,0.03)', transition: 'all 0.2s' }}>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <div style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '15px' }}>{unit.unit_no || unit.unitNo}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{unit.floor === 0 ? 'GROUND' : `${unit.floor}F`} • Wing {unit.wing || 'Alpha'}</div>
-                                            </td>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <div style={{ fontWeight: 700, color: 'var(--navy-900)', fontSize: '14px' }}>{projectName}</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{unit.type || unit.property_type} • {unit.facing} Facing</div>
-                                            </td>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <div style={{ fontWeight: 700, color: 'var(--navy-900)', fontSize: '14px' }}>{(unit.area || unit.area_sqft || 0).toLocaleString()} SqFt</div>
-                                                <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>Internal Carpet</div>
-                                            </td>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <div style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '15px' }}>
-                                                    {unit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(unit.base_price) : unit.price}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: 'var(--accent-emerald-dark)', fontWeight: 800, marginTop: 2 }}>+2.4% Est Yield</div>
-                                            </td>
-                                            <td style={{ padding: '20px 32px' }}>
-                                                <span className={`badge ${STATUS_BADGE[unit.status] || 'badge-slate'}`} style={{ fontWeight: 900, fontSize: '10px', padding: '6px 16px', borderRadius: '10px', minWidth: 100 }}>
-                                                    {(unit.status || 'AVAILABLE').toUpperCase()}
-                                                </span>
-                                            </td>
-                                            <td style={{ padding: '20px 32px', textAlign: 'right' }}>
-                                                <button className="icon-btn hover-lift" onClick={() => setSelectedUnit(unit)} style={{ width: 44, height: 44, borderRadius: 12, border: '1px solid rgba(0,0,0,0.06)', background: 'white' }}>
-                                                    <Eye size={20} />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )
-            )}
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+                    {filtered.map(unit => (
+                        <div key={unit.id} className="premium-card unit-card-luxury" onClick={() => setSelectedUnit(unit)} style={{ cursor: 'pointer' }}>
+                            <div className="unit-image-placeholder">
+                                <div className={`badge-status status-${(unit.status || 'Available').replace(' ', '')}`}>
+                                    {unit.status}
+                                </div>
+                                <div className="price-tag">
+                                    {unit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(unit.base_price) : unit.price}
+                                </div>
+                                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.05)' }}>
+                                    <Building2 size={120} />
+                                </div>
+                            </div>
+                            <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 950, fontSize: '1.4rem', color: COLORS.slate950, letterSpacing: '-0.8px' }}>{unit.unit_no || unit.unitNo}</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate500 }}>{unit.projectName}</div>
+                                    </div>
+                                    <div style={{ background: `${COLORS.indigo}10`, color: COLORS.indigo, padding: '6px 14px', borderRadius: '12px', fontWeight: 900, fontSize: '0.75rem' }}>
+                                        {unit.property_type || unit.type}
+                                    </div>
+                                </div>
 
-            {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3 className="modal-title">Add Unit</h3>
-                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setShowModal(false)}><X size={16} /></button>
-                        </div>
-                        <div className="modal-body">
-                            <div className="form-grid form-grid-2">
-                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                    <label className="form-label">Project *</label>
-                                    <select className="form-control" value={form.projectId} onChange={e => setForm({ ...form, projectId: e.target.value })}>
-                                        <option value="">Select project...</option>
-                                        {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                    </select>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                    <div style={{ background: COLORS.slate50, padding: '12px', borderRadius: '16px' }}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Floor</div>
+                                        <div style={{ fontWeight: 900, fontSize: '1rem' }}>{unit.floor} Tier</div>
+                                    </div>
+                                    <div style={{ background: COLORS.slate50, padding: '12px', borderRadius: '16px' }}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Structure</div>
+                                        <div style={{ fontWeight: 900, fontSize: '1rem' }}>{unit.facing} Look</div>
+                                    </div>
                                 </div>
-                                <div className="form-group">
-                                    <label className="form-label">Unit No. *</label>
-                                    <input className="form-control" value={form.unitNo} onChange={e => setForm({ ...form, unitNo: e.target.value })} placeholder="A-1201" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Type</label>
-                                    <select className="form-control" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
-                                        {['1BHK', '2BHK', '3BHK', '4BHK', 'Villa', 'Penthouse', 'Commercial'].map(t => <option key={t}>{t}</option>)}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Floor</label>
-                                    <input className="form-control" type="number" value={form.floor} onChange={e => setForm({ ...form, floor: e.target.value })} placeholder="12" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Area (sqft)</label>
-                                    <input className="form-control" type="number" value={form.area} onChange={e => setForm({ ...form, area: e.target.value })} placeholder="1450" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Price</label>
-                                    <input className="form-control" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="₹95L" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Status</label>
-                                    <select className="form-control" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                                        {['Available', 'Booked', 'Sold', 'On Hold'].map(s => <option key={s}>{s}</option>)}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Facing</label>
-                                    <select className="form-control" value={form.facing} onChange={e => setForm({ ...form, facing: e.target.value })}>
-                                        {['East', 'West', 'North', 'South', 'Sea View', 'Garden View'].map(f => <option key={f}>{f}</option>)}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Parking Spots</label>
-                                    <select className="form-control" value={form.parking} onChange={e => setForm({ ...form, parking: e.target.value })}>
-                                        {[1, 2, 3, 4].map(n => <option key={n}>{n}</option>)}
-                                    </select>
+
+                                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: `1px dashed ${COLORS.slate200}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.emerald, fontWeight: 900, fontSize: '0.85rem' }}>
+                                        <Sparkles size={16} /> Portfolio Managed
+                                    </div>
+                                    <ArrowUpRight size={18} color={COLORS.slate300} />
                                 </div>
                             </div>
                         </div>
-                        <div className="modal-footer">
-                            <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                            <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Add Unit'}</button>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             )}
 
-            {/* Selected Unit Side Drawer */}
+            {/* 🛸 Selected Asset Side Ledger */}
             {selectedUnit && (
-                <div className="modal-overlay" onClick={() => setSelectedUnit(null)} style={{ justifyContent: 'flex-end', background: 'rgba(10,22,40,0.4)', backdropFilter: 'blur(4px)' }}>
-                    <div className="modal animate-slideInRight" onClick={e => e.stopPropagation()} style={{ width: 440, height: '100%', borderRadius: 0, margin: 0, paddingBottom: 80, overflowY: 'auto', background: 'white', boxShadow: '-8px 0 40px rgba(0,0,0,0.1)' }}>
-                        <div className="modal-header" style={{ padding: '24px 28px', background: 'var(--slate-50)', borderBottom: '1px solid var(--border-light)' }}>
-                            <div>
-                                <h3 className="modal-title" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--navy-900)' }}>Unit Detail</h3>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--navy-600)' }}>{selectedUnit.projectName}</span>
-                                    <span style={{ color: 'var(--text-muted)' }}>·</span>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{selectedUnit.unit_no || selectedUnit.unitNo}</span>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }} onClick={() => setSelectedUnit(null)}>
+                    <div className="premium-card" style={{ width: '100%', maxWidth: '480px', height: '100%', borderRadius: '40px 0 0 40px', background: 'white', position: 'relative', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ padding: '40px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.indigo, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Institutional Ledger</div>
+                                    <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: 950, color: COLORS.slate950 }}>Asset {selectedUnit.unit_no || selectedUnit.unitNo}</h2>
                                 </div>
+                                <button onClick={() => setSelectedUnit(null)} style={{ background: COLORS.slate100, border: 'none', width: 44, height: 44, borderRadius: '14px', cursor: 'pointer' }}><X size={24} /></button>
                             </div>
-                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setSelectedUnit(null)}><X size={20} /></button>
-                        </div>
-                        <div className="modal-body" style={{ padding: '32px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                                <div style={{ padding: 16, background: 'var(--slate-50)', borderRadius: 16, border: '1px solid var(--border-light)' }}>
-                                    <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 12 }}>Status Update</label>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                                <div style={{ background: COLORS.slate50, padding: '24px', borderRadius: '24px', border: `1px solid ${COLORS.slate200}` }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '16px' }}>Status Lifecycle Control</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                         {['Available', 'Booked', 'Sold', 'On Hold'].map(s => (
                                             <button
                                                 key={s}
-                                                className={`btn btn-sm ${selectedUnit.status === s ? 'btn-primary' : 'btn-white'}`}
-                                                style={{ height: 40, border: selectedUnit.status === s ? 'none' : '1px solid var(--border-medium)' }}
                                                 onClick={() => handleUpdateUnit(selectedUnit.id, { status: s })}
                                                 disabled={updatingUnit}
+                                                style={{ 
+                                                    padding: '12px', borderRadius: '14px', border: 'none',
+                                                    background: selectedUnit.status === s ? COLORS.slate950 : 'white',
+                                                    color: selectedUnit.status === s ? 'white' : COLORS.slate500,
+                                                    fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer',
+                                                    boxShadow: '0 4px 8px rgba(0,0,0,0.05)', transition: '0.2s'
+                                                }}
                                             >
                                                 {s}
                                             </button>
@@ -355,53 +454,82 @@ export default function Inventory() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-2 gap-6">
-                                    <div>
-                                        <label className="form-label" style={{ fontWeight: 800 }}>Property Type</label>
-                                        <div style={{ padding: 12, background: 'white', border: '1px solid var(--border-medium)', borderRadius: 12, fontWeight: 800, color: 'var(--navy-800)' }}>{selectedUnit.type || selectedUnit.property_type}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                                    {[
+                                        { label: 'Project Portfolio', val: selectedUnit.projectName, icon: Building2 },
+                                        { label: 'Market Valuation', val: selectedUnit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(selectedUnit.base_price) : selectedUnit.price, icon: Wallet },
+                                        { label: 'Architecture', val: selectedUnit.facing, icon: Compass },
+                                        { label: 'Floor Tier', val: selectedUnit.floor, icon: Layers }
+                                    ].map((item, i) => (
+                                        <div key={i}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                                <item.icon size={14} color={COLORS.slate400} />
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>{item.label}</span>
+                                            </div>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: COLORS.slate950 }}>{item.val}</div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{ padding: '24px', background: `${COLORS.emerald}05`, borderRadius: '24px', border: `1px dashed ${COLORS.emerald}30`, display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ width: 44, height: 44, borderRadius: '12px', background: COLORS.emerald, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <ShieldCheck size={24} />
                                     </div>
                                     <div>
-                                        <label className="form-label" style={{ fontWeight: 800 }}>Base Price</label>
-                                        <div style={{ padding: 12, background: 'white', border: '1px solid var(--border-medium)', borderRadius: 12, fontWeight: 800, color: 'var(--navy-800)' }}>
-                                            {selectedUnit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(selectedUnit.base_price) : selectedUnit.price}
-                                        </div>
+                                        <div style={{ fontWeight: 950, color: COLORS.slate950 }}>Verified Integrity</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate500 }}>Asset status is synchronized with real-world availability.</div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-3 gap-4">
-                                    <div style={{ textAlign: 'center', padding: '16px', borderRadius: 16, background: 'var(--slate-50)' }}>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Floor</div>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)' }}>{selectedUnit.floor}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'center', padding: '16px', borderRadius: 16, background: 'var(--slate-50)' }}>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Area</div>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)' }}>{selectedUnit.area || selectedUnit.area_sqft}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'center', padding: '16px', borderRadius: 16, background: 'var(--slate-50)' }}>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Facing</div>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)' }}>{selectedUnit.facing}</div>
-                                    </div>
-                                </div>
-
-                                <div style={{ paddingTop: 24, borderTop: '1px solid var(--border-light)' }}>
-                                    <h4 style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: 16 }}>Inventory History</h4>
-                                    <div style={{ borderLeft: '2px solid var(--slate-100)', paddingLeft: 20, marginLeft: 8 }}>
-                                        <div style={{ position: 'relative', marginBottom: 24 }}>
-                                            <div style={{ position: 'absolute', left: -26, top: 4, width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-emerald)', border: '2px solid white' }} />
-                                            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Inventory Created</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Initial upload via bulk import</div>
-                                        </div>
-                                        <div style={{ position: 'relative' }}>
-                                            <div style={{ position: 'absolute', left: -26, top: 4, width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-cyan)', border: '2px solid white' }} />
-                                            <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Last Synced</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Status verified with property management</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <button style={{ marginTop: '20px', width: '100%', padding: '20px', borderRadius: '22px', border: `2px solid ${COLORS.slate950}`, color: COLORS.slate950, fontWeight: 950, fontSize: '1rem', background: 'transparent', cursor: 'pointer' }}>
+                                    View Interaction Audit
+                                </button>
                             </div>
                         </div>
-                        <div className="modal-footer" style={{ border: 'none', padding: '24px 32px' }}>
-                            <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => setSelectedUnit(null)}>Close View</button>
+                    </div>
+                </div>
+            )}
+
+            {/* 🛸 Global Asset Registration Modal */}
+            {showModal && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(10px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowModal(false)}>
+                    <div className="premium-card" style={{ width: '100%', maxWidth: '640px', padding: '48px', background: 'white' }} onClick={e => e.stopPropagation()}>
+                        <h2 style={{ margin: '0 0 32px', fontSize: '2.2rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-1.5px' }}>Register New Asset</h2>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Target Portfolio</label>
+                                <select className="input-lux" value={form.projectId} onChange={e => setForm({ ...form, projectId: e.target.value })}>
+                                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Unit Identifier</label>
+                                <input className="input-lux" value={form.unitNo} onChange={e => setForm({ ...form, unitNo: e.target.value })} placeholder="B-2402" />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Configuration</label>
+                                <select className="input-lux" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                                    {['1BHK', '2BHK', '3BHK', '4BHK', 'Villa', 'Penthouse', 'Commercial'].map(t => <option key={t}>{t}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Valuation (INR)</label>
+                                <input className="input-lux" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="9.5Cr" />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Floor Tier</label>
+                                <input className="input-lux" type="number" value={form.floor} onChange={e => setForm({ ...form, floor: e.target.value })} placeholder="24" />
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
+                            <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '18px', borderRadius: '20px', border: `2px solid ${COLORS.slate200}`, fontWeight: 900, background: 'transparent', cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={save} disabled={saving} style={{ 
+                                flex: 2, padding: '18px', borderRadius: '20px', border: 'none', background: COLORS.slate950, 
+                                color: 'white', fontWeight: 900, boxShadow: '0 12px 24px rgba(15,23,42,0.2)', cursor: 'pointer' 
+                            }}>
+                                {saving ? 'Synthesizing...' : 'Register Asset'}
+                            </button>
                         </div>
                     </div>
                 </div>
