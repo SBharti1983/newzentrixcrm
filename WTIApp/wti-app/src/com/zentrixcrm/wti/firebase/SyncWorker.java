@@ -39,7 +39,6 @@ public class SyncWorker extends Worker {
 
     private void sendUserLog(String message) {
         Intent intent = new Intent(ACTION_SYNC_LOG);
-        // Explicitly set package to ensure the broadcast reaches our Activity
         intent.setPackage(getApplicationContext().getPackageName());
         intent.putExtra("message", message);
         getApplicationContext().sendBroadcast(intent);
@@ -57,41 +56,46 @@ public class SyncWorker extends Worker {
             return Result.success();
         }
 
-        sendUserLog("Sync worker active. Processing " + unsyncedLogs.size() + " calls.");
-
         SharedPreferences prefs = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE);
         String firebaseBaseUrl = prefs.getString("firebase_url", "");
         String crmApiUrl = prefs.getString("storage_server", "");
         
-        // Use telephony_secret as primary, fallback to legacy zapier_secret
         String secret = prefs.getString("telephony_secret", prefs.getString("zapier_secret", "zentrix_zap_secure_8842_x"));
         String tenantId = prefs.getString("tenant_id", "6f023c0a-a505-4ae4-962a-038a944d500e");
         String agentName = prefs.getString("agent_name", "Unknown");
         String tenantSlug = prefs.getString("tenant_slug", "general");
 
+        sendUserLog("Sync started for: " + agentName);
+
         FirebaseDatabase database = null;
         FirebaseStorage storage = null;
         if (!firebaseBaseUrl.isEmpty()) {
             try {
-                // Extract project ID more reliably from the URL
+                // Ensure URL is fixed
+                if (!firebaseBaseUrl.endsWith("/")) firebaseBaseUrl += "/";
+                
                 String projectId = "zentrix-wti-default";
                 try {
                     String host = Uri.parse(firebaseBaseUrl).getHost();
-                    if (host != null && host.contains("-default-rtdb")) {
-                        projectId = host.split("-default-rtdb")[0];
-                    } else if (host != null) {
-                        projectId = host.split("\\.")[0];
+                    if (host != null && host.contains(".firebasedatabase.app")) {
+                        // Project ID is everything before the first "." or the "-default-rtdb"
+                        if (host.contains("-default-rtdb")) {
+                            projectId = host.split("-default-rtdb")[0];
+                        } else {
+                            projectId = host.split("\\.")[0];
+                        }
                     }
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to parse projectId from URL", e);
-                }
+                } catch (Exception e) {}
 
+                // Standard Firebase Storage buckets use .firebasestorage.app or .appspot.com
+                String storageBucket = projectId + ".firebasestorage.app";
+                
                 FirebaseOptions options = new FirebaseOptions.Builder()
                         .setDatabaseUrl(firebaseBaseUrl)
                         .setApplicationId("com.zentrixcrm.wti")
                         .setProjectId(projectId)
-                        .setApiKey("unused")
-                        .setStorageBucket(projectId + ".appspot.com")
+                        .setApiKey("unused_but_required_by_sdk")
+                        .setStorageBucket(storageBucket)
                         .build();
 
                 FirebaseApp app;
@@ -103,7 +107,7 @@ public class SyncWorker extends Worker {
                 database = FirebaseDatabase.getInstance(app);
                 storage = FirebaseStorage.getInstance(app);
             } catch (Exception e) {
-                sendUserLog("Storage Init Error: " + e.getMessage());
+                sendUserLog("Sync Init Error: " + e.getMessage());
             }
         }
 
@@ -114,43 +118,45 @@ public class SyncWorker extends Worker {
 
         boolean anyFailed = false;
         for (CallLogEntity log : unsyncedLogs) {
-            sendUserLog("Processing: " + log.number);
+            sendUserLog("Syncing Call: " + log.number);
 
             // 1. Storage Upload
             if (log.firebaseRecordingUrl == null && storage != null && log.recordingPath != null) {
                 File file = new File(log.recordingPath);
                 if (file.exists() && file.length() > 0) {
-                    sendUserLog("Uploading audio file...");
                     log.firebaseRecordingUrl = uploadToFirebaseStorage(storage, tenantSlug, agentName, log, file);
                     if (log.firebaseRecordingUrl != null) {
                         dao.update(log);
+                        sendUserLog("Audio Uploaded.");
                     } else {
-                        sendUserLog("Audio upload failed.");
+                        anyFailed = true;
+                        sendUserLog("Audio Upload Failed - check Storage Rules.");
                     }
+                } else {
+                    sendUserLog("Recording file not found.");
                 }
             }
 
             // 2. CRM Sync
             if (!log.crmSynced && !crmApiUrl.isEmpty()) {
-                sendUserLog("Updating CRM lead status...");
-                if (uploadToCRM(client, crmApiUrl, secret, tenantId, log, log.firebaseRecordingUrl)) {
+                File file = (log.recordingPath != null) ? new File(log.recordingPath) : null;
+                if (uploadToCRM(client, crmApiUrl, secret, tenantId, log, log.firebaseRecordingUrl, file)) {
                     log.crmSynced = true;
                     dao.update(log);
+                    sendUserLog("CRM lead updated.");
                 } else {
                     anyFailed = true;
-                    sendUserLog("CRM update failed (API Error)");
+                    sendUserLog("CRM Lead Status update failed.");
                 }
-            } else if (crmApiUrl.isEmpty()) {
-                log.crmSynced = true;
             }
 
             // 3. RTDB History Sync
             if (!log.firebaseSynced && database != null) {
-                sendUserLog("Syncing to agent history...");
                 DatabaseReference ref = database.getReference("agents").child(agentName).child("call_history");
                 if (syncLogToFirebase(ref, log, log.firebaseRecordingUrl)) {
                     log.firebaseSynced = true;
                     dao.update(log);
+                    sendUserLog("Saved to History.");
                 } else {
                     anyFailed = true;
                     sendUserLog("History sync failed.");
@@ -161,7 +167,7 @@ public class SyncWorker extends Worker {
             if (log.crmSynced && log.firebaseSynced) {
                 log.isSynced = true;
                 dao.update(log);
-                sendUserLog("Sync Complete for " + log.number);
+                sendUserLog("Sync Complete: " + log.number);
 
                 if (log.recordingPath != null && prefs.getBoolean("delete_after_sync", true)) {
                     new File(log.recordingPath).delete();
@@ -174,32 +180,34 @@ public class SyncWorker extends Worker {
 
     private String uploadToFirebaseStorage(FirebaseStorage storage, String tenantSlug, String agentName, CallLogEntity log, File file) {
         try {
-            String yearMonth = new SimpleDateFormat("yyyy-MM", Locale.US).format(new Date(log.timestamp));
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date(log.timestamp));
             String fileName = agentName.replaceAll("[^a-zA-Z0-9]", "") + "_" + timeStamp + ".mp4";
-            String storagePath = "recordings/" + tenantSlug + "/" + yearMonth + "/" + fileName;
+            String storagePath = "recordings/" + tenantSlug + "/" + fileName;
 
             StorageReference storageRef = storage.getReference().child(storagePath);
             final CountDownLatch latch = new CountDownLatch(1);
-            final String[] downloadUrl = {null};
+            final String[] resultUrl = {null};
 
-            storageRef.putFile(Uri.fromFile(file)).addOnSuccessListener(taskSnapshot -> {
-                storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    downloadUrl[0] = uri.toString();
+            storageRef.putFile(Uri.fromFile(file))
+                .addOnSuccessListener(taskSnapshot -> {
+                    storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        resultUrl[0] = uri.toString();
+                        latch.countDown();
+                    }).addOnFailureListener(e -> latch.countDown());
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Storage failure: " + e.getMessage());
                     latch.countDown();
-                }).addOnFailureListener(e -> latch.countDown());
-            }).addOnFailureListener(e -> latch.countDown());
+                });
 
-            latch.await(60, TimeUnit.SECONDS);
-            return downloadUrl[0];
+            latch.await(45, TimeUnit.SECONDS);
+            return resultUrl[0];
         } catch (Exception e) {
-            Log.e(TAG, "Firebase upload error", e);
-            sendUserLog("Upload Error: " + e.getMessage());
             return null;
         }
     }
 
-    private boolean uploadToCRM(okhttp3.OkHttpClient client, String crmBaseUrl, String secret, String tenantId, CallLogEntity log, String firebaseUrl) {
+    private boolean uploadToCRM(okhttp3.OkHttpClient client, String crmBaseUrl, String secret, String tenantId, CallLogEntity log, String firebaseUrl, File audioFile) {
         String uploadUrl = crmBaseUrl + "/api/telephony/upload-recording";
         try {
             String interactionId = (log.interactionId != null && !log.interactionId.isEmpty()) ? log.interactionId : UUID.randomUUID().toString();
@@ -215,6 +223,10 @@ public class SyncWorker extends Worker {
 
             if (firebaseUrl != null) {
                 bodyBuilder.addFormDataPart("recordingUrl", firebaseUrl);
+            } else if (audioFile != null && audioFile.exists()) {
+                // FALLBACK: Upload File directly to CRM if Firebase failed
+                bodyBuilder.addFormDataPart("audio", audioFile.getName(),
+                        okhttp3.RequestBody.create(audioFile, okhttp3.MediaType.parse("audio/mp4")));
             }
 
             okhttp3.Request request = new okhttp3.Request.Builder()
