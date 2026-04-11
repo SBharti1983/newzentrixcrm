@@ -133,6 +133,9 @@ export const leadsApi = {
 export const projectsApi = {
     list: (params = {}) => api('/projects?' + new URLSearchParams(params)),
     get: (id) => api(`/projects/${id}`),
+    create: (data) => api('/projects', { method: 'POST', body: data }),
+    update: (id, data) => api(`/projects/${id}`, { method: 'PATCH', body: data }),
+    delete: (id) => api(`/projects/${id}`, { method: 'DELETE' }),
     inventory: (id, params = {}) => api(`/projects/${id}/inventory?` + new URLSearchParams(params)),
 };
 

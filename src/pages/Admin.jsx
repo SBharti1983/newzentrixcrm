@@ -55,6 +55,7 @@ export default function Admin() {
     
     // Settings Edit State
     const [editingSetting, setEditingSetting] = useState(null);
+    const [editingProject, setEditingProject] = useState(null);
     const [settingValue, setSettingValue] = useState("");
 
     // ─── Recording / Bridge Policy Panel ───────────────────────────
@@ -659,7 +660,23 @@ export default function Admin() {
 
             {/* Projects Config Tab */}
             {tab === 'projects' && (
-                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{PROJECTS_DATA.length} active projects</span>
+                        <button className="btn btn-primary btn-sm" onClick={() => {
+                            setEditingProject({ id: 'new', name: 'New Project' });
+                            setForm({
+                                name: '',
+                                location: '',
+                                type: 'Residential',
+                                units: 0,
+                                available: 0,
+                                status: 'Active',
+                                completion: ''
+                            });
+                        }}>
+                            <Plus size={14} /> Add Project
+                        </button>
+                    </div>
                     <div className="table-wrapper">
                         <table>
                             <thead>
@@ -686,6 +703,41 @@ export default function Admin() {
                                             </span>
                                         </td>
                                         <td style={{ fontSize: '0.85rem' }}>{p.completion}</td>
+                                        <td>
+                                            <button 
+                                                className="btn btn-ghost btn-sm btn-icon" 
+                                                onClick={() => {
+                                                    setEditingProject(p);
+                                                    setForm({
+                                                        name: p.name,
+                                                        location: p.location,
+                                                        type: p.type || 'Residential',
+                                                        units: p.total_units || 0,
+                                                        available: p.available_units || 0,
+                                                        status: p.status || 'Active',
+                                                        completion: p.possession_date ? new Date(p.possession_date).toISOString().split('T')[0] : ''
+                                                    });
+                                                }}
+                                            >
+                                                <Edit2 size={13} />
+                                            </button>
+                                            <button 
+                                                className="btn btn-ghost btn-sm btn-icon" 
+                                                style={{ color: 'var(--accent-rose)', marginLeft: 8 }}
+                                                onClick={async () => {
+                                                    if (!window.confirm(`Are you sure you want to delete "${p.name}"? This action cannot be undone.`)) return;
+                                                    try {
+                                                        await projectsApi.delete(p.id);
+                                                        showToast('Project deleted successfully', 'success');
+                                                        window.location.reload();
+                                                    } catch (err) {
+                                                        showToast(err.error || 'Failed to delete project', 'error');
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 size={13} />
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -832,6 +884,94 @@ export default function Admin() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Project Edit Modal */}
+            {editingProject && (
+                <div className="modal-overlay">
+                    <div className="modal" style={{ maxWidth: 600 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title">{editingProject.id === 'new' ? 'Register New Project' : `Edit Project: ${editingProject.name}`}</h3>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setEditingProject(null)}><X size={16} /></button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '24px' }}>
+                            <div className="form-grid form-grid-2">
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Project Name</label>
+                                    <input className="form-control" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                                </div>
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Location</label>
+                                    <input className="form-control" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Type</label>
+                                    <select className="form-control" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>
+                                        <option value="Residential">Residential</option>
+                                        <option value="Commercial">Commercial</option>
+                                        <option value="Villa">Villa</option>
+                                        <option value="Luxury">Luxury</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <select className="form-control" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                                        <option value="Active">Active</option>
+                                        <option value="Pre-launch">Pre-launch</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="On Hold">On Hold</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Total Units</label>
+                                    <input className="form-control" type="number" value={form.units} onChange={e => setForm({ ...form, units: parseInt(e.target.value) || 0 })} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Available Units</label>
+                                    <input className="form-control" type="number" value={form.available} onChange={e => setForm({ ...form, available: parseInt(e.target.value) || 0 })} />
+                                </div>
+                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Possession Date</label>
+                                    <input className="form-control" type="date" value={form.completion} onChange={e => setForm({ ...form, completion: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setEditingProject(null)}>Cancel</button>
+                            <button className="btn btn-primary" onClick={async () => {
+                                setSaving(true);
+                                try {
+                                    const payload = {
+                                        name: form.name,
+                                        location: form.location,
+                                        type: form.type,
+                                        status: form.status,
+                                        total_units: form.units,
+                                        available_units: form.available,
+                                        possession_date: form.completion || null
+                                    };
+                                    if (editingProject.id === 'new') {
+                                        await projectsApi.create(payload);
+                                        showToast('Project registered successfully!', 'success');
+                                    } else {
+                                        await projectsApi.update(editingProject.id, payload);
+                                        showToast('Project updated successfully!', 'success');
+                                    }
+                                    setEditingProject(null);
+                                    window.location.reload(); 
+                                } catch (err) {
+                                    showToast(err.error || 'Failed to save project', 'error');
+                                } finally {
+                                    setSaving(false);
+                                }
+                            }} disabled={saving}>
+                                {saving ? 'Saving...' : (editingProject.id === 'new' ? 'Complete Registration' : 'Update Project')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                null
             )}
 
             {/* User Modal */}
