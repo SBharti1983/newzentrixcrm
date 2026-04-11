@@ -2,11 +2,107 @@ import { useState, useEffect } from 'react';
 import { 
     Send, Bot, MessageSquare, Users, Sparkles, 
     Zap, CheckCircle2, AlertCircle, Clock, 
-    ChevronRight, Settings2, Smartphone, Plus
+    ChevronRight, Settings2, Smartphone, Plus,
+    BarChart3, Rocket, Target, Cpu, Globe, 
+    Flame, MessageCircle
 } from 'lucide-react';
 import { marketingApi, leadsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { useApi } from '../hooks/useApi';
+
+const COLORS = {
+    indigo: '#6366f1',
+    violet: '#8b5cf6',
+    emerald: '#10b981',
+    cyan: '#06b6d4',
+    rose: '#f43f5e',
+    amber: '#f59e0b',
+    slate950: '#040d1a',
+    slate900: '#0a1628',
+    slate800: '#1e293b',
+    slate700: '#334155',
+    slate500: '#64748b',
+    slate400: '#94a3b8',
+    slate200: '#e2e8f0',
+    slate50: '#f8fafc',
+    white: '#ffffff',
+    glass: 'rgba(255, 255, 255, 0.82)',
+    glassDark: 'rgba(15, 23, 42, 0.9)'
+};
+
+const STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+.whatsapp-war-room {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: ${COLORS.slate900};
+}
+
+.premium-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03), inset 0 0 0 1px rgba(255,255,255,0.4);
+    transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.premium-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.06);
+}
+
+.tab-btn {
+    padding: 12px 28px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-field {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 18px;
+    border: 1.5px solid ${COLORS.slate200};
+    background: white;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.input-field:focus {
+    outline: none;
+    border-color: ${COLORS.indigo};
+    box-shadow: 0 0 0 4px ${COLORS.indigo}15;
+}
+
+.bot-pulsar {
+    animation: bot-glow 3s infinite ease-in-out;
+}
+
+@keyframes bot-glow {
+    0% { transform: scale(1); box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+    50% { transform: scale(1.05); box-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
+    100% { transform: scale(1); box-shadow: 0 0 20px rgba(99, 102, 241, 0.2); }
+}
+
+.shimmer-bg {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer-anim 2s infinite linear;
+}
+
+@keyframes shimmer-anim {
+    to { background-position: 200% center; }
+}
+`;
 
 export default function WhatsAppMarketing() {
     const { showToast } = useToast();
@@ -16,14 +112,19 @@ export default function WhatsAppMarketing() {
     // Broadcast State
     const [broadcastForm, setBroadcastForm] = useState({ name: '', message_body: '', segment: 'All' });
     const { data: broadcasts, refresh: refreshBroadcasts } = useApi(marketingApi.getBroadcasts);
-    const { data: leads } = useApi(() => leadsApi.list({ limit: 1000 }));
+    const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 1000 }));
+    const leads = leadsRes?.data || [];
 
     // Chatbot State
     const [chatbot, setChatbot] = useState(null);
     const [_savingBot, setSavingBot] = useState(false);
 
     useEffect(() => {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = STYLES;
+        document.head.appendChild(styleEl);
         marketingApi.getChatbot().then(setChatbot).catch(console.error);
+        return () => document.head.removeChild(styleEl);
     }, []);
 
     const handleCreateBroadcast = async () => {
@@ -31,8 +132,7 @@ export default function WhatsAppMarketing() {
             return showToast('Please fill in all fields', 'error');
         }
 
-        // Apply segmentation logic
-        let targetLeads = leads?.leads || [];
+        let targetLeads = leads || [];
         if (broadcastForm.segment === 'New Leads ONLY') {
             targetLeads = targetLeads.filter(l => l.stage === 'New');
         } else if (broadcastForm.segment === 'Site Visit Completed') {
@@ -72,85 +172,99 @@ export default function WhatsAppMarketing() {
     };
 
     return (
-        <div className="page-fade-in" style={{ padding: '32px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
+        <div className="whatsapp-war-room" style={{ padding: '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
+            
+            {/* 🚀 War Room Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px' }}>
                 <div>
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 8 }}>WhatsApp Intelligence</h1>
-                    <p style={{ color: 'var(--text-muted)', fontWeight: 500 }}>High-frequency outreach and 24/7 autonomous AI responders.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+                        <Flame size={20} color={COLORS.rose} strokeWidth={2.5} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.rose, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                            Marketing Intelligence Hub
+                        </span>
+                    </div>
+                    <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-2.5px' }}>
+                        WhatsApp <span style={{ color: COLORS.indigo }}>Intelligence</span>
+                    </h1>
+                    <p style={{ margin: '8px 0 0', color: COLORS.slate500, fontSize: '1.2rem', fontWeight: 600 }}>
+                        Autonomous AI engagement and high-frequency campaign broadcasting.
+                    </p>
                 </div>
-                <div className="glass-card" style={{ display: 'flex', padding: 4, borderRadius: 16 }}>
-                    <button 
-                        onClick={() => setActiveTab('broadcasts')}
-                        style={{ 
-                            padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                            background: activeTab === 'broadcasts' ? 'var(--navy-900)' : 'transparent',
-                            color: activeTab === 'broadcasts' ? 'white' : 'var(--text-muted)',
-                            fontWeight: 700, transition: '0.2s'
-                        }}
-                    >
-                        Broadcasts
+
+                <div className="premium-card" style={{ display: 'flex', padding: '6px', borderRadius: '20px', background: 'white' }}>
+                    <button className="tab-btn" onClick={() => setActiveTab('broadcasts')} style={{ 
+                        background: activeTab === 'broadcasts' ? COLORS.slate950 : 'transparent', 
+                        color: activeTab === 'broadcasts' ? 'white' : COLORS.slate500 
+                    }}>
+                        <Send size={18} /> Broadcasts
                     </button>
-                    <button 
-                        onClick={() => setActiveTab('chatbot')}
-                        style={{ 
-                            padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                            background: activeTab === 'chatbot' ? 'var(--navy-900)' : 'transparent',
-                            color: activeTab === 'chatbot' ? 'white' : 'var(--text-muted)',
-                            fontWeight: 700, transition: '0.2s'
-                        }}
-                    >
-                        AI Chatbot
+                    <button className="tab-btn" onClick={() => setActiveTab('chatbot')} style={{ 
+                        background: activeTab === 'chatbot' ? COLORS.slate950 : 'transparent', 
+                        color: activeTab === 'chatbot' ? 'white' : COLORS.slate500 
+                    }}>
+                        <Bot size={18} /> AI Chatbot
                     </button>
                 </div>
             </div>
 
             {activeTab === 'broadcasts' ? (
-                /* Broadcast Tab */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
                     
-                    {/* Stats */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-                        <div className="glass-card" style={{ padding: 24 }}>
-                            <div style={{ color: 'var(--accent-cyan)', marginBottom: 12 }}><Send size={24} /></div>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Broadcasts</h4>
-                            <div style={{ fontSize: '2rem', fontWeight: 900 }}>{broadcasts?.length || 0}</div>
+                    {/* 📊 Broadcast Intelligence Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '28px' }}>
+                        <div className="premium-card" style={{ padding: '28px' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: '14px', background: `${COLORS.indigo}10`, color: COLORS.indigo, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                <BarChart3 size={24} />
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 950, color: COLORS.slate950 }}>{broadcasts?.length || 0}</div>
+                            <div style={{ fontSize: '0.85rem', color: COLORS.slate500, fontWeight: 750, marginTop: '4px' }}>Active Campaigns</div>
                         </div>
-                        <div className="glass-card" style={{ padding: 24 }}>
-                            <div style={{ color: 'var(--accent-emerald)', marginBottom: 12 }}><Users size={24} /></div>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Reach</h4>
-                            <div style={{ fontSize: '2rem', fontWeight: 900 }}>{(broadcasts || []).reduce((acc, b) => acc + (b.recipients_count || 0), 0)}</div>
+                        <div className="premium-card" style={{ padding: '28px' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: '14px', background: `${COLORS.emerald}10`, color: COLORS.emerald, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                <Users size={24} />
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 950, color: COLORS.slate950 }}>
+                                {(broadcasts || []).reduce((acc, b) => acc + (b.recipients_count || 0), 0)}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: COLORS.slate500, fontWeight: 750, marginTop: '4px' }}>Platform Reach</div>
+                        </div>
+                        <div className="premium-card" style={{ padding: '28px' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: '14px', background: `${COLORS.cyan}10`, color: COLORS.cyan, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                                <Globe size={24} />
+                            </div>
+                            <div style={{ fontSize: '2rem', fontWeight: 950, color: COLORS.slate950 }}>96%</div>
+                            <div style={{ fontSize: '0.85rem', color: COLORS.slate500, fontWeight: 750, marginTop: '4px' }}>Delivery Success</div>
                         </div>
                         <button 
                             onClick={() => setIsCreating(true)}
-                            className="hover-lift"
+                            className="premium-card" 
                             style={{ 
-                                border: '2px dashed rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)',
-                                borderRadius: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', 
-                                justifyContent: 'center', gap: 12, color: 'var(--accent-cyan)', cursor: 'pointer'
+                                padding: '28px', background: `linear-gradient(135deg, ${COLORS.indigo}, ${COLORS.violet})`, 
+                                color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', 
+                                justifyContent: 'center', cursor: 'pointer', border: 'none' 
                             }}
                         >
-                            <Plus size={32} />
-                            <span style={{ fontWeight: 800 }}>Create New Campaign</span>
+                            <Rocket size={32} strokeWidth={2.5} style={{ marginBottom: '12px' }} />
+                            <div style={{ fontWeight: 900, fontSize: '1rem' }}>Initiate Campaign</div>
                         </button>
                     </div>
 
-                    {/* Create Modal - Simplified for view */}
+                    {/* 🚀 Campaign Launcher */}
                     {isCreating && (
-                        <div className="glass-card" style={{ padding: 32, border: '2px solid var(--accent-cyan)' }}>
-                            <h3 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: 24 }}>New WhatsApp Broadcast</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 32 }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                    <div className="form-group">
-                                        <label>Campaign Name</label>
-                                        <input 
-                                            value={broadcastForm.name}
-                                            onChange={e => setBroadcastForm({...broadcastForm, name: e.target.value})}
-                                            placeholder="e.g. Diwali Property Launch"
-                                        />
+                        <div className="premium-card" style={{ padding: '40px', border: `2px solid ${COLORS.indigo}` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950, color: COLORS.slate950 }}>New Strategic Broadcast</h3>
+                                <button onClick={() => setIsCreating(false)} style={{ background: COLORS.slate100, border: 'none', width: 40, height: 40, borderRadius: '12px', cursor: 'pointer' }}><X size={20} /></button>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '40px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Campaign Persona</label>
+                                        <input className="input-field" value={broadcastForm.name} onChange={e => setBroadcastForm({...broadcastForm, name: e.target.value})} placeholder="e.g. Premium Penthouse Launch" />
                                     </div>
-                                    <div className="form-group">
-                                        <label>Target Segment</label>
-                                        <select value={broadcastForm.segment} onChange={e => setBroadcastForm({...broadcastForm, segment: e.target.value})}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Target Segment</label>
+                                        <select className="input-field" value={broadcastForm.segment} onChange={e => setBroadcastForm({...broadcastForm, segment: e.target.value})}>
                                             <option>All Leads</option>
                                             <option>New Leads ONLY</option>
                                             <option>Site Visit Completed</option>
@@ -158,147 +272,155 @@ export default function WhatsAppMarketing() {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="form-group">
-                                    <label>Message Content (supports {"{{name}}"} placeholders)</label>
-                                    <textarea 
-                                        style={{ height: 160 }}
-                                        value={broadcastForm.message_body}
-                                        onChange={e => setBroadcastForm({...broadcastForm, message_body: e.target.value})}
-                                        placeholder="Hello {{name}}! We are excited to announce our new project..."
-                                    />
-                                    <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
-                                        <button className="btn btn-primary" onClick={handleCreateBroadcast} style={{ flex: 1 }}>Launch Broadcast Now</button>
-                                        <button className="btn btn-secondary" onClick={() => setIsCreating(false)}>Cancel</button>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Message Architecture (supports {"{{name}}"})</label>
+                                    <textarea className="input-field" style={{ height: '160px', resize: 'none' }} value={broadcastForm.message_body} onChange={e => setBroadcastForm({...broadcastForm, message_body: e.target.value})} placeholder="Hello {{name}}! We are thrilled to invite you..." />
+                                    <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+                                        <button onClick={handleCreateBroadcast} style={{ 
+                                            flex: 2, padding: '16px', borderRadius: '18px', border: 'none', background: COLORS.slate950, 
+                                            color: 'white', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 12px 24px rgba(15,23,42,0.2)' 
+                                        }}>Launch Mission</button>
+                                        <button onClick={() => setIsCreating(false)} style={{ flex: 1, padding: '16px', borderRadius: '18px', border: `2px solid ${COLORS.slate200}`, background: 'transparent', fontWeight: 900, cursor: 'pointer' }}>Save Draft</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* History Table */}
-                    <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{ padding: 24, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Broadcast History</h3>
+                    {/* 📜 Mission Logs (History) */}
+                    <div className="premium-card" style={{ padding: 0 }}>
+                        <div style={{ padding: '28px', borderBottom: `1px solid ${COLORS.slate200}` }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 950, color: COLORS.slate950 }}>Historical Archives</h3>
                         </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                                <tr style={{ textAlign: 'left', background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}>
-                                    <th style={{ padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800 }}>CAMPAIGN NAME</th>
-                                    <th style={{ padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800 }}>RECIPIENTS</th>
-                                    <th style={{ padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800 }}>STATUS</th>
-                                    <th style={{ padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800 }}>SENT DATE</th>
-                                    <th style={{ padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800 }}>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(broadcasts || []).map(b => (
-                                    <tr key={b.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                        <td style={{ padding: '20px 24px', fontWeight: 700 }}>{b.name}</td>
-                                        <td style={{ padding: '20px 24px' }}>{b.recipients_count} Leads</td>
-                                        <td style={{ padding: '20px 24px' }}>
-                                            <span style={{ 
-                                                padding: '4px 10px', borderRadius: 8, fontSize: '0.75rem', fontWeight: 800,
-                                                background: b.status === 'Completed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                                                color: b.status === 'Completed' ? '#10b981' : '#f59e0b'
-                                            }}>
-                                                {b.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{new Date(b.sent_at).toLocaleDateString()}</td>
-                                        <td style={{ padding: '20px 24px' }}><button className="btn-icon-tiny"><ChevronRight size={18} /></button></td>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: `${COLORS.slate50}`, color: COLORS.slate400, fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        <th style={{ padding: '20px 28px', textAlign: 'left' }}>Persona (Name)</th>
+                                        <th style={{ padding: '20px 28px', textAlign: 'left' }}>Impact (Recipients)</th>
+                                        <th style={{ padding: '20px 28px', textAlign: 'left' }}>Lifecycle</th>
+                                        <th style={{ padding: '20px 28px', textAlign: 'left' }}>Deployment Date</th>
+                                        <th style={{ padding: '20px 28px', textAlign: 'left' }}>Action</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {(broadcasts || []).map(b => (
+                                        <tr key={b.id} style={{ borderBottom: `1px solid ${COLORS.slate200}` }}>
+                                            <td style={{ padding: '24px 28px', fontWeight: 900, fontSize: '0.95rem', color: COLORS.slate950 }}>{b.name}</td>
+                                            <td style={{ padding: '24px 28px', fontWeight: 700, color: COLORS.slate700 }}>{b.recipients_count} Targets</td>
+                                            <td style={{ padding: '24px 28px' }}>
+                                                <div style={{ 
+                                                    display: 'inline-flex', padding: '6px 14px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 900,
+                                                    background: b.status === 'Completed' ? `${COLORS.emerald}10` : `${COLORS.amber}10`,
+                                                    color: b.status === 'Completed' ? COLORS.emerald : COLORS.amber
+                                                }}>
+                                                    {b.status === 'Completed' ? <CheckCircle2 size={14} style={{ marginRight: '6px' }} /> : <Clock size={14} style={{ marginRight: '6px' }} />}
+                                                    {b.status}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '24px 28px', color: COLORS.slate400, fontWeight: 600 }}>{new Date(b.sent_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                                            <td style={{ padding: '24px 28px' }}><button style={{ background: `${COLORS.slate100}`, border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}><ChevronRight size={18} /></button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             ) : (
-                /* Chatbot Tab */
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 32 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1.8fr)', gap: '40px' }}>
                     
-                    {/* Left: Bot Identity & Toggle */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                        <div className="glass-card" style={{ padding: 32, textAlign: 'center' }}>
-                            <div style={{ 
-                                width: 100, height: 100, borderRadius: '35px', background: 'rgba(0,180,216,0.1)', 
-                                margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    {/* 🤖 Bot Core Identity */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                        <div className="premium-card" style={{ padding: '40px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                            <div className="shimmer-bg" style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }} />
+                            <div className="bot-pulsar" style={{ 
+                                width: 120, height: 120, borderRadius: '44px', background: 'white', 
+                                margin: '0 auto 32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 20px 50px rgba(0,0,0,0.1)', border: `1.5px solid ${COLORS.slate200}`
                             }}>
-                                <Bot size={54} color="var(--accent-cyan)" />
+                                <Bot size={64} color={COLORS.indigo} strokeWidth={2.5} />
                             </div>
-                            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: 8 }}>{chatbot?.bot_name}</h2>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 24 }}>Zentrix Autonomous Sales Assistant</p>
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 950, marginBottom: '8px', color: COLORS.slate950 }}>{chatbot?.bot_name}</h2>
+                            <p style={{ fontSize: '1rem', color: COLORS.slate500, fontWeight: 600, marginBottom: '32px' }}>Zentrix Autonomous Responder</p>
                             
                             <button 
                                 onClick={() => handleUpdateChatbot({ is_active: !chatbot.is_active })}
                                 style={{ 
-                                    width: '100%', padding: '16px', borderRadius: 16, border: 'none', 
-                                    background: chatbot?.is_active ? 'var(--accent-emerald)' : 'rgba(255,255,255,0.05)',
-                                    color: 'white', fontWeight: 900, fontSize: '1rem', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12
+                                    width: '100%', padding: '20px', borderRadius: '22px', border: 'none', 
+                                    background: chatbot?.is_active ? `linear-gradient(135deg, ${COLORS.emerald}, #059669)` : COLORS.slate100,
+                                    color: chatbot?.is_active ? 'white' : COLORS.slate500, fontWeight: 950, fontSize: '1rem', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                                    boxShadow: chatbot?.is_active ? '0 12px 24px rgba(16,185,129,0.3)' : 'none', transition: 'all 0.3s ease'
                                 }}
                             >
                                 {chatbot?.is_active ? <Zap size={20} fill="white" /> : <Clock size={20} />}
-                                {chatbot?.is_active ? 'BOT IS ONLINE' : 'BOT IS OFFLINE'}
+                                {chatbot?.is_active ? 'MISSION ACTIVE' : 'MISSION STANDBY'}
                             </button>
                         </div>
 
-                        <div className="glass-card" style={{ padding: 24 }}>
-                            <h4 style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 20 }}>Core Behavior</h4>
-                            <div className="form-group" style={{ marginBottom: 20 }}>
-                                <label>Bot Handle Name</label>
-                                <input value={chatbot?.bot_name} onChange={e => setChatbot({...chatbot, bot_name: e.target.value})} onBlur={() => handleUpdateChatbot({ bot_name: chatbot.bot_name })} />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <Sparkles size={18} color="var(--accent-cyan)" />
-                                    <span style={{ fontWeight: 700 }}>AI Smart Response</span>
+                        <div className="premium-card" style={{ padding: '32px' }}>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase', marginBottom: '24px', letterSpacing: '0.1em' }}>Autonomous Logic</h4>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.slate600 }}>Bot Identity Name</label>
+                                    <input className="input-field" value={chatbot?.bot_name} onChange={e => setChatbot({...chatbot, bot_name: e.target.value})} onBlur={() => handleUpdateChatbot({ bot_name: chatbot.bot_name })} />
                                 </div>
-                                <input type="checkbox" checked={chatbot?.ai_enabled} onChange={e => handleUpdateChatbot({ ai_enabled: e.target.checked })} />
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px', background: `${COLORS.indigo}05`, borderRadius: '20px', border: `1px dashed ${COLORS.indigo}30` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        <Sparkles size={20} color={COLORS.indigo} />
+                                        <span style={{ fontWeight: 800, color: COLORS.slate900 }}>Gemini 1.5 Cognitive Engine</span>
+                                    </div>
+                                    <input type="checkbox" style={{ width: '20px', height: '20px' }} checked={chatbot?.ai_enabled} onChange={e => handleUpdateChatbot({ ai_enabled: e.target.checked })} />
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right: Messages & AI Prompt */}
-                    <div className="glass-card" style={{ padding: 32 }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <Settings2 size={22} color="var(--accent-cyan)" />
-                            Response Automation
-                        </h3>
-
-                        <div className="form-group" style={{ marginBottom: 24 }}>
-                            <label>Default Greeting Message</label>
-                            <textarea 
-                                style={{ height: 80 }}
-                                value={chatbot?.greeting_message}
-                                onChange={e => setChatbot({...chatbot, greeting_message: e.target.value})}
-                                onBlur={() => handleUpdateChatbot({ greeting_message: chatbot.greeting_message })}
-                                placeholder="Sent when a new user messages for the first time."
-                            />
+                    {/* ⚙️ AI Prompt Engineering Hub */}
+                    <div className="premium-card" style={{ padding: '40px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '32px' }}>
+                             <div style={{ width: 44, height: 44, borderRadius: '14px', background: `${COLORS.indigo}10`, color: COLORS.indigo, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Settings2 size={24} />
+                             </div>
+                             <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950, color: COLORS.slate950 }}>Behavioral Configuration</h3>
                         </div>
 
-                        <div className="form-group" style={{ marginBottom: 24 }}>
-                            <label>AI System Instructions (Prompt Engineering)</label>
-                            <textarea 
-                                style={{ height: 160, background: 'rgba(0,180,216,0.02)', border: '1px solid rgba(0,180,216,0.2)' }}
-                                value={chatbot?.ai_prompt}
-                                onChange={e => setChatbot({...chatbot, ai_prompt: e.target.value})}
-                                onBlur={() => handleUpdateChatbot({ ai_prompt: chatbot.ai_prompt })}
-                                placeholder="You are a real estate agent for Zentrix. Be professional, answer pricing questions carefully, and always try to schedule a site visit..."
-                            />
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>
-                                <Sparkles size={12} style={{ marginRight: 4 }} />
-                                Powerd by Google Gemini 1.5 Pro for intelligent 24/7 engagement.
-                            </p>
-                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Inbound Greeting (Protocol 1)</label>
+                                <textarea 
+                                    className="input-field" style={{ height: '100px', resize: 'none' }}
+                                    value={chatbot?.greeting_message}
+                                    onChange={e => setChatbot({...chatbot, greeting_message: e.target.value})}
+                                    onBlur={() => handleUpdateChatbot({ greeting_message: chatbot.greeting_message })}
+                                    placeholder="The initial autonomous response to first-time contacts."
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>Fallback Response (If AI is off / fails)</label>
-                            <textarea 
-                                style={{ height: 80 }}
-                                value={chatbot?.fallback_message}
-                                onChange={e => setChatbot({...chatbot, fallback_message: e.target.value})}
-                                onBlur={() => handleUpdateChatbot({ fallback_message: chatbot.fallback_message })}
-                            />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Cognitive Prompt (Gemini Instructions)</label>
+                                <textarea 
+                                    className="input-field" style={{ height: '200px', resize: 'none', background: `${COLORS.indigo}02`, border: `1.5px solid ${COLORS.indigo}30` }}
+                                    value={chatbot?.ai_prompt}
+                                    onChange={e => setChatbot({...chatbot, ai_prompt: e.target.value})}
+                                    onBlur={() => handleUpdateChatbot({ ai_prompt: chatbot.ai_prompt })}
+                                    placeholder="Define the bot's tone, property knowledge base, and site-visit scheduling logic..."
+                                />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.indigo, fontSize: '0.75rem', fontWeight: 800, marginTop: '4px' }}>
+                                    <Target size={12} /> Instructions are processed in real-time on every interaction.
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Fallback Buffer</label>
+                                <textarea 
+                                    className="input-field" style={{ height: '80px', resize: 'none' }}
+                                    value={chatbot?.fallback_message}
+                                    onChange={e => setChatbot({...chatbot, fallback_message: e.target.value})}
+                                    onBlur={() => handleUpdateChatbot({ fallback_message: chatbot.fallback_message })}
+                                />
+                            </div>
                         </div>
                     </div>
 

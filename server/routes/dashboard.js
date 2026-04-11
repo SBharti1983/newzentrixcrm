@@ -12,21 +12,20 @@ router.get('/', async (req, res) => {
     const isManager = ['admin', 'sales_manager', 'team_leader'].includes(req.user.role);
     const filterPersonal = req.query.personal === 'true' || req.user.role === 'agent';
 
-    // Get downline user IDs for hierarchy filtering
-    let downlineIds = [];
-    if (req.user.role === 'team_leader') {
-        const { rows: agents } = await pool.query('SELECT id FROM users WHERE reports_to = $1', [uid]);
-        downlineIds = [uid, ...agents.map(a => a.id)];
-    } else if (req.user.role === 'sales_manager') {
-        const { rows: members } = await pool.query(`
-            SELECT id FROM users WHERE reports_to = $1
-            UNION
-            SELECT id FROM users WHERE reports_to IN (SELECT id FROM users WHERE reports_to = $1)
-        `, [uid]);
-        downlineIds = [uid, ...members.map(m => m.id)];
-    }
-
     try {
+        // 1. Get downline user IDs for hierarchy filtering (inside try/catch for safety)
+        let downlineIds = [];
+        if (req.user.role === 'team_leader') {
+            const { rows: agents } = await pool.query('SELECT id FROM users WHERE reports_to = $1', [uid]);
+            downlineIds = [uid, ...agents.map(a => a.id)];
+        } else if (req.user.role === 'sales_manager') {
+            const { rows: members } = await pool.query(`
+                SELECT id FROM users WHERE reports_to = $1
+                UNION
+                SELECT id FROM users WHERE reports_to IN (SELECT id FROM users WHERE reports_to = $1)
+            `, [uid]);
+            downlineIds = [uid, ...members.map(m => m.id)];
+        }
         // If a manager specifies a member_id, we show that specific agent's dashboard
         const targetUserId = (isManager && req.query.member_id && req.query.member_id !== 'undefined' && req.query.member_id !== 'null') ? req.query.member_id : uid;
         const effectivePersonal = filterPersonal || (req.query.member_id && req.query.member_id !== 'undefined' && req.query.member_id !== 'null');
@@ -45,41 +44,36 @@ router.get('/', async (req, res) => {
         const nurtureParams = effectivePersonal ? [tid, targetUserId] : [tid];
 
         const queries = [
-            // Lead summary
+            // KPI Consolidated Query (Leads, Bookings, Overdue, Pipeline)
             pool.query(`
                 SELECT
-                    COUNT(*) FILTER (WHERE stage NOT IN ('Won','Lost')) as active_leads,
-                    COUNT(*) FILTER (WHERE stage = 'Won') as won,
-                    COUNT(*) FILTER (WHERE stage = 'Lost') as lost,
-                    COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW())) as new_this_month,
-                    COALESCE(ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1), 0) as win_rate
-                FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? leadParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
-
-            // Booking summary
-            pool.query(`
-                SELECT COUNT(*) as total, COALESCE(SUM(total_amount), 0) as total_value
-                FROM bookings WHERE tenant_id = $1 AND status != 'Cancelled'${effectivePersonal ? ' AND assigned_agent_id = $2' : (downlineIds.length ? ' AND assigned_agent_id = ANY($2)' : '')}`, effectivePersonal ? bookingParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
-
-            // Overdue installments
-            pool.query(`
-                SELECT COUNT(i.id) as overdue_count, COALESCE(SUM(i.amount),0) as overdue_amount
-                FROM installments i
-                JOIN bookings b ON i.booking_id = b.id
-                WHERE i.tenant_id = $1 AND i.status = 'Overdue'${effectivePersonal ? ' AND b.assigned_agent_id = $2' : (downlineIds.length ? ' AND b.assigned_agent_id = ANY($2)' : '')}`, effectivePersonal ? overdueParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
-
-            // Pipeline value
-            pool.query(`
-                SELECT COALESCE(SUM(
-                    CASE
-                        WHEN budget ILIKE '%Cr%' THEN 
-                            COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 10000000
-                        WHEN budget ILIKE '%L%' THEN 
-                            COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 100000
-                        ELSE 
-                            COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0)
-                    END
-                ), 0) as pipeline_value
-                FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}`, effectivePersonal ? leadParams : (downlineIds.length ? [tid, downlineIds] : [tid])),
+                    (SELECT json_build_object(
+                        'active_leads', COUNT(*) FILTER (WHERE stage NOT IN ('Won','Lost')),
+                        'won', COUNT(*) FILTER (WHERE stage = 'Won'),
+                        'lost', COUNT(*) FILTER (WHERE stage = 'Lost'),
+                        'new_this_month', COUNT(*) FILTER (WHERE created_at >= date_trunc('month', NOW())),
+                        'win_rate', COALESCE(ROUND(COUNT(*) FILTER (WHERE stage = 'Won') * 100.0 / NULLIF(COUNT(*),0), 1), 0)
+                    ) FROM leads WHERE tenant_id = $1${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}) as leads_kpi,
+                    
+                    (SELECT json_build_object(
+                        'total', COUNT(*),
+                        'total_value', COALESCE(SUM(total_amount), 0)
+                    ) FROM bookings WHERE tenant_id = $1 AND status != 'Cancelled'${effectivePersonal ? ' AND assigned_agent_id = $2' : (downlineIds.length ? ' AND assigned_agent_id = ANY($2)' : '')}) as bookings_kpi,
+                    
+                    (SELECT json_build_object(
+                        'overdue_count', COUNT(i.id),
+                        'overdue_amount', COALESCE(SUM(i.amount),0)
+                    ) FROM installments i JOIN bookings b ON i.booking_id = b.id
+                      WHERE i.tenant_id = $1 AND i.status = 'Overdue'${effectivePersonal ? ' AND b.assigned_agent_id = $2' : (downlineIds.length ? ' AND b.assigned_agent_id = ANY($2)' : '')}) as overdue_kpi,
+                    
+                    (SELECT COALESCE(SUM(
+                        CASE
+                            WHEN budget ILIKE '%Cr%' THEN COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 10000000
+                            WHEN budget ILIKE '%L%' THEN COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 100000
+                            ELSE COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0)
+                        END
+                    ), 0) FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}) as pipeline_value
+            `, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Leads by stage
             pool.query(`
@@ -205,24 +199,23 @@ router.get('/', async (req, res) => {
             }
         };
 
+        // Execute all queries in parallel with dedicated error wrapping
         const results = await Promise.all([
-            executeQuery(queries[0], 'Leads'),
-            executeQuery(queries[1], 'Bookings'),
-            executeQuery(queries[2], 'Overdue'),
-            executeQuery(queries[3], 'Pipeline'),
-            executeQuery(queries[4], 'Stages'),
-            executeQuery(queries[5], 'Followups'),
-            executeQuery(queries[6], 'Nurture'),
-            executeQuery(queries[7], 'Sentiment'),
-            executeQuery(queries[8], 'Alerts'),
-            executeQuery(queries[9], 'Trends'),
-            executeQuery(queries[10], 'AgentStats'), 
-            executeQuery(queries[11], 'ProjectSentimentHeatmap'),
-            executeQuery(queries[12], 'AgentSentimentHeatmap'),
-            queries[13] ? executeQuery(queries[13], 'Members') : Promise.resolve({ rows: [] })
+            executeQuery(queries[0], 'KPIs'),
+            executeQuery(queries[1], 'Stages'),
+            executeQuery(queries[2], 'Followups'),
+            executeQuery(queries[3], 'Nurture'),
+            executeQuery(queries[4], 'Sentiment'),
+            executeQuery(queries[5], 'Alerts'),
+            executeQuery(queries[6], 'Trends'),
+            executeQuery(queries[7], 'AgentStats'), 
+            executeQuery(queries[8], 'ProjectSentimentHeatmap'),
+            executeQuery(queries[9], 'AgentSentimentHeatmap'),
+            queries[10] ? executeQuery(queries[10], 'Members') : Promise.resolve({ rows: [] })
         ]);
         
-        const [leads, bookings, installs, pipeline, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, membersResult] = results;
+        const [kpiResult, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, membersResult] = results;
+        const kpis = kpiResult.rows[0] || {};
 
         res.json({
             meta: {
@@ -231,10 +224,10 @@ router.get('/', async (req, res) => {
                 user_id: targetUserId,
                 is_impersonating: targetUserId !== uid
             },
-            leads: leads.rows[0],
-            bookings: bookings.rows[0],
-            overdue: installs.rows[0],
-            pipeline: { value: pipeline.rows[0].pipeline_value },
+            leads: kpis.leads_kpi || {},
+            bookings: kpis.bookings_kpi || {},
+            overdue: kpis.overdue_kpi || {},
+            pipeline: { value: kpis.pipeline_value || 0 },
             stages: stages.rows,
             upcoming_followups: followups.rows,
             nurture: nurture.rows[0],

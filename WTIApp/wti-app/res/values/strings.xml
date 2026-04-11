@@ -78,4 +78,6 @@
 
     <string name="stat_talk_time_format">%1$dm</string>
     <string name="enterprise_footer">zentrixWTI Enterprise Integration v1.2</string>
+
+    <string name="accessibility_description">Enables high-quality call recording by bypassing system restrictions.</string>
 </resources>

@@ -17,6 +17,8 @@ import android.telecom.TelecomManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -38,6 +40,7 @@ import com.zentrixcrm.wti.database.AppDatabase;
 import com.zentrixcrm.wti.firebase.FirebaseService;
 import com.zentrixcrm.wti.firebase.SyncWorker;
 import com.zentrixcrm.wti.log.UserLogService;
+import com.zentrixcrm.wti.recording.CallAccessibilityService;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -172,7 +175,52 @@ public class Wti extends AppCompatActivity {
         updateDialerStatus();
         initSimSelection();
         
-        new Handler(Looper.getMainLooper()).postDelayed(this::checkBatteryOptimization, 2000);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            checkBatteryOptimization();
+            checkAccessibilityService();
+        }, 2000);
+    }
+
+    private void checkAccessibilityService() {
+        if (!isAccessibilityServiceEnabled()) {
+            new MaterialAlertDialogBuilder(this)
+                    .setTitle("Enable Recording Support")
+                    .setMessage("To bypass Android's silence restrictions and record both sides of the call, please enable the Accessibility Service for zentrixWTI.")
+                    .setPositiveButton("Enable Now", (dialog, which) -> {
+                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("Later", null)
+                    .show();
+        } else {
+            if (userLogService != null) userLogService.log("Call Accessibility Service Connected");
+        }
+    }
+
+    private boolean isAccessibilityServiceEnabled() {
+        String service = getPackageName() + "/" + CallAccessibilityService.class.getCanonicalName();
+        int accessibilityEnabled = 0;
+        try {
+            accessibilityEnabled = Settings.Secure.getInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED);
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e("Wti", "Error finding setting: " + e.getMessage());
+        }
+
+        TextUtils.SimpleStringSplitter mStringColonSplitter = new TextUtils.SimpleStringSplitter(':');
+
+        if (accessibilityEnabled == 1) {
+            String settingValue = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (settingValue != null) {
+                mStringColonSplitter.setString(settingValue);
+                while (mStringColonSplitter.hasNext()) {
+                    String accessibilityService = mStringColonSplitter.next();
+                    if (accessibilityService.equalsIgnoreCase(service)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
