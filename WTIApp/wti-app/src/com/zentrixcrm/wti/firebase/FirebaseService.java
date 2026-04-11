@@ -141,11 +141,32 @@ public class FirebaseService {
             tempApp = FirebaseApp.initializeApp(context, options, appName);
             final FirebaseDatabase tempDb = FirebaseDatabase.getInstance(tempApp);
             
-            final ValueEventListener testListener = new ValueEventListener() {
+            // We must declare the listener before the runnable so the runnable can reference it,
+            // but the listener needs to reference the runnable to cancel it. We can bypass
+            // this loop using a final array reference, or simply not removing the listener
+            // inside the timeout (it will be harmless since callback only runs once logically).
+            final ValueEventListener[] listenerHolder = new ValueEventListener[1];
+
+            final Runnable timeoutTask = new Runnable() {
+                @Override
+                public void run() {
+                    if (listenerHolder[0] != null) {
+                        tempDb.getReference(".info/connected").removeEventListener(listenerHolder[0]);
+                    }
+                    try { tempApp.delete(); } catch (Exception ignored) {}
+                    // If we haven't succeeded yet, return failure
+                    callback.onResult(false);
+                }
+            };
+            
+            final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+            
+            listenerHolder[0] = new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     boolean connected = snapshot.getValue(Boolean.class) != null && snapshot.getValue(Boolean.class);
                     if (connected) {
+                        handler.removeCallbacks(timeoutTask);
                         callback.onResult(true);
                         tempDb.getReference(".info/connected").removeEventListener(this);
                         try { tempApp.delete(); } catch (Exception ignored) {}
@@ -154,21 +175,15 @@ public class FirebaseService {
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
+                    handler.removeCallbacks(timeoutTask);
                     callback.onResult(false);
                     tempDb.getReference(".info/connected").removeEventListener(this);
                     try { tempApp.delete(); } catch (Exception ignored) {}
                 }
             };
 
-            tempDb.getReference(".info/connected").addValueEventListener(testListener);
-
-            // Timeout after 5 seconds
-            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                tempDb.getReference(".info/connected").removeEventListener(testListener);
-                try { tempApp.delete(); } catch (Exception ignored) {}
-                // If we haven't succeeded yet, return failure
-                callback.onResult(false);
-            }, 5000);
+            tempDb.getReference(".info/connected").addValueEventListener(listenerHolder[0]);
+            handler.postDelayed(timeoutTask, 5000);
 
         } catch (Exception e) {
             if (userLogService != null) userLogService.log("Test error: " + e.getMessage());
