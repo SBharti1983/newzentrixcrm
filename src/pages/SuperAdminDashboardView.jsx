@@ -121,6 +121,7 @@ const KPICard = ({ title, value, change, isUp, icon: Icon, color, sparkData }) =
 export default function SuperAdminDashboardView({ tenants = [], stats = {}, subscriptions = [] }) {
     const [activeTab, setActiveTab] = React.useState('operational');
     const [finSearch, setFinSearch] = React.useState('');
+    const [actionMenu, setActionMenu] = React.useState(null);
     const sparkMock = (range) => [...Array(10)].map((_, i) => ({ val: Math.random() * range + 10 }));
 
     return (
@@ -323,8 +324,38 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: t.is_active ? COLORS.success : COLORS.danger }}>{t.is_active ? 'Active' : 'Suspended'}</span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '12px 0', textAlign: 'right' }}>
-                                            <MoreHorizontal size={14} color={COLORS.textSecondary} style={{ cursor: 'pointer' }} />
+                                        <td style={{ padding: '12px 0', textAlign: 'right', position: 'relative' }}>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setActionMenu(actionMenu === t.id ? null : t.id);
+                                                }}
+                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                                            >
+                                                <MoreHorizontal size={16} color={COLORS.textSecondary} />
+                                            </button>
+
+                                            {actionMenu === t.id && (
+                                                <div style={{
+                                                    position: 'absolute', right: 0, top: '100%', width: '160px',
+                                                    background: 'white', border: `1px solid ${COLORS.border}`,
+                                                    borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                                                    zIndex: 100, overflow: 'hidden'
+                                                }}>
+                                                    <button 
+                                                        onClick={() => { window.location.href = `/workspace-management?edit=${t.id}`; }}
+                                                        style={{ width: '100%', padding: '10px 16px', border: 'none', background: 'white', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                                                    >
+                                                        <ExternalLink size={12} /> Manage Node
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => { setActionMenu(null); }}
+                                                        style={{ width: '100%', padding: '10px 16px', border: 'none', borderTop: `1px solid ${COLORS.border}`, background: 'white', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', color: t.is_active ? COLORS.danger : COLORS.success }}
+                                                    >
+                                                        {t.is_active ? 'Suspend Node' : 'Activate Node'}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
