@@ -49,7 +49,13 @@ router.post('/tenants', async (req, res) => {
             return res.status(409).json({ error: 'An account with this email already exists' });
         }
 
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+        let slug;
+        if (plan === 'pro_solo') {
+            slug = name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+        } else {
+            slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+        }
+        
         const { rows: slugCheck } = await client.query('SELECT id FROM tenants WHERE slug = $1', [slug]);
         const uniqueSlug = slugCheck.length ? `${slug}-${Date.now().toString().slice(-4)}` : slug;
 

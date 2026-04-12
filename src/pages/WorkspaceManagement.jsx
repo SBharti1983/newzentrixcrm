@@ -286,7 +286,18 @@ export default function WorkspaceManagement() {
                                     className="form-control" 
                                     placeholder="Company Name" 
                                     value={formData.name}
-                                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                    onChange={e => {
+                                        const val = e.target.value;
+                                        let newSlug = formData.slug;
+                                        if (!editingTenant) {
+                                            if (formData.plan === 'pro_solo') {
+                                                newSlug = val.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+                                            } else {
+                                                newSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                            }
+                                        }
+                                        setFormData({ ...formData, name: val, slug: newSlug });
+                                    }}
                                 />
                             </div>
                             <div>
@@ -309,7 +320,18 @@ export default function WorkspaceManagement() {
                                     <select 
                                         className="form-control"
                                         value={formData.plan}
-                                        onChange={e => setFormData({ ...formData, plan: e.target.value })}
+                                        onChange={e => {
+                                            const newPlan = e.target.value;
+                                            let newSlug = formData.slug;
+                                            if (!editingTenant && formData.name) {
+                                                if (newPlan === 'pro_solo') {
+                                                    newSlug = formData.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+                                                } else {
+                                                    newSlug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                                }
+                                            }
+                                            setFormData({ ...formData, plan: newPlan, slug: newSlug });
+                                        }}
                                     >
                                         <option value="starter">Starter</option>
                                         <option value="pro">Professional</option>
