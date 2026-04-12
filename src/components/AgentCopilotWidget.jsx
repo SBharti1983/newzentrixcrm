@@ -90,7 +90,7 @@ export default function AgentCopilotWidget() {
                     <div>
                         <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900, letterSpacing: '0.02em' }}>Zentrix Co-Pilot</h4>
                         <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} /> Online (Gemini 2.5)
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} /> Online (Gemini AI)
                         </div>
                     </div>
                 </div>

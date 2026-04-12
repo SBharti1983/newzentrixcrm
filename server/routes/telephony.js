@@ -211,9 +211,9 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
             console.log('[Telephony] Inline transcription: downloading from Firebase URL...');
             const urlPrompt = `
                 CRITICAL INSTRUCTION: You are an audio transcription AI. You must ONLY transcribe what is actually spoken in the audio file.
-                DO NOT invent, fabricate, or hallucinate a conversation.
-                If the audio is silent, unintelligible, or contains no speech, you MUST return an empty transcript array [].
-                Do not assume this is a Dubai real estate call unless the audio actually mentions it.
+                7. DO NOT invent, fabricate, or hallucinate a conversation.
+                8. If the audio is silent, unintelligible, or contains no speech, you MUST return an empty transcript array [].
+                9. Focus strictly on the audio provided. If you cannot hear anything clearly, say so in the summary.
 
                 If speech is present:
                 Provide a detailed verbatim transcript, identifying the speakers. 

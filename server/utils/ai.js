@@ -28,7 +28,10 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
 
         for (const modelName of modelsToTry) {
             try {
-                const model = localGenAI.getGenerativeModel({ model: modelName });
+                const model = localGenAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { temperature: 0 }
+                });
                 const result = await model.generateContent(finalPrompt);
                 const response = result.response;
                 let text = response.text();
@@ -74,12 +77,15 @@ async function generateAudioTranscription(prompt, base64Audio, mimeType, isJson 
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
         }
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-flash-latest"];
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
             try {
-                const model = localGenAI.getGenerativeModel({ model: modelName });
+                const model = localGenAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { temperature: 0 }
+                });
                 
                 const result = await model.generateContent([
                     { inlineData: { data: base64Audio, mimeType: mimeType } },

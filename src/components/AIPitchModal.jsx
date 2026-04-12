@@ -89,7 +89,7 @@ export default function AIPitchModal({ lead, onClose, fixedProject }) {
                                 <RefreshCw size={24} color="var(--accent-violet)" className="animate-spin" />
                             </div>
                             <h4 style={{ fontWeight: 800, color: 'var(--navy-900)' }}>Analyzing Interaction History...</h4>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 8 }}>Gemini 2.5 is crafting the perfect pitch based on recent conversations.</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 8 }}>Our AI Engine is crafting the perfect pitch based on recent conversations.</p>
                         </div>
                     ) : (
                         <div className="animate-fadeIn">
@@ -138,7 +138,7 @@ export default function AIPitchModal({ lead, onClose, fixedProject }) {
                 <div style={{ padding: '16px 32px', background: 'var(--slate-50)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                         <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--accent-emerald)' }} />
-                        POWERED BY GEMINI 2.5 FLASH EXPERIMENTAL
+                        POWERED BY GEMINI AI
                     </div>
                 </div>
             </div>
