@@ -2,13 +2,52 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { billingApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { CheckCircle, Zap, Shield, Crown, User, Edit3 } from 'lucide-react';
+import { CheckCircle, Zap, Shield, Crown, User, Edit3, X } from 'lucide-react';
 
 export default function Billing() {
     const { user } = useAuth();
     const { showToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [gateway, setGateway] = useState('razorpay'); // 'stripe' | 'razorpay'
+
+    const [plans, setPlans] = useState([
+        {
+            name: 'pro_solo', title: 'Solopreneur Premium', price: '₹999', desc: 'Premium features for individual agents and solo practitioners.',
+            icon: <User size={24} />, bg: '#a855f7',
+            features: ['1 User License', 'Unlimited Leads', 'Auto-Slug Identification', 'Personal Branding', 'WhatsApp + SMS', 'AI Copilot Access']
+        },
+        {
+            name: 'starter', title: 'Starter', price: '₹2,900', desc: 'Perfect for small brokerages just getting started.',
+            icon: <Zap size={24} />, bg: '#06b6d4',
+            features: ['Up to 5 Users', '2,000 Leads Storage', '10 Projects', 'Basic Support', 'Email Notifications']
+        },
+        {
+            name: 'pro', title: 'Professional', price: '₹7,900', desc: 'Advanced features for growing real estate teams.',
+            icon: <Shield size={24} />, bg: '#1e3a8a', recommended: true,
+            features: ['Up to 15 Users', '10,000 Leads Storage', '50 Projects', 'Priority Support', 'WhatsApp + SMS', 'Advanced Analytics']
+        },
+        {
+            name: 'enterprise', title: 'Enterprise', price: '₹19,900', desc: 'Unlimited scale for top-tier developers and agencies.',
+            icon: <Crown size={24} />, bg: '#8b5cf6',
+            features: ['Unlimited Users', 'Unlimited Leads', 'Unlimited Projects', 'Dedicated Account Manager', 'Custom API Access', 'Custom White-labeling']
+        }
+    ]);
+    const [editingPlan, setEditingPlan] = useState(null);
+
+    const handleUpdatePlan = (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const updated = {
+            ...editingPlan,
+            title: formData.get('title'),
+            price: formData.get('price'),
+            desc: formData.get('desc'),
+            features: formData.get('features').split(',').map(f => f.trim())
+        };
+        setPlans(plans.map(p => p.name === editingPlan.name ? updated : p));
+        setEditingPlan(null);
+        showToast('Plan configuration synchronized.', 'success');
+    };
 
     const handleSubscribe = async (plan) => {
         setLoading(true);
@@ -116,28 +155,7 @@ export default function Billing() {
 
             {/* Pricing Grid */}
             <div className="grid grid-4" style={{ width: '100%', margin: '0 auto', alignItems: 'stretch' }}>
-                {[
-                    {
-                        name: 'pro_solo', title: 'Solopreneur Premium', price: '₹999', desc: 'Premium features for individual agents and solo practitioners.',
-                        icon: <User size={24} />, bg: 'var(--accent-purple, #a855f7)',
-                        features: ['1 User License', 'Unlimited Leads', 'Auto-Slug Identification', 'Personal Branding', 'WhatsApp + SMS', 'AI Copilot Access']
-                    },
-                    {
-                        name: 'starter', title: 'Starter', price: '₹2,900', desc: 'Perfect for small brokerages just getting started.',
-                        icon: <Zap size={24} />, bg: 'var(--accent-cyan)',
-                        features: ['Up to 5 Users', '2,000 Leads Storage', '10 Projects', 'Basic Support', 'Email Notifications']
-                    },
-                    {
-                        name: 'pro', title: 'Professional', price: '₹7,900', desc: 'Advanced features for growing real estate teams.',
-                        icon: <Shield size={24} />, bg: 'var(--navy-600)', recommended: true,
-                        features: ['Up to 15 Users', '10,000 Leads Storage', '50 Projects', 'Priority Support', 'WhatsApp + SMS', 'Advanced Analytics']
-                    },
-                    {
-                        name: 'enterprise', title: 'Enterprise', price: '₹19,900', desc: 'Unlimited scale for top-tier developers and agencies.',
-                        icon: <Crown size={24} />, bg: 'var(--accent-violet)',
-                        features: ['Unlimited Users', 'Unlimited Leads', 'Unlimited Projects', 'Dedicated Account Manager', 'Custom API Access', 'Custom White-labeling']
-                    }
-                ].map(plan => (
+                {plans.map(plan => (
                     <div key={plan.name} className="card" style={{
                         padding: '16px 20px',
                         position: 'relative',
@@ -152,7 +170,7 @@ export default function Billing() {
                         {user?.role === 'superadmin' && (
                             <button 
                                 style={{ position: 'absolute', top: 12, right: 12, background: 'white', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
-                                onClick={(e) => { e.stopPropagation(); showToast('Direct plan editing coming soon to Admin Console.', 'info'); }}
+                                onClick={(e) => { e.stopPropagation(); setEditingPlan(plan); }}
                                 title="Edit Plan Configuration"
                             >
                                 <Edit3 size={14} />
@@ -204,6 +222,40 @@ export default function Billing() {
                     </div>
                 ))}
             </div>
+
+            {/* Admin Edit Modal */}
+            {editingPlan && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="card" style={{ width: '100%', maxWidth: '480px', padding: '32px', borderRadius: '32px', animation: 'slideUp 0.3s ease-out' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0 }}>Configure {editingPlan.title}</h2>
+                            <button onClick={() => setEditingPlan(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleUpdatePlan} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Plan Title</label>
+                                <input name="title" defaultValue={editingPlan.title} style={{ padding: '12px', borderRadius: '12px', border: '1.5px solid var(--border-medium)', fontWeight: 600 }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Monthly Price (Formatted)</label>
+                                <input name="price" defaultValue={editingPlan.price} style={{ padding: '12px', borderRadius: '12px', border: '1.5px solid var(--border-medium)', fontWeight: 600 }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Short Description</label>
+                                <textarea name="desc" defaultValue={editingPlan.desc} style={{ padding: '12px', borderRadius: '12px', border: '1.5px solid var(--border-medium)', fontWeight: 600, minHeight: '80px', resize: 'vertical' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Features (Comma separated)</label>
+                                <textarea name="features" defaultValue={editingPlan.features.join(', ')} style={{ padding: '12px', borderRadius: '12px', border: '1.5px solid var(--border-medium)', fontWeight: 600, minHeight: '80px', resize: 'vertical' }} />
+                            </div>
+                            <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                                <button type="button" onClick={() => setEditingPlan(null)} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: 'none', background: '#f1f5f9', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+                                <button type="submit" style={{ flex: 2, padding: '14px', borderRadius: '14px', border: 'none', background: 'var(--navy-700)', color: 'white', fontWeight: 800, cursor: 'pointer' }}>Sync Configuration</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <div style={{ textAlign: 'center', marginTop: 40, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                 Payments are securely processed via Stripe. All plans are billed in INR.
