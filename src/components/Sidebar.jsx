@@ -89,12 +89,6 @@ const NAV_SECTIONS = [
             { path: '/billing', label: 'Billing & Plan', icon: CreditCard },
         ],
     },
-    {
-        label: 'System',
-        items: [
-            { path: '/superadmin', label: 'Super Admin', icon: LayoutDashboard },
-        ],
-    },
 ];
 
 const ROLE_LABELS = {
@@ -140,8 +134,15 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     const filteredSections = NAV_SECTIONS.map(section => ({
         ...section,
         items: section.items.filter(item => {
+            // Superadmin has a special top-level dashboard
             if (item.path === '/superadmin' && !isMainDomain) return false;
             return canAccess(item.path);
+        }).map(item => {
+            // Personalize Dashboard label for Super Admins
+            if (item.path === '/' && user?.role === 'superadmin') {
+                return { ...item, label: 'Network Command Center', icon: Zap };
+            }
+            return item;
         }),
     })).filter(section => section.items.length > 0);
 

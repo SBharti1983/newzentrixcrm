@@ -122,74 +122,68 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {} }) {
 
     return (
         <div style={{ 
-            background: COLORS.bg, 
-            minHeight: 'calc(100vh - 70px)', 
-            padding: '12px 18px',
-            fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+            minHeight: '100vh', 
+            padding: '32px',
+            fontFamily: '"Inter", sans-serif',
             color: COLORS.textPrimary,
-            overflowX: 'hidden'
         }}>
+            <style>{`
+                .wow-card:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+                }
+            `}</style>
+
+            {/* Premium Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                <div>
+                    <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-1.5px' }}>
+                        Network <span style={{ color: '#6366f1' }}>Command Center</span>
+                    </h1>
+                    <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '1.1rem', fontWeight: 500 }}>Monitoring global workspaces across Zentrix Network</p>
+                </div>
+                <div style={{ padding: '10px 20px', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                    <Activity size={18} color="#6366f1" />
+                    <span style={{ fontWeight: 800, color: '#1e293b' }}>GLOBAL NETWORK LIVE</span>
+                </div>
+            </div>
+
             {/* KPI Grid */}
             <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(6, 1fr)',
-                gap: '12px', 
-                marginBottom: '20px'
+                gap: '16px', 
+                marginBottom: '32px'
             }}>
-                <KPICard 
-                    title="Revenue (MRR)" 
-                    value={`$${(stats?.mrr || 0).toLocaleString()}`} 
-                    change="12.4%" 
-                    isUp={true} 
-                    icon={DollarSign} 
-                    color={COLORS.success} 
-                    sparkData={sparkMock(30)} 
-                />
-                <KPICard 
-                    title="Total Tenants" 
-                    value={(tenants?.length || 0).toString()} 
-                    change="8.4%" 
-                    isUp={true} 
-                    icon={Building2} 
-                    color={COLORS.primary} 
-                    sparkData={sparkMock(20)} 
-                />
-                <KPICard 
-                    title="Active Users" 
-                    value={(stats?.totalUsers || 0).toLocaleString()} 
-                    change="10.2%" 
-                    isUp={true} 
-                    icon={Users} 
-                    color={COLORS.info} 
-                    sparkData={sparkMock(40)} 
-                />
-                <KPICard 
-                    title="Churn" 
-                    value="1.8%" 
-                    change="0.2%" 
-                    isUp={false} 
-                    icon={Activity} 
-                    color={COLORS.danger} 
-                    sparkData={sparkMock(15)} 
-                />
-                <KPICard 
-                    title="Conv." 
-                    value="9.4%" 
-                    change="1.1%" 
-                    isUp={true} 
-                    icon={Zap} 
-                    color={COLORS.chartPurple} 
-                    sparkData={sparkMock(25)} 
-                />
-                <KPICard 
-                    title="Uptime" 
-                    value="99.9%" 
-                    change="0.01%" 
-                    isUp={true} 
-                    icon={Server} 
-                    color={COLORS.chartTeal} 
-                    sparkData={sparkMock(5)} 
-                />
+                {[
+                    { title: "Revenue (MRR)", value: `$${(stats?.mrr || 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success, bg: '#dcfce7' },
+                    { title: "Total Tenants", value: (tenants?.length || 0).toString(), icon: Building2, color: COLORS.primary, bg: '#dbeafe' },
+                    { title: "Active Users", value: (stats?.totalUsers || 0).toLocaleString(), icon: Users, color: '#ec4899', bg: '#fce7f3' },
+                    { title: "Churn Rate", value: "1.8%", icon: Activity, color: COLORS.danger, bg: '#fee2e2' },
+                    { title: "Network Conv.", value: "9.4%", icon: Zap, color: '#8b5cf6', bg: '#f5f3ff' },
+                    { title: "System Uptime", value: "99.9%", icon: Server, color: '#0ea5e9', bg: '#f0f9ff' }
+                ].map((k, i) => (
+                    <div key={i} className="wow-card" style={{
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '24px',
+                        border: '1px solid rgba(255, 255, 255, 0.5)',
+                        padding: '16px',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
+                        display: 'flex', flexDirection: 'column', gap: '4px',
+                        transition: 'all 0.3s ease'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                            <div style={{ width: 40, height: 40, borderRadius: '10px', background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <k.icon size={20} color={k.color} />
+                            </div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: COLORS.success, background: '#ecfdf5', padding: '3px 7px', borderRadius: '8px' }}>+5.2%</div>
+                        </div>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a' }}>{k.value}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700 }}>{k.title}</div>
+                    </div>
+                ))}
             </div>
 
             {/* Charts Row */}
