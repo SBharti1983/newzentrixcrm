@@ -237,33 +237,33 @@ export default function Inventory() {
             {/* 💎 Asset Intelligence Ribbon */}
             <div className="premium-card shimmer-ai" style={{ 
                 background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate900} 100%)`, 
-                padding: '36px 40px', color: 'white', marginBottom: '40px', border: 'none'
+                padding: '18px 40px', color: 'white', marginBottom: '32px', border: 'none'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                             <Box size={20} color={COLORS.cyan} strokeWidth={2.5} />
-                             <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                             <Box size={16} color={COLORS.cyan} strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
                                 Institutional Asset Repository
                              </span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, letterSpacing: '-2.5px', lineHeight: 1, color: COLORS.white }}>
+                        <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1, color: COLORS.white }}>
                             The Inventory <span style={{ color: COLORS.cyan }}>Vault</span>
                         </h1>
-                        <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem', fontWeight: 600, maxWidth: '600px' }}>
+                        <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
                             Managing {units.length} institutional assets across {projects.length} strategic portfolios.
                         </p>
                     </div>
 
                     <div style={{ display: 'flex', gap: '32px' }}>
                         {[
-                            { label: 'Available Units', val: counts.Available, color: COLORS.emerald },
-                            { label: 'Market Reservations', val: counts.Booked, color: COLORS.amber },
-                            { label: 'Portfolio Value', val: '₹142Cr', color: COLORS.white }
+                            { label: 'Available', val: counts.Available, color: COLORS.emerald },
+                            { label: 'Reservations', val: counts.Booked, color: COLORS.amber },
+                            { label: 'Value', val: '₹142Cr', color: COLORS.white }
                         ].map((stat, i) => (
-                            <div key={i} style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '2.4rem', fontWeight: 950, color: stat.color, letterSpacing: '-1.5px' }}>{stat.val}</div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
+                            <div key={i} style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: stat.color, letterSpacing: '-0.5px' }}>{stat.val}</div>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
                             </div>
                         ))}
                     </div>
