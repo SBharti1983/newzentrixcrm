@@ -37,6 +37,8 @@
   --accent-violet-dark: #7c3aed;
   --accent-cyan: #06b6d4;
   --accent-cyan-dark: #0891b2;
+  --accent-indigo: #6366f1;
+  --accent-indigo-dark: #4f46e5;
 
   /* Semantic colors */
   --color-success: var(--accent-emerald);

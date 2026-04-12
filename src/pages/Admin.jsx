@@ -58,7 +58,15 @@ export default function Admin() {
     const { user: currentUser, refreshUser } = useAuth();
 
     // Filter users based on current user role: Managers only see Agents and themselves
+    // Filter users based on current user role and search term
     const users = usersRawList.filter(u => {
+        const matchesSearch = !userSearch || 
+            u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
+            u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
+            u.role.toLowerCase().includes(userSearch.toLowerCase());
+        
+        if (!matchesSearch) return false;
+
         if (currentUser.role === 'sales_manager') {
              // Manager sees themselves and Agents
              return u.id === currentUser.id || u.role === 'agent';
@@ -66,11 +74,14 @@ export default function Admin() {
         return true; // Admins and SuperAdmins see everyone
     });
 
+
     const [tab, setTab] = useState('users');
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [form, setForm] = useState(DEFAULT_FORM);
     const [saving, setSaving] = useState(false);
+    const [userSearch, setUserSearch] = useState('');
+
     
     // Settings Edit State
     const [editingSetting, setEditingSetting] = useState(null);
@@ -611,12 +622,28 @@ export default function Admin() {
             {/* Users Tab */}
             {tab === 'users' && (
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{users.length} team members</span>
-                        <button className="btn btn-primary btn-sm" onClick={openAdd}>
-                            <Plus size={14} /> Add User
-                        </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 16 }}>
+                        <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
+                            <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
+                            <input 
+                                type="text"
+                                className="form-control"
+                                placeholder="Search by name, email or role..."
+                                value={userSearch}
+                                onChange={e => setUserSearch(e.target.value)}
+                                style={{ paddingLeft: 40, background: 'white', borderRadius: 12, border: '1px solid var(--border-medium)' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--slate-100)', padding: '6px 12px', borderRadius: '8px' }}>
+                                {users.length} Users
+                            </span>
+                            <button className="btn btn-primary" onClick={openAdd} style={{ padding: '8px 20px', fontWeight: 800 }}>
+                                <Plus size={16} /> Add Team Member
+                            </button>
+                        </div>
                     </div>
+
                     <div className="grid grid-2">
                         {users.map(u => (
                             <div key={u.id} className="card" style={{ padding: '18px 20px' }}>
@@ -771,8 +798,11 @@ export default function Admin() {
             {/* Permissions Tab */}
             {tab === 'permissions' && (
                 <div className="grid grid-3">
-                    {Object.entries(systemSettings?.role_permissions || ROLE_PERMISSIONS).map(([role, perms]) => (
+                    {Object.entries(systemSettings?.role_permissions || ROLE_PERMISSIONS)
+                        .filter(([role]) => role !== 'superadmin' || currentUser.role === 'superadmin')
+                        .map(([role, perms]) => (
                         <div key={role} className="card" style={{ overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
+
                             <div style={{
                                 background: role === 'superadmin'
                                     ? 'linear-gradient(135deg, var(--accent-rose-dark), var(--accent-rose))'
@@ -789,10 +819,11 @@ export default function Admin() {
                                 <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>
                                     {role === 'admin' ? '👤' : role === 'sales_manager' ? '🎯' : role === 'team_leader' ? '🎖️' : '💼'}
                                 </div>
-                                <div style={{ fontWeight: 800, color: 'white', fontSize: '1rem' }}>{ROLE_LABELS[role]}</div>
-                                <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', marginTop: 2 }}>
-                                    {users.filter(u => u.role === role).length} users assigned
+                                <div style={{ fontWeight: 800, color: 'white', fontSize: '1rem', letterSpacing: '0.02em' }}>{ROLE_LABELS[role] || role}</div>
+                                <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.75rem', marginTop: 2, fontWeight: 500 }}>
+                                    {usersRawList.filter(u => u.role === role).length} users assigned
                                 </div>
+
                             </div>
                             <div style={{ padding: '18px 20px', flex: 1 }}>
                                 {perms.map(p => (
@@ -1056,17 +1087,18 @@ export default function Admin() {
                                 )}
                                 <div className="form-group">
                                     <label className="form-label">Role</label>
-                                    <select className="form-control" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                        {currentUser.role !== 'sales_manager' && (
-                                            <>
-                                                <option value="superadmin">Super Administrator</option>
-                                                <option value="admin">Administrator</option>
-                                                <option value="sales_manager">Sales Manager</option>
-                                                <option value="team_leader">Team Leader</option>
-                                            </>
-                                        )}
-                                        <option value="agent">Sales Agent</option>
-                                    </select>
+                                        <select className="form-control" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                                            {currentUser.role === 'superadmin' && <option value="superadmin">Super Administrator</option>}
+                                            {currentUser.role !== 'sales_manager' && (
+                                                <>
+                                                    <option value="admin">Administrator</option>
+                                                    <option value="sales_manager">Sales Manager</option>
+                                                    <option value="team_leader">Team Leader</option>
+                                                </>
+                                            )}
+                                            <option value="agent">Sales Agent</option>
+                                        </select>
+
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Department</label>
