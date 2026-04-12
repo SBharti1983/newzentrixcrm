@@ -8,18 +8,21 @@ export default function SuperAdmin() {
     const { addToast } = useToast();
     const [tenants, setTenants] = useState([]);
     const [stats, setStats] = useState(null);
+    const [subscriptions, setSubscriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [tData, sData] = await Promise.all([
+            const [tData, sData, subData] = await Promise.all([
                 superAdminApi.getTenants(),
-                superAdminApi.getStats()
+                superAdminApi.getStats(),
+                superAdminApi.getSubscriptions()
             ]);
             setTenants(tData);
             setStats(sData);
+            setSubscriptions(subData || []);
             setError(null);
         } catch (err) {
             console.error('SuperAdmin Data Fetch Error:', err);
@@ -64,5 +67,5 @@ export default function SuperAdmin() {
     }
 
     // We pass the fetched data to the rich dashboard view
-    return <SuperAdminDashboardView tenants={tenants} stats={stats} />;
+    return <SuperAdminDashboardView tenants={tenants} stats={stats} subscriptions={subscriptions} />;
 }

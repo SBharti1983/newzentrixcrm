@@ -5,10 +5,11 @@ import {
 } from 'recharts';
 import { 
     MoreHorizontal, 
-    Users, Building2, DollarSign, Activity, Server, Zap,
+    Users, Building2, DollarSign, Activity, Server, Zap, Globe,
     ArrowUpRight, ArrowDownRight,
     CreditCard,
-    BarChart3, Plus, ExternalLink, RefreshCw
+    BarChart3, Plus, ExternalLink, RefreshCw,
+    Receipt, History, Search
 } from 'lucide-react';
 
 const COLORS = {
@@ -117,7 +118,9 @@ const KPICard = ({ title, value, change, isUp, icon: Icon, color, sparkData }) =
     </div>
 );
 
-export default function SuperAdminDashboardView({ tenants = [], stats = {} }) {
+export default function SuperAdminDashboardView({ tenants = [], stats = {}, subscriptions = [] }) {
+    const [activeTab, setActiveTab] = React.useState('operational');
+    const [finSearch, setFinSearch] = React.useState('');
     const sparkMock = (range) => [...Array(10)].map((_, i) => ({ val: Math.random() * range + 10 }));
 
     return (
@@ -125,7 +128,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {} }) {
             background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
             minHeight: '100vh', 
             padding: '32px',
-            fontFamily: '"Inter", sans-serif',
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
             color: COLORS.textPrimary,
         }}>
             <style>{`
@@ -133,21 +136,52 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {} }) {
                     transform: translateY(-5px);
                     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
                 }
+                .tab-btn {
+                    padding: 10px 24px;
+                    border-radius: 12px;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    border: none;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
             `}</style>
 
             {/* Premium Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-1.5px' }}>
-                        Network <span style={{ color: '#6366f1' }}>Command Center</span>
-                    </h1>
-                    <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '1.1rem', fontWeight: 500 }}>Monitoring global workspaces across Zentrix Network</p>
+                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, letterSpacing: '-1px' }}>Global Command Center</h1>
+                    <p style={{ margin: '4px 0 0', color: COLORS.textSecondary, fontWeight: 500 }}>System-wide infrastructure & financial oversight.</p>
                 </div>
-                <div style={{ padding: '10px 20px', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                    <Activity size={18} color="#6366f1" />
-                    <span style={{ fontWeight: 800, color: '#1e293b' }}>GLOBAL NETWORK LIVE</span>
+
+                <div style={{ display: 'flex', background: 'white', padding: '4px', borderRadius: '16px', border: `1px solid ${COLORS.border}` }}>
+                    <button 
+                        className="tab-btn" 
+                        onClick={() => setActiveTab('operational')}
+                        style={{ 
+                            background: activeTab === 'operational' ? COLORS.primary : 'transparent',
+                            color: activeTab === 'operational' ? 'white' : COLORS.textSecondary
+                        }}
+                    >
+                        <Zap size={16} /> Operational
+                    </button>
+                    <button 
+                        className="tab-btn" 
+                        onClick={() => setActiveTab('financial')}
+                        style={{ 
+                            background: activeTab === 'financial' ? COLORS.primary : 'transparent',
+                            color: activeTab === 'financial' ? 'white' : COLORS.textSecondary
+                        }}
+                    >
+                        <CreditCard size={16} /> Financial Ledger
+                    </button>
                 </div>
             </div>
+            {activeTab === 'operational' ? (
+                <>
 
             {/* KPI Grid */}
             <div style={{ 
@@ -341,6 +375,103 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {} }) {
                     </div>
                 </div>
             </div>
+            </>
+            ) : (
+                <div className="animate-fadeIn">
+                    {/* Financial Summary Ribbon */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                        {[
+                            { label: 'Total Revenue', val: `₹${subscriptions.reduce((acc, s) => acc + (parseFloat(s.amount) || 0), 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success },
+                            { label: 'Active Subscriptions', val: subscriptions.filter(s => s.status === 'active').length, icon: History, color: COLORS.primary },
+                            { label: 'Pending Collections', val: '₹12,400', icon: Receipt, color: COLORS.warning },
+                            { label: 'Churn Rate (MoM)', val: '1.2%', icon: Activity, color: COLORS.danger },
+                        ].map((s, i) => (
+                            <div key={i} className="wow-card" style={{ background: 'white', padding: '24px', borderRadius: '20px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                                    <div style={{ width: 36, height: 36, borderRadius: '10px', background: `${s.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <s.icon size={18} color={s.color} />
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>{s.label}</span>
+                                </div>
+                                <div style={{ fontSize: '1.8rem', fontWeight: 800 }}>{s.val}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ background: 'white', borderRadius: '24px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
+                        <div style={{ padding: '24px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', width: '320px' }}>
+                                <Search size={18} color={COLORS.textSecondary} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search ledger by tenant or ID..." 
+                                    value={finSearch}
+                                    onChange={(e) => setFinSearch(e.target.value)}
+                                    style={{ width: '100%', padding: '12px 12px 12px 42px', borderRadius: '14px', border: `1.5px solid ${COLORS.border}`, fontSize: '0.9rem', outline: 'none' }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button className="tab-btn" style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary }}>Download CSV</button>
+                                <button className="tab-btn" style={{ background: COLORS.primary, color: 'white' }}>Generate Report</button>
+                            </div>
+                        </div>
+
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ background: COLORS.bg }}>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Transaction Terminal</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan Lifecycle</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Financial Value</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Status</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {subscriptions.filter(s => 
+                                        s.tenant_name?.toLowerCase().includes(finSearch.toLowerCase()) || 
+                                        s.gateway_sub_id?.toLowerCase().includes(finSearch.toLowerCase())
+                                    ).map(sub => (
+                                        <tr key={sub.id} style={{ borderBottom: `1px solid ${COLORS.bg}`, transition: 'background 0.2s' }}>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{sub.tenant_name}</div>
+                                                <div style={{ fontSize: '0.7rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>ID: {sub.gateway_sub_id}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, background: `${COLORS.primary}10`, color: COLORS.primary, textTransform: 'uppercase' }}>
+                                                    {sub.plan}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ fontWeight: 900, color: COLORS.textPrimary }}>₹{parseFloat(sub.amount || 0).toLocaleString()}</div>
+                                                <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary, fontWeight: 700, textTransform: 'uppercase' }}>Via {sub.gateway}</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 800, background: sub.status === 'active' ? '#ecfdf5' : '#fef2f2', color: sub.status === 'active' ? '#059669' : '#dc2626' }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: sub.status === 'active' ? '#10B981' : '#EF4444' }} />
+                                                    {sub.status?.toUpperCase()}
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px', fontSize: '0.85rem', fontWeight: 600, color: COLORS.textSecondary }}>
+                                                {new Date(sub.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {subscriptions.length === 0 && (
+                                        <tr>
+                                            <td colSpan="5" style={{ padding: '80px', textAlign: 'center', color: COLORS.textSecondary }}>
+                                                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧾</div>
+                                                <div style={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary }}>No global transactions found.</div>
+                                                <p>Automated billing sequences will appear here as tenants upgrade.</p>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <button style={{
                 position: 'fixed', bottom: 40, right: 40, width: 56, height: 56, borderRadius: '28px',

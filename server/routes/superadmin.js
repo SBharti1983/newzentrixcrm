@@ -143,4 +143,20 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// Get all subscriptions across the platform
+router.get('/subscriptions', async (req, res) => {
+    try {
+        const { rows } = await pool.query(`
+            SELECT s.*, t.name as tenant_name, t.slug as tenant_slug
+            FROM subscriptions s
+            JOIN tenants t ON s.tenant_id = t.id
+            ORDER BY s.created_at DESC
+        `);
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch global subscriptions' });
+    }
+});
+
 module.exports = router;

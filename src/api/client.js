@@ -291,6 +291,7 @@ export const notificationsApi = {
 // ─── Super Admin ──────────────────────────────────────────────────
 export const superAdminApi = {
     getTenants: () => api('/superadmin/tenants'),
+    getSubscriptions: () => api('/superadmin/subscriptions'),
     createTenant: (data) => api('/superadmin/tenants', { method: 'POST', body: data }),
     updateTenant: (id, data) => api(`/superadmin/tenants/${id}`, { method: 'PATCH', body: data }),
     deleteTenant: (id) => api(`/superadmin/tenants/${id}`, { method: 'DELETE' }),
