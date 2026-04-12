@@ -57,23 +57,7 @@ export default function Admin() {
     // derive current user from session storage
     const { user: currentUser, refreshUser } = useAuth();
 
-    // Filter users based on current user role: Managers only see Agents and themselves
-    // Filter users based on current user role and search term
-    const users = usersRawList.filter(u => {
-        const matchesSearch = !userSearch || 
-            u.name.toLowerCase().includes(userSearch.toLowerCase()) ||
-            u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-            u.role.toLowerCase().includes(userSearch.toLowerCase());
-        
-        if (!matchesSearch) return false;
 
-        if (currentUser?.role === 'sales_manager') {
-             // Manager sees themselves and Agents
-             return u.id === currentUser?.id || u.role === 'agent';
-        }
-
-        return true; // Admins and SuperAdmins see everyone
-    });
 
 
     const [tab, setTab] = useState('users');
@@ -88,6 +72,22 @@ export default function Admin() {
     const [editingSetting, setEditingSetting] = useState(null);
     const [editingProject, setEditingProject] = useState(null);
     const [settingValue, setSettingValue] = useState("");
+
+    // Filter users based on current user role and search term
+    const users = usersRawList.filter(u => {
+        const matchesSearch = !userSearch || 
+            (u.name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+            (u.email || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+            (u.role || '').toLowerCase().includes(userSearch.toLowerCase());
+        
+        if (!matchesSearch) return false;
+
+        if (currentUser?.role === 'sales_manager') {
+             return u.id === currentUser?.id || u.role === 'agent';
+        }
+        return true;
+    });
+
 
     // ─── Recording / Bridge Policy Panel ───────────────────────────
     const RecordingPolicyPanel = () => {
