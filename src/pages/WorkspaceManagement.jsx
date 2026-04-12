@@ -5,7 +5,7 @@ import { PageLoader } from '../components/Feedback';
 import { 
     Building2, Plus, Search, Filter, MoreHorizontal, 
     ShieldCheck, Zap, Server, Globe, ExternalLink,
-    Lock, CheckCircle2, XCircle
+    Lock, CheckCircle2, XCircle, Trash2
 } from 'lucide-react';
 
 export default function WorkspaceManagement() {
@@ -189,18 +189,24 @@ export default function WorkspaceManagement() {
                                             >
                                                 {t.is_active ? <Lock size={16} /> : <Zap size={16} />}
                                             </button>
-                                            <div style={{ position: 'relative' }}>
-                                                <button 
-                                                    className="dropdown-trigger"
-                                                    style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: '#475569', cursor: 'pointer' }}
-                                                    onClick={() => {
-                                                        const confirm = window.confirm(`Manage ${t.name}? This will open Infrastructure Controls.`);
-                                                        if (confirm) addToast({ type: 'info', title: 'Loading Console', message: 'Connecting to cluster terminal...' });
-                                                    }}
-                                                >
-                                                    <MoreHorizontal size={16} />
-                                                </button>
-                                            </div>
+                                            <button 
+                                                onClick={async () => {
+                                                    const confirmed = window.confirm(`DANGER: Permanently decommission ${t.name}? This will erase all tenant data!`);
+                                                    if (confirmed) {
+                                                        try {
+                                                            await superAdminApi.deleteTenant(t.id);
+                                                            addToast({ type: 'success', title: 'Workspace Purged', message: 'Registry updated successfully.' });
+                                                            fetchTenants();
+                                                        } catch (err) {
+                                                            addToast({ type: 'error', title: 'Purge Failed', message: 'Unauthorized or database lock.' });
+                                                        }
+                                                    }
+                                                }}
+                                                style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #fecaca', color: '#b91c1c', cursor: 'pointer' }}
+                                                title="Permanently Delete Workspace"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
