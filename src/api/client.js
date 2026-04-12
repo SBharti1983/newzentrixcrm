@@ -124,7 +124,8 @@ export const leadsApi = {
     addInteraction: (id, data) => api(`/leads/${id}/interactions`, { method: 'POST', body: data }),
     updateInteraction: (leadId, interactionId, data) => api(`/leads/${leadId}/interactions/${interactionId}`, { method: 'PATCH', body: data }),
     deleteInteraction: (leadId, interactionId) => api(`/leads/${leadId}/interactions/${interactionId}`, { method: 'DELETE' }),
-    exportCalls: () => api('/leads/export-calls'),
+    exportCalls: (params = {}) => api('/leads/export-calls?' + new URLSearchParams(params)),
+    generatePhysicalReport: (csvContent, filename) => api('/leads/generate-physical-report', { method: 'POST', body: { csvContent, filename } }),
     aiScore: (id) => api(`/leads/${id}/ai-score`, { method: 'POST' }),
     getMatches: (id) => api(`/leads/${id}/matches`),
 };

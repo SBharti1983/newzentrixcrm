@@ -2,7 +2,7 @@
 import { 
     Phone, Clock, BarChart3, TrendingUp, Users, 
     ArrowUpRight, ArrowDownRight, Smartphone, Activity,
-    Calendar, Mic, Filter, Download
+    Calendar, Mic, Filter, Download, FileSpreadsheet, FileText
 } from 'lucide-react';
 import { 
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -10,16 +10,124 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { useApi } from '../hooks/useApi';
-import { analyticsApi } from '../api/client';
+import { analyticsApi, leadsApi } from '../api/client';
+import { useToast } from '../hooks/useToast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const COLORS = ['#00b4d8', '#0077b6', '#90e0ef', '#03045e'];
 
 export default function VoiceAnalytics() {
+    const { showToast } = useToast();
     const { data: stats, loading } = useApi(() => fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/stats`, {
         headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
     }).then(r => r.json()));
 
     const { data: liveData } = useApi(() => analyticsApi.get({ range: '30days' }));
+
+    const handleExportAudit = async (format = 'csv') => {
+        showToast(`Preparing ${format.toUpperCase()} audit...`, 'info');
+        try {
+            const data = await leadsApi.exportCalls({ range: '30days' });
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const filename = `Zentrix_Voice_Audit_${timestamp}`;
+
+            if (format === 'csv') {
+                const headers = ['Date', 'Agent', 'Lead', 'Lead Phone', 'Duration', 'Outcome', 'Note'];
+                const rows = (data || []).map(c => [
+                    new Date(c.date).toLocaleString(),
+                    c.agent_name,
+                    c.lead_name,
+                    c.lead_phone,
+                    c.duration + 's',
+                    c.outcome,
+                    (c.note || '').replace(/,/g, ';')
+                ]);
+
+                const csvContent = "\uFEFF"
+                    + [headers, ...rows].map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `${filename}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                // PHYSICAL SAVE TO SERVER (For Downloads availability)
+                try {
+                    await leadsApi.generatePhysicalReport(csvContent, `${filename}.csv`);
+                    showToast(`FILE SAVED TO: Windows Downloads folder`, 'success');
+                } catch (err) {
+                    console.warn('Physical save skip:', err);
+                }
+            } else {
+                const doc = new jsPDF('landscape');
+                const pageWidth = doc.internal.pageSize.getWidth();
+                
+                doc.setFillColor(10, 22, 40);
+                doc.rect(0, 0, pageWidth, 40, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.text('VOICE TELEMETRY AUDIT', 20, 25);
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Zentrix Real-time Telemetry Hub | ${new Date().toLocaleString()}`, 20, 34);
+
+                const headers = [['Date', 'Agent', 'Lead', 'Duration', 'Outcome', 'Note']];
+                const rows = (data || []).map(c => [
+                    new Date(c.date).toLocaleString(),
+                    c.agent_name,
+                    c.lead_name,
+                    c.duration + 's',
+                    c.outcome,
+                    (c.note || '').slice(0, 60) + '...'
+                ]);
+
+                autoTable(doc, {
+                    startY: 50,
+                    head: headers,
+                    body: rows,
+                    headStyles: { fillColor: [10, 22, 40] },
+                    styles: { fontSize: 8 }
+                });
+
+                const pdfBlob = doc.output('blob');
+                const url = URL.createObjectURL(pdfBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${filename}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            // Register in Export Center
+            try {
+                const { documentsApi } = await import('../api/client');
+                await documentsApi.create({
+                    name: format === 'csv' ? `${filename}.csv` : `${filename}.pdf`,
+                    type: 'Report',
+                    status: 'Final',
+                    notes: `Voice Telemetry Audit: 30-day snapshot`
+                });
+            } catch (err) {
+                console.warn('Failed to log export metadata:', err);
+            }
+
+            showToast('Audit exported and saved to history!', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to export audit', 'error');
+        }
+    };
 
     if (loading) return <div className="p-8 text-center">Loading Telemetry...</div>;
 
@@ -42,17 +150,25 @@ export default function VoiceAnalytics() {
                     <p style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Precision tracking for GSM SIM-integrated dialing performance.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 12 }}>
-                    <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Calendar size={16} /> Last 30 Days
+                    <button 
+                        className="btn btn-primary btn-sm" 
+                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                        onClick={() => handleExportAudit('csv')}
+                    >
+                        <FileSpreadsheet size={16} /> EXPORT CSV
                     </button>
-                    <button className="btn btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Download size={16} /> Export Audit
+                    <button 
+                        className="btn btn-secondary btn-sm" 
+                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                        onClick={() => handleExportAudit('pdf')}
+                    >
+                        <FileText size={16} /> PDF
                     </button>
                 </div>
             </div>
 
             {/* Metrics Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 40 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>
                 {cards.map((card, i) => (
                     <div key={i} className="glass-card" style={{ padding: 24, position: 'relative', overflow: 'hidden' }}>
                         <div style={{ 

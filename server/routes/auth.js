@@ -160,12 +160,21 @@ router.post('/login', async (req, res) => {
     email = email.trim();
     try {
         console.log(`[AUTH] Login attempt for: "${email}" (subdomain: ${subdomain})`);
-        const { rows } = await pool.query(
-            `SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active 
-             FROM users u 
-             LEFT JOIN tenants t ON u.tenant_id = t.id 
-             WHERE LOWER(u.email) = LOWER($1)`, [email]
-        );
+        
+        let query = `
+            SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active 
+            FROM users u 
+            LEFT JOIN tenants t ON u.tenant_id = t.id 
+            WHERE LOWER(u.email) = LOWER($1)
+        `;
+        const params = [email];
+
+        if (subdomain) {
+            query += ` AND t.slug = $2`;
+            params.push(subdomain);
+        }
+
+        const { rows } = await pool.query(query, params);
         const user = rows[0];
         
         if (!user) {
@@ -299,12 +308,16 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
     try {
         const { rows } = await pool.query(
             `SELECT u.id, u.name, u.email, u.role, u.avatar, u.phone, u.department, u.last_login_at, u.telephony_agent_id,
-                    t.name as tenant_name, t.slug, t.plan, t.primary_color
+                    t.name as tenant_name, t.slug, t.plan, t.primary_color, t.settings
              FROM users u JOIN tenants t ON u.tenant_id = t.id
              WHERE u.id = $1`, [req.user.id]
         );
         if (!rows[0]) return res.status(404).json({ error: 'User not found' });
-        res.json(rows[0]);
+        const user = rows[0];
+        res.json({
+            ...user,
+            features: user.settings?.features || {}
+        });
     } catch (_err) {
         res.status(500).json({ error: 'Failed to fetch profile' });
     }

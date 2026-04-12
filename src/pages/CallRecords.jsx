@@ -1,28 +1,43 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
-import { leadsApi } from '../api/client';
+import { leadsApi, usersApi } from '../api/client';
 import { PageLoader, PageError } from '../components/Feedback';
 import { Phone, Download, Search, Calendar, User, Clock, FileText, ExternalLink, CheckCircle2, TrendingUp, Filter, BarChart3, Play, Pause, X, Mic, AudioLines, ShieldAlert, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { useToast } from '../hooks/useToast';
 
 export default function CallRecords() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [search, setSearch] = useState('');
     const [outcomeFilter, setOutcomeFilter] = useState('All');
-    const [agentFilter, setAgentFilter] = useState('All');
-    const [qaCall, setQaCall] = useState(null); // High-fidelity QA Modal state
+    const [agentFilter, setAgentFilter] = useState('All'); // Store agent ID or 'All'
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [qaCall, setQaCall] = useState(null); 
     const [isPlaying, setIsPlaying] = useState(false);
 
-    const { data: calls, loading, error, refetch } = useApi(useCallback(() => leadsApi.exportCalls(), []));
+    const { data: users } = useApi(usersApi.list);
+    const agentOptions = (users || []).filter(u => ['agent', 'team_leader', 'sales_manager', 'admin'].includes(u.role));
+
+    const { data: calls, loading, error, refetch } = useApi(
+        useCallback(() => leadsApi.exportCalls({ 
+            agentId: agentFilter, 
+            startDate, 
+            endDate 
+        }), [agentFilter, startDate, endDate])
+    );
 
     const filteredCalls = (calls || []).filter(call => {
         const matchesSearch = call.lead_name?.toLowerCase().includes(search.toLowerCase()) ||
             call.lead_phone?.includes(search) ||
             call.agent_name?.toLowerCase().includes(search.toLowerCase());
         const matchesOutcome = outcomeFilter === 'All' || call.outcome === outcomeFilter;
-        const matchesAgent = agentFilter === 'All' || call.agent_name === agentFilter;
-        return matchesSearch && matchesOutcome && matchesAgent;
+        // Agent filtering is now done server-side, but keep client search for responsiveness
+        return matchesSearch && matchesOutcome;
     });
 
     const agents = Array.from(new Set((calls || []).map(c => c.agent_name))).filter(Boolean);
@@ -43,34 +58,222 @@ export default function CallRecords() {
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(-14); // Last 14 days
 
-    const exportToCSV = () => {
-        if (!filteredCalls.length) return;
+    const generatePDFReport = async () => {
+        if (!filteredCalls.length) {
+            showToast('No records to export', 'info');
+            return;
+        }
+        
+        try {
+            const doc = new jsPDF();
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-IN');
+            
+            // --- Premium Header ---
+            doc.setFillColor(15, 23, 42); // Navy-900
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TELEPHONY AUDIT REPORT', 14, 22);
+            
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generated on: ${dateStr} | Zentrix CRM Strategic Intelligence`, 14, 32);
+            
+            // --- KPI Summary ---
+            doc.setTextColor(51, 65, 85);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Performance Summary', 14, 50);
+            
+            const totalCalls = filteredCalls.length;
+            const avgDuration = Math.round(filteredCalls.reduce((acc, c) => acc + (parseInt(c.duration) || 0), 0) / totalCalls);
+            const successRate = totalCalls > 0 
+                ? Math.round((filteredCalls.filter(c => c.outcome === 'Connected' || c.outcome === 'Interested').length / totalCalls) * 100)
+                : 0;
 
-        const headers = ['Date', 'Lead Name', 'Phone', 'Agent', 'Duration', 'Outcome', 'Notes'];
-        const rows = filteredCalls.map(c => [
-            new Date(c.date).toLocaleString(),
-            c.lead_name,
-            c.lead_phone,
-            c.agent_name,
-            c.duration || 'N/A',
-            c.outcome || 'Connected',
-            (c.note || '').replace(/,/g, ';')
-        ]);
+            doc.setFontSize(9);
+            doc.setTextColor(71, 85, 105);
+            doc.text(`Total Records: ${totalCalls}`, 14, 58);
+            doc.text(`Avg. Duration: ${avgDuration}s`, 60, 58);
+            doc.text(`Success Rate: ${successRate}%`, 110, 58);
 
-        const csvContent = [
-            headers.join(','),
-            ...rows.map(r => r.join(','))
-        ].join('\n');
+            // --- Data Table ---
+            const tableColumn = ["Date", "Lead", "Phone", "Agent", "Duration", "Outcome", "Sentiment"];
+            const tableRows = filteredCalls.map(c => {
+                const d = new Date(c.date);
+                const validDate = isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('en-IN');
+                return [
+                    validDate,
+                    c.lead_name || 'Anonymous',
+                    c.lead_phone || 'N/A',
+                    c.agent_name || 'System',
+                    `${c.duration || 0}s`,
+                    c.outcome || 'N/A',
+                    c.sentiment || 'Neutral'
+                ];
+            });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `call_records_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 65,
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 8, cellPadding: 3 },
+                alternateRowStyles: { fillColor: [249, 250, 251] }
+            });
+
+            // --- Footer ---
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(148, 163, 184);
+                doc.text(`Page ${i} of ${pageCount} | Confidential - Zentrix Enterprise Log`, 14, doc.internal.pageSize.height - 10);
+            }
+
+            const filename = `Zentrix_Audit_Log_${now.toISOString().split('T')[0]}.pdf`;
+            
+            const pdfBlob = doc.output('blob');
+            const url = URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            // Register in Export Center
+            try {
+                const { documentsApi } = await import('../api/client');
+                await documentsApi.create({
+                    name: filename,
+                    type: 'Report',
+                    status: 'Final',
+                    notes: `Telephony Official Audit: ${filteredCalls.length} records exported`
+                });
+            } catch (err) {
+                console.warn('Failed to log export metadata:', err);
+            }
+
+            showToast('PDF Report generated and saved to history', 'success');
+        } catch (err) {
+            console.error('PDF Gen Error:', err);
+            showToast('Failed to generate PDF. Check console for details.', 'error');
+        }
+    };
+
+    const exportToCSV = async () => {
+        if (!filteredCalls.length) {
+            showToast('No records to export', 'info');
+            return;
+        }
+        
+        try {
+            const headers = ['Date', 'Lead Name', 'Phone', 'Agent', 'Duration', 'Outcome', 'Sentiment', 'Notes'];
+            const rows = filteredCalls.map(c => {
+                const d = new Date(c.date);
+                const dateStr = isNaN(d.getTime()) ? 'N/A' : d.toLocaleString('en-IN');
+                return [
+                    dateStr,
+                    c.lead_name || '',
+                    c.lead_phone || '',
+                    c.agent_name || '',
+                    c.duration || '0',
+                    c.outcome || '',
+                    c.sentiment || '',
+                    (c.note || '').slice(0, 500).replace(/\n/g, ' ')
+                ];
+            });
+
+            // Proper CSV escaping
+            const csvContent = [headers, ...rows].map(row => 
+                row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(",")
+            ).join("\n");
+            // Add UTF-8 BOM for Excel compatibility
+            const BOM = '\uFEFF';
+            const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            const filename = `telephony_audit_${new Date().toISOString().split('T')[0]}.csv`;
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 200);
+            
+            // REDUNDANT PHYSICAL SAVE (For easy discovery)
+            try {
+                const { leadsApi } = await import('../api/client');
+                await leadsApi.generatePhysicalReport(csvContent, filename);
+                showToast(`FILE SAVED TO: ZentrixCRM/server/exports/${filename}`, 'success');
+            } catch (err) {
+                console.warn('Physical save skip:', err);
+            }
+            
+            showToast('Excel-ready CSV exported and saved to history', 'success');
+            
+            // Register in Export Center
+            try {
+                const { documentsApi } = await import('../api/client');
+                await documentsApi.create({
+                    name: filename,
+                    type: 'Report',
+                    status: 'Final',
+                    notes: `Telephony CSV Export: ${filteredCalls.length} records`
+                });
+            } catch (err) {
+                console.warn('Failed to log export metadata:', err);
+            }
+        } catch (err) {
+            showToast('Export failed', 'error');
+        }
+    };
+
+    const downloadTranscript = async (interactionId, leadName) => {
+        try {
+            const token = sessionStorage.getItem('zentrix_token');
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+            const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error('Failed to fetch transcript');
+            const text = await response.text();
+            
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            
+            const safeName = (leadName || 'Lead').replace(/[^a-zA-Z0-9]/g, '_');
+            const filename = `Transcript_${safeName}_${interactionId.slice(0,8)}.txt`;
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 200);
+            
+            showToast('Transcript downloaded', 'success');
+        } catch (err) {
+            showToast('Download failed', 'error');
+        }
     };
 
     // ── Metrics calculation ──
@@ -100,69 +303,82 @@ export default function CallRecords() {
     };
 
     return (
-        <div className="animate-fadeIn pb-10 relative">
+        <div className="ent-page-container animate-fadeIn pb-10">
             {/* Header Section */}
-            <div className="page-header">
-                <div className="page-header-left">
-                    <h1 className="page-title">Voice Intelligence</h1>
-                    <p className="page-subtitle">Unified log of all client communications and voice engagements</p>
+            <div className="page-header" style={{ marginBottom: 32 }}>
+                <div>
+                    <h1 className="ent-section-title" style={{ fontSize: '1.75rem' }}>Voice Intelligence Hub</h1>
+                    <p className="ent-section-subtitle">Unified log of all client communications and voice engagements</p>
                 </div>
-                <div className="page-actions">
+                <div className="page-actions" style={{ gap: 16 }}>
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                         <input
                             type="text"
                             placeholder="Filter communications..."
                             className="form-control"
-                            style={{ paddingLeft: '32px', width: '280px', fontSize: '0.85rem' }}
+                            style={{ paddingLeft: '32px', width: '320px', fontSize: '0.85rem', borderRadius: 14 }}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <button onClick={exportToCSV} className="btn btn-secondary shadow-sm">
-                        <Download size={15} /> Export History
-                    </button>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                        <button onClick={generatePDFReport} className="btn hover-lift" style={{ 
+                            padding: '0 20px', height: 44, borderRadius: '12px', background: 'var(--navy-900)', color: 'white',
+                            display: 'flex', alignItems: 'center', gap: 10, border: 'none', fontWeight: 800
+                        }}>
+                            <FileText size={18} /> EXPORT PDF (OFFICIAL)
+                        </button>
+                        <button onClick={exportToCSV} className="btn hover-lift" style={{ 
+                            padding: '0 16px', height: 44, borderRadius: '12px', background: 'white', 
+                            border: '1px solid var(--border-medium)', color: 'var(--navy-700)',
+                            display: 'flex', alignItems: 'center', gap: 10, fontWeight: 800
+                        }}>
+                            <Download size={18} /> CSV
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Stats Ribbon */}
-            <div className="grid grid-4 mb-6">
+            <div className="grid grid-4 mb-10" style={{ gap: 24 }}>
                 {[
-                    { label: 'Total Volume', value: totalCalls, icon: <Phone size={20} />, color: 'var(--navy-600)', trend: '+12% vs last week' },
-                    { label: 'Outreach Success', value: `${Math.round((connectedCalls / totalCalls) * 100 || 0)}%`, icon: <CheckCircle2 size={20} />, color: 'var(--accent-emerald)', trend: 'High connectivity' },
-                    { label: 'Avg Engagement', value: fmtDuration(avgDurationSeconds), icon: <Clock size={20} />, color: 'var(--accent-cyan)', trend: 'Improving quality' },
-                    { label: 'Total Airtime', value: fmtDuration(totalSeconds), icon: <BarChart3 size={20} />, color: 'var(--accent-violet)', trend: 'Daily growth' },
+                    { label: 'Total Volume', value: totalCalls, icon: <Phone size={20} />, color: 'var(--navy-600)', trend: '+12% growth' },
+                    { label: 'Outreach Success', value: `${Math.round((connectedCalls / totalCalls) * 100 || 0)}%`, icon: <CheckCircle2 size={20} />, color: '#059669', trend: 'High connectivity' },
+                    { label: 'Avg Engagement', value: fmtDuration(avgDurationSeconds), icon: <Clock size={20} />, color: '#0891b2', trend: 'Improving quality' },
+                    { label: 'Total Airtime', value: fmtDuration(totalSeconds), icon: <BarChart3 size={20} />, color: '#7c3aed', trend: 'Daily growth' },
                 ].map((stat, i) => (
-                    <div key={i} className="card stat-card hover-lift" style={{
-                        padding: '18px 20px',
-                        border: '1px solid var(--border-light)',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-                    }}>
+                    <div key={i} className="ent-card" style={{ padding: '24px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                                <div className="stat-label" style={{ fontSize: '0.65rem', letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{stat.label}</div>
-                                <div className="stat-value" style={{ fontSize: '1.4rem', color: i === 0 ? 'var(--navy-900)' : stat.color }}>{stat.value}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: 4 }}>{stat.trend}</div>
+                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.05em', color: 'var(--slate-500)', marginBottom: 8 }}>{stat.label}</div>
+                                <div style={{ fontSize: '1.75rem', fontWeight: 900, color: 'var(--navy-900)' }}>{stat.value}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                                    <div style={{ width: 12, height: 2, background: stat.color, borderRadius: 1 }} />
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)' }}>{stat.trend}</span>
+                                </div>
                             </div>
-                            <div style={{ padding: 10, borderRadius: 12, background: 'var(--slate-50)', color: stat.color }}>{stat.icon}</div>
+                            <div style={{ width: 48, height: 48, borderRadius: 16, background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {stat.icon}
+                            </div>
                         </div>
                     </div>
                 ))}
             </div>
 
             {/* Performance Analytics Row */}
-            <div className="grid grid-2 mb-8" style={{ gridTemplateColumns: '2fr 1fr' }}>
-                <div className="card glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.8)' }}>
+            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: '2fr 1fr', gap: 32 }}>
+                <div className="ent-card" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                         <div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)' }}>Interaction Horizon</h3>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>Omni-channel voice traffic over time</p>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-900)' }}>Interaction Horizon</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, fontWeight: 600 }}>Omni-channel voice traffic over time</p>
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                            <span style={{ fontSize: '10px', background: 'var(--navy-900)', color: 'white', padding: '2px 8px', borderRadius: 6, fontWeight: 900 }}>DAILY VOLUME</span>
+                            <span style={{ fontSize: '10px', background: 'var(--navy-900)', color: 'white', padding: '4px 12px', borderRadius: 8, fontWeight: 900 }}>REAL-TIME DATA</span>
                         </div>
                     </div>
-                    <div style={{ height: 200, width: '100%' }}>
+                    <div style={{ height: 260, width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
                                 <defs>
@@ -190,18 +406,18 @@ export default function CallRecords() {
                     </div>
                 </div>
 
-                <div className="card glass-card" style={{ padding: '24px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.8)' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 20 }}>Refinement Matrix</h3>
+                <div className="ent-card" style={{ padding: '32px' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 24 }}>Refinement Matrix</h3>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                         <div>
-                            <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 8 }}>
+                            <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
                                 Communication Outcome
                             </label>
                             <select
                                 value={outcomeFilter}
                                 onChange={(e) => setOutcomeFilter(e.target.value)}
-                                style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border-medium)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-900)', outline: 'none' }}
+                                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--border-medium)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)', outline: 'none', background: 'var(--slate-50)' }}
                             >
                                 <option value="All">Global Consensus (All)</option>
                                 {outcomes.map(o => <option key={o} value={o}>{o}</option>)}
@@ -209,26 +425,53 @@ export default function CallRecords() {
                         </div>
 
                         <div>
-                            <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 8 }}>
-                                Assigned Intelligence Unit
+                            <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
+                                Agent Identity Selection
                             </label>
                             <select
                                 value={agentFilter}
                                 onChange={(e) => setAgentFilter(e.target.value)}
-                                style={{ width: '100%', padding: '10px 14px', borderRadius: 12, border: '1px solid var(--border-medium)', fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-900)', outline: 'none' }}
+                                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--border-medium)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)', outline: 'none', background: 'var(--slate-50)' }}
                             >
-                                <option value="All">Unified Team (All)</option>
-                                {agents.map(a => <option key={a} value={a}>{a}</option>)}
+                                <option value="All">Unified Team (All Agents)</option>
+                                {agentOptions.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
                         </div>
 
-                        <div style={{ marginTop: 10, padding: '14px', borderRadius: 16, background: 'var(--slate-50)', border: '1px solid var(--border-light)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--navy-600)', marginBottom: 4 }}>
-                                <Filter size={14} />
-                                <span style={{ fontSize: '11px', fontWeight: 800 }}>ACTIVE FILTERS</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                            <div>
+                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
+                                    Horizon Start
+                                </label>
+                                <input 
+                                    type="date" 
+                                    className="form-control" 
+                                    value={startDate} 
+                                    onChange={e => setStartDate(e.target.value)} 
+                                    style={{ fontSize: '0.8rem', borderRadius: 14, padding: '10px 14px', background: 'white' }}
+                                />
                             </div>
-                            <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                Displaying {filteredCalls.length} of {calls?.length || 0} interaction objects based on current sync parameters.
+                            <div>
+                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 10 }}>
+                                    Horizon End
+                                </label>
+                                <input 
+                                    type="date" 
+                                    className="form-control" 
+                                    value={endDate} 
+                                    onChange={e => setEndDate(e.target.value)} 
+                                    style={{ fontSize: '0.8rem', borderRadius: 14, padding: '10px 14px', background: 'white' }}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ padding: '18px', borderRadius: 20, background: 'var(--navy-50)', border: '1px solid var(--navy-100)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--navy-600)', marginBottom: 6 }}>
+                                <Filter size={16} />
+                                <span style={{ fontSize: '12px', fontWeight: 900 }}>AUDIT COMPLIANCE</span>
+                            </div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--navy-800)', fontWeight: 600, opacity: 0.8 }}>
+                                Found {filteredCalls.length} logs matching your parameters.
                             </div>
                         </div>
                     </div>
@@ -327,8 +570,11 @@ export default function CallRecords() {
                                                 }}>
                                                     <AudioLines size={14} /> AI QA
                                                 </button>
+                                                <button onClick={() => downloadTranscript(call.id, call.lead_name)} className="btn btn-icon btn-ghost btn-sm" title="Download Text Transcript" style={{ color: 'var(--accent-indigo)' }}>
+                                                    <FileText size={15} />
+                                                </button>
                                                 <button onClick={() => navigate(`/leads/${call.lead_id}`)} className="btn btn-icon btn-ghost btn-sm" title="Open Lead Intelligence">
-                                                    <ExternalLink size={16} />
+                                                    <ExternalLink size={15} />
                                                 </button>
                                             </div>
                                         </td>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { authApi } from '../api/client';
-import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shield, Zap, BarChart3, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shield, Zap, BarChart3, CheckCircle2, Phone } from 'lucide-react';
 
 const getSubdomain = () => {
     const host = window.location.hostname;
@@ -355,45 +355,6 @@ export default function Login() {
                         </p>
                     </div>
 
-                    {/* Role selector */}
-                    <div style={{
-                        display: 'flex', gap: 6, padding: 4,
-                        background: 'var(--slate-50)', borderRadius: 12, marginBottom: 24,
-                        border: '1px solid var(--border-light)',
-                    }}>
-                        {[
-                            { name: 'Admin', color: '#6366f1', lightBg: 'rgba(99,102,241,0.08)' },
-                            { name: 'Manager', color: '#4f46e5', lightBg: 'rgba(79,70,229,0.08)' },
-                            { name: 'Team Lead', color: '#06b6d4', lightBg: 'rgba(6,182,212,0.08)' },
-                            { name: 'Agent', color: '#10b981', lightBg: 'rgba(16,185,129,0.08)' },
-                        ].map(role => {
-                            const isActive = selectedRole === role.name;
-                            return (
-                                <button
-                                    key={role.name}
-                                    type="button"
-                                    className={isActive ? '' : 'login-role-btn'}
-                                    onClick={() => {
-                                        setSelectedRole(role.name);
-                                    }}
-                                    style={{
-                                        flex: 1, padding: '9px 2px', fontSize: '0.7rem', fontWeight: 700,
-                                        borderRadius: 9, border: 'none',
-                                        background: isActive ? role.color : 'transparent',
-                                        color: isActive ? 'white' : 'var(--text-muted)',
-                                        boxShadow: isActive ? `0 4px 14px ${role.color}35` : 'none',
-                                        cursor: 'pointer',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.04em',
-                                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {role.name}
-                                </button>
-                            );
-                        })}
-                    </div>
 
                     <form onSubmit={handleSubmit}>
                         {/* Email */}
@@ -536,9 +497,35 @@ export default function Login() {
                         </a>
                     </div>
 
+                    {/* Support & Helpline */}
+                    <div style={{
+                        marginTop: 32, padding: '16px', borderRadius: '14px',
+                        background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)',
+                        textAlign: 'center'
+                    }}>
+                        <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 800, color: '#1e3a73', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Facing difficulties?
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                    <Phone size={12} color="#1e3a73" />
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>+91-80766-31994</span>
+                            </div>
+                            <div style={{ width: '1px', height: '14px', background: 'rgba(0,0,0,0.1)' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                                    <Mail size={12} color="#1e3a73" />
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>billing@zentrixcrm.com</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Footer text */}
                     <div style={{
-                        marginTop: 36, paddingTop: 20,
+                        marginTop: 24, paddingTop: 16,
                         borderTop: '1px solid var(--border-light)',
                         textAlign: 'center',
                     }}>

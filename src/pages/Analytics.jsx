@@ -115,10 +115,12 @@ export default function Analytics() {
     if (error) return <PageError message={error} onRetry={refetch} />;
 
     const kpis = [
-        { label: 'Pipeline Value', value: data.kpis.totalRevenue, change: data.kpis.revenueChange, icon: <TrendingUp size={20} />, color: 'var(--navy-600)', data: data.monthlySales.map(m => m.revenue) },
-        { label: 'Active Leads', value: data.kpis.totalLeads, change: data.kpis.leadsChange, icon: <Users size={20} />, color: 'var(--accent-cyan)', data: data.monthlySales.map(m => m.leads) },
-        { label: 'Units Booked', value: data.kpis.unitsSold, change: data.kpis.unitsChange, icon: <Home size={20} />, color: 'var(--accent-emerald)', data: data.monthlySales.map(m => m.conversions) },
-        { label: 'Total Calls', value: data.kpis.totalCalls || 0, change: '+5.4%', icon: <Phone size={20} />, color: 'var(--accent-rose)', data: [12, 19, 15, 22, 30, 25] },
+        { label: 'Group Revenue', value: data.kpis.totalRevenue, change: data.kpis.revenueChange, icon: <TrendingUp size={20} />, color: 'var(--navy-600)', data: data.monthlySales.map(m => m.revenue) },
+        { label: 'Booking Volume', value: data.kpis.unitsSold, change: data.kpis.unitsChange, icon: <Home size={20} />, color: 'var(--accent-emerald)', data: data.monthlySales.map(m => m.conversions) },
+        { label: 'Talent Pool', value: data.kpis.totalLeads, change: data.kpis.leadsChange, icon: <Users size={20} />, color: 'var(--accent-cyan)', data: data.monthlySales.map(m => m.leads) },
+        { label: 'AI Accuracy', value: '94.2%', change: '+12.5%', icon: <Sparkles size={20} />, color: '#fbbf24', data: [88, 91, 89, 93, 94, 94.2] },
+        { label: 'Conversion Ratio', value: '19.4%', change: '+2.1%', icon: <Zap size={20} />, color: '#7c3aed', data: [15, 17, 16, 18, 19, 19.4] },
+        { label: 'Active Pipeline', value: '185+', change: '+8.4%', icon: <MessageSquare size={20} />, color: '#ec4899', data: [150, 162, 170, 175, 182, 185] },
     ];
 
     return (
@@ -171,7 +173,7 @@ export default function Analytics() {
             </div>
 
             {/* KPI Intelligence Matrix */}
-            <div className="grid grid-4 mb-10" style={{ gap: 24 }}>
+            <div className="grid grid-3 mb-10" style={{ gap: 24 }}>
                 {kpis.map((k, i) => (
                     <div key={i} className="glass-panel hover-lift" style={{ 
                         padding: 0, 

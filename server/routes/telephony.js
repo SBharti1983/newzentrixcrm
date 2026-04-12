@@ -387,6 +387,22 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
             }
         }
 
+        // ─── SYNC WTI DISPOSITION TO CRM PIPELINE ───
+        if (finalLeadId && disposition) {
+            let nextStage = null;
+            const disp = disposition.toLowerCase();
+            if (disp.includes('interested') && !disp.includes('not')) nextStage = 'Interested';
+            else if (disp.includes('not interested')) nextStage = 'Lost';
+            else if (disp.includes('invalid') || disp.includes('wrong')) nextStage = 'Lost';
+            else if (disp.includes('follow-up')) nextStage = 'Connected';
+
+            if (nextStage) {
+                console.log(`[Telephony] WTI Disposition '${disposition}' → Updating Lead Stage to: ${nextStage}`);
+                await pool.query('UPDATE leads SET stage = $1, updated_at = NOW() WHERE id = $2 AND tenant_id = $3', 
+                    [nextStage, finalLeadId, req.tenantId]);
+            }
+        }
+
         // ─── PUSH TRANSCRIPT TO FIREBASE RTDB ───
         // Makes transcript available in real-time for Android app + web dashboard
         if (transcriptLines && savedInteractionId) {
@@ -816,6 +832,7 @@ router.get('/agent-activity', hybridAuth, async (req, res) => {
                 user_id,
                 COUNT(*) filter (where created_at >= current_date) as calls_today,
                 COUNT(*) filter (where created_at >= date_trunc('week', current_date)) as calls_this_week,
+                COUNT(*) filter (where created_at >= date_trunc('month', current_date)) as calls_this_month,
                 COUNT(*) filter (where outcome = 'Interested' OR sentiment = 'Positive') as success_calls,
                 COUNT(*) filter (where recording_url IS NOT NULL AND created_at >= current_date) as synced_recordings_today,
                 COUNT(*) filter (where recording_url IS NOT NULL) as synced_recordings
@@ -844,7 +861,7 @@ router.get('/agent-activity', hybridAuth, async (req, res) => {
         console.log(`[MDM Debug] STEP 8: Mapping report...`);
 
         const activityReport = agents.map(agent => {
-            const m = metricMap[agent.id] || { calls_today: 0, calls_this_week: 0, success_calls: 0, synced_recordings: 0, synced_recordings_today: 0 };
+            const m = metricMap[agent.id] || { calls_today: 0, calls_this_week: 0, calls_this_month: 0, success_calls: 0, synced_recordings: 0, synced_recordings_today: 0 };
 
             // Compare today's calls vs today's synced recordings to determine pending uploads
             const callsToday = parseInt(m.calls_today) || 0;
@@ -860,6 +877,7 @@ router.get('/agent-activity', hybridAuth, async (req, res) => {
                 telephonyId: agent.telephony_agent_id || 'Not Mapped',
                 callsToday: callsToday,
                 callsThisWeek: parseInt(m.calls_this_week) || 0,
+                callsThisMonth: parseInt(m.calls_this_month) || 0,
                 successCount: parseInt(m.success_calls) || 0,
                 syncedRecordings: parseInt(m.synced_recordings) || 0,
                 syncStatus: isSyncPending ? `Waiting Wi-Fi (${pendingUploads} pending)` : 'Up to Date',

@@ -118,11 +118,16 @@ const ROLE_COLORS = {
 export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onLogout, onNavigate }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, canAccess } = useAuth();
+    const { user, canAccess, refreshUser } = useAuth();
     const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
     const [realLeadCount, setRealLeadCount] = useState(null);
 
     const isMainDomain = window.location.hostname === 'zentrixcrm.com' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // Auto-sync user profile & features on mount to reflect latest administrative changes (e.g. premium activations)
+    useEffect(() => {
+        refreshUser();
+    }, []);
 
     useEffect(() => {
         if (canAccess('/leads')) {

@@ -85,6 +85,10 @@ export default function Admin() {
         if (currentUser?.role === 'sales_manager') {
              return u.id === currentUser?.id || u.role === 'agent';
         }
+
+        if (currentUser?.role === 'admin') {
+            return u.role !== 'superadmin';
+        }
         return true;
     });
 
@@ -368,6 +372,7 @@ export default function Admin() {
         const [sending, setSending] = useState(false);
         const { data: report, loading, error } = useApi(telephonyApi.getAgentActivity);
         const [searchTerm, setSearchTerm] = useState('');
+        const [timeFilter, setTimeFilter] = useState('Today'); // 'Today' | 'Weekly' | 'Monthly'
 
         const filteredReport = (report || []).filter(r => {
             const name = r.name || '';
@@ -415,17 +420,44 @@ export default function Admin() {
                 </div>
 
                 {/* Handset Sync Integrity Matrix */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0 }}>Agent Device Integrity & Dial Analytics</h3>
-                    <div style={{ position: 'relative' }}>
-                        <Smartphone size={16} color="#94a3b8" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
-                        <input 
-                            type="text"
-                            placeholder="Filter by Name, ID or Team..."
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            style={{ padding: '12px 16px 12px 42px', borderRadius: '12px', border: '1px solid var(--border-medium)', background: 'white', fontSize: '0.85rem', fontWeight: 600, width: '280px', outline: 'none' }}
-                        />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px', flexWrap: 'wrap', gap: '20px' }}>
+                    <div>
+                        <h3 className="ent-section-title">Agent Device Integrity & Dial Analytics</h3>
+                        <p className="ent-section-subtitle" style={{ marginBottom: 0 }}>Active fleet monitoring & periodic performance trackers</p>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {/* Periodic Toggle */}
+                        <div style={{ display: 'flex', background: 'var(--slate-100)', padding: '4px', borderRadius: '14px', border: '1px solid var(--border-light)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.03)' }}>
+                            {['Today', 'Weekly', 'Monthly'].map(f => (
+                                <button
+                                    key={f}
+                                    onClick={() => setTimeFilter(f)}
+                                    style={{
+                                        padding: '8px 20px', borderRadius: '10px', border: 'none',
+                                        background: timeFilter === f ? 'white' : 'transparent',
+                                        color: timeFilter === f ? 'var(--navy-900)' : 'var(--slate-500)',
+                                        fontSize: '0.75rem', fontWeight: timeFilter === f ? 900 : 700, cursor: 'pointer',
+                                        boxShadow: timeFilter === f ? '0 4px 12px rgba(10,22,40,0.08)' : 'none',
+                                        transition: 'all 0.2s', minWidth: '90px'
+                                    }}
+                                >
+                                    {f}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Search */}
+                        <div style={{ position: 'relative' }}>
+                            <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)' }} />
+                            <input 
+                                type="text"
+                                placeholder="Search fleet..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                style={{ padding: '12px 16px 12px 38px', borderRadius: '14px', border: '1px solid var(--border-medium)', background: 'white', fontSize: '0.85rem', fontWeight: 600, width: '240px', outline: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -434,10 +466,10 @@ export default function Admin() {
                         <thead>
                             <tr>
                                 <th>Agent Identity</th>
-                                <th>Designation / Team</th>
-                                <th>Calls Today</th>
+                                <th>Team / Designation</th>
+                                <th>Calls {timeFilter}</th>
                                 <th>Success Ratio</th>
-                                <th>Recording Sync Status</th>
+                                <th>Recording Sync</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -464,20 +496,45 @@ export default function Admin() {
                                             <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-600)' }}>{ROLE_LABELS[r.role] || r.role}</div>
                                             <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>{r.department}</div>
                                         </td>
-                                        <td style={{ fontWeight: 800 }}>{r.callsToday} <span style={{ color: '#94a3b8', fontSize: '0.75rem', marginLeft: 4 }}>({r.callsThisWeek} total)</span></td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <div style={{ width: '60px', height: '6px', background: '#e2e8f0', borderRadius: '3px' }}>
-                                                    <div style={{ width: `${r.callsToday > 0 ? (r.successCount / r.callsToday * 100) : 0}%`, height: '100%', background: '#10b981', borderRadius: '3px' }} />
-                                                </div>
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>{r.successCount} Wins</span>
+                                        <td style={{ fontWeight: 800 }}>
+                                            <div style={{ fontSize: '1.1rem', color: 'var(--navy-900)' }}>
+                                                {timeFilter === 'Today' ? r.callsToday : timeFilter === 'Weekly' ? r.callsThisWeek : r.callsThisMonth}
+                                            </div>
+                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>
+                                                {timeFilter === 'Today' ? 'Since morning' : timeFilter === 'Weekly' ? 'Current Week' : 'Current Month'}
                                             </div>
                                         </td>
                                         <td>
-                                            {r.syncStatus === 'Up to Date' ? (
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, padding: '4px 10px', background: '#ecfdf5', color: '#10b981', borderRadius: '99px', textTransform: 'uppercase' }}>✓ Synced</span>
+                                            {(() => {
+                                                const total = timeFilter === 'Today' ? r.callsToday : timeFilter === 'Weekly' ? r.callsThisWeek : r.callsThisMonth;
+                                                const pct = total > 0 ? (r.successCount / total * 100) : 0;
+                                                return (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <div style={{ width: '70px', height: '8px', background: 'var(--slate-100)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '4px' }} />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--navy-900)' }}>{r.successCount} wins</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td style={{ padding: '20px 24px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ 
+                                                    width: 10, height: 10, borderRadius: '50%', 
+                                                    background: r.isOnline ? '#10b981' : '#cbd5e1',
+                                                    boxShadow: r.isOnline ? '0 0 8px #10b981' : 'none'
+                                                }} />
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, color: r.isOnline ? '#059669' : '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {r.isOnline ? 'Active Now' : 'Last seen: Offline'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '20px 24px' }}>
+                                            {r.syncStatus.includes('Up to Date') ? (
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, padding: '4px 12px', background: '#ecfdf5', color: '#10b981', borderRadius: '8px', textTransform: 'uppercase', border: '1px solid #b7ebc6' }}>✓ Fully Synced</span>
                                             ) : (
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, padding: '4px 10px', background: '#fffbeb', color: '#f59e0b', borderRadius: '99px', textTransform: 'uppercase' }}>⚠ {r.syncStatus}</span>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 900, padding: '4px 12px', background: '#fffbeb', color: '#f59e0b', borderRadius: '8px', textTransform: 'uppercase', border: '1px solid #fde68a' }}>⚠ Sync Pending</span>
                                             )}
                                         </td>
                                     </tr>

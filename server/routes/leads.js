@@ -10,19 +10,84 @@ router.use(auth);
 // GET /api/leads/export-calls
 router.get('/export-calls', async (req, res) => {
     try {
-        const { rows } = await pool.query(
-            `SELECT i.*, l.name as lead_name, l.phone as lead_phone, u.name as agent_name
-             FROM interactions i
-             JOIN leads l ON i.lead_id = l.id
-             JOIN users u ON i.user_id = u.id
-             WHERE i.type = 'Call' AND i.tenant_id = $1
-             ORDER BY i.date DESC`,
-            [req.tenantId]
-        );
+        const { agentId, startDate, endDate } = req.query;
+        let query = `
+            SELECT i.*, l.name as lead_name, l.phone as lead_phone, u.name as agent_name, u.phone as agent_phone, u.role as designation
+            FROM interactions i
+            JOIN leads l ON i.lead_id = l.id
+            JOIN users u ON i.user_id = u.id
+            WHERE i.type = 'Call' AND i.tenant_id = $1
+        `;
+        const params = [req.tenantId];
+        let i = 2;
+
+        if (agentId && agentId !== 'All') {
+            query += ` AND i.user_id = $${i++}`;
+            params.push(agentId);
+        }
+        if (startDate) {
+            query += ` AND i.date >= $${i++}`;
+            params.push(startDate);
+        }
+        if (endDate) {
+            // Include full end date
+            query += ` AND i.date <= $${i++}`;
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            params.push(end.toISOString());
+        }
+
+        query += ` ORDER BY i.date DESC`;
+        
+        const { rows } = await pool.query(query, params);
         res.json(rows);
     } catch (err) {
         console.error('Export calls error:', err);
         res.status(500).json({ error: 'Failed to fetch call records' });
+    }
+});
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+
+// POST /api/leads/generate-physical-report
+router.post('/generate-physical-report', async (req, res) => {
+    try {
+        const { csvContent, filename } = req.body;
+        if (!csvContent || !filename) return res.status(400).json({ error: 'Content and filename required' });
+
+        // 1. Primary Save (Project Exports Folder)
+        const exportsDir = path.join(__dirname, '../exports');
+        if (!fs.existsSync(exportsDir)) fs.mkdirSync(exportsDir, { recursive: true });
+        const filePath = path.join(exportsDir, filename);
+        
+        fs.writeFileSync(filePath, '\ufeff' + csvContent, 'utf8');
+
+        // 2. Secondary Save (Windows Downloads Folder) - FORCING it to user's view
+        let downloadedPath = null;
+        try {
+            const downloadsFolder = path.join(os.homedir(), 'Downloads');
+            if (fs.existsSync(downloadsFolder)) {
+                downloadedPath = path.join(downloadsFolder, filename);
+                fs.writeFileSync(downloadedPath, '\ufeff' + csvContent, 'utf8');
+                console.log(`[REPORT ENGINE] Forced copy to Downloads: ${downloadedPath}`);
+            }
+        } catch (e) {
+            console.warn('[REPORT ENGINE] Could not reach Windows Downloads folder:', e.message);
+        }
+        
+        res.json({ 
+            success: true, 
+            path: filePath,
+            downloadsPath: downloadedPath,
+            message: downloadedPath 
+                ? `Report saved directly into your Windows Downloads folder!` 
+                : `Report saved to server/exports/${filename}`
+        });
+    } catch (err) {
+        console.error('Physical report gen error:', err);
+        res.status(500).json({ error: 'Failed to save physical report' });
     }
 });
 

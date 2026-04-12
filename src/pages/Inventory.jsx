@@ -247,10 +247,10 @@ export default function Inventory() {
                                 Institutional Asset Repository
                              </span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, letterSpacing: '-2.5px', lineHeight: 1 }}>
+                        <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, letterSpacing: '-2.5px', lineHeight: 1, color: COLORS.white }}>
                             The Inventory <span style={{ color: COLORS.cyan }}>Vault</span>
                         </h1>
-                        <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.4)', fontSize: '1.2rem', fontWeight: 600, maxWidth: '600px' }}>
+                        <p style={{ margin: '12px 0 0', color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem', fontWeight: 600, maxWidth: '600px' }}>
                             Managing {units.length} institutional assets across {projects.length} strategic portfolios.
                         </p>
                     </div>

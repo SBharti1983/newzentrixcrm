@@ -87,6 +87,56 @@
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Enterprise Elevation Tokens */
+  --ent-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --ent-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --ent-glass-bg: rgba(255, 255, 255, 0.7);
+  --ent-glass-border: rgba(255, 255, 255, 0.4);
+}
+
+/* ─── Enterprise Utilities ────────────────────────────────────────── */
+.ent-page-container {
+  padding: 32px 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.ent-section-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--navy-900);
+  margin-bottom: 8px;
+}
+
+.ent-section-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+.ent-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+.ent-card:hover {
+  border-color: var(--navy-100);
+  box-shadow: 0 12px 30px rgba(10, 22, 40, 0.05);
+}
+
+.ent-table-header {
+  background: var(--slate-50);
+  letter-spacing: 0.05em;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--slate-500);
+  text-transform: uppercase;
 }
 
 /* ─── Reset & Base ───────────────────────────────────────────────── */
