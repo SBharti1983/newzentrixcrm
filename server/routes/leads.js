@@ -730,8 +730,8 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
         const userMap = new Map();
         allUsers.forEach(u => {
             userMap.set(u.id, u.id);
-            userMap.set(u.email.toLowerCase(), u.id);
-            userMap.set(u.name.toLowerCase(), u.id);
+            if (u.email) userMap.set(u.email.toLowerCase(), u.id);
+            if (u.name) userMap.set(u.name.toLowerCase(), u.id);
         });
 
         let importedCount = 0;
@@ -739,14 +739,28 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
         let skippedLimit = 0;
 
         for (const row of rows) {
-            const name = row['Name'] || row['name'] || row['Lead Name'] || row['lead_name'];
-            const contactCellValue = row['Contact'] || row['contact'] || row['Phone'] || row['phone'] || row['Mobile'] || row['mobile'];
-            const phone = contactCellValue ? String(contactCellValue).trim() : '';
-            const email = row['Email'] || row['email'];
-            const city = row['City'] || row['city'];
-            const source = row['Source'] || row['source'] || 'Import';
+            // Normalize header access to be case-insensitive
+            const getVal = (fields) => {
+                for (const f of fields) {
+                    const foundKey = Object.keys(row).find(k => k.toLowerCase().replace(/[\s_]/g, '') === f.toLowerCase().replace(/[\s_]/g, ''));
+                    if (foundKey) return row[foundKey];
+                }
+                return null;
+            };
+
+            const name = getVal(['Name', 'Lead Name']);
+            const phoneVal = getVal(['Contact', 'Phone', 'Mobile', 'Number']);
+            const phone = phoneVal ? String(phoneVal).trim() : '';
+            const email = getVal(['Email']);
+            const city = getVal(['City', 'Location']);
+            const source = getVal(['Source']) || 'Import';
+            const status = getVal(['Status']) || 'Active';
+            const stage = getVal(['Stage']) || 'New';
+            const budget = getVal(['Budget']);
+            const scoreVal = getVal(['Score']);
+            const score = (scoreVal && !isNaN(parseInt(scoreVal))) ? parseInt(scoreVal) : 50;
             
-            const assignedToRaw = row['Assigned To'] || row['assigned_to'] || row['Assigned'] || row['Agent'] || row['agent'] || null;
+            const assignedToRaw = getVal(['Assigned To', 'Agent', 'Assigned']);
             let assignedTo = null;
             if (assignedToRaw) {
                assignedTo = userMap.get(String(assignedToRaw).trim().toLowerCase()) || null;
@@ -766,9 +780,9 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
             }
 
             await pool.query(
-                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, assigned_to)
-                 VALUES ($1, $2, $3, $4, $5, $6, 'New', 'Medium', 50, $7)`,
-                [req.tenantId, name, phone, email || null, city || null, source, assignedTo]
+                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, assigned_to, status, budget)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'Medium', $8, $9, $10, $11)`,
+                [req.tenantId, name, phone, email || null, city || null, source, stage, score, assignedTo, status, budget || null]
             );
             importedCount++;
         }
