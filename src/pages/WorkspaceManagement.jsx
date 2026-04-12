@@ -141,8 +141,13 @@ export default function WorkspaceManagement() {
                                 <tr key={t.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                            <div style={{ width: 44, height: 44, borderRadius: '14px', background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900, color: '#475569' }}>
-                                                {t.name?.[0].toUpperCase()}
+                                            <div style={{ 
+                                                width: 44, height: 44, borderRadius: '14px', 
+                                                background: 'linear-gradient(135deg, #6366f1, #a855f7)', 
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                fontSize: '0.9rem', fontWeight: 900, color: 'white' 
+                                            }}>
+                                                {t.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{t.name}</div>
@@ -153,8 +158,8 @@ export default function WorkspaceManagement() {
                                     <td style={{ padding: '16px 24px' }}>
                                         <span style={{ 
                                             padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800,
-                                            background: t.plan === 'enterprise' ? '#fdf2f8' : t.plan === 'pro' ? '#f5f3ff' : '#f0f9ff',
-                                            color: t.plan === 'enterprise' ? '#be185d' : t.plan === 'pro' ? '#6d28d9' : '#0369a1',
+                                            background: t.plan === 'enterprise' ? '#fdf2f8' : t.plan?.includes('solo') ? '#ecfdf5' : '#f5f3ff',
+                                            color: t.plan === 'enterprise' ? '#be185d' : t.plan?.includes('solo') ? '#059669' : '#6d28d9',
                                             textTransform: 'uppercase', border: '1px solid rgba(0,0,0,0.05)'
                                         }}>
                                             {t.plan}
@@ -162,7 +167,7 @@ export default function WorkspaceManagement() {
                                     </td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#334155' }}>{t.max_users} Users Cap</div>
-                                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{t.max_leads} Leads License</div>
+                                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{t.max_leads || 500} Leads License</div>
                                     </td>
                                     <td style={{ padding: '16px 24px' }}>
                                         <div style={{ 
@@ -179,14 +184,23 @@ export default function WorkspaceManagement() {
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                             <button 
                                                 onClick={() => toggleTenantStatus(t)}
-                                                style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: t.is_active ? '#dc2626' : '#059669', cursor: 'pointer' }}
+                                                style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: t.is_active ? '#dc2626' : '#059669', cursor: 'pointer', transition: 'all 0.2s' }}
                                                 title={t.is_active ? 'Suspend Workspace' : 'Activate Workspace'}
                                             >
-                                                <Lock size={16} />
+                                                {t.is_active ? <Lock size={16} /> : <Zap size={16} />}
                                             </button>
-                                            <button style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: '#475569', cursor: 'pointer' }}>
-                                                <MoreHorizontal size={16} />
-                                            </button>
+                                            <div style={{ position: 'relative' }}>
+                                                <button 
+                                                    className="dropdown-trigger"
+                                                    style={{ padding: '8px', borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', color: '#475569', cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        const confirm = window.confirm(`Manage ${t.name}? This will open Infrastructure Controls.`);
+                                                        if (confirm) addToast({ type: 'info', title: 'Loading Console', message: 'Connecting to cluster terminal...' });
+                                                    }}
+                                                >
+                                                    <MoreHorizontal size={16} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
