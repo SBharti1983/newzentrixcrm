@@ -20,6 +20,11 @@ export default function WorkspaceManagement() {
     const [formData, setFormData] = useState({
         name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500
     });
+    
+    // Deletion State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [tenantToDelete, setTenantToDelete] = useState(null);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
     useEffect(() => {
         fetchTenants();
@@ -62,7 +67,6 @@ export default function WorkspaceManagement() {
                 await superAdminApi.updateTenant(editingTenant.id, formData);
                 addToast({ type: 'success', title: 'Profile Updated', message: `${formData.name} configurations refreshed.` });
             } else {
-                // For creation, we generate a dummy admin password if not provided
                 await superAdminApi.createTenant({ 
                     ...formData, 
                     admin_name: `${formData.name} Admin`, 
@@ -78,21 +82,28 @@ export default function WorkspaceManagement() {
         }
     };
 
-    const handleDelete = async (tenant) => {
-        const confirmPhrase = `delete ${tenant.slug}`;
-        const input = window.prompt(`DANGER: This action is PERMANENT. To confirm, type: ${confirmPhrase}`);
+    const handleDelete = async () => {
+        if (!tenantToDelete || deleteConfirmText !== `delete ${tenantToDelete.slug}`) return;
         
-        if (input === confirmPhrase) {
-            try {
-                await superAdminApi.deleteTenant(tenant.id);
-                addToast({ type: 'success', title: 'Workspace Terminated', message: 'All cluster data purged.' });
-                fetchTenants();
-            } catch (err) {
-                addToast({ type: 'error', title: 'Decommission Failed', message: 'Database integrity lock or unauthorized.' });
-            }
-        } else if (input !== null) {
-            addToast({ type: 'info', title: 'Deletion Aborted', message: 'Confirmation phrase did not match.' });
+        try {
+            setLoading(true);
+            await superAdminApi.deleteTenant(tenantToDelete.id);
+            addToast({ type: 'success', title: 'Workspace Terminated', message: 'All cluster data purged.' });
+            setIsDeleteModalOpen(false);
+            setTenantToDelete(null);
+            setDeleteConfirmText('');
+            fetchTenants();
+        } catch (err) {
+            addToast({ type: 'error', title: 'Decommission Failed', message: 'Database integrity lock or unauthorized.' });
+        } finally {
+            setLoading(false);
         }
+    };
+
+    const openDeleteConfirm = (tenant) => {
+        setTenantToDelete(tenant);
+        setDeleteConfirmText('');
+        setIsDeleteModalOpen(true);
     };
 
     const toggleTenantStatus = async (tenant) => {
@@ -241,7 +252,7 @@ export default function WorkspaceManagement() {
                                                 {t.is_active ? <Lock size={18} /> : <Zap size={18} />}
                                             </button>
                                             <button 
-                                                onClick={() => handleDelete(t)}
+                                                onClick={() => openDeleteConfirm(t)}
                                                 style={{ padding: '10px', borderRadius: '12px', background: 'white', border: '1px solid #fecaca', color: '#b91c1c', cursor: 'pointer' }}
                                                 title="Decommission Node"
                                             >
@@ -328,6 +339,54 @@ export default function WorkspaceManagement() {
                                 {editingTenant ? 'Sync Configurations' : 'Initiate Provisioning'}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* DESTRUCTIVE ACTION MODAL (WIPE DATA) */}
+            {isDeleteModalOpen && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 20 }}>
+                    <div style={{ background: 'white', borderRadius: '28px', width: '100%', maxWidth: '440px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', textAlign: 'center' }}>
+                        <div style={{ width: 64, height: 64, borderRadius: '20px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                            <Trash2 size={32} />
+                        </div>
+                        <h2 style={{ margin: '0 0 12px', fontSize: '1.4rem', fontWeight: 900 }}>Decommission Workspace?</h2>
+                        <p style={{ margin: '0 0 24px', fontSize: '0.9rem', color: '#64748b', lineHeight: 1.6 }}>
+                            This will permanently erase all leads, users, and cluster data for <strong style={{ color: '#0f172a' }}>{tenantToDelete?.name}</strong>. This action is irreversible.
+                        </p>
+                        
+                        <div style={{ textAlign: 'left', marginBottom: '24px' }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: '#dc2626', textTransform: 'uppercase', marginBottom: '8px' }}>
+                                Type "delete {tenantToDelete?.slug}" to confirm
+                            </label>
+                            <input 
+                                className="form-control" 
+                                style={{ borderColor: '#fecaca', background: '#fff9f9' }}
+                                placeholder={`delete ${tenantToDelete?.slug}`}
+                                value={deleteConfirmText}
+                                onChange={e => setDeleteConfirmText(e.target.value)}
+                            />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                            <button 
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                style={{ padding: '12px', borderRadius: '14px', background: '#f1f5f9', color: '#475569', border: 'none', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleDelete}
+                                disabled={deleteConfirmText !== `delete ${tenantToDelete?.slug}`}
+                                style={{ 
+                                    padding: '12px', borderRadius: '14px', background: '#dc2626', color: 'white', 
+                                    border: 'none', fontWeight: 700, cursor: 'pointer',
+                                    opacity: deleteConfirmText === `delete ${tenantToDelete?.slug}` ? 1 : 0.5
+                                }}
+                            >
+                                Wipe Workspace
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
