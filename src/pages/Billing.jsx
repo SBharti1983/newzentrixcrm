@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { billingApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { CheckCircle, Zap, Shield, Crown } from 'lucide-react';
+import { CheckCircle, Zap, Shield, Crown, User } from 'lucide-react';
 
 export default function Billing() {
     const { user } = useAuth();
@@ -115,8 +115,13 @@ export default function Billing() {
             </div>
 
             {/* Pricing Grid */}
-            <div className="grid grid-3" style={{ width: '100%', margin: '0 auto', alignItems: 'stretch' }}>
+            <div className="grid grid-4" style={{ width: '100%', margin: '0 auto', alignItems: 'stretch' }}>
                 {[
+                    {
+                        name: 'pro_solo', title: 'Solopreneur Premium', price: '₹999', desc: 'Premium features for individual agents and solo practitioners.',
+                        icon: <User size={24} />, bg: 'var(--accent-purple, #a855f7)',
+                        features: ['1 User License', 'Unlimited Leads', 'Auto-Slug Identification', 'Personal Branding', 'WhatsApp + SMS', 'AI Copilot Access']
+                    },
                     {
                         name: 'starter', title: 'Starter', price: '₹2,900', desc: 'Perfect for small brokerages just getting started.',
                         icon: <Zap size={24} />, bg: 'var(--accent-cyan)',
