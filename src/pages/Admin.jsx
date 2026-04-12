@@ -10,12 +10,14 @@ const ROLE_LABELS = {
     superadmin: 'Super Administrator',
     admin: 'Administrator',
     sales_manager: 'Sales Manager',
+    team_leader: 'Team Leader',
     agent: 'Sales Agent',
 };
 const ROLE_BADGE = {
     superadmin: 'badge-rose',
     admin: 'badge-violet',
     sales_manager: 'badge-blue',
+    team_leader: 'badge-indigo',
     agent: 'badge-cyan',
 };
 
@@ -23,6 +25,7 @@ const ROLE_PERMISSIONS = {
     superadmin: ['Full System Access', 'Manage Tenants', 'View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data', 'Billing Access'],
     admin: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Manage Users', 'System Settings', 'Delete Records', 'Export Data'],
     sales_manager: ['View Dashboard', 'Manage Leads', 'Manage Projects', 'View Analytics', 'Assign Agents', 'Export Data'],
+    team_leader: ['View Team Dashboard', 'Manage Team Leads', 'View Analytics', 'Lead Distribution', 'Daily Tracking'],
     agent: ['View Dashboard', 'Manage Own Leads', 'View Projects', 'Schedule Visits', 'Update Bookings'],
 };
 
@@ -527,6 +530,21 @@ export default function Admin() {
         }
     };
 
+    const handleUpdatePermissions = async (role, newPerms) => {
+        try {
+            setSaving(true);
+            const currentPerms = systemSettings?.role_permissions || ROLE_PERMISSIONS;
+            const updated = { ...currentPerms, [role]: newPerms };
+            await settingsApi.update({ role_permissions: updated });
+            showToast(`Permissions for ${ROLE_LABELS[role]} updated!`, 'success');
+            refetchSettings();
+        } catch (err) {
+            showToast(err.error || 'Failed to update permissions', 'error');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const openAdd = () => { setForm(DEFAULT_FORM); setEditingUser(null); setShowModal(true); };
     const openEdit = (u) => { setForm({ ...u, new_password: '' }); setEditingUser(u.id); setShowModal(true); };
     const save = async () => {
@@ -753,28 +771,30 @@ export default function Admin() {
             {/* Permissions Tab */}
             {tab === 'permissions' && (
                 <div className="grid grid-3">
-                    {Object.entries(ROLE_PERMISSIONS).map(([role, perms]) => (
-                        <div key={role} className="card" style={{ overflow: 'visible' }}>
+                    {Object.entries(systemSettings?.role_permissions || ROLE_PERMISSIONS).map(([role, perms]) => (
+                        <div key={role} className="card" style={{ overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
                             <div style={{
                                 background: role === 'superadmin'
                                     ? 'linear-gradient(135deg, var(--accent-rose-dark), var(--accent-rose))'
                                     : role === 'admin'
                                         ? 'linear-gradient(135deg, var(--accent-violet-dark), var(--accent-violet))'
                                         : role === 'sales_manager'
-                                            ? 'linear-gradient(135deg, var(--navy-700), var(--navy-50))'
-                                            : 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))',
+                                            ? 'linear-gradient(135deg, #1e293b, #334155)'
+                                            : role === 'team_leader' 
+                                                ? 'linear-gradient(135deg, var(--accent-indigo-dark), var(--accent-indigo))'
+                                                : 'linear-gradient(135deg, var(--accent-cyan-dark), var(--accent-cyan))',
                                 padding: '20px 22px',
                                 borderRadius: 'var(--border-radius-lg) var(--border-radius-lg) 0 0',
                             }}>
                                 <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>
-                                    {role === 'admin' ? '👤' : role === 'sales_manager' ? '🎯' : '💼'}
+                                    {role === 'admin' ? '👤' : role === 'sales_manager' ? '🎯' : role === 'team_leader' ? '🎖️' : '💼'}
                                 </div>
                                 <div style={{ fontWeight: 800, color: 'white', fontSize: '1rem' }}>{ROLE_LABELS[role]}</div>
                                 <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', marginTop: 2 }}>
-                                    {users.filter(u => u.role === role).length} users
+                                    {users.filter(u => u.role === role).length} users assigned
                                 </div>
                             </div>
-                            <div style={{ padding: '18px 20px' }}>
+                            <div style={{ padding: '18px 20px', flex: 1 }}>
                                 {perms.map(p => (
                                     <div key={p} style={{
                                         display: 'flex', alignItems: 'center', gap: 10,
@@ -788,9 +808,36 @@ export default function Admin() {
                                             fontSize: '0.65rem', color: 'var(--accent-emerald)',
                                             flexShrink: 0,
                                         }}>✅</div>
-                                        <span style={{ fontSize: '0.85rem' }}>{p}</span>
+                                        <span style={{ fontSize: '0.85rem', flex: 1 }}>{p}</span>
+                                        <button 
+                                            className="btn btn-ghost btn-sm btn-icon" 
+                                            style={{ width: 22, height: 22, color: 'var(--accent-rose)' }}
+                                            onClick={() => handleUpdatePermissions(role, perms.filter(x => x !== p))}
+                                        >
+                                            <Trash2 size={10} />
+                                        </button>
                                     </div>
                                 ))}
+                            </div>
+                            <div style={{ padding: '12px 20px', background: 'var(--bg-light)', borderRadius: '0 0 var(--border-radius-lg) var(--border-radius-lg)', borderTop: '1px solid var(--border-light)' }}>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const val = e.target.perm.value.trim();
+                                    if (val && !perms.includes(val)) {
+                                        handleUpdatePermissions(role, [...perms, val]);
+                                        e.target.reset();
+                                    }
+                                }} style={{ display: 'flex', gap: 8 }}>
+                                    <input 
+                                        name="perm" 
+                                        placeholder="Add mission..." 
+                                        className="form-control" 
+                                        style={{ height: 32, fontSize: '0.75rem', padding: '0 12px' }} 
+                                    />
+                                    <button type="submit" className="btn btn-primary btn-sm" style={{ height: 32, width: 32, padding: 0 }}>
+                                        <Plus size={14} />
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     ))}
@@ -1015,6 +1062,7 @@ export default function Admin() {
                                                 <option value="superadmin">Super Administrator</option>
                                                 <option value="admin">Administrator</option>
                                                 <option value="sales_manager">Sales Manager</option>
+                                                <option value="team_leader">Team Leader</option>
                                             </>
                                         )}
                                         <option value="agent">Sales Agent</option>

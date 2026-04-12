@@ -8,16 +8,25 @@ const initFirebase = () => {
     if (admin.apps.length > 0) return admin.app();
 
     try {
-        const projectId = process.env.FIREBASE_PROJECT_ID;
-        const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-        let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+        const projectId = (process.env.FIREBASE_PROJECT_ID || '').trim();
+        const clientEmail = (process.env.FIREBASE_CLIENT_EMAIL || '').trim();
+        let privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').trim();
 
         if (!projectId || !clientEmail || !privateKey) {
-            console.warn('[FIREBASE] Missing credentials in .env. Storage features will be limited.');
+            const missing = [];
+            if (!projectId) missing.push('FIREBASE_PROJECT_ID');
+            if (!clientEmail) missing.push('FIREBASE_CLIENT_EMAIL');
+            if (!privateKey) missing.push('FIREBASE_PRIVATE_KEY');
+            console.warn(`[FIREBASE] Initialization skipped. Missing env vars: ${missing.join(', ')}`);
             return null;
         }
 
-        // Handle escaped newlines in private key
+        // --- PRIVATE KEY SANITIZATION ---
+        // 1. Strip surrounding quotes if present
+        if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+            privateKey = privateKey.substring(1, privateKey.length - 1);
+        }
+        // 2. Handle escaped newlines
         privateKey = privateKey.replace(/\\n/g, '\n');
 
         return admin.initializeApp({
@@ -26,11 +35,11 @@ const initFirebase = () => {
                 clientEmail,
                 privateKey,
             }),
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.firebasestorage.app`,
             databaseURL: process.env.FIREBASE_DATABASE_URL || `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`
         });
     } catch (err) {
-        console.error('[FIREBASE] Initialization failed:', err.message);
+        console.error('[FIREBASE] Critical Initialization Error:', err.message);
         return null;
     }
 };

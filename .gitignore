@@ -37,6 +37,7 @@ tmp/
 !package-lock.json
 !server/package.json
 !server/package-lock.json
+!vercel.json
 *.txt
 *.hprof
 WTIApp/build/
