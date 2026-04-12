@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { PageLoader, PageError } from '../components/Feedback';
 import { usersApi, projectsApi, settingsApi, telephonyApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio, Search } from 'lucide-react';
 
 const ROLE_LABELS = {
     superadmin: 'Super Administrator',
