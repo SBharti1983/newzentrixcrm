@@ -26,13 +26,29 @@ const ROLE_PERMISSIONS = {
     agent: ['View Dashboard', 'Manage Own Leads', 'View Projects', 'Schedule Visits', 'Update Bookings'],
 };
 
+const SETTINGS_MAP = {
+    // Company
+    'Company Name': 'company_name', 'Website': 'company_website', 'Support Email': 'support_email', 'Phone': 'company_phone',
+    // CRM
+    'Lead Expiry (days)': 'lead_expiry_days', 'Auto-assign Leads': 'auto_assign_leads', 'Default Currency': 'default_currency', 'Fiscal Year Start': 'fiscal_year_start',
+    // Notifications
+    'Follow-up Reminders': 'followup_reminders', 'Visit Reminders': 'visit_reminders', 'Booking Alerts': 'booking_alerts', 'Weekly Reports': 'weekly_reports',
+    // Privacy
+    'Data Retention': 'data_retention', 'Backup Frequency': 'backup_freq', 'Export Format': 'export_format', 'Audit Logs': 'audit_logs',
+    // Communication
+    'WhatsApp Phone ID': 'whatsapp_phone_id', 'WhatsApp API Key': 'whatsapp_api_key', 'SMTP Host': 'smtp_host', 'SMTP User': 'smtp_user', 'SMTP Password': 'smtp_pass',
+    // System
+    'Firebase Project': 'firebase_project_id', 'Firebase Database URL': 'firebase_database_url', 'Storage Server URL': 'android_storage_url', 'Webhook Secret': 'telephony_secret',
+    'Gemini AI Key': 'gemini_api_key'
+};
+
 const DEFAULT_FORM = { name: '', email: '', role: 'agent', department: 'Sales', phone: '', password: 'Zentrix@123', telephony_agent_id: '' };
 
 export default function Admin() {
     const { showToast } = useToast();
-    const { data: usersRaw, loading, error, refetch } = useApi(() => usersApi.list());
+    const { data: usersRaw, loading, error, refetch: refetchUsers } = useApi(() => usersApi.list());
     const { data: projectsRaw } = useApi(() => projectsApi.list());
-    const { data: systemSettings } = useApi(() => settingsApi.get());
+    const { data: systemSettings, refetch: refetchSettings } = useApi(() => settingsApi.get());
     const usersRawList = usersRaw || [];
     const PROJECTS_DATA = projectsRaw || [];
     // derive current user from session storage
@@ -460,31 +476,18 @@ export default function Admin() {
     };
 
     const displaySetting = (key, fallback) => {
-        const keyMap = {
-            'Company Name': 'company_name', 'Website': 'company_website', 'Support Email': 'support_email', 'Phone': 'company_phone',
-            'Lead Expiry (days)': 'lead_expiry_days', 'Auto-assign Leads': 'auto_assign_leads', 'Default Currency': 'default_currency', 'Fiscal Year Start': 'fiscal_year_start',
-            'Follow-up Reminders': 'followup_reminders', 'Visit Reminders': 'visit_reminders', 'Booking Alerts': 'booking_alerts', 'Weekly Reports': 'weekly_reports',
-            'Data Retention': 'data_retention', 'Backup Frequency': 'backup_freq', 'Export Format': 'export_format', 'Audit Logs': 'audit_logs',
-            'WhatsApp Phone ID': 'whatsapp_phone_id', 'WhatsApp API Key': 'whatsapp_api_key', 'SMTP Host': 'smtp_host', 'SMTP User': 'smtp_user', 'SMTP Password': 'smtp_pass',
-            'Gemini AI Key': 'gemini_api_key'
-        };
-        const dbKey = keyMap[key] || key;
-        return systemSettings?.[dbKey] !== undefined ? systemSettings[dbKey] : fallback;
+        const dbKey = SETTINGS_MAP[key] || key;
+        const val = systemSettings?.[dbKey];
+        if (key.includes('Password') || key.includes('API Key') || key === 'Webhook Secret' || key === 'Gemini AI Key') {
+            return val ? '••••••••' : 'None';
+        }
+        return val !== undefined && val !== null ? val : fallback;
     };
 
     const handleSaveSetting = async () => {
         try {
             setSaving(true);
-            const keyMap = {
-                'Company Name': 'company_name', 'Website': 'company_website', 'Support Email': 'support_email', 'Phone': 'company_phone',
-                'Lead Expiry (days)': 'lead_expiry_days', 'Auto-assign Leads': 'auto_assign_leads', 'Default Currency': 'default_currency', 'Fiscal Year Start': 'fiscal_year_start',
-                'Follow-up Reminders': 'followup_reminders', 'Visit Reminders': 'visit_reminders', 'Booking Alerts': 'booking_alerts', 'Weekly Reports': 'weekly_reports',
-                'Data Retention': 'data_retention', 'Backup Frequency': 'backup_freq', 'Export Format': 'export_format', 'Audit Logs': 'audit_logs',
-                'WhatsApp Phone ID': 'whatsapp_phone_id', 'WhatsApp API Key': 'whatsapp_api_key', 'SMTP Host': 'smtp_host', 'SMTP User': 'smtp_user', 'SMTP Password': 'smtp_pass',
-                'Firebase Project': 'firebase_project_id', 'Firebase Database URL': 'firebase_database_url', 'Storage Server URL': 'android_storage_url', 'Webhook Secret': 'telephony_secret',
-                'Gemini AI Key': 'gemini_api_key'
-            };
-            const settingKey = keyMap[editingSetting] || editingSetting;
+            const settingKey = SETTINGS_MAP[editingSetting] || editingSetting;
             
             // SECURITY FIX: Do not save masked values back to the DB
             if (settingValue === '••••••••') {
@@ -496,7 +499,7 @@ export default function Admin() {
             await settingsApi.update({ [settingKey]: settingValue });
             showToast('Setting updated', 'success');
             setEditingSetting(null);
-            refetch();
+            refetchSettings();
         } catch (err) {
             showToast(err.error || 'Failed to update setting', 'error');
         } finally {
@@ -550,7 +553,7 @@ export default function Admin() {
                 await usersApi.create({ name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone, password: form.password || 'Zentrix@123', telephony_agent_id: agentIdFormatted });
             }
             showToast(editingUser ? 'User updated!' : 'User added!', 'success');
-            setShowModal(false); refetch();
+            setShowModal(false); refetchUsers();
         } catch (err) { showToast(err.error || 'Failed', 'error'); } finally { setSaving(false); }
     };
     const deleteUser = async (id) => {
@@ -559,14 +562,14 @@ export default function Admin() {
         try {
             await usersApi.update(id, { is_active: false });
             showToast('User deactivated successfully', 'success');
-            refetch();
+            refetchUsers();
         } catch (err) {
             showToast(err?.error || err?.message || 'Failed to deactivate user', 'error');
         }
     };
 
     if (loading) return <PageLoader />;
-    if (error) return <PageError message={error} onRetry={refetch} />;
+    if (error) return <PageError message={error} onRetry={refetchUsers} />;
 
     return (
         <div className="animate-fadeIn">
@@ -821,7 +824,7 @@ export default function Admin() {
                                     <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{k}</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <span style={{ fontSize: '0.875rem', fontWeight: 600, maxWidth: '280px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                            {section.title.includes('System') ? v : displaySetting(k, v)}
+                                            {displaySetting(k, v)}
                                         </span>
                                         {k === 'Storage Server URL' && (
                                             <button 
@@ -846,7 +849,9 @@ export default function Admin() {
                                         )}
                                         <button className="btn btn-ghost btn-sm btn-icon" onClick={() => {
                                             setEditingSetting(k);
-                                            setSettingValue(section.title.includes('System') ? v : displaySetting(k, v));
+                                            const currentVal = displaySetting(k, v);
+                                            const cleanVal = String(currentVal || '').toLowerCase();
+                                            setSettingValue((cleanVal === 'n/a' || cleanVal === 'not configured' || cleanVal === 'none') ? "" : currentVal);
                                         }} style={{ width: 24, height: 24, padding: 0 }}>
                                             <Edit2 size={11} />
                                         </button>
