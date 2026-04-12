@@ -453,6 +453,8 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                     <tr style={{ background: COLORS.bg }}>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Transaction Terminal</th>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan Lifecycle</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>TranID</th>
+                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan Duration</th>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Financial Value</th>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Status</th>
                                         <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Timestamp</th>
@@ -466,12 +468,18 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                         <tr key={sub.id} style={{ borderBottom: `1px solid ${COLORS.bg}`, transition: 'background 0.2s' }}>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{sub.tenant_name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>ID: {sub.gateway_sub_id}</div>
+                                                <div style={{ fontSize: '0.7rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>{sub.tenant_slug}.zentrixcrm.com</div>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, background: `${COLORS.primary}10`, color: COLORS.primary, textTransform: 'uppercase' }}>
                                                     {sub.plan}
                                                 </span>
+                                            </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.textPrimary, fontFamily: 'monospace' }}>{sub.gateway_sub_id?.slice(0, 12)}...</div>
+                                            </td>
+                                            <td style={{ padding: '16px 24px' }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: COLORS.textSecondary }}>Monthly</div>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ fontWeight: 900, color: COLORS.textPrimary }}>₹{parseFloat(sub.amount || 0).toLocaleString()}</div>
@@ -490,7 +498,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                     ))}
                                     {subscriptions.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '80px', textAlign: 'center', color: COLORS.textSecondary }}>
+                                            <td colSpan="7" style={{ padding: '80px', textAlign: 'center', color: COLORS.textSecondary }}>
                                                 <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧾</div>
                                                 <div style={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary }}>No global transactions found.</div>
                                                 <p>Automated billing sequences will appear here as tenants upgrade.</p>
@@ -504,11 +512,18 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                 </div>
             )}
 
-            <button style={{
-                position: 'fixed', bottom: 40, right: 40, width: 56, height: 56, borderRadius: '28px',
-                background: COLORS.primary, color: 'white', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
-                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
+            <button 
+                onClick={() => { window.location.href = '/workspace-management?provision=true'; }}
+                style={{
+                    position: 'fixed', bottom: 40, right: 40, width: 56, height: 56, borderRadius: '28px',
+                    background: COLORS.primary, color: 'white', boxShadow: '0 8px 32px rgba(99, 102, 241, 0.4)',
+                    border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)', zIndex: 1000
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1) rotate(90deg)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
+                title="Provision New Workspace"
+            >
                 <Plus size={24} strokeWidth={3} />
             </button>
             <style dangerouslySetInnerHTML={{ __html: "@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');" }} />
