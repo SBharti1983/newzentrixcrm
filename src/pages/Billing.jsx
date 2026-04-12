@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { billingApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { CheckCircle, Zap, Shield, Crown, User } from 'lucide-react';
+import { CheckCircle, Zap, Shield, Crown, User, Edit3 } from 'lucide-react';
 
 export default function Billing() {
     const { user } = useAuth();
@@ -149,6 +149,15 @@ export default function Billing() {
                         height: '100%',
                         borderRadius: '24px'
                     }}>
+                        {user?.role === 'superadmin' && (
+                            <button 
+                                style={{ position: 'absolute', top: 12, right: 12, background: 'white', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}
+                                onClick={(e) => { e.stopPropagation(); showToast('Direct plan editing coming soon to Admin Console.', 'info'); }}
+                                title="Edit Plan Configuration"
+                            >
+                                <Edit3 size={14} />
+                            </button>
+                        )}
                         {plan.recommended && (
                             <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', background: plan.bg, color: 'white', fontSize: '0.6rem', fontWeight: 800, padding: '4px 12px', borderRadius: 20, letterSpacing: '0.05em', whiteSpace: 'nowrap', width: 'max-content', zIndex: 20 }}>
                                 MOST POPULAR
