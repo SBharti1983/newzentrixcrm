@@ -67,10 +67,11 @@ export default function Admin() {
         
         if (!matchesSearch) return false;
 
-        if (currentUser.role === 'sales_manager') {
+        if (currentUser?.role === 'sales_manager') {
              // Manager sees themselves and Agents
-             return u.id === currentUser.id || u.role === 'agent';
+             return u.id === currentUser?.id || u.role === 'agent';
         }
+
         return true; // Admins and SuperAdmins see everyone
     });
 
@@ -799,8 +800,9 @@ export default function Admin() {
             {tab === 'permissions' && (
                 <div className="grid grid-3">
                     {Object.entries(systemSettings?.role_permissions || ROLE_PERMISSIONS)
-                        .filter(([role]) => role !== 'superadmin' || currentUser.role === 'superadmin')
+                        .filter(([role]) => role !== 'superadmin' || currentUser?.role === 'superadmin')
                         .map(([role, perms]) => (
+
                         <div key={role} className="card" style={{ overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
 
                             <div style={{
@@ -1088,8 +1090,9 @@ export default function Admin() {
                                 <div className="form-group">
                                     <label className="form-label">Role</label>
                                         <select className="form-control" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
-                                            {currentUser.role === 'superadmin' && <option value="superadmin">Super Administrator</option>}
-                                            {currentUser.role !== 'sales_manager' && (
+                                            {currentUser?.role === 'superadmin' && <option value="superadmin">Super Administrator</option>}
+                                            {currentUser?.role !== 'sales_manager' && (
+
                                                 <>
                                                     <option value="admin">Administrator</option>
                                                     <option value="sales_manager">Sales Manager</option>
