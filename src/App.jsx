@@ -55,6 +55,7 @@ import PartnerReferral from './pages/public/PartnerReferral';
 import CommandCenter from './pages/CommandCenter';
 import Reports from './pages/Reports';
 import TeamHierarchy from './pages/TeamHierarchy';
+import WorkspaceManagement from './pages/WorkspaceManagement';
 import './index.css';
 
 // ─── Role-based access guard ────────────────────────────────────────
@@ -181,6 +182,7 @@ function ProtectedApp() {
             <Route path="/admin" element={<RoleGuard path="/admin"><Admin /></RoleGuard>} />
             <Route path="/calendar" element={<RoleGuard path="/calendar"><CalendarPage /></RoleGuard>} />
             <Route path="/superadmin" element={<RoleGuard path="/superadmin"><SuperAdmin /></RoleGuard>} />
+            <Route path="/workspace-management" element={<RoleGuard path="/superadmin"><WorkspaceManagement /></RoleGuard>} />
             <Route path="/customer-portal" element={<RoleGuard path="/customer-portal"><CustomerPortal /></RoleGuard>} />
             <Route path="/broker-portal" element={<RoleGuard path="/broker-portal"><BrokerPortal /></RoleGuard>} />
             <Route path="/inbox" element={<RoleGuard path="/inbox"><Inbox /></RoleGuard>} />

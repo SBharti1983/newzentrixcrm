@@ -146,6 +146,16 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
         }),
     })).filter(section => section.items.length > 0);
 
+    // Add Workspace Control for Super Admins at the bottom if not already in NAV_SECTIONS
+    if (user?.role === 'superadmin') {
+        filteredSections.push({
+            label: 'System Infrastructure',
+            items: [
+                { path: '/workspace-management', label: 'Workspace Control', icon: Building2 }
+            ]
+        });
+    }
+
     const handleNav = (path) => {
         navigate(path);
         if (onNavigate) onNavigate(); // close sidebar on mobile
