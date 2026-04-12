@@ -67,5 +67,10 @@ export default function SuperAdmin() {
     }
 
     // We pass the fetched data to the rich dashboard view
-    return <SuperAdminDashboardView tenants={tenants} stats={stats} subscriptions={subscriptions} />;
+    return <SuperAdminDashboardView 
+        tenants={tenants} 
+        stats={stats} 
+        subscriptions={subscriptions} 
+        onReload={fetchData} 
+    />;
 }

@@ -143,6 +143,36 @@ router.get('/stats', async (req, res) => {
     }
 });
 
+// Record a manual payment/subscription
+router.post('/subscriptions/manual', async (req, res) => {
+    const { tenant_id, plan, amount, gateway_sub_id, method = 'manual' } = req.body;
+    
+    if (!tenant_id || !plan || !amount) {
+        return res.status(400).json({ error: 'Tenant, plan, and amount are required' });
+    }
+
+    try {
+        const { rows: [sub] } = await pool.query(`
+            INSERT INTO subscriptions (tenant_id, plan, status, amount, gateway, gateway_sub_id)
+            VALUES ($1, $2, 'active', $3, $4, $5)
+            RETURNING *
+        `, [tenant_id, plan, amount, method, gateway_sub_id || `MAN-${Date.now()}`]);
+        
+        // Fetch tenant name for the response to update UI locally
+        const { rows: [result] } = await pool.query(`
+            SELECT s.*, t.name as tenant_name, t.slug as tenant_slug 
+            FROM subscriptions s 
+            JOIN tenants t ON s.tenant_id = t.id 
+            WHERE s.id = $1
+        `, [sub.id]);
+
+        res.status(201).json(result);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to record manual payment' });
+    }
+});
+
 // Get all subscriptions across the platform
 router.get('/subscriptions', async (req, res) => {
     try {

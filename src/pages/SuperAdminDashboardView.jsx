@@ -9,8 +9,10 @@ import {
     ArrowUpRight, ArrowDownRight,
     CreditCard,
     BarChart3, Plus, ExternalLink, RefreshCw,
-    Receipt, History, Search
+    Receipt, History, Search, X
 } from 'lucide-react';
+import { superAdminApi } from '../api/client';
+import { useToast } from '../hooks/useToast';
 
 const COLORS = {
     bg: '#F8FAFC',
@@ -118,10 +120,38 @@ const KPICard = ({ title, value, change, isUp, icon: Icon, color, sparkData }) =
     </div>
 );
 
-export default function SuperAdminDashboardView({ tenants = [], stats = {}, subscriptions = [] }) {
+export default function SuperAdminDashboardView({ tenants = [], stats = {}, subscriptions = [], onReload }) {
+    const { showToast } = useToast();
     const [activeTab, setActiveTab] = React.useState('operational');
     const [finSearch, setFinSearch] = React.useState('');
     const [actionMenu, setActionMenu] = React.useState(null);
+    const [showAddSub, setShowAddSub] = React.useState(false);
+    const [subLoading, setSubLoading] = React.useState(false);
+
+    const handleAddManualSub = async (e) => {
+        e.preventDefault();
+        setSubLoading(true);
+        const formData = new FormData(e.target);
+        const data = {
+            tenant_id: formData.get('tenant_id'),
+            plan: formData.get('plan'),
+            amount: formData.get('amount'),
+            method: formData.get('method'),
+            gateway_sub_id: formData.get('ref')
+        };
+
+        try {
+            await superAdminApi.recordManualSubscription(data);
+            showToast('Manual payment successfully synchronized with global ledger.', 'success');
+            setShowAddSub(false);
+            if (onReload) onReload();
+        } catch (err) {
+            showToast('Failed to record transaction. Please verify node connectivity.', 'error');
+        } finally {
+            setSubLoading(false);
+        }
+    };
+
     const sparkMock = (range) => [...Array(10)].map((_, i) => ({ val: Math.random() * range + 10 }));
 
     return (
@@ -442,6 +472,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                 />
                             </div>
                             <div style={{ display: 'flex', gap: '12px' }}>
+                                <button className="tab-btn" onClick={() => setShowAddSub(true)} style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary }}>Record Payment</button>
                                 <button className="tab-btn" style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, color: COLORS.textPrimary }}>Download CSV</button>
                                 <button className="tab-btn" style={{ background: COLORS.primary, color: 'white' }}>Generate Report</button>
                             </div>
@@ -526,6 +557,62 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
             >
                 <Plus size={24} strokeWidth={3} />
             </button>
+            {/* Manual Subscription Modal */}
+            {showAddSub && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="card" style={{ width: '100%', maxWidth: '520px', padding: '32px', borderRadius: '32px', animation: 'slideUp 0.3s ease-out' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0 }}>Record Manual Payment</h2>
+                            <button onClick={() => setShowAddSub(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: COLORS.textSecondary }}><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleAddManualSub} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Target Workspace Node</label>
+                                <select name="tenant_id" required style={{ padding: '12px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, fontWeight: 600, appearance: 'none', background: 'white' }}>
+                                    <option value="">Select a workspace...</option>
+                                    {tenants.map(t => <option key={t.id} value={t.id}>{t.name} ({t.slug})</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Subscription Tier</label>
+                                    <select name="plan" required style={{ padding: '12px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, fontWeight: 600 }}>
+                                        <option value="pro_solo">Solopreneur</option>
+                                        <option value="starter">Starter</option>
+                                        <option value="pro">Professional</option>
+                                        <option value="enterprise">Enterprise</option>
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Payment Method</label>
+                                    <select name="method" required style={{ padding: '12px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, fontWeight: 600 }}>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="cash">Cash Settlement</option>
+                                        <option value="check">Physical Check</option>
+                                        <option value="upi">Direct UPI</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Final Settlement Value (INR)</label>
+                                    <input type="number" name="amount" placeholder="e.g. 7900" required style={{ padding: '12px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, fontWeight: 600 }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Reference / TranID</label>
+                                    <input name="ref" placeholder="TXN-XXXXXX" style={{ padding: '12px', borderRadius: '12px', border: `1.5px solid ${COLORS.border}`, fontWeight: 600 }} />
+                                </div>
+                            </div>
+                            <div style={{ marginTop: '16px', display: 'flex', gap: '12px' }}>
+                                <button type="button" onClick={() => setShowAddSub(false)} style={{ flex: 1, padding: '14px', borderRadius: '14px', border: 'none', background: '#f1f5f9', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+                                <button type="submit" disabled={subLoading} style={{ flex: 2, padding: '14px', borderRadius: '14px', border: 'none', background: COLORS.primary, color: 'white', fontWeight: 800, cursor: 'pointer', opacity: subLoading ? 0.7 : 1 }}>
+                                    {subLoading ? 'Synchronizing...' : 'Settle & Record Payment'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
             <style dangerouslySetInnerHTML={{ __html: "@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');" }} />
         </div>
     );
