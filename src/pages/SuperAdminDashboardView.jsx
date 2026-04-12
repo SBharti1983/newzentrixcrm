@@ -444,10 +444,25 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                         {[
                             { label: 'Total Revenue', val: `₹${subscriptions.reduce((acc, s) => acc + (parseFloat(s.amount) || 0), 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success },
                             { label: 'Active Subscriptions', val: subscriptions.filter(s => s.status === 'active').length, icon: History, color: COLORS.primary },
-                            { label: 'Pending Collections', val: '₹12,400', icon: Receipt, color: COLORS.warning },
+                            { 
+                                label: 'Pending Collections', 
+                                val: `₹${tenants.filter(t => t.plan !== 'trial' && !subscriptions.some(s => s.tenant_id === t.id && s.status === 'active')).length * 7900}`, 
+                                icon: Receipt, 
+                                color: COLORS.warning,
+                                actionable: true
+                            },
                             { label: 'Churn Rate (MoM)', val: '1.2%', icon: Activity, color: COLORS.danger },
                         ].map((s, i) => (
-                            <div key={i} className="wow-card" style={{ background: 'white', padding: '24px', borderRadius: '20px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                            <div 
+                                key={i} 
+                                className="wow-card" 
+                                onClick={() => s.actionable && setFinSearch('pending')}
+                                style={{ 
+                                    background: 'white', padding: '24px', borderRadius: '20px', 
+                                    border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+                                    cursor: s.actionable ? 'pointer' : 'default'
+                                }}
+                            >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                                     <div style={{ width: 36, height: 36, borderRadius: '10px', background: `${s.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <s.icon size={18} color={s.color} />
@@ -492,11 +507,31 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {subscriptions.filter(s => 
-                                        s.tenant_name?.toLowerCase().includes(finSearch.toLowerCase()) || 
-                                        s.gateway_sub_id?.toLowerCase().includes(finSearch.toLowerCase())
-                                    ).map(sub => (
-                                        <tr key={sub.id} style={{ borderBottom: `1px solid ${COLORS.bg}`, transition: 'background 0.2s' }}>
+                                    {([...subscriptions, ...tenants
+                                        .filter(t => t.plan !== 'trial' && !subscriptions.some(s => s.tenant_id === t.id && s.status === 'active'))
+                                        .map(t => ({
+                                            id: `pend-${t.id}`,
+                                            tenant_id: t.id,
+                                            tenant_name: t.name,
+                                            tenant_slug: t.slug,
+                                            plan: t.plan,
+                                            amount: 7900,
+                                            status: 'pending',
+                                            gateway: 'N/A',
+                                            gateway_sub_id: 'OVERDUE',
+                                            created_at: new Date().toISOString()
+                                        }))
+                                    ])
+                                    .filter(s => {
+                                        if (finSearch === 'pending') return s.status === 'pending';
+                                        return s.tenant_name?.toLowerCase().includes(finSearch.toLowerCase()) || 
+                                               s.gateway_sub_id?.toLowerCase().includes(finSearch.toLowerCase());
+                                    }).map(sub => (
+                                        <tr key={sub.id} style={{ 
+                                            borderBottom: `1px solid ${COLORS.bg}`, 
+                                            transition: 'background 0.2s',
+                                            background: sub.status === 'pending' ? '#fffbeb' : 'transparent' 
+                                        }}>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{sub.tenant_name}</div>
                                                 <div style={{ fontSize: '0.7rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>{sub.tenant_slug}.zentrixcrm.com</div>
@@ -507,7 +542,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                                 </span>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.textPrimary, fontFamily: 'monospace' }}>{sub.gateway_sub_id?.slice(0, 12)}...</div>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: sub.status === 'pending' ? COLORS.danger : COLORS.textPrimary, fontFamily: 'monospace' }}>{sub.gateway_sub_id}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
                                                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: COLORS.textSecondary }}>Monthly</div>
@@ -517,13 +552,17 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                                 <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary, fontWeight: 700, textTransform: 'uppercase' }}>Via {sub.gateway}</div>
                                             </td>
                                             <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 800, background: sub.status === 'active' ? '#ecfdf5' : '#fef2f2', color: sub.status === 'active' ? '#059669' : '#dc2626' }}>
-                                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: sub.status === 'active' ? '#10B981' : '#EF4444' }} />
+                                                <div style={{ 
+                                                    display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 800, 
+                                                    background: sub.status === 'active' ? '#ecfdf5' : sub.status === 'pending' ? '#fff7ed' : '#fef2f2', 
+                                                    color: sub.status === 'active' ? '#059669' : sub.status === 'pending' ? '#9a3412' : '#dc2626' 
+                                                }}>
+                                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: sub.status === 'active' ? '#10B981' : sub.status === 'pending' ? '#F97316' : '#EF4444' }} />
                                                     {sub.status?.toUpperCase()}
                                                 </div>
                                             </td>
                                             <td style={{ padding: '16px 24px', fontSize: '0.85rem', fontWeight: 600, color: COLORS.textSecondary }}>
-                                                {new Date(sub.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                {sub.status === 'pending' ? 'ACTION REQUIRED' : new Date(sub.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                             </td>
                                         </tr>
                                     ))}
