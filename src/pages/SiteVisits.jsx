@@ -205,10 +205,10 @@ export default function SiteVisits() {
                             Showcase Logistics Command
                         </span>
                     </div>
-                    <h1 style={{ margin: 0, fontSize: '3rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-2.5px' }}>
+                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1px' }}>
                         Site Visit <span style={{ color: COLORS.indigo }}>Radar</span>
                     </h1>
-                    <p style={{ margin: '8px 0 0', color: COLORS.slate500, fontSize: '1.2rem', fontWeight: 600 }}>
+                    <p style={{ margin: '6px 0 0', color: COLORS.slate500, fontSize: '0.95rem', fontWeight: 600 }}>
                         Orchestrating premium property tours and real-time attendance tracking.
                     </p>
                 </div>
