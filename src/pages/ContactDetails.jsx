@@ -6,6 +6,7 @@ import { leadsApi, zapierApi, notificationsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
+import FollowupModal from '../components/FollowupModal';
 
 const LIFECYCLE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const LIFECYCLE_COLORS = {
@@ -47,6 +48,8 @@ export default function ContactDetails() {
     const [composerTrigger, setComposerTrigger] = useState(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showFollowupModal, setShowFollowupModal] = useState(false);
+    const [justLogged, setJustLogged] = useState(false);
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -219,6 +222,8 @@ export default function ContactDetails() {
             }
             setNewNote('');
             setShowActivityBox(false);
+            setJustLogged(true);
+            setTimeout(() => setJustLogged(false), 10000); // Hide the suggestion after 10s
             loadData();
         } catch (e) {
             console.error('Send Error:', e);
@@ -962,6 +967,20 @@ export default function ContactDetails() {
                         </div>
                     ) : activeTab === 'Activities' ? (
                         <div style={{ maxWidth: 640, margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button 
+                                    onClick={() => setShowFollowupModal(true)}
+                                    style={{ 
+                                        display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', 
+                                        borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', 
+                                        color: 'var(--navy-900)', fontWeight: 800, fontSize: '12px', cursor: 'pointer',
+                                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)', transition: 'all 0.2s'
+                                    }}
+                                    className="hover-lift"
+                                >
+                                    <CalendarIcon size={14} color="#3b82f6" /> Schedule Next Follow-up
+                                </button>
+                            </div>
                             <div style={{
                                 padding: '16px',
                                 borderRadius: '20px',
@@ -1129,6 +1148,35 @@ export default function ContactDetails() {
                                                 </button>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+
+                                {justLogged && (
+                                    <div className="animate-scaleIn" style={{ 
+                                        marginTop: 12, padding: '16px', background: 'linear-gradient(135deg, #f0fdf4, #ffffff)', 
+                                        borderRadius: '20px', border: '1px solid #b7ebc6', display: 'flex', 
+                                        alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                                        boxShadow: '0 8px 16px rgba(16, 185, 129, 0.08)'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div style={{ width: 36, height: 36, borderRadius: '10px', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <CalendarIcon size={18} color="white" />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontSize: '13px', fontWeight: 900, color: '#065f46' }}>Activity Logged!</div>
+                                                <div style={{ fontSize: '11px', color: '#059669', fontWeight: 600 }}>Schedule the next step now?</div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => setShowFollowupModal(true)}
+                                            style={{ 
+                                                padding: '8px 16px', borderRadius: '10px', background: '#10b981', 
+                                                color: 'white', border: 'none', fontWeight: 900, fontSize: '12px', 
+                                                cursor: 'pointer', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' 
+                                            }}
+                                        >
+                                            Schedule Follow-up
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -1457,6 +1505,18 @@ export default function ContactDetails() {
                         </div>
                     </div>
                 </div>
+            )}
+            {showFollowupModal && (
+                <FollowupModal 
+                    onClose={() => setShowFollowupModal(false)}
+                    leadId={id}
+                    leadName={contact.name}
+                    initialAgentId={contact.assigned_to}
+                    onScheduled={() => {
+                        setJustLogged(false);
+                        loadData();
+                    }}
+                />
             )}
         </div>
     );
