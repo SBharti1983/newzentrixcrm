@@ -828,8 +828,9 @@ export default function Admin() {
 
                             </div>
                             <div style={{ padding: '18px 20px', flex: 1 }}>
-                                {perms.map(p => (
+                                {Array.isArray(perms) && perms.map(p => (
                                     <div key={p} style={{
+
                                         display: 'flex', alignItems: 'center', gap: 10,
                                         padding: '8px 0',
                                         borderBottom: '1px solid var(--border-light)',
