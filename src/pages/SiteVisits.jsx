@@ -243,40 +243,40 @@ export default function SiteVisits() {
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', marginBottom: '48px' }}>
                 <div className="premium-card" style={{ 
                     background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate800} 100%)`, 
-                    padding: '32px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    padding: '20px 32px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: COLORS.indigo, marginBottom: '8px' }}>
-                            <Zap size={18} fill={COLORS.indigo} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Peak</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: COLORS.indigo, marginBottom: '4px' }}>
+                            <Zap size={16} fill={COLORS.indigo} />
+                            <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Peak</span>
                         </div>
-                        <h2 style={{ fontSize: '1.8rem', fontWeight: 950, margin: 0 }}>Site Showcase Momentum</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '6px', fontWeight: 600 }}>Avg conversion velocity: <span style={{ color: COLORS.emerald }}>24.5%</span> this month.</p>
+                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: 0 }}>Site Showcase Momentum</h2>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '2px', fontSize: '0.85rem', fontWeight: 600 }}>Avg conversion velocity: <span style={{ color: COLORS.emerald }}>24.5%</span> this month.</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '32px' }}>
+                    <div style={{ display: 'flex', gap: '24px' }}>
                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', fontWeight: 950, color: COLORS.white }}>{completedThisMonth}</div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Completed</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: COLORS.white }}>{completedThisMonth}</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Completed</div>
                         </div>
                         <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', fontWeight: 950, color: COLORS.indigo }}>{visits.filter(v => v.status === 'Scheduled').length}</div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Scheduled</div>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: COLORS.indigo }}>{visits.filter(v => v.status === 'Scheduled').length}</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Scheduled</div>
                         </div>
                     </div>
                 </div>
 
-                <div className="premium-card" style={{ padding: '32px', display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div className="premium-card" style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <div style={{ 
-                        width: 64, height: 64, borderRadius: '22px', background: `${COLORS.emerald}10`, color: COLORS.emerald,
+                        width: 48, height: 48, borderRadius: '16px', background: `${COLORS.emerald}10`, color: COLORS.emerald,
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                        <Car size={32} />
+                        <Car size={24} />
                     </div>
                     <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase', marginBottom: '4px' }}>Logistics Health</div>
-                        <div style={{ fontSize: '1.6rem', fontWeight: 950, color: COLORS.slate950 }}>98.2% On-Time</div>
-                        <div style={{ fontSize: '0.85rem', color: COLORS.emerald, fontWeight: 700, marginTop: '2px' }}>Transport Optimized</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase', marginBottom: '4px' }}>Logistics Health</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 950, color: COLORS.slate950 }}>98.2% On-Time</div>
+                        <div style={{ fontSize: '0.8rem', color: COLORS.emerald, fontWeight: 700, marginTop: '2px' }}>Transport Optimized</div>
                     </div>
                 </div>
             </div>
