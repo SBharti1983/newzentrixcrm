@@ -83,7 +83,7 @@ export default function WorkspaceManagement() {
     };
 
     const handleDelete = async () => {
-        if (!tenantToDelete || deleteConfirmText !== `delete ${tenantToDelete.slug}`) return;
+        if (!tenantToDelete || deleteConfirmText.toLowerCase() !== `delete ${tenantToDelete.slug}`) return;
         
         try {
             setLoading(true);
@@ -399,11 +399,11 @@ export default function WorkspaceManagement() {
                             </button>
                             <button 
                                 onClick={handleDelete}
-                                disabled={deleteConfirmText !== `delete ${tenantToDelete?.slug}`}
+                                disabled={deleteConfirmText.toLowerCase() !== `delete ${tenantToDelete?.slug}`}
                                 style={{ 
                                     padding: '12px', borderRadius: '14px', background: '#dc2626', color: 'white', 
                                     border: 'none', fontWeight: 700, cursor: 'pointer',
-                                    opacity: deleteConfirmText === `delete ${tenantToDelete?.slug}` ? 1 : 0.5
+                                    opacity: deleteConfirmText.toLowerCase() === `delete ${tenantToDelete?.slug}` ? 1 : 0.5
                                 }}
                             >
                                 Wipe Workspace
