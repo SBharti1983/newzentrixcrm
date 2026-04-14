@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
@@ -14,52 +14,64 @@ import InstallPWA from './components/InstallPWA';
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import { BrandingProvider, useBranding } from './context/BrandingContext';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Leads from './pages/Leads';
-import NurtureLeads from './pages/NurtureLeads';
-import Pipeline from './pages/Pipeline';
-import Projects from './pages/Projects';
-import Inventory from './pages/Inventory';
-import Customers from './pages/Customers';
-import ContactDetails from './pages/ContactDetails';
-import Bookings from './pages/Bookings';
-import Followups from './pages/Followups';
-import SiteVisits from './pages/SiteVisits';
-import Analytics from './pages/Analytics';
-import Leaderboard from './pages/Leaderboard';
-import Admin from './pages/Admin';
-import Notifications from './pages/Notifications';
-import ChannelPartners from './pages/ChannelPartners';
-import PaymentTracker from './pages/PaymentTracker';
-import Agreements from './pages/Agreements';
-import CalendarPage from './pages/CalendarPage';
-import Enquiry from './pages/Enquiry';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
-import SuperAdmin from './pages/SuperAdmin';
-import CustomerPortal from './pages/CustomerPortal';
-import BrokerPortal from './pages/BrokerPortal';
-import Inbox from './pages/Inbox';
-import Automations from './pages/Automations';
-import AutomationDistribution from './pages/AutomationDistribution';
-import Commissions from './pages/Commissions';
-import CallRecords from './pages/CallRecords';
-import VoiceAnalytics from './pages/VoiceAnalytics';
-import LeadScoreStatus from './pages/LeadScoreStatus';
-import Kiosk from './pages/Kiosk';
-import Billing from './pages/Billing';
-import BillingSuccess from './pages/BillingSuccess';
-import Integrations from './pages/Integrations';
-import Marketing from './pages/Marketing';
-import WhatsAppMarketing from './pages/WhatsAppMarketing';
-import PartnerReferral from './pages/public/PartnerReferral';
-import CommandCenter from './pages/CommandCenter';
-import Reports from './pages/Reports';
-import TeamHierarchy from './pages/TeamHierarchy';
-import WorkspaceManagement from './pages/WorkspaceManagement';
-import PublicSignup from './pages/PublicSignup';
+// --- Lazy Loaded Pages ---
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Leads = lazy(() => import('./pages/Leads'));
+const NurtureLeads = lazy(() => import('./pages/NurtureLeads'));
+const Pipeline = lazy(() => import('./pages/Pipeline'));
+const Projects = lazy(() => import('./pages/Projects'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Customers = lazy(() => import('./pages/Customers'));
+const ContactDetails = lazy(() => import('./pages/ContactDetails'));
+const Bookings = lazy(() => import('./pages/Bookings'));
+const Followups = lazy(() => import('./pages/Followups'));
+const SiteVisits = lazy(() => import('./pages/SiteVisits'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const ChannelPartners = lazy(() => import('./pages/ChannelPartners'));
+const PaymentTracker = lazy(() => import('./pages/PaymentTracker'));
+const Agreements = lazy(() => import('./pages/Agreements'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const Enquiry = lazy(() => import('./pages/Enquiry'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const SuperAdmin = lazy(() => import('./pages/SuperAdmin'));
+const CustomerPortal = lazy(() => import('./pages/CustomerPortal'));
+const BrokerPortal = lazy(() => import('./pages/BrokerPortal'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const Automations = lazy(() => import('./pages/Automations'));
+const AutomationDistribution = lazy(() => import('./pages/AutomationDistribution'));
+const Commissions = lazy(() => import('./pages/Commissions'));
+const CallRecords = lazy(() => import('./pages/CallRecords'));
+const VoiceAnalytics = lazy(() => import('./pages/VoiceAnalytics'));
+const LeadScoreStatus = lazy(() => import('./pages/LeadScoreStatus'));
+const Kiosk = lazy(() => import('./pages/Kiosk'));
+const Billing = lazy(() => import('./pages/Billing'));
+const BillingSuccess = lazy(() => import('./pages/BillingSuccess'));
+const Integrations = lazy(() => import('./pages/Integrations'));
+const Marketing = lazy(() => import('./pages/Marketing'));
+const WhatsAppMarketing = lazy(() => import('./pages/WhatsAppMarketing'));
+const PartnerReferral = lazy(() => import('./pages/public/PartnerReferral'));
+const CommandCenter = lazy(() => import('./pages/CommandCenter'));
+const Reports = lazy(() => import('./pages/Reports'));
+const TeamHierarchy = lazy(() => import('./pages/TeamHierarchy'));
+const WorkspaceManagement = lazy(() => import('./pages/WorkspaceManagement'));
+const PublicSignup = lazy(() => import('./pages/PublicSignup'));
+
+// --- Pre-loaded Critical Components ---
+import { PageLoader } from './components/Feedback';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import Dialer from './components/Dialer';
+import ZapierAssistant from './components/ZapierAssistant';
+import AgentCopilotWidget from './components/AgentCopilotWidget';
+import MobileActionHub from './components/MobileActionHub';
+import InstallPWA from './components/InstallPWA';
+import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
 // --- UI Overlays ---
@@ -193,7 +205,8 @@ function ProtectedApp() {
           onToggle={handleNavToggle}
         />
         <main className="page-content">
-          <Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : <Dashboard />}</RoleGuard>} />
             <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/leads" element={<RoleGuard path="/leads"><Leads /></RoleGuard>} />
@@ -235,6 +248,7 @@ function ProtectedApp() {
             <Route path="/billing/success" element={<BillingSuccess />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </main>
       </div>
       {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
@@ -264,7 +278,7 @@ export default function App() {
                 <Route path="/referral/:partnerId" element={<PartnerReferral />} />
                 <Route path="/kiosk" element={<Kiosk />} />
                 {/* All other routes — protected */}
-                <Route path="/*" element={<ProtectedApp />} />
+                <Route path="/*" element={<Suspense fallback={<PageLoader />}><ProtectedApp /></Suspense>} />
               </Routes>
             </BrowserRouter>
           </ErrorBoundary>
