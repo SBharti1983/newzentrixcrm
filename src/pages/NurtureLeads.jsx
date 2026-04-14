@@ -174,7 +174,7 @@ export default function NurtureLeads() {
                                             <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>MIGRATED FROM</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pillCol, background: pillBg, border: `1px solid ${pillCol}30`, padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pillCol, background: pillBg, border: `1px solid ${pillCol}30`, padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
                                                 {lead.nurture_reason || 'General Follow Up'}
                                             </span>
                                         </td>
@@ -184,12 +184,12 @@ export default function NurtureLeads() {
                                                     <Calendar size={14} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#64748b'} strokeWidth={2.5}/>
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)' }}>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)', whiteSpace: 'nowrap' }}>
                                                         {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime()) 
                                                             ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                                             : 'Not Scheduled'}
                                                     </div>
-                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                                                         {isOverdue ? 'Overdue' : isDueToday ? 'Due Today' : 'Follow Up'}
                                                     </div>
                                                 </div>
