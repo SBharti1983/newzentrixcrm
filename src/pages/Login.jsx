@@ -177,8 +177,8 @@ export default function Login() {
         <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
     ) : (branding?.logo_icon || 'Z');
     
-    const tenantColor = branding?.primary_color || '#1e3a8a'; // Deep Navy as default
-    const bgGradient = `linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)`; // Light neutral background
+    const tenantColor = branding?.primary_color || '#1e3a8a';
+    const bgGradient = `linear-gradient(135deg, #050d21 0%, #172554 100%)`; // Midnight Navy background
 
     const styleRef = useRef(null);
 
