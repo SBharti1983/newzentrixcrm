@@ -1,3 +1,7 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../db/pool');
+
 async function getTenantByHostname(hostname) {
     let tenant;
     const parts = hostname.split('.');
