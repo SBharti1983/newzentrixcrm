@@ -238,7 +238,11 @@ router.get('/', async (req, res) => {
         }
     }
     if (channel_partner_id) { conditions.push(`l.channel_partner_id = $${i++}`); params.push(channel_partner_id); }
-    if (status) { conditions.push(`l.status = $${i++}`); params.push(status); }
+    // Only apply status filter if we are NOT doing a targeted nurture_due/overdue search
+    // to avoid conflicting status conditions (e.g. status='Active' AND status='Nurture')
+    if (status && !req.query.nurture_due && !req.query.nurture_overdue) { 
+        conditions.push(`l.status = $${i++}`); params.push(status); 
+    }
 
     if (startDate) {
         conditions.push(`l.created_at::date >= $${i++}`);
@@ -250,9 +254,10 @@ router.get('/', async (req, res) => {
     }
 
     if (req.query.nurture_due === 'true') {
-        conditions.push(`l.status = 'Nurture' AND l.reconnect_date <= CURRENT_DATE`);
+        // Show anything with a reconnect date today or earlier, excluding dead/closed leads
+        conditions.push(`l.reconnect_date <= CURRENT_DATE AND l.status NOT IN ('Won', 'Lost')`);
     } else if (req.query.nurture_overdue === 'true') {
-        conditions.push(`l.status = 'Nurture' AND l.reconnect_date < CURRENT_DATE`);
+        conditions.push(`l.reconnect_date < CURRENT_DATE AND l.status NOT IN ('Won', 'Lost')`);
     } else if (req.query.reconnect_date) {
         conditions.push(`l.reconnect_date = $${i++}`);
         params.push(req.query.reconnect_date);
@@ -302,8 +307,8 @@ router.get('/', async (req, res) => {
             pool.query(`SELECT COUNT(*) FROM leads l WHERE ${where}`, params),
             pool.query(
                 `SELECT 
-                    COUNT(*) FILTER (WHERE status = 'Nurture' AND reconnect_date = CURRENT_DATE) as due_today,
-                    COUNT(*) FILTER (WHERE status = 'Nurture' AND reconnect_date < CURRENT_DATE) as overdue
+                    COUNT(*) FILTER (WHERE reconnect_date = CURRENT_DATE AND status NOT IN ('Won', 'Lost')) as due_today,
+                    COUNT(*) FILTER (WHERE reconnect_date < CURRENT_DATE AND status NOT IN ('Won', 'Lost')) as overdue
                  FROM leads WHERE tenant_id = $1`,
                 [req.tenantId]
             )

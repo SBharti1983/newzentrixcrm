@@ -349,10 +349,20 @@ export default function Leads() {
 
                     <button 
                         className={`btn btn-sm ${filterNurtureDue ? 'btn-primary' : 'btn-ghost'}`} 
-                        style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
+                        style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}
                         onClick={() => { setPage(1); setFilterNurtureDue(!filterNurtureDue); }}
                     >
                         🎯 Nurture Due
+                        {leadsRes?.nurture?.due_today > 0 && (
+                            <span style={{ background: filterNurtureDue ? 'rgba(255,255,255,0.2)' : 'var(--accent-rose)', color: filterNurtureDue ? 'white' : 'white', padding: '0 6px', borderRadius: 6, fontSize: '0.65rem' }}>
+                                {leadsRes.nurture.due_today}
+                            </span>
+                        )}
+                        {leadsRes?.nurture?.overdue > 0 && !filterNurtureDue && (
+                            <span style={{ background: '#ef4444', color: 'white', padding: '0 6px', borderRadius: 6, fontSize: '0.65rem' }} title="Overdue">
+                                {leadsRes.nurture.overdue}
+                            </span>
+                        )}
                     </button>
                     
                     {(filterStage !== 'All' || filterStatus !== 'All' || filterSource !== 'All' || filterAgent !== 'All' || filterNurtureDue || startDate || endDate || search) && (
@@ -448,8 +458,8 @@ export default function Leads() {
                                             style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                         />
                                     </th>
-                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
-                                        const widths = { 'Lead': '150px', 'Contact': '150px', 'Status': '75px', 'Stage': '95px', 'Source': '85px', 'Score': '55px', 'Created By': '85px', 'Create Date': '95px', 'Assigned To': '100px', 'Last Contact': '110px', 'Actions': '115px' };
+                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
+                                        const widths = { 'Lead': '150px', 'Contact': '150px', 'Status': '75px', 'Stage': '95px', 'Source': '85px', 'Score': '55px', 'Re-connect': '100px', 'Reason': '120px', 'Created By': '85px', 'Create Date': '95px', 'Assigned To': '100px', 'Last Contact': '110px', 'Actions': '115px' };
                                         const isSticky = h === 'Actions';
                                         return (
                                             <th key={h} style={{ 
@@ -507,11 +517,25 @@ export default function Leads() {
                                                 <span style={{ fontSize: '0.72rem', fontWeight: 800 }}>{leadScore}</span>
                                             </div>
                                         </td>
+                                        {filterNurtureDue && (
+                                            <>
+                                                <td style={{ textAlign: 'center', padding: '8px' }}>
+                                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-rose)', background: 'var(--rose-50)', borderRadius: 6, padding: '2px 4px' }}>
+                                                        {lead.reconnect_date ? new Date(lead.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today'}
+                                                    </div>
+                                                </td>
+                                                <td style={{ textAlign: 'center', padding: '8px' }}>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--slate-600)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={lead.nurture_reason}>
+                                                        {lead.nurture_reason || '—'}
+                                                    </div>
+                                                </td>
+                                            </>
+                                        )}
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name || 'System'}</span>
                                         </td>
                                         <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
-                                            {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                                            {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                                         </td>
                                         <td style={{ textAlign: 'center', padding: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>

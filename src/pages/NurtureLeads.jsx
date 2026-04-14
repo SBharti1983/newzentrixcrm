@@ -87,8 +87,8 @@ export default function NurtureLeads() {
             <div style={{ display: 'flex', gap: 16, marginBottom: 24, marginTop: 8 }}>
                 {[
                     { id: 'All', label: 'Total Nurture Pool', icon: Users, color: 'var(--navy-600)', bg: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', count: leadsRes?.total || 0, sub: 'Active in Nurture' },
-                    { id: 'Due Today', label: 'Action Required', icon: Clock, color: 'var(--accent-blue)', bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)', count: leadsRes?.counts?.dueToday || 0, sub: 'Due Today' },
-                    { id: 'Overdue', label: 'Escalated Leads', icon: AlertCircle, color: 'var(--accent-rose)', bg: 'linear-gradient(135deg, #fef2f2, #fee2e2)', count: leadsRes?.counts?.overdue || 0, sub: 'Overdue Follow-ups' }
+                    { id: 'Due Today', label: 'Action Required', icon: Clock, color: 'var(--accent-blue)', bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)', count: leadsRes?.nurture?.due_today || 0, sub: 'Due Today' },
+                    { id: 'Overdue', label: 'Escalated Leads', icon: AlertCircle, color: 'var(--accent-rose)', bg: 'linear-gradient(135deg, #fef2f2, #fee2e2)', count: leadsRes?.nurture?.overdue || 0, sub: 'Overdue Follow-ups' }
                 ].map(tab => {
                     const isActive = filterType === tab.id;
                     return (
@@ -136,7 +136,7 @@ export default function NurtureLeads() {
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                         <thead>
                             <tr style={{ background: 'var(--slate-50)' }}>
-                                {['Lead Client', 'Dormancy Context', 'Reconnect Strategy', 'Assigned Rep', 'Manage'].map(h => (
+                                {['Lead Client', 'Original Stage', 'Nurture Reason', 'Reconnect Date', 'Assigned Rep', 'Manage'].map(h => (
                                     <th key={h} style={{ padding: '14px 24px', fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'left', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
                                 ))}
                             </tr>
@@ -170,27 +170,27 @@ export default function NurtureLeads() {
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-                                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pillCol, background: pillBg, border: `1px solid ${pillCol}30`, padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                                                    {lead.nurture_reason || 'General Follow Up'}
-                                                </span>
-                                                <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-secondary)' }}>From Stage: <span style={{ color: 'var(--navy-600)', fontWeight: 800 }}>{lead.stage}</span></div>
-                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--navy-600)', fontWeight: 800 }}>{lead.stage}</div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>MIGRATED FROM</div>
                                         </td>
                                         <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{ width: 36, height: 36, borderRadius: '10px', background: isOverdue ? '#fee2e2' : isDueToday ? '#dbeafe' : '#f1f5f9', border: `1px solid ${isOverdue ? '#fca5a5' : isDueToday ? '#bfdbfe' : '#e2e8f0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                    <Calendar size={16} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#64748b'} strokeWidth={2.5}/>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pillCol, background: pillBg, border: `1px solid ${pillCol}30`, padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                                {lead.nurture_reason || 'General Follow Up'}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: isOverdue ? '#fee2e2' : isDueToday ? '#dbeafe' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                    <Calendar size={14} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#64748b'} strokeWidth={2.5}/>
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)' }}>
                                                         {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime()) 
                                                             ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                                             : 'Not Scheduled'}
-                                                        {isOverdue && <AlertCircle size={12} color="#dc2626" />}
                                                     </div>
-                                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: isOverdue ? '#dc2626' : isDueToday ? '#2563eb' : 'var(--text-muted)' }}>
-                                                        {isOverdue ? 'ACTION OVERDUE' : isDueToday ? 'ACTION DUE TODAY' : 'SCHEDULED RECONNECT'}
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                                        {isOverdue ? 'Overdue' : isDueToday ? 'Due Today' : 'Follow Up'}
                                                     </div>
                                                 </div>
                                             </div>
