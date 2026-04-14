@@ -20,16 +20,8 @@ router.post('/enrich-lead/:id', async (req, res) => {
 
         const lead = rows[0];
 
-        if (!isAiEnabled) {
-            return res.json({
-                enriched: false,
-                message: 'AI enrichment is simulated as GEMINI_API_KEY is missing.',
-                suggestions: {
-                    name: lead.name.split(' ').map(n => n[0].toUpperCase() + n.slice(1).toLowerCase()).join(' '),
-                    email: lead.email ? lead.email.toLowerCase() : null
-                }
-            });
-        }
+        const { rows: tenantRows } = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+        const tenantKey = tenantRows[0]?.settings?.gemini_api_key || null;
 
         const prompt = `
             Analyze this Real Estate Lead data and provide:
@@ -44,16 +36,16 @@ router.post('/enrich-lead/:id', async (req, res) => {
             Budget: ${lead.budget}
             Notes: ${lead.notes}
 
-            Return JSON:
+            Return ONLY raw JSON:
             {
-                "standardized": { "name": "string", "email": "string" },
-                "persona": "string",
-                "talkingPoints": ["string"],
-                "searchQuery": "string"
+                "standardized": { "name": "Standardized Name", "email": "standardized@email.com" },
+                "persona": "One line category",
+                "talkingPoints": ["Point 1", "Point 2", "Point 3"],
+                "searchQuery": "Google Search Query"
             }
         `;
 
-        const insights = await generateAIResponse(prompt);
+        const insights = await generateAIResponse(prompt, true, tenantKey);
         res.json({ enriched: true, insights });
     } catch (err) {
         console.error(err);
@@ -71,11 +63,13 @@ router.post('/transcribe-call', upload.single('audio'), async (req, res) => {
     }
 
     try {
-        if (!isAiEnabled) {
+        const { rows: tenantRows } = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+        const tenantKey = tenantRows[0]?.settings?.gemini_api_key || null;
+
+        if (!isAiEnabled && !tenantKey) {
             return res.json({
                 transcript: [
-                    { speaker: 'AGt', text: 'Hello, this is Zentrix Real Estate. We are running in simulated AI mode.' },
-                    { speaker: 'CLI', text: 'I understand. Please enable your GEMINI_API_KEY environment variable to transcribe real audio.' }
+                    { speaker: 'AGt', text: 'AI Assistant is currently disabled. Check system configuration.' }
                 ],
                 sentiment: 'Neutral'
             });
@@ -112,7 +106,7 @@ router.post('/transcribe-call', upload.single('audio'), async (req, res) => {
         const base64Audio = req.file.buffer.toString('base64');
         const mimeType = req.file.mimetype || 'audio/wav';
 
-        const result = await generateAudioTranscription(prompt, base64Audio, mimeType, true);
+        const result = await generateAudioTranscription(prompt, base64Audio, mimeType, true, tenantKey);
 
         // Tie transcript to lead profile if leadId or interactionId is passed
         const { leadId, interactionId } = req.body;
@@ -177,7 +171,10 @@ router.post('/summarize-call', async (req, res) => {
     if (!transcript) return res.status(400).json({ error: 'Transcript is required' });
 
     try {
-        if (!isAiEnabled) {
+        const { rows: tenantRows } = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+        const tenantKey = tenantRows[0]?.settings?.gemini_api_key || null;
+
+        if (!isAiEnabled && !tenantKey) {
             return res.json({
                 summary: "This is a simulated AI summary. (Gemini API Key missing)",
                 keyPoints: ["Lead expressed interest in 3BHK", "Budget is slightly flexible", "Wants to visit site next Sunday"],
@@ -233,7 +230,10 @@ router.post('/generate-content', async (req, res) => {
             }
         `;
 
-        const content = await generateAIResponse(prompt);
+        const { rows: tenantRows } = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+        const tenantKey = tenantRows[0]?.settings?.gemini_api_key || null;
+
+        const content = await generateAIResponse(prompt, true, tenantKey);
         res.json(content);
     } catch (err) {
         console.error(err);

@@ -66,8 +66,15 @@ function daysSince(dateStr) {
 
 function parseBudgetL(budget) {
     if (!budget) return 0;
-    const n = parseFloat(budget.replace(/[₹\s]/g, ''));
-    if (budget.includes('Cr')) return n * 100;
+    // Remove currency, spaces, and commas for robust parsing
+    const normalized = budget.replace(/[₹\s,]/g, '').toLowerCase();
+    const n = parseFloat(normalized);
+    if (isNaN(n)) return 0;
+    
+    // Check for Crore/Cr and Lakh/Lac/L
+    if (normalized.includes('cr')) return n * 100;
+    // If it's a raw large number (e.g. 5000000), convert to Lakhs
+    if (n >= 100000) return n / 100000;
     return n;
 }
 
@@ -98,6 +105,7 @@ export default function Pipeline() {
     const [filterAgent, setFilterAgent] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
     const [filterPriority, setFilterPriority] = useState('All');
+    const [filterProject, setFilterProject] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState('metrics');
     const { user: currentUser } = useAuth();
@@ -116,7 +124,8 @@ export default function Pipeline() {
         const matchAgent = filterAgent === 'All' || l.assigned_to === filterAgent;
         const matchSource = filterSource === 'All' || l.source === filterSource;
         const matchPriority = filterPriority === 'All' || l.priority === filterPriority;
-        return matchQ && matchAgent && matchSource && matchPriority;
+        const matchProject = filterProject === 'All' || String(l.project_id) === String(filterProject);
+        return matchQ && matchAgent && matchSource && matchPriority && matchProject;
     });
 
     const byStage = s => filteredLeads.filter(l => l.stage === s);
@@ -149,6 +158,12 @@ export default function Pipeline() {
     const totalPipelineVal = fmtL(
         leads.filter(l => l.stage !== 'Lost').reduce((s, l) => s + parseBudgetL(l.budget), 0)
     );
+
+    const projectMatrixData = (projects || []).map(p => {
+        const pLeads = filteredLeads.filter(l => String(l.project_id) === String(p.id));
+        const val = pLeads.reduce((s, l) => s + parseBudgetL(l.budget), 0);
+        return { name: p.name, value: val, leads: pLeads.length };
+    }).sort((a, b) => b.value - a.value).slice(0, 5);
 
     // ── Add lead ─────────────────────────────────────────────────────
     const saveNewLead = async () => {
@@ -283,7 +298,7 @@ export default function Pipeline() {
                         <div style={{ width: 1, height: 24, background: 'var(--border-light)', margin: '0 4px' }} />
                         <button onClick={() => setShowFilters(f => !f)} className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-outline'}`} style={{ borderRadius: 8, gap: 6, height: 36, fontSize: '0.78rem', fontWeight: 700, padding: '0 12px' }}>
                             <Filter size={15} /> Filters
-                            {(filterAgent !== 'All' || filterSource !== 'All' || filterPriority !== 'All') &&
+                            {(filterAgent !== 'All' || filterSource !== 'All' || filterPriority !== 'All' || filterProject !== 'All') &&
                                 <span style={{ background: 'var(--accent-rose)', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>!</span>
                             }
                         </button>
@@ -295,6 +310,11 @@ export default function Pipeline() {
                             style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
                             <option value="All">All Agents</option>
                             {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                        <select className="form-control" value={filterProject} onChange={e => setFilterProject(e.target.value)}
+                            style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
+                            <option value="All">All Projects</option>
+                            {(projects || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                         <select className="form-control" value={filterSource} onChange={e => setFilterSource(e.target.value)}
                             style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
@@ -447,6 +467,44 @@ export default function Pipeline() {
                                         })}
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                        
+                        {/* Project Wise Pipeline Distribution */}
+                        <div className="card" style={{ padding: 0 }}>
+                            <div className="card-header" style={{ padding: '12px 16px' }}>
+                                <div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Home size={16} style={{ color: 'var(--accent-cyan-dark)' }} /> Asset Intelligence
+                                </div>
+                            </div>
+                            <div className="card-body" style={{ padding: '16px' }}>
+                                <div style={{ marginBottom: 16 }}>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Top 5 projects by pipeline value contribution</p>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                                    {projectMatrixData.map((p, i) => (
+                                        <div key={i}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'flex-end' }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--navy-900)' }}>{p.name}</div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                   <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--navy-600)' }}>{fmtL(p.value)}</span>
+                                                   <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginLeft: 6 }}>({p.leads} leads)</span>
+                                                </div>
+                                            </div>
+                                            <div style={{ height: 6, background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden' }}>
+                                                <div style={{ 
+                                                    width: `${Math.round((p.value / (projectMatrixData[0]?.value || 1)) * 100)}%`, 
+                                                    height: '100%', 
+                                                    background: 'linear-gradient(90deg, var(--accent-cyan), var(--navy-600))',
+                                                    borderRadius: 3 
+                                                }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {projectMatrixData.length === 0 && (
+                                        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No project associations found</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

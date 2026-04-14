@@ -3,6 +3,7 @@ const pool = require('../db/pool');
 const auth = require('../middleware/auth');
 const { validateLead } = require('../middleware/validators');
 const automationService = require('../services/automationService');
+const { sendPushNotification } = require('../utils/push');
 
 const router = express.Router();
 router.use(auth);
@@ -124,46 +125,64 @@ router.get('/:id/matches', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT l.*, u.name as agent_name, u.avatar as agent_avatar, p.name as project_name,
+            `SELECT l.*, cust_map.id as customer_id, u.name as agent_name, u.avatar as agent_avatar, u.role as agent_role, u.phone as agent_phone, u.email as agent_email,
+                p.name as project_name,
+                (SELECT u2.name FROM activity_log al JOIN users u2 ON al.user_id = u2.id WHERE al.entity_id::uuid = l.id AND al.entity_type = 'lead' AND al.action = 'created' LIMIT 1) as created_by_name,
                 (
                     SELECT json_agg(merged_activity ORDER BY date DESC)
                     FROM (
-                        SELECT 
-                            id, 
-                            type, 
-                            date, 
-                            note, 
-                            (SELECT name FROM users WHERE id = interactions.user_id) as agent_name,
-                            'interaction' as entry_type
-                        FROM interactions 
-                        WHERE lead_id = l.id
-                        
+                        SELECT id, type, date, note, 
+                               (SELECT name FROM users WHERE id = interactions.user_id) as agent_name,
+                               'interaction' as entry_type
+                        FROM interactions WHERE lead_id = l.id
                         UNION ALL
-                        
-                        SELECT 
-                            id, 
-                            action as type, 
-                            created_at as date, 
-                            CASE 
-                                WHEN action = 'updated' AND (new_data->>'stage') IS NOT NULL 
-                                THEN 'Stage progressed to ' || (new_data->>'stage')
-                                ELSE action 
-                            END as note,
-                            (SELECT name FROM users WHERE id = activity_log.user_id) as agent_name,
-                            'system' as entry_type
-                        FROM activity_log 
-                        WHERE entity_type = 'lead' AND entity_id::uuid = l.id
+                        SELECT id, 
+                               CASE 
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'budget' IS DISTINCT FROM old_data::jsonb->>'budget') THEN 'Budget Update'
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'stage' IS DISTINCT FROM old_data::jsonb->>'stage') THEN 'Stage Advance'
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'status' IS DISTINCT FROM old_data::jsonb->>'status') THEN 'Status Change'
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'property_type' IS DISTINCT FROM old_data::jsonb->>'property_type') THEN 'Property Update'
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'project_id' IS DISTINCT FROM old_data::jsonb->>'project_id') THEN 'Project Pivot'
+                                 ELSE INITCAP(action)
+                               END as type,
+                               created_at as date, 
+                               CASE 
+                                 WHEN LOWER(TRIM(action)) = 'booking_created' THEN 'Deal Booked: ' || COALESCE(new_data::jsonb->>'unit_no', 'N/A') || ' (' || COALESCE(new_data::jsonb->>'total_amount', '0') || ')'
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'budget' IS DISTINCT FROM old_data::jsonb->>'budget') THEN 'Budget updated to ' || COALESCE(new_data::jsonb->>'budget', 'None')
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'stage' IS DISTINCT FROM old_data::jsonb->>'stage') THEN 'Stage advanced to ' || COALESCE(new_data::jsonb->>'stage', 'None')
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'property_type' IS DISTINCT FROM old_data::jsonb->>'property_type') THEN 'Property Type updated to ' || COALESCE(new_data::jsonb->>'property_type', 'None')
+                                 WHEN LOWER(TRIM(action)) = 'updated' AND (new_data::jsonb->>'project_id' IS DISTINCT FROM old_data::jsonb->>'project_id') THEN 'Target Project updated'
+                                 ELSE action 
+                               END as note,
+                               (SELECT name FROM users WHERE id = activity_log.user_id) as agent_name,
+                               'system' as entry_type
+                        FROM activity_log WHERE (entity_type = 'lead' AND entity_id::uuid = l.id) OR (entity_type = 'contact' AND entity_id::uuid = l.id)
                     ) merged_activity
                 ) as interactions,
                 (
-                    SELECT COUNT(b.id) 
-                    FROM bookings b 
-                    JOIN customers c ON b.customer_id = c.id 
-                    WHERE c.lead_id = l.id
-                ) as booking_count
+                    SELECT json_agg(deal) FROM (
+                        SELECT b.id, b.status, b.total_amount, COALESCE(i.unit_no, b.unit_no) as unit_number, i.floor, proj.name as project_name
+                        FROM bookings b
+                        JOIN customers c ON b.customer_id = c.id
+                        LEFT JOIN inventory i ON b.unit_id = i.id
+                        LEFT JOIN projects proj ON b.project_id = proj.id
+                        WHERE c.lead_id = l.id
+                    ) deal
+                ) as deals,
+                (
+                    WITH RECURSIVE hierarchy AS (
+                        SELECT id, name, avatar, role, phone, email, reports_to FROM users WHERE id = l.assigned_to
+                        UNION ALL
+                        SELECT u.id, u.name, u.avatar, u.role, u.phone, u.email, u.reports_to
+                        FROM users u
+                        INNER JOIN hierarchy h ON h.reports_to = u.id
+                    )
+                    SELECT json_agg(h) FROM hierarchy h
+                ) as team
              FROM leads l
              LEFT JOIN users u ON l.assigned_to = u.id
              LEFT JOIN projects p ON l.project_id = p.id
+             LEFT JOIN customers cust_map ON cust_map.lead_id = l.id
              WHERE l.id = $1 AND l.tenant_id = $2`, [req.params.id, req.tenantId]
         );
         if (!rows[0]) return res.status(404).json({ error: 'Lead not found' });
@@ -193,6 +212,7 @@ router.get('/:id', async (req, res) => {
         }
         res.json(lead);
     } catch (_err) {
+        console.error('[GET /api/leads/:id] Error:', _err);
         res.status(500).json({ error: 'Failed to fetch lead' });
     }
 });
@@ -269,7 +289,8 @@ router.get('/', async (req, res) => {
     try {
         const [dataRes, countRes, nurtureStats] = await Promise.all([
             pool.query(
-                `SELECT l.*, u.name as agent_name, u.avatar as agent_avatar, p.name as project_name
+                `SELECT l.*, u.name as agent_name, u.avatar as agent_avatar, p.name as project_name,
+                        (SELECT u2.name FROM activity_log al JOIN users u2 ON al.user_id = u2.id WHERE al.entity_id::uuid = l.id AND al.entity_type = 'lead' AND al.action = 'created' LIMIT 1) as created_by_name
                  FROM leads l
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN projects p ON l.project_id = p.id
@@ -485,11 +506,16 @@ router.post('/:id/interactions', async (req, res) => {
 
 // PATCH /api/leads/:leadId/interactions/:interactionId
 router.patch('/:leadId/interactions/:interactionId', async (req, res) => {
-    const { note } = req.body;
+    const { note, outcome, duration } = req.body;
     try {
         const { rows } = await pool.query(
-            `UPDATE interactions SET note = $1 WHERE id = $2 AND lead_id = $3 AND tenant_id = $4 RETURNING *`,
-            [note, req.params.interactionId, req.params.leadId, req.tenantId]
+            `UPDATE interactions 
+             SET note = COALESCE($1, note), 
+                 outcome = COALESCE($2, outcome), 
+                 duration = COALESCE($3, duration) 
+             WHERE id = $4 AND lead_id = $5 AND tenant_id = $6 
+             RETURNING *`,
+            [note, outcome, duration, req.params.interactionId, req.params.leadId, req.tenantId]
         );
         if (!rows[0]) return res.status(404).json({ error: 'Interaction not found' });
         res.json(rows[0]);
@@ -520,6 +546,60 @@ router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
     } catch (err) {
         console.error('[Interaction Delete] ERROR:', err);
         res.status(500).json({ error: 'Failed to delete interaction', details: err.message });
+    }
+});
+
+// POST /api/leads/:id/deals
+router.post('/:id/deals', async (req, res) => {
+    try {
+        const { unit_number, project_name, total_amount, status } = req.body;
+        if (!total_amount) return res.status(400).json({ error: 'Total amount is required' });
+
+        // First find or create a customer from this lead
+        const leadRes = await pool.query('SELECT * FROM leads WHERE id=$1 AND tenant_id=$2', [req.params.id, req.tenantId]);
+        if (!leadRes.rows[0]) return res.status(404).json({ error: 'Lead not found' });
+        const lead = leadRes.rows[0];
+
+        let customerId;
+        const custRes = await pool.query('SELECT id FROM customers WHERE lead_id=$1 AND tenant_id=$2', [req.params.id, req.tenantId]);
+        if (custRes.rows[0]) {
+            customerId = custRes.rows[0].id;
+        } else {
+            const newCust = await pool.query(
+                `INSERT INTO customers (tenant_id, name, phone, email, lead_id) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+                [req.tenantId, lead.name, lead.phone, lead.email, lead.id]
+            );
+            customerId = newCust.rows[0].id;
+        }
+
+        // We use a dummy project or find a matched project if provided
+        let projectId = null;
+        if (project_name) {
+            const projRes = await pool.query('SELECT id FROM projects WHERE name ILIKE $1 AND tenant_id=$2 LIMIT 1', [project_name, req.tenantId]);
+            if (projRes.rows[0]) projectId = projRes.rows[0].id;
+        }
+        if (!projectId) {
+            const fallRes = await pool.query('SELECT id FROM projects WHERE tenant_id=$1 LIMIT 1', [req.tenantId]);
+            if (fallRes.rows[0]) projectId = fallRes.rows[0].id;
+        }
+
+        const { rows } = await pool.query(
+            `INSERT INTO bookings (tenant_id, customer_id, project_id, unit_no, total_amount, status)
+             VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+            [req.tenantId, customerId, projectId, unit_number || 'N/A', total_amount, status || 'Active']
+        );
+
+        // Activity log
+        await pool.query(
+            `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
+             VALUES ($1, $2, 'lead', $3, 'booking_created', $4)`,
+            [req.tenantId, req.user.id, req.params.id, JSON.stringify(rows[0])]
+        );
+
+        res.status(201).json(rows[0]);
+    } catch (err) {
+        console.error('Failed to add deal', err);
+        res.status(500).json({ error: 'Failed to add deal' });
     }
 });
 
@@ -593,6 +673,26 @@ router.patch('/:id', async (req, res) => {
             automationService.handleStageChange(rows[0], old.rows[0].stage, updates.stage, req.io).catch(err => {
                 console.error('[Automation Trigger] Stage change error:', err);
             });
+
+            // If Lead becomes HOT, send targeted push notification to assigned agent
+            if (updates.stage === 'Hot') {
+                const targetUserId = rows[0].assigned_to;
+                if (targetUserId) {
+                    pool.query('SELECT * FROM push_subscriptions WHERE user_id = $1', [targetUserId])
+                        .then(({ rows: subs }) => {
+                            subs.forEach(sub => {
+                                sendPushNotification(sub, {
+                                    title: '🔥 HOT LEAD DETECTED!',
+                                    body: `${rows[0].name} just peaked in interest! Strike while the iron is hot.`,
+                                    data: {
+                                        url: `/leads/${rows[0].id}`,
+                                        leadId: rows[0].id
+                                    }
+                                }).catch(e => console.error('Push failed for sub:', sub.endpoint, e));
+                            });
+                        });
+                }
+            }
         }
 
         // Auto-create Nurture Followup if status changed to Nurture

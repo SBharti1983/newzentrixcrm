@@ -72,7 +72,25 @@ router.get('/', async (req, res) => {
                             WHEN budget ILIKE '%L%' THEN COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 100000
                             ELSE COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0)
                         END
-                    ), 0) FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}) as pipeline_value
+                    ), 0) FROM leads WHERE tenant_id = $1 AND stage NOT IN ('Won','Lost')${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}) as pipeline_value,
+                    
+                    (SELECT COALESCE(ROUND(AVG(EXTRACT(EPOCH FROM (first_i.created_at - l.created_at)) / 60)), 0)
+                     FROM leads l
+                     JOIN LATERAL (
+                         SELECT created_at FROM interactions 
+                         WHERE lead_id = l.id 
+                         ORDER BY created_at ASC LIMIT 1
+                     ) first_i ON true
+                     WHERE l.tenant_id = $1
+                     ${effectivePersonal ? ' AND l.assigned_to = $2' : (downlineIds.length ? ' AND l.assigned_to = ANY($2)' : '')}) as avg_response_time,
+
+                    (SELECT COALESCE(ROUND(AVG(
+                        CASE
+                            WHEN budget ILIKE '%Cr%' THEN COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 10000000
+                            WHEN budget ILIKE '%L%' THEN COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0) * 100000
+                            ELSE COALESCE(CAST(NULLIF(regexp_replace(budget, '[^0-9.]', '', 'g'), '') AS DECIMAL), 0)
+                        END
+                    )), 0) FROM leads WHERE tenant_id = $1 AND budget IS NOT NULL${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')}) as avg_deal_size
             `, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Leads by stage
@@ -129,20 +147,25 @@ router.get('/', async (req, res) => {
                 WHERE i.tenant_id = $1 AND i.sentiment = 'Cold'
                 ORDER BY i.date DESC LIMIT 5`, [tid]),
 
-            // Property Popularity Index (Trending)
+            // Activity Trend (Last 30 Days)
             pool.query(`
+                WITH series AS (
+                    SELECT generate_series(NOW() - INTERVAL '30 days', NOW(), '1 day')::date as d
+                )
                 SELECT 
-                    p as name, 
-                    COUNT(*) as mentions
-                FROM interactions i, unnest(i.projects_discussed) p
-                WHERE i.tenant_id = $1 AND i.date >= NOW() - INTERVAL '30 days'
-                GROUP BY p
-                ORDER BY mentions DESC LIMIT 6`, [tid]),
+                    TO_CHAR(s.d, 'Mon DD') as name,
+                    (SELECT COUNT(*) FROM leads l WHERE l.tenant_id = $1 AND l.created_at::date = s.d ${effectivePersonal ? ' AND l.assigned_to = $2' : (downlineIds.length ? ' AND l.assigned_to = ANY($2)' : '')}) as leads,
+                    (SELECT COUNT(*) FROM interactions i WHERE i.tenant_id = $1 AND i.type = 'Call' AND i.date::date = s.d ${effectivePersonal ? ' AND i.user_id = $2' : (downlineIds.length ? ' AND i.user_id = ANY($2)' : '')}) as calls,
+                    (SELECT COUNT(*) FROM followups f WHERE f.tenant_id = $1 AND f.scheduled_at::date = s.d ${effectivePersonal ? ' AND f.assigned_to = $2' : (downlineIds.length ? ' AND f.assigned_to = ANY($2)' : '')}) as follow,
+                    (SELECT COUNT(*) FROM activity_log al WHERE al.tenant_id = $1 AND al.action = 'updated' AND al.new_data->>'stage' = 'Site Visit Done' AND al.created_at::date = s.d ${effectivePersonal ? ' AND al.user_id = $2' : (downlineIds.length ? ' AND al.user_id = ANY($2)' : '')}) as visits
+                FROM series s
+                ORDER BY s.d ASC`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Agent Telephony Quick Stats
             pool.query(`
                 SELECT 
                     COUNT(*) filter (where created_at >= current_date) as calls_today,
+                    SUM(duration) filter (where created_at >= current_date) as talk_time_today,
                     COUNT(*) filter (where note ILIKE '%Recording Link%') as synced_recordings
                 FROM interactions
                 WHERE tenant_id = $1 AND user_id = $2 AND type = 'Call'
@@ -171,7 +194,34 @@ router.get('/', async (req, res) => {
                 FROM interactions i
                 JOIN users u ON i.user_id = u.id
                 WHERE i.tenant_id = $1 AND i.sentiment IS NOT NULL
-                GROUP BY u.id, u.name`, [tid])
+                GROUP BY u.id, u.name`, [tid]),
+
+            // 🔥 Active Deals (Recent Bookings)
+            pool.query(`
+                SELECT b.unit_no, b.status, b.total_amount, p.name as project_name
+                FROM bookings b
+                JOIN projects p ON b.project_id = p.id
+                WHERE b.tenant_id = $1 ${effectivePersonal ? ' AND b.assigned_agent_id = $2' : (downlineIds.length ? ' AND b.assigned_agent_id = ANY($2)' : '')}
+                ORDER BY b.created_at DESC LIMIT 3`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
+
+            // 🔥 Assigned Team (Hierarchy / Squad)
+            pool.query(`
+                SELECT u.id, u.name, u.role, u.avatar, u.email, u.phone,
+                       u.reports_to as manager_id
+                FROM users u
+                WHERE u.tenant_id = $1 AND u.is_active = TRUE
+                AND (u.id = $2 OR u.reports_to = $2 OR u.id = (SELECT reports_to FROM users WHERE id = $2))
+                LIMIT 5`, [tid, targetUserId]),
+
+            // 🔥 Top Projects by Leads
+            pool.query(`
+                SELECT p.name, p.id, COUNT(l.id) as lead_count,
+                       (SELECT image_url FROM projects WHERE id = p.id) as image_url
+                FROM leads l
+                JOIN projects p ON l.project_id = p.id
+                WHERE l.tenant_id = $1 ${effectivePersonal ? ' AND l.assigned_to = $2' : (downlineIds.length ? ' AND l.assigned_to = ANY($2)' : '')}
+                GROUP BY p.id, p.name
+                ORDER BY lead_count DESC LIMIT 3`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid]))
         ];
 
         // Only fetch members list in global mode
@@ -211,10 +261,13 @@ router.get('/', async (req, res) => {
             executeQuery(queries[7], 'AgentStats'), 
             executeQuery(queries[8], 'ProjectSentimentHeatmap'),
             executeQuery(queries[9], 'AgentSentimentHeatmap'),
-            queries[10] ? executeQuery(queries[10], 'Members') : Promise.resolve({ rows: [] })
+            executeQuery(queries[10], 'ActiveDeals'),
+            executeQuery(queries[11], 'AssignedTeam'),
+            executeQuery(queries[12], 'TopProjects'),
+            queries[13] ? executeQuery(queries[13], 'Members') : Promise.resolve({ rows: [] })
         ]);
         
-        const [kpiResult, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, membersResult] = results;
+        const [kpiResult, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, activeDeals, assignedTeam, topProjects, membersResult] = results;
         const kpis = kpiResult.rows[0] || {};
 
         res.json({
@@ -227,7 +280,11 @@ router.get('/', async (req, res) => {
             leads: kpis.leads_kpi || {},
             bookings: kpis.bookings_kpi || {},
             overdue: kpis.overdue_kpi || {},
-            pipeline: { value: kpis.pipeline_value || 0 },
+            pipeline: { 
+                value: kpis.pipeline_value || 0,
+                avg_response_time: kpis.avg_response_time || 0,
+                avg_deal_size: kpis.avg_deal_size || 0
+            },
             stages: stages.rows,
             upcoming_followups: followups.rows,
             nurture: nurture.rows[0],
@@ -239,6 +296,9 @@ router.get('/', async (req, res) => {
                 projects: projectHeatmap.rows,
                 agents: agentHeatmap.rows
             },
+            active_deals: activeDeals.rows,
+            assigned_team: assignedTeam.rows,
+            top_projects: topProjects.rows,
             members: membersResult.rows
         });
     } catch (err) {

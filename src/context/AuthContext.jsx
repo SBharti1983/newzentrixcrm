@@ -24,9 +24,11 @@ export function AuthProvider({ children }) {
             setLoading(false);
             return true;
         } catch (err) {
-            setLoginError(err.error || 'Login failed.');
+            const msg = err.error || err.message || 'Login failed. Please check your credentials.';
+            setLoginError(msg);
             setLoading(false);
-            return false;
+            // Re-throw so Login.jsx handleSubmit can also catch and display the error
+            throw new Error(msg);
         }
     };
 

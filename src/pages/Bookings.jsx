@@ -214,6 +214,18 @@ export default function Bookings() {
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
 
+    const totalRevenueValue = bookings.filter(b => b.status !== 'Cancelled').reduce((acc, curr) => {
+        const val = parseFloat(String(curr.total_amount || curr.amount || '0').replace(/[^0-9.]/g, ''));
+        return acc + val;
+    }, 0);
+
+    const formatCurrency = (val) => {
+        if (!val) return '₹0';
+        if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+        if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+        return `₹${val.toLocaleString()}`;
+    };
+
     return (
         <div className="animate-fadeIn">
             <div className="page-header">
@@ -240,7 +252,7 @@ export default function Bookings() {
                     { label: 'Total Bookings', value: bookings.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
                     { label: 'Confirmed', value: bookings.filter(b => b.status === 'Confirmed').length, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)' },
                     { label: 'Pending Docs', value: bookings.filter(b => b.status === 'Pending Docs').length, icon: '📄', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
-                    { label: 'Revenue', value: '₹2.6Cr', icon: '💰', color: 'var(--navy-600)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
+                    { label: 'Revenue', value: formatCurrency(totalRevenueValue), icon: '💰', color: 'var(--navy-600)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
                 ].map(s => (
                     <div key={s.label} style={{
                         background: s.bg, borderRadius: 'var(--border-radius-lg)',

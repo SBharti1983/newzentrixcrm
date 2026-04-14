@@ -9,7 +9,7 @@ import {
     ArrowUpRight, ArrowDownRight,
     CreditCard,
     BarChart3, Plus, ExternalLink, RefreshCw,
-    Receipt, History, Search, X
+    Receipt, History, Search, X, Bell, FileText, Shield, ShieldAlert
 } from 'lucide-react';
 import { superAdminApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
@@ -120,13 +120,28 @@ const KPICard = ({ title, value, change, isUp, icon: Icon, color, sparkData }) =
     </div>
 );
 
-export default function SuperAdminDashboardView({ tenants = [], stats = {}, subscriptions = [], onReload }) {
+export default function SuperAdminDashboardView({ 
+    tenants = [], stats = {}, subscriptions = [], auditLogs = [], utilizationAlerts = [], onReload 
+}) {
     const { showToast } = useToast();
     const [activeTab, setActiveTab] = React.useState('operational');
     const [finSearch, setFinSearch] = React.useState('');
     const [actionMenu, setActionMenu] = React.useState(null);
     const [showAddSub, setShowAddSub] = React.useState(false);
     const [subLoading, setSubLoading] = React.useState(false);
+    const [nudgingId, setNudgingId] = React.useState(null);
+
+    const handleNudge = async (tenantId) => {
+        setNudgingId(tenantId);
+        try {
+            await superAdminApi.nudgeTenant(tenantId);
+            showToast('Recovery nudge dispatched to workspace admin.', 'success');
+        } catch (err) {
+            showToast('Failed to dispatch nudge. Verify node owner phone/email.', 'error');
+        } finally {
+            setNudgingId(null);
+        }
+    };
 
     const handleAddManualSub = async (e) => {
         e.preventDefault();
@@ -158,7 +173,10 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
         <div style={{ 
             background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
             minHeight: '100vh', 
-            padding: '32px',
+            width: '100%',
+            overflowX: 'hidden',
+            padding: '24px',
+            boxSizing: 'border-box',
             fontFamily: '"Plus Jakarta Sans", sans-serif',
             color: COLORS.textPrimary,
         }}>
@@ -178,11 +196,20 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                    white-space: nowrap;
+                }
+                @media (max-width: 1200px) {
+                    .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+                }
+                @media (max-width: 768px) {
+                    .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+                    .header-row { flex-direction: column; gap: 20px; align-items: flex-start !important; }
+                    .charts-row { grid-template-columns: 1fr !important; }
+                    .management-row { grid-template-columns: 1fr !important; }
                 }
             `}</style>
 
-            {/* Premium Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+            <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap' }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, letterSpacing: '-1px' }}>Global Command Center</h1>
                     <p style={{ margin: '4px 0 0', color: COLORS.textSecondary, fontWeight: 500 }}>System-wide infrastructure & financial oversight.</p>
@@ -191,8 +218,9 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                 <div style={{ display: 'flex', background: 'white', padding: '4px', borderRadius: '16px', border: `1px solid ${COLORS.border}` }}>
                     <button 
                         className="tab-btn" 
-                        onClick={() => setActiveTab('operational')}
+                        onClick={() => { setActiveTab('operational'); setFinSearch(''); }}
                         style={{ 
+                            padding: '10px 18px',
                             background: activeTab === 'operational' ? COLORS.primary : 'transparent',
                             color: activeTab === 'operational' ? 'white' : COLORS.textSecondary
                         }}
@@ -201,13 +229,25 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                     </button>
                     <button 
                         className="tab-btn" 
-                        onClick={() => setActiveTab('financial')}
+                        onClick={() => { setActiveTab('financial'); setFinSearch(''); }}
                         style={{ 
+                            padding: '10px 18px',
                             background: activeTab === 'financial' ? COLORS.primary : 'transparent',
                             color: activeTab === 'financial' ? 'white' : COLORS.textSecondary
                         }}
                     >
                         <CreditCard size={16} /> Financial Ledger
+                    </button>
+                    <button 
+                        className="tab-btn" 
+                        onClick={() => { setActiveTab('audit'); setFinSearch(''); }}
+                        style={{ 
+                            padding: '10px 18px',
+                            background: activeTab === 'audit' ? COLORS.primary : 'transparent',
+                            color: activeTab === 'audit' ? 'white' : COLORS.textSecondary
+                        }}
+                    >
+                        <Shield size={16} /> Governance
                     </button>
                 </div>
             </div>
@@ -215,7 +255,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                 <>
 
             {/* KPI Grid */}
-            <div style={{ 
+            <div className="kpi-grid" style={{ 
                 display: 'grid', 
                 gridTemplateColumns: 'repeat(6, 1fr)',
                 gap: '16px', 
@@ -252,7 +292,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
             </div>
 
             {/* Charts Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '24px' }}>
+            <div className="charts-row" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', marginBottom: '24px' }}>
                 <div style={{
                     background: COLORS.card, borderRadius: '20px', padding: '24px',
                     border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
@@ -307,7 +347,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
             </div>
 
             {/* Table and Logs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
+            <div className="management-row" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px' }}>
                 <div style={{
                     background: COLORS.card, borderRadius: '20px', padding: '24px',
                     border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
@@ -325,13 +365,17 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                 <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
                                     <th style={{ textAlign: 'left', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Workspace</th>
                                     <th style={{ textAlign: 'left', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Tier</th>
-                                    <th style={{ textAlign: 'left', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Users</th>
+                                    <th style={{ textAlign: 'left', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Node Utilization</th>
                                     <th style={{ textAlign: 'left', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Status</th>
                                     <th style={{ textAlign: 'right', padding: '10px 0', color: COLORS.textSecondary, fontSize: '0.65rem', textTransform: 'uppercase', fontWeight: 800 }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {tenants?.slice(0, 5).map(t => (
+                                {tenants?.slice(0, 5).map(t => {
+                                    const userPct = Math.min(((t.user_count || 0) / (t.max_users || 1)) * 100, 100);
+                                    const leadPct = Math.min(((t.lead_count || 0) / (t.max_leads || 500)) * 100, 100);
+
+                                    return (
                                     <tr key={t.id} style={{ borderBottom: `1px solid #F1F5F9` }}>
                                         <td style={{ padding: '12px 0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -347,7 +391,24 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                         <td style={{ padding: '12px 0' }}>
                                             <span style={{ padding: '3px 6px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 700, background: '#F1F5F9', color: COLORS.textPrimary }}>{t.plan?.toUpperCase()}</span>
                                         </td>
-                                        <td style={{ padding: '12px 0', fontWeight: 600, fontSize: '0.8rem' }}>{t.max_users}</td>
+                                        <td style={{ padding: '12px 0' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: 100 }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: 700, color: COLORS.textSecondary }}>
+                                                    <span>USERS</span>
+                                                    <span style={{ color: userPct > 90 ? COLORS.danger : COLORS.textPrimary }}>{t.user_count}/{t.max_users}</span>
+                                                </div>
+                                                <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                                                    <div style={{ width: `${userPct}%`, height: '100%', background: userPct > 90 ? COLORS.danger : COLORS.primary, borderRadius: 2 }} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', fontWeight: 700, color: COLORS.textSecondary }}>
+                                                    <span>LEADS</span>
+                                                    <span style={{ color: leadPct > 90 ? COLORS.danger : COLORS.textPrimary }}>{t.lead_count}/{t.max_leads}</span>
+                                                </div>
+                                                <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                                                    <div style={{ width: `${leadPct}%`, height: '100%', background: leadPct > 90 ? COLORS.danger : '#0EA5E9', borderRadius: 2 }} />
+                                                </div>
+                                            </div>
+                                        </td>
                                         <td style={{ padding: '12px 0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.is_active ? COLORS.success : COLORS.danger }} />
@@ -388,7 +449,7 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                             )}
                                         </td>
                                     </tr>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
                     </div>
@@ -400,19 +461,35 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                         border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
                     }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Audit Logs</h3>
-                            <RefreshCw size={14} color={COLORS.textSecondary} />
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0 }}>Utilization Pulse</h3>
+                            <ShieldAlert size={14} color={COLORS.danger} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {ACTIVITY.slice(0, 3).map(log => (
-                                <div key={log.id} style={{ display: 'flex', gap: 10 }}>
-                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: COLORS.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><log.icon size={12} color={COLORS.textSecondary} /></div>
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>{log.action}</div>
-                                        <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary }}>{log.actor} • {log.time}</div>
+                            {utilizationAlerts.length > 0 ? utilizationAlerts.slice(0, 3).map(alert => (
+                                <div key={alert.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <div style={{ width: 28, height: 28, borderRadius: '8px', background: alert.severity === 'CRITICAL' ? '#FEE2E2' : '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Zap size={12} color={alert.severity === 'CRITICAL' ? COLORS.danger : COLORS.warning} />
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{alert.name}</div>
+                                            <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary }}>{alert.reason} @ {alert.severity}</div>
+                                        </div>
                                     </div>
+                                    <button 
+                                        onClick={() => handleNudge(alert.id)}
+                                        disabled={nudgingId === alert.id}
+                                        style={{ padding: '6px', borderRadius: '8px', border: 'none', background: COLORS.bg, cursor: 'pointer', color: COLORS.primary }}
+                                    >
+                                        <Bell size={12} />
+                                    </button>
                                 </div>
-                            ))}
+                            )) : (
+                                <div style={{ textAlign: 'center', padding: '12px', background: COLORS.bg, borderRadius: '12px' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: COLORS.success }}>NETWORK STABLE</div>
+                                    <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary }}>No capacity friction detected.</div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -437,10 +514,15 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                 </div>
             </div>
             </>
-            ) : (
+            ) : activeTab === 'financial' ? (
                 <div className="animate-fadeIn">
                     {/* Financial Summary Ribbon */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+                        gap: '20px', 
+                        marginBottom: '32px' 
+                    }}>
                         {[
                             { label: 'Total Revenue', val: `₹${subscriptions.reduce((acc, s) => acc + (parseFloat(s.amount) || 0), 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success },
                             { label: 'Active Subscriptions', val: subscriptions.filter(s => s.status === 'active').length, icon: History, color: COLORS.primary },
@@ -474,8 +556,8 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                         ))}
                     </div>
 
-                    <div style={{ background: 'white', borderRadius: '24px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden' }}>
-                        <div style={{ padding: '24px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: 'white', borderRadius: '24px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.03)', overflow: 'hidden', width: '100%' }}>
+                        <div style={{ padding: '20px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                             <div style={{ position: 'relative', width: '320px' }}>
                                 <Search size={18} color={COLORS.textSecondary} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }} />
                                 <input 
@@ -493,17 +575,23 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                             </div>
                         </div>
 
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <div style={{ 
+                        overflowX: 'hidden', 
+                        width: '100%',
+                        borderRadius: '0 0 24px 24px',
+                        background: 'white'
+                    }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: COLORS.bg }}>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Transaction Terminal</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan Lifecycle</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>TranID</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan Duration</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Financial Value</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Status</th>
-                                        <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Timestamp</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Tenant</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Plan</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Ref ID</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Cycle</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Amount</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Status</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Action</th>
+                                        <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Date</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -532,26 +620,26 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                             transition: 'background 0.2s',
                                             background: sub.status === 'pending' ? '#fffbeb' : 'transparent' 
                                         }}>
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{sub.tenant_name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>{sub.tenant_slug}.zentrixcrm.com</div>
+                                            <td style={{ padding: '10px 12px' }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{sub.tenant_name}</div>
+                                                <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary, letterSpacing: '0.05em' }}>{sub.tenant_slug}.zentrixcrm.com</div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
+                                            <td style={{ padding: '10px 12px' }}>
                                                 <span style={{ padding: '4px 10px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, background: `${COLORS.primary}10`, color: COLORS.primary, textTransform: 'uppercase' }}>
                                                     {sub.plan}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
+                                            <td style={{ padding: '10px 12px' }}>
                                                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: sub.status === 'pending' ? COLORS.danger : COLORS.textPrimary, fontFamily: 'monospace' }}>{sub.gateway_sub_id}</div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
+                                            <td style={{ padding: '10px 12px' }}>
                                                 <div style={{ fontSize: '0.75rem', fontWeight: 600, color: COLORS.textSecondary }}>Monthly</div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
+                                            <td style={{ padding: '10px 12px' }}>
                                                 <div style={{ fontWeight: 900, color: COLORS.textPrimary }}>₹{parseFloat(sub.amount || 0).toLocaleString()}</div>
                                                 <div style={{ fontSize: '0.65rem', color: COLORS.textSecondary, fontWeight: 700, textTransform: 'uppercase' }}>Via {sub.gateway}</div>
                                             </td>
-                                            <td style={{ padding: '16px 24px' }}>
+                                            <td style={{ padding: '10px 12px' }}>
                                                 <div style={{ 
                                                     display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '99px', fontSize: '0.7rem', fontWeight: 800, 
                                                     background: sub.status === 'active' ? '#ecfdf5' : sub.status === 'pending' ? '#fff7ed' : '#fef2f2', 
@@ -561,7 +649,40 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                                                     {sub.status?.toUpperCase()}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '16px 24px', fontSize: '0.85rem', fontWeight: 600, color: COLORS.textSecondary }}>
+                                            <td style={{ padding: '10px 12px' }}>
+                                                {sub.status === 'active' ? (
+                                                    <a 
+                                                        href={`/api/superadmin/subscriptions/${sub.id}/invoice`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        style={{ 
+                                                            padding: '8px', borderRadius: '8px', border: 'none', 
+                                                            background: `${COLORS.primary}10`, color: COLORS.primary, 
+                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+                                                            gap: '6px', fontSize: '0.65rem', fontWeight: 800, textDecoration: 'none'
+                                                        }}
+                                                    >
+                                                        <FileText size={14} /> INVOICE
+                                                    </a>
+                                                ) : (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span style={{ color: COLORS.danger, fontSize: '0.7rem', fontWeight: 800 }}>NOTICE</span>
+                                                        <button 
+                                                            onClick={() => handleNudge(sub.tenant_id)}
+                                                            disabled={nudgingId === sub.tenant_id}
+                                                            style={{ 
+                                                                padding: '6px', borderRadius: '8px', border: 'none', 
+                                                                background: COLORS.warning + '20', color: COLORS.warning, 
+                                                                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                                                opacity: nudgingId === sub.tenant_id ? 0.5 : 1
+                                                            }}
+                                                        >
+                                                            <Bell size={12} />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 600, color: COLORS.textSecondary }}>
                                                 {sub.status === 'pending' ? 'ACTION REQUIRED' : new Date(sub.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                             </td>
                                         </tr>
@@ -580,7 +701,72 @@ export default function SuperAdminDashboardView({ tenants = [], stats = {}, subs
                         </div>
                     </div>
                 </div>
-            )}
+            ) : activeTab === 'audit' ? (
+                <div style={{ background: 'white', borderRadius: '32px', border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+                    <div style={{ padding: '24px', borderBottom: `1px solid ${COLORS.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: '12px', background: `${COLORS.primary}10`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Shield size={24} color={COLORS.primary} />
+                            </div>
+                            <div>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>Universal Audit Ledger</h2>
+                                <p style={{ margin: 0, fontSize: '0.8rem', color: COLORS.textSecondary }}>Persistent record of system-wide administrative interventions.</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => onReload && onReload()} 
+                            style={{ padding: '10px 16px', borderRadius: '12px', background: COLORS.bg, border: 'none', color: COLORS.textPrimary, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                        >
+                            <RefreshCw size={14} /> Sync Logs
+                        </button>
+                    </div>
+                    
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ background: COLORS.bg }}>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Action Type</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Target Node</th>
+                                    <th style={{ textAlign: 'left', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Operational Details</th>
+                                    <th style={{ textAlign: 'right', padding: '16px 24px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.textSecondary, textTransform: 'uppercase' }}>Settlement</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {auditLogs.map(log => (
+                                    <tr key={log.id} style={{ borderBottom: `1px solid ${COLORS.bg}` }}>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: log.action.includes('payment') ? COLORS.success : COLORS.primary }} />
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.textPrimary }}>{log.action.replace('_', ' ').toUpperCase()}</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: COLORS.textSecondary, fontWeight: 600 }}>
+                                            {log.target_id || 'SYSTEM'}
+                                        </td>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{ fontSize: '0.75rem', color: COLORS.textSecondary, background: COLORS.bg, padding: '6px 10px', borderRadius: '8px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 600, color: COLORS.primary }}>
+                                            {new Date(log.created_at).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {auditLogs.length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" style={{ padding: '80px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🕵️‍♂️</div>
+                                            <div style={{ fontWeight: 800, fontSize: '1.2rem' }}>Audit ledger is currently clean.</div>
+                                            <p style={{ color: COLORS.textSecondary }}>Administrative actions will be persistently recorded here.</p>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            ) : null}
 
             <button 
                 onClick={() => { window.location.href = '/workspace-management?provision=true'; }}

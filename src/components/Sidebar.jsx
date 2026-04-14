@@ -7,8 +7,9 @@ import {
     FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy, RotateCw
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useBranding } from '../context/BrandingContext';
 import { ROLE_ACCESS } from '../constants/access';
-import { leadsApi } from '../api/client';
+import { leadsApi, bookingsApi, followupsApi, notificationsApi } from '../api/client';
 
 const NAV_SECTIONS = [
     {
@@ -22,7 +23,7 @@ const NAV_SECTIONS = [
     {
         label: 'Sales',
         items: [
-            { path: '/leads', label: 'Leads', icon: Users, badge: '10' },
+            { path: '/leads', label: 'Leads', icon: Users, badge: null },
             { path: '/pipeline', label: 'Deals', icon: BarChart3 },
             { path: '/nurture-leads', label: 'Nurture Leads', icon: RotateCw },
             { path: '/lead-scoring', label: 'Lead Scoring', icon: Target },
@@ -31,7 +32,7 @@ const NAV_SECTIONS = [
     {
         label: 'Planning',
         items: [
-            { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: '5' },
+            { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: null },
             { path: '/site-visits', label: 'Site Visits', icon: MapPin },
         ],
     },
@@ -45,7 +46,7 @@ const NAV_SECTIONS = [
     {
         label: 'Communications',
         items: [
-            { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: '3' },
+            { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: null },
             { path: '/whatsapp-marketing', label: 'WhatsApp Intelligence', icon: Sparkles },
             { path: '/marketing', label: 'Marketing Hub', icon: Target },
             { path: '/call-records', label: 'Call Log', icon: History },
@@ -66,7 +67,7 @@ const NAV_SECTIONS = [
         label: 'Customers',
         items: [
             { path: '/customers', label: 'Customers', icon: UserCheck },
-            { path: '/bookings', label: 'Bookings', icon: BookOpen, badge: '3' },
+            { path: '/bookings', label: 'Bookings', icon: BookOpen, badge: null },
             { path: '/payment-tracker', label: 'Payment Tracker', icon: CreditCard },
             { path: '/agreements', label: 'Agreements & Docs', icon: FileCheck },
             { path: '/customer-portal', label: 'Customer Portal', icon: ExternalLink },
@@ -113,8 +114,12 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     const navigate = useNavigate();
     const location = useLocation();
     const { user, canAccess, refreshUser } = useAuth();
+    const { branding } = useBranding();
     const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
     const [realLeadCount, setRealLeadCount] = useState(null);
+    const [realBookingCount, setRealBookingCount] = useState(null);
+    const [realFollowupCount, setRealFollowupCount] = useState(null);
+    const [realInboxCount, setRealInboxCount] = useState(null);
 
     const isMainDomain = window.location.hostname === 'zentrixcrm.com' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
@@ -124,12 +129,27 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     }, []);
 
     useEffect(() => {
-        if (canAccess('/leads')) {
+        if (user && canAccess('/leads')) {
             leadsApi.list({ limit: 1 })
                 .then(res => setRealLeadCount(res.total))
                 .catch(err => console.error('Failed to update sidebar lead count', err));
         }
-    }, [canAccess]);
+        if (user && canAccess('/bookings')) {
+            bookingsApi.list({ limit: 100 })
+                .then(res => setRealBookingCount(Array.isArray(res) ? res.length : (res.data?.length || 0)))
+                .catch(err => console.error('Failed to update sidebar booking count', err));
+        }
+        if (user && canAccess('/followups')) {
+            followupsApi.list({ status: 'Pending', limit: 100 })
+                .then(res => setRealFollowupCount(Array.isArray(res) ? res.length : 0))
+                .catch(err => console.error('Failed to update sidebar followup count', err));
+        }
+        if (user && canAccess('/inbox')) {
+            notificationsApi.conversations()
+                .then(res => setRealInboxCount(Array.isArray(res) ? res.length : 0))
+                .catch(err => console.error('Failed to update sidebar inbox count', err));
+        }
+    }, [canAccess, user]);
 
     const filteredSections = NAV_SECTIONS.map(section => ({
         ...section,
@@ -173,8 +193,12 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
         <nav className={sidebarClass}>
             {/* Logo + mobile close button */}
             <div className="sidebar-logo">
-                <div className="sidebar-logo-icon">Z</div>
-                <span className="sidebar-logo-text">Zentrix CRM</span>
+                {branding.logo_url ? (
+                    <img src={branding.logo_url} alt={branding.company_name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
+                ) : (
+                    <div className="sidebar-logo-icon">{branding.logo_icon || 'Z'}</div>
+                )}
+                <span className="sidebar-logo-text">{branding.company_name || 'Zentrix CRM'}</span>
                 {isMobile && (
                     <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu">
                         <X size={20} />
@@ -207,9 +231,10 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                         <div className="nav-section-label">{section.label}</div>
                         {section.items.map(({ path, label, icon: Icon, badge }) => {
                             let displayBadge = badge;
-                            if (label === 'Leads' && realLeadCount !== null) {
-                                displayBadge = realLeadCount;
-                            }
+                            if (label === 'Leads' && realLeadCount !== null) displayBadge = realLeadCount;
+                            if (label === 'Follow-Ups' && realFollowupCount !== null) displayBadge = realFollowupCount;
+                            if (label === 'Omnichannel Inbox' && realInboxCount !== null) displayBadge = realInboxCount;
+                            if (label === 'Bookings' && realBookingCount !== null) displayBadge = realBookingCount;
                             return (
                                 <button
                                     key={path}

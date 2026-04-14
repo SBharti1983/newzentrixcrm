@@ -236,4 +236,30 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     res.json({ received: true });
 });
 
+// Get or generate referral code for the tenant
+router.get('/referral', auth, async (req, res) => {
+    try {
+        const { rows: [tenant] } = await pool.query('SELECT slug, referral_code FROM tenants WHERE id = $1', [req.tenantId]);
+        
+        let code = tenant.referral_code;
+        if (!code) {
+            code = `${tenant.slug.toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            await pool.query('UPDATE tenants SET referral_code = $1 WHERE id = $2', [code, req.tenantId]);
+        }
+        
+        const { rows: referrals } = await pool.query(`
+            SELECT r.*, t.name as referee_name, t.slug as referee_slug
+            FROM referrals r
+            JOIN tenants t ON r.referee_id = t.id
+            WHERE r.referrer_id = $1
+            ORDER BY r.created_at DESC
+        `, [req.tenantId]);
+
+        res.json({ code, referrals });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch referral profile' });
+    }
+});
+
 module.exports = router;

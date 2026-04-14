@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { 
     Filter, Download, Plus, Search, FileText, 
     BarChart2, PieChart, Activity, Calendar, Phone,
-    MoreVertical, FileSpreadsheet, FileJson, User
+    MoreVertical, FileSpreadsheet, FileJson, User, Home
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import jsPDF from 'jspdf';
@@ -18,6 +18,7 @@ const REPORT_TEMPLATES = [
     { id: 'telephony', title: 'Telephony Audit Report', description: 'Agent-wise call tracking with durations and outcomes', icon: Phone, type: 'telephony' },
     { id: 'conversion', title: 'Conversion Attribution', description: 'Determine highest converting marketing channels', icon: PieChart, type: 'conversion' },
     { id: 'sales', title: 'Executive Sales Summary', description: 'C-level overview of revenue and unit absorption', icon: BarChart2, type: 'sales' },
+    { id: 'project-wise', title: 'Project Wise Lead Report', description: 'Lead count and pipeline value breakdown by project asset', icon: Home, type: 'project' },
 ];
 
 export default function Reports() {
@@ -292,6 +293,94 @@ export default function Reports() {
         }
     };
 
+    const generateProjectReport = async (format = 'pdf') => {
+        setGenerating(true);
+        showToast('Compiling Project-Wise Intelligence...', 'info');
+        
+        try {
+            const res = await analyticsApi.get({ range: 'thisyear' });
+            const projects = res.revenueByProject || [];
+            
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+            const filename = `Zentrix_Project_Pulse_${timestamp}`;
+
+            if (format === 'csv') {
+                const headers = ['Project Name', 'Total Bookings', 'GTV (Revenue Cr)', 'Status'];
+                const rows = projects.map(p => [
+                    p.name,
+                    p.bookings,
+                    `₹${parseFloat(p.revenue).toFixed(2)}Cr`,
+                    'Active'
+                ]);
+
+                const csvContent = "\uFEFF" + [headers, ...rows].map(e => e.map(val => `"${val}"`).join(",")).join("\n");
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `${filename}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                await leadsApi.generatePhysicalReport(csvContent, `${filename}.csv`);
+                showToast('CSV Exported & Saved to Server', 'success');
+            } else {
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const NAVY = [10, 22, 40];
+
+                doc.setFillColor(...NAVY);
+                doc.rect(0, 0, pageWidth, 40, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(22);
+                doc.setFont('helvetica', 'bold');
+                doc.text('PROJECT ABSORPTION REPORT', 20, 25);
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Zentrix Real Estate Analytics | Generated on ${new Date().toLocaleString()}`, 20, 34);
+
+                const headers = [['Project Asset', 'Unit Bookings', 'Revenue Contribution (Cr)', 'Inventory Status']];
+                const rows = projects.map(p => [
+                    p.name,
+                    p.bookings,
+                    `₹${parseFloat(p.revenue).toFixed(2)}Cr`,
+                    'In-Process'
+                ]);
+
+                autoTable(doc, {
+                    startY: 50,
+                    head: headers,
+                    body: rows,
+                    headStyles: { fillColor: NAVY, textColor: [255, 255, 255] },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    styles: { fontSize: 9 }
+                });
+
+                doc.save(`${filename}.pdf`);
+            }
+
+            // History Log
+            await documentsApi.create({
+                name: format === 'csv' ? `${filename}.csv` : `${filename}.pdf`,
+                type: 'Report',
+                status: 'Final',
+                notes: `Project Wise Absorption Pulse`
+            });
+
+            showToast('Project report finalized!', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to compile project report', 'error');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     return (
         <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
             {/* Header / Command Ribbon */}
@@ -468,6 +557,7 @@ export default function Reports() {
                                                 onClick={() => {
                                                     if (template.id === 'telephony') generateTelephonyReport('pdf');
                                                     else if (template.id === 'monthly') generateMonthlyReport();
+                                                    else if (template.id === 'project-wise') generateProjectReport('pdf');
                                                     else showToast('Template build in progress', 'info');
                                                 }}
                                                 style={{ 
@@ -482,6 +572,7 @@ export default function Reports() {
                                             <button 
                                                 onClick={() => {
                                                     if (template.id === 'telephony') generateTelephonyReport('csv');
+                                                    else if (template.id === 'project-wise') generateProjectReport('csv');
                                                     else showToast('CSV export for this template coming soon', 'info');
                                                 }}
                                                 style={{ 

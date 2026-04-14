@@ -10,7 +10,8 @@ router.get('/', async (req, res) => {
     const isSuperAdmin = req.user.role === 'superadmin';
     console.log(`[ACL] User ${req.user.email} (Role: ${req.user.role}) attempting to list users.`);
     
-    if (!['admin', 'sales_manager', 'superadmin'].includes(req.user.role)) {
+    const allowedRoles = ['admin', 'sales_manager', 'superadmin', 'team_leader', 'agent'];
+    if (!allowedRoles.includes(req.user.role)) {
         return res.status(403).json({ error: 'Insufficient permissions' });
     }
 

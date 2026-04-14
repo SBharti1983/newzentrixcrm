@@ -8,12 +8,14 @@ import AgentDashboardView from './AgentDashboardView';
 import ManagerDashboardView from './ManagerDashboardView';
 import AdminDashboardView from './AdminDashboardView';
 import TeamLeaderDashboardView from './TeamLeaderDashboardView';
+import SoloDashboard from './SoloDashboard';
 import {
     AlertCircle, TrendingUp,
     Clock, Flame,
     ShieldCheck,
     Trophy,
 } from 'lucide-react';
+import InstallPWA from '../components/InstallPWA';
 
 const STAGE_COLORS = { 
     'New Lead': '#3b82f6', 'Connected': '#6366f1', 'Qualified': '#06b6d4',
@@ -136,15 +138,15 @@ export default function Dashboard() {
     if (user?.role === 'superadmin') {
         return <Navigate to="/superadmin" replace />;
     }
-    if (user?.role === 'admin') {
-        return <AdminDashboardView user={user} data={stats} />;
-    }
-    if (user?.role === 'team_leader') {
-        return <TeamLeaderDashboardView user={user} data={stats} />;
-    }
-    
-    if (personalMode) {
-        return (
+    let dashboardView;
+    if (user?.tenant_plan === 'pro_solo' || user?.tenant?.plan === 'pro_solo') {
+        dashboardView = <SoloDashboard />;
+    } else if (user?.role === 'admin') {
+        dashboardView = <AdminDashboardView user={user} data={stats} />;
+    } else if (user?.role === 'team_leader') {
+        dashboardView = <TeamLeaderDashboardView user={user} data={stats} />;
+    } else if (personalMode) {
+        dashboardView = (
             <div className="animate-fadeIn" style={{ background: '#f8fafc', padding: '24px', minHeight: '100vh', margin: '-24px' }}>
                 <AgentDashboardView 
                     user={user} 
@@ -154,11 +156,18 @@ export default function Dashboard() {
                 />
             </div>
         );
+    } else {
+        dashboardView = (
+            <div className="animate-fadeIn" style={{ background: '#f4f7fb', margin: '-24px' }}>
+                <ManagerDashboardView user={user} data={stats} telemetry={telemetryData} loading={loading} />
+            </div>
+        );
     }
 
     return (
-        <div className="animate-fadeIn" style={{ background: '#f4f7fb', margin: '-24px' }}>
-            <ManagerDashboardView user={user} data={stats} telemetry={telemetryData} loading={loading} />
-        </div>
+        <>
+            <InstallPWA />
+            {dashboardView}
+        </>
     );
 }

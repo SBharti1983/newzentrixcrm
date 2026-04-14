@@ -4,7 +4,8 @@ import { useAuth } from '../hooks/useAuth';
 import { PageLoader, PageError } from '../components/Feedback';
 import { usersApi, projectsApi, settingsApi, telephonyApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio, Search, Palette } from 'lucide-react';
+import { useBranding } from '../context/BrandingContext';
 
 const ROLE_LABELS = {
     superadmin: 'Super Administrator',
@@ -50,12 +51,15 @@ const DEFAULT_FORM = { name: '', email: '', role: 'agent', department: 'Sales', 
 export default function Admin() {
     const { showToast } = useToast();
     const { data: usersRaw, loading, error, refetch: refetchUsers } = useApi(() => usersApi.list());
-    const { data: projectsRaw } = useApi(() => projectsApi.list());
+    const { data: projectsRaw, refetch: refetchProjects } = useApi(() => projectsApi.list());
     const { data: systemSettings, refetch: refetchSettings } = useApi(() => settingsApi.get());
     const usersRawList = usersRaw || [];
     const PROJECTS_DATA = projectsRaw || [];
     // derive current user from session storage
     const { user: currentUser, refreshUser } = useAuth();
+
+    // White Label branding
+    const { branding, updateBranding } = useBranding();
 
 
 
@@ -71,6 +75,7 @@ export default function Admin() {
     // Settings Edit State
     const [editingSetting, setEditingSetting] = useState(null);
     const [editingProject, setEditingProject] = useState(null);
+    const [projectToDelete, setProjectToDelete] = useState(null);
     const [settingValue, setSettingValue] = useState("");
 
     // Filter users based on current user role and search term
@@ -668,8 +673,8 @@ export default function Admin() {
             </div>
 
             {/* Tabs */}
-            <div className="tabs mb-6" style={{ width: 'fit-content' }}>
-                {[['users', <Users size={14} />, 'Users & Roles'], ['projects', <Building2 size={14} />, 'Projects Config'], ['permissions', <Shield size={14} />, 'Permissions'], ['settings', <Settings size={14} />, 'Settings'], ['recording', <Phone size={14} />, 'Recording & Bridge'], ['agent_activity', <Smartphone size={14} />, 'Agent Activity']].map(([key, icon, label]) => (
+            <div className="tabs mb-6" style={{ width: 'fit-content', flexWrap: 'wrap' }}>
+                {[['users', <Users size={14} />, 'Users & Roles'], ['projects', <Building2 size={14} />, 'Projects Config'], ['permissions', <Shield size={14} />, 'Permissions'], ['settings', <Settings size={14} />, 'Settings'], ['whitelabel', <Palette size={14} />, 'White Label'], ['recording', <Phone size={14} />, 'Recording & Bridge'], ['agent_activity', <Smartphone size={14} />, 'Agent Activity']].map(([key, icon, label]) => (
                     <button key={key} className={`tab-btn${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}
                         style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {icon}{label}
@@ -831,18 +836,12 @@ export default function Admin() {
                                             <button 
                                                 className="btn btn-ghost btn-sm btn-icon" 
                                                 style={{ color: 'var(--accent-rose)', marginLeft: 8 }}
-                                                onClick={async () => {
-                                                    if (!window.confirm(`Are you sure you want to delete "${p.name}"? This action cannot be undone.`)) return;
-                                                    try {
-                                                        await projectsApi.delete(p.id);
-                                                        showToast('Project deleted successfully', 'success');
-                                                        window.location.reload();
-                                                    } catch (err) {
-                                                        showToast(err.error || 'Failed to delete project', 'error');
-                                                    }
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setProjectToDelete(p);
                                                 }}
                                             >
-                                                <Trash2 size={13} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </td>
                                     </tr>
@@ -1102,7 +1101,7 @@ export default function Admin() {
                                         showToast('Project updated successfully!', 'success');
                                     }
                                     setEditingProject(null);
-                                    window.location.reload(); 
+                                    refetchProjects(); 
                                 } catch (err) {
                                     showToast(err.error || 'Failed to save project', 'error');
                                 } finally {
@@ -1186,6 +1185,252 @@ export default function Admin() {
                     </div>
                 </div>
             )}
+
+            {/* White Label Tab */}
+            {tab === 'whitelabel' && (
+                <WhiteLabelPanel branding={branding} updateBranding={updateBranding} showToast={showToast} />
+            )}
+
+            {/* Deletion Confirmation Modal */}
+            {projectToDelete && (
+                <div className="modal-overlay">
+                    <div className="modal" style={{ maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3 className="modal-title" style={{ color: 'var(--accent-rose)' }}>Delete Project?</h3>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setProjectToDelete(null)}><X size={16} /></button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '24px', textAlign: 'center' }}>
+                            <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(244, 63, 94, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                                <Trash2 size={30} color="var(--accent-rose)" />
+                            </div>
+                            <p style={{ fontWeight: 600, color: 'var(--navy-900)', fontSize: '1.1rem', marginBottom: 8 }}>Are you sure?</p>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                                You are about to delete <strong>"{projectToDelete.name}"</strong>. This will unlink all associated leads and site visits. This action cannot be undone.
+                            </p>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setProjectToDelete(null)} disabled={saving}>Cancel</button>
+                            <button 
+                                className="btn btn-primary" 
+                                style={{ background: 'var(--accent-rose)', borderColor: 'var(--accent-rose)' }}
+                                onClick={async () => {
+                                    setSaving(true);
+                                    try {
+                                        await projectsApi.delete(projectToDelete.id);
+                                        showToast('Project deleted successfully', 'success');
+                                        setProjectToDelete(null);
+                                        refetchProjects();
+                                    } catch (err) {
+                                        console.error('Project delete error:', err);
+                                        showToast(err.error || 'Failed to delete project', 'error');
+                                    } finally {
+                                        setSaving(false);
+                                    }
+                                }}
+                                disabled={saving}
+                            >
+                                {saving ? 'Deleting...' : 'Permanently Delete'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ─── White Label Panel Component ────────────────────────────────────
+function WhiteLabelPanel({ branding, updateBranding, showToast }) {
+    const [localBrand, setLocalBrand] = useState({
+        company_name: branding?.company_name || '',
+        logo_url: branding?.logo_url || '',
+        logo_icon: branding?.logo_icon || '',
+        primary_color: branding?.primary_color || '#6366f1',
+        sidebar_color: branding?.sidebar_color || '#0a1628',
+        accent_color: branding?.accent_color || '#06b6d4',
+        favicon_url: branding?.favicon_url || '',
+        tagline: branding?.tagline || '',
+        powered_by: branding?.powered_by !== false,
+        support_email: branding?.support_email || '',
+        support_phone: branding?.support_phone || '',
+        login_banner_text: branding?.login_banner_text || '',
+        footer_text: branding?.footer_text || '',
+        pwa_enabled: branding?.pwa_enabled !== false,
+    });
+    const [wlSaving, setWlSaving] = useState(false);
+
+    useEffect(() => {
+        if (branding) {
+            setLocalBrand(prev => ({
+                ...prev,
+                company_name: branding.company_name || prev.company_name,
+                logo_url: branding.logo_url || prev.logo_url,
+                logo_icon: branding.logo_icon || prev.logo_icon,
+                primary_color: branding.primary_color || prev.primary_color,
+                sidebar_color: branding.sidebar_color || prev.sidebar_color,
+                accent_color: branding.accent_color || prev.accent_color,
+                favicon_url: branding.favicon_url || prev.favicon_url,
+                tagline: branding.tagline || prev.tagline,
+                powered_by: branding.powered_by !== false,
+                support_email: branding.support_email || prev.support_email,
+                support_phone: branding.support_phone || prev.support_phone,
+                login_banner_text: branding.login_banner_text || prev.login_banner_text,
+                footer_text: branding.footer_text || prev.footer_text,
+                pwa_enabled: branding.pwa_enabled !== false,
+            }));
+        }
+    }, [branding]);
+
+    const handleSaveWhiteLabel = async () => {
+        setWlSaving(true);
+        try {
+            await updateBranding(localBrand);
+            showToast('White label branding saved! Changes are live.', 'success');
+        } catch (err) {
+            showToast(err?.error || 'Failed to save branding', 'error');
+        } finally {
+            setWlSaving(false);
+        }
+    };
+
+    const Field = ({ label, name, placeholder, type = 'text', span2, helper }) => (
+        <div className="form-group" style={span2 ? { gridColumn: 'span 2' } : {}}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, display: 'block' }}>{label}</label>
+            {type === 'color' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <input type="color" value={localBrand[name]} onChange={e => setLocalBrand({ ...localBrand, [name]: e.target.value })} style={{ width: 44, height: 38, border: 'none', borderRadius: 8, cursor: 'pointer', padding: 0 }} />
+                    <input className="form-control" value={localBrand[name]} onChange={e => setLocalBrand({ ...localBrand, [name]: e.target.value })} style={{ flex: 1, fontFamily: 'monospace', fontWeight: 700 }} />
+                </div>
+            ) : type === 'textarea' ? (
+                <textarea className="form-control" value={localBrand[name] || ''} onChange={e => setLocalBrand({ ...localBrand, [name]: e.target.value })} placeholder={placeholder} rows={3} style={{ resize: 'vertical', fontWeight: 600 }} />
+            ) : (
+                <input className="form-control" type={type} value={localBrand[name] || ''} onChange={e => setLocalBrand({ ...localBrand, [name]: e.target.value })} placeholder={placeholder} style={{ fontWeight: 600 }} />
+            )}
+            {helper && <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>{helper}</p>}
+        </div>
+    );
+
+    return (
+        <div className="animate-fadeIn">
+            {/* Hero Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+                borderRadius: '24px', padding: '36px', color: 'white', marginBottom: '32px',
+                boxShadow: '0 20px 40px rgba(15, 23, 42, 0.2)',
+                position: 'relative', overflow: 'hidden'
+            }}>
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px', position: 'relative' }}>
+                    <Palette size={24} color="#a78bfa" /> White Label Configuration
+                </h3>
+                <p style={{ margin: '0 0 8px', color: '#94a3b8', fontWeight: 500, maxWidth: '600px', lineHeight: 1.6, position: 'relative' }}>
+                    Customize your CRM's brand identity. Replace the default Zentrix branding with your own company name, logo, colors, and messaging. All changes take effect instantly across Sidebar, Header, Login, and exported documents.
+                </p>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '16px', position: 'relative', flexWrap: 'wrap' }}>
+                    <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        Brand: <span style={{ color: localBrand.primary_color }}>{localBrand.company_name || 'Zentrix CRM'}</span>
+                    </div>
+                    <div style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.08)', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 14, height: 14, borderRadius: 4, background: localBrand.primary_color, border: '1px solid rgba(255,255,255,0.3)' }} />
+                        {localBrand.primary_color}
+                    </div>
+                </div>
+            </div>
+
+            {/* Live Preview Card */}
+            <div className="card" style={{ padding: '24px', marginBottom: '24px', borderLeft: `4px solid ${localBrand.primary_color}` }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '16px' }}>Live Preview</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: localBrand.sidebar_color, borderRadius: '12px', color: 'white' }}>
+                    {localBrand.logo_url ? (
+                        <img src={localBrand.logo_url} alt="Logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain', background: 'white', padding: 2 }} />
+                    ) : (
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: localBrand.primary_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.1rem' }}>
+                            {localBrand.logo_icon || (localBrand.company_name?.[0] || 'Z')}
+                        </div>
+                    )}
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '1rem' }}>{localBrand.company_name || 'Zentrix CRM'}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{localBrand.tagline || 'Real Estate Intelligence Platform'}</div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Brand Identity Section */}
+            <div className="card" style={{ padding: '28px', marginBottom: '24px' }}>
+                <h4 style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--navy-900)', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>🏷️ Brand Identity</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <Field label="Company Name" name="company_name" placeholder="Your Company Name" />
+                    <Field label="Logo Icon (Single Char)" name="logo_icon" placeholder="Z" helper="Shown in sidebar when collapsed. First letter of company name is auto-used." />
+                    <Field label="Logo URL (Image)" name="logo_url" placeholder="https://yourdomain.com/logo.png" span2 helper="Full URL to your company logo (PNG/SVG). Replaces the icon letter in the sidebar." />
+                    <Field label="Tagline / Subtitle" name="tagline" placeholder="Real Estate Intelligence Platform" />
+                    <Field label="Favicon URL" name="favicon_url" placeholder="https://yourdomain.com/favicon.ico" helper="Updates the browser tab icon." />
+                </div>
+            </div>
+
+            {/* Theme Colors Section */}
+            <div className="card" style={{ padding: '28px', marginBottom: '24px' }}>
+                <h4 style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--navy-900)', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>🎨 Theme Colors</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+                    <Field label="Primary / Accent Color" name="primary_color" type="color" />
+                    <Field label="Sidebar Background" name="sidebar_color" type="color" />
+                    <Field label="Secondary Accent" name="accent_color" type="color" />
+                </div>
+            </div>
+
+            {/* Support & Communication */}
+            <div className="card" style={{ padding: '28px', marginBottom: '24px' }}>
+                <h4 style={{ fontWeight: 900, fontSize: '1.05rem', color: 'var(--navy-900)', marginBottom: '20px', marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>📞 Support & Communication</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    <Field label="Support Email" name="support_email" placeholder="support@yourcompany.com" />
+                    <Field label="Support Phone" name="support_phone" placeholder="+91-XXXXX-XXXXX" />
+                    <Field label="Login Page Banner Text" name="login_banner_text" placeholder="Welcome to Our CRM Platform" span2 helper="Custom message shown on the login page." />
+                    <Field label="Footer Text" name="footer_text" placeholder="© 2026 Your Company. All rights reserved." span2 helper="Appears in exported PDFs and the login page footer." />
+                </div>
+            </div>
+
+            {/* Powered By Toggle */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                <div className="card" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)', marginBottom: '4px' }}>Show "Powered by Zentrix CRM"</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '350px' }}>
+                                When disabled, all references to Zentrix CRM are removed.
+                            </div>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: '52px', height: '28px', cursor: 'pointer', flexShrink: 0 }}>
+                            <input type="checkbox" checked={localBrand.powered_by} onChange={e => setLocalBrand({ ...localBrand, powered_by: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
+                            <span style={{ position: 'absolute', inset: 0, borderRadius: '99px', background: localBrand.powered_by ? '#10b981' : '#cbd5e1', transition: 'all 0.3s' }}>
+                                <span style={{ position: 'absolute', width: '22px', height: '22px', borderRadius: '50%', background: 'white', top: '3px', left: localBrand.powered_by ? '27px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }} />
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div className="card" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)', marginBottom: '4px' }}>Mobile App (PWA) Support</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '350px' }}>
+                                Allow agents to install the CRM as an app on their home screen.
+                            </div>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: '52px', height: '28px', cursor: 'pointer', flexShrink: 0 }}>
+                            <input type="checkbox" checked={localBrand.pwa_enabled} onChange={e => setLocalBrand({ ...localBrand, pwa_enabled: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
+                            <span style={{ position: 'absolute', inset: 0, borderRadius: '99px', background: localBrand.pwa_enabled ? '#10b981' : '#cbd5e1', transition: 'all 0.3s' }}>
+                                <span style={{ position: 'absolute', width: '22px', height: '22px', borderRadius: '50%', background: 'white', top: '3px', left: localBrand.pwa_enabled ? '27px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }} />
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {/* Save Button */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button className="btn btn-primary" onClick={handleSaveWhiteLabel} disabled={wlSaving} style={{ padding: '14px 36px', fontSize: '1rem', fontWeight: 800 }}>
+                    {wlSaving ? 'Applying Branding...' : '🎨 Save & Apply White Label'}
+                </button>
+            </div>
         </div>
     );
 }

@@ -17,8 +17,12 @@ export const PresenceProvider = ({ children }) => {
         const token = sessionStorage.getItem('zentrix_token');
         if (!token) return;
 
-        let baseUrl = 'http://localhost:5050/api';
-        baseUrl = baseUrl.replace('/api', '');
+        // In dev mode, connect to the Vite dev server's origin (socket.io is proxied).
+        // In production, connect to the backend origin directly.
+        const isProd = import.meta.env.PROD;
+        const baseUrl = isProd 
+            ? 'https://zentrixcrm-production-cd2d.up.railway.app'
+            : window.location.origin;
 
         const newSocket = io(baseUrl, {
             auth: { token },
@@ -42,13 +46,13 @@ export const PresenceProvider = ({ children }) => {
         };
     }, [user]);
 
-    const trackPage = (path) => {
+    const trackPage = React.useCallback((path) => {
         if (!socket || !socket.connected) return;
         if (currentPathRef.current === path) return;
         
         currentPathRef.current = path;
         socket.emit('page_view', { path });
-    };
+    }, [socket]);
 
     const value = {
         socket,

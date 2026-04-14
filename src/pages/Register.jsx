@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Building2, User, Mail, Lock, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 import { authApi, setToken } from '../api/client';
+import { useBranding } from '../context/BrandingContext';
 
 const getSubdomain = () => {
     const host = window.location.hostname;
@@ -16,6 +17,7 @@ const getSubdomain = () => {
 
 export default function Register() {
     const navigate = useNavigate();
+    const { branding } = useBranding();
     const [form, setForm] = useState({ company_name: '', name: '', email: '', password: '', phone: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -56,6 +58,10 @@ export default function Register() {
     }, []);
 
     const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+    const tenantLogo = branding?.logo_url ? (
+        <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12 }} />
+    ) : (branding?.logo_icon || 'Z');
 
     return (
         <div style={{
@@ -106,13 +112,13 @@ export default function Register() {
                     <div style={{ marginBottom: 20 }}>
                         <div style={{
                             width: 44, height: 44, borderRadius: 12, marginBottom: 14,
-                            background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+                            background: branding?.primary_color || 'linear-gradient(135deg, #6366f1, #818cf8)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: '1.2rem', fontWeight: 800, color: '#fff',
                             boxShadow: '0 8px 16px rgba(99, 102, 241, 0.3)',
-                        }}>Z</div>
+                        }}>{tenantLogo}</div>
                         <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.02em' }}>
-                            Create your account
+                            Join {branding?.company_name || 'Zentrix CRM'}
                         </h1>
                         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: 4, fontWeight: 500 }}>
                             Start your 14-day free trial

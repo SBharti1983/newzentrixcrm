@@ -61,7 +61,7 @@ export default function Integrations() {
                 zapier: { name: 'Zapier Bot', phone: '9000000000', notes: 'Simulated from dashboard' }
             };
 
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/webhooks/${integration.webhook_url_key}/${provider.id === 'meta' ? 'facebook' : provider.id}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/webhooks/${integration.webhook_url_key}/${provider.id === 'meta' ? 'facebook' : provider.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(testPayload[provider.id] || testPayload.zapier)

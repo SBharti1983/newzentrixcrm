@@ -18,7 +18,8 @@ export default function WorkspaceManagement() {
     // Form and Editing State
     const [editingTenant, setEditingTenant] = useState(null);
     const [formData, setFormData] = useState({
-        name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500
+        name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500,
+        logo_url: '', primary_color: '#6366f1', custom_domain: ''
     });
     
     // Deletion State
@@ -28,6 +29,16 @@ export default function WorkspaceManagement() {
 
     useEffect(() => {
         fetchTenants();
+        
+        // Handle deep-linking from Command Center
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('provision') === 'true') {
+            handleOpenCreate();
+        } else if (params.get('edit')) {
+            // Find tenant in data (may need to wait for fetch to finish or just use the ID)
+            const tenantId = params.get('edit');
+            // We'll handle this in fetchTenants once data arrives
+        }
     }, []);
 
     const fetchTenants = async () => {
@@ -35,6 +46,14 @@ export default function WorkspaceManagement() {
             setLoading(true);
             const data = await superAdminApi.getTenants();
             setTenants(data);
+            
+            // Handle auto-edit if param exists
+            const params = new URLSearchParams(window.location.search);
+            const editId = params.get('edit');
+            if (editId) {
+                const tenant = data.find(t => t.id === editId);
+                if (tenant) handleOpenEdit(tenant);
+            }
         } catch (err) {
             addToast({ type: 'error', title: 'Fetch Failed', message: 'Could not load workspaces.' });
         } finally {
@@ -44,7 +63,7 @@ export default function WorkspaceManagement() {
 
     const handleOpenCreate = () => {
         setEditingTenant(null);
-        setFormData({ name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500 });
+        setFormData({ name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500, logo_url: '', primary_color: '#6366f1', custom_domain: '' });
         setIsModalOpen(true);
     };
 
@@ -55,7 +74,10 @@ export default function WorkspaceManagement() {
             slug: tenant.slug, 
             plan: tenant.plan, 
             max_users: tenant.max_users, 
-            max_leads: tenant.max_leads 
+            max_leads: tenant.max_leads,
+            logo_url: tenant.logo_url || '',
+            primary_color: tenant.primary_color || '#6366f1',
+            custom_domain: tenant.settings?.custom_domain || ''
         });
         setIsModalOpen(true);
     };
@@ -63,12 +85,18 @@ export default function WorkspaceManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const payload = { ...formData };
+            const cd = payload.custom_domain;
+            delete payload.custom_domain;
+
             if (editingTenant) {
-                await superAdminApi.updateTenant(editingTenant.id, formData);
+                payload.settings = { ...(editingTenant.settings || {}), custom_domain: cd };
+                await superAdminApi.updateTenant(editingTenant.id, payload);
                 addToast({ type: 'success', title: 'Profile Updated', message: `${formData.name} configurations refreshed.` });
             } else {
+                payload.settings = { custom_domain: cd };
                 await superAdminApi.createTenant({ 
-                    ...formData, 
+                    ...payload, 
                     admin_name: `${formData.name} Admin`, 
                     admin_email: `admin@${formData.slug}.zentrixcrm.com`, 
                     admin_password: 'Password@123' 
@@ -198,15 +226,23 @@ export default function WorkspaceManagement() {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                             <div style={{ 
                                                 width: 44, height: 44, borderRadius: '14px', 
-                                                background: 'linear-gradient(135deg, #6366f1, #a855f7)', 
+                                                background: t.logo_url ? 'white' : (t.primary_color || 'linear-gradient(135deg, #6366f1, #a855f7)'), 
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                                fontSize: '0.9rem', fontWeight: 900, color: 'white' 
+                                                fontSize: '0.9rem', fontWeight: 900, color: 'white',
+                                                border: t.logo_url ? '1.5px solid #e2e8f0' : 'none',
+                                                overflow: 'hidden'
                                             }}>
-                                                {t.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                                                {t.logo_url ? (
+                                                    <img src={t.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                                ) : (
+                                                    t.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+                                                )}
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{t.name}</div>
-                                                <div style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 700 }}>{t.slug}.zentrixcrm.com</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 700 }}>
+                                                    {t.settings?.custom_domain || `${t.slug}.zentrixcrm.com`}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -269,54 +305,73 @@ export default function WorkspaceManagement() {
 
             {/* Universal Form Modal */}
             {isModalOpen && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}>
-                    <div style={{ background: 'white', borderRadius: '28px', width: '100%', maxWidth: '500px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>
-                                {editingTenant ? 'Configure Workspace' : 'Provision Workspace'}
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 10 }}>
+                    <div style={{ 
+                        background: 'white', 
+                        borderRadius: '24px', 
+                        width: '100%', 
+                        maxWidth: '520px', 
+                        maxHeight: '95vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
+                            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
+                                {editingTenant ? 'Configure Workspace' : 'Provision New Node'}
                             </h2>
                             <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><XCircle size={24} /></button>
                         </div>
                         
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>Workspace Identity</label>
-                                <input 
-                                    required 
-                                    className="form-control" 
-                                    placeholder="Company Name" 
-                                    value={formData.name}
-                                    onChange={e => {
-                                        const val = e.target.value;
-                                        let newSlug = formData.slug;
-                                        if (!editingTenant) {
-                                            if (formData.plan === 'pro_solo') {
-                                                newSlug = val.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
-                                            } else {
-                                                newSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-                                            }
-                                        }
-                                        setFormData({ ...formData, name: val, slug: newSlug });
-                                    }}
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>Subdomain Slug</label>
-                                <div style={{ position: 'relative' }}>
+                        <form onSubmit={handleSubmit} style={{ 
+                            padding: '24px', 
+                            overflowY: 'auto',
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '14px' 
+                        }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Workspace Identity</label>
                                     <input 
                                         required 
-                                        readOnly={!!editingTenant}
                                         className="form-control" 
-                                        value={formData.slug}
-                                        onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') })}
-                                        style={editingTenant ? { background: '#f8fafc', color: '#94a3b8', cursor: 'not-allowed' } : {}}
+                                        placeholder="Company Name" 
+                                        value={formData.name}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            let newSlug = formData.slug;
+                                            if (!editingTenant) {
+                                                if (formData.plan === 'pro_solo') {
+                                                    newSlug = val.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+                                                } else {
+                                                    newSlug = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                                                }
+                                            }
+                                            setFormData({ ...formData, name: val, slug: newSlug });
+                                        }}
                                     />
-                                    <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', fontWeight: 700, color: '#6366f1' }}>.zentrixcrm.com</span>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Subdomain</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input 
+                                            required 
+                                            readOnly={!!editingTenant}
+                                            className="form-control" 
+                                            value={formData.slug}
+                                            style={{ background: editingTenant ? '#f8fafc' : 'white' }}
+                                            onChange={e => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-') })}
+                                        />
+                                        {!editingTenant && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.65rem', fontWeight: 700, color: '#6366f1' }}>.zentrix...</span>}
+                                    </div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>Subscription Tier</label>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Tier</label>
                                     <select 
                                         className="form-control"
                                         value={formData.plan}
@@ -334,31 +389,83 @@ export default function WorkspaceManagement() {
                                         }}
                                     >
                                         <option value="starter">Starter</option>
-                                        <option value="pro">Professional</option>
+                                        <option value="pro">Pro</option>
                                         <option value="enterprise">Enterprise</option>
-                                        <option value="pro_solo">Solopreneur Premium</option>
+                                        <option value="pro_solo">Solopreneur</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 800, color: '#475569', marginBottom: '8px' }}>License Seats</label>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Seats</label>
                                     <input 
                                         type="number" 
-                                        className="form-control" 
+                                        className="form-control"
                                         value={formData.max_users}
                                         onChange={e => setFormData({ ...formData, max_users: parseInt(e.target.value) })}
                                     />
                                 </div>
                             </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Lead Cap</label>
+                                    <input 
+                                        type="number" 
+                                        className="form-control"
+                                        value={formData.max_leads}
+                                        onChange={e => setFormData({ ...formData, max_leads: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Brand Color</label>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <input 
+                                            type="color" 
+                                            value={formData.primary_color}
+                                            onChange={e => setFormData({ ...formData, primary_color: e.target.value })}
+                                            style={{ width: '40px', height: '40px', border: '1px solid #e2e8f0', cursor: 'pointer', borderRadius: '8px', padding: 2 }}
+                                        />
+                                        <input 
+                                            type="text" 
+                                            value={formData.primary_color}
+                                            onChange={e => setFormData({ ...formData, primary_color: e.target.value })}
+                                            style={{ flex: 1, padding: '0 10px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Logo URL</label>
+                                <input 
+                                    type="url" 
+                                    placeholder="https://..."
+                                    value={formData.logo_url}
+                                    className="form-control"
+                                    onChange={e => setFormData({ ...formData, logo_url: e.target.value })}
+                                />
+                            </div>
+                            
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 800, color: '#475569', marginBottom: '4px', textTransform: 'uppercase' }}>Custom Domain Mapping</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="e.g. crm.apex.com"
+                                    className="form-control"
+                                    value={formData.custom_domain}
+                                    onChange={e => setFormData({ ...formData, custom_domain: e.target.value.toLowerCase().replace(/[^a-z0-9.-]+/g, '') })}
+                                />
+                                <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: '#64748b' }}>Point DNS CNAME/A record to Vercel for this to work.</p>
+                            </div>
                             
                             <button 
                                 type="submit" 
                                 style={{ 
-                                    marginTop: '10px', padding: '14px', background: '#6366f1', color: 'white', 
-                                    border: 'none', borderRadius: '16px', fontWeight: 800, fontSize: '1rem', 
-                                    cursor: 'pointer', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.2)' 
+                                    marginTop: '8px', padding: '12px', background: '#6366f1', color: 'white', 
+                                    border: 'none', borderRadius: '12px', fontWeight: 800, fontSize: '0.9rem', 
+                                    cursor: 'pointer', boxShadow: '0 8px 16px rgba(99, 102, 241, 0.2)' 
                                 }}
                             >
-                                {editingTenant ? 'Sync Configurations' : 'Initiate Provisioning'}
+                                {editingTenant ? 'Save Changes' : 'Provision Now'}
                             </button>
                         </form>
                     </div>
@@ -415,14 +522,24 @@ export default function WorkspaceManagement() {
             <style dangerouslySetInnerHTML={{ __html: `
                 .form-control {
                     width: 100%;
-                    padding: 12px 16px;
+                    padding: 8px 14px;
                     border-radius: 12px;
                     border: 1px solid #e2e8f0;
-                    font-size: 0.95rem;
+                    font-size: 0.9rem;
                     font-weight: 500;
                     outline: none;
                     transition: all 0.2s;
                     box-sizing: border-box;
+                    background: white;
+                    color: #0f172a;
+                }
+                select.form-control {
+                    appearance: none;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 12px center;
+                    background-size: 16px;
+                    padding-right: 40px;
                 }
                 .form-control:focus {
                     border-color: #6366f1;

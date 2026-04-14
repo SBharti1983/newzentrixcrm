@@ -93,7 +93,15 @@ router.get('/health', authenticateHandset, (req, res) => {
  * Along with: interactionId, disposition, phoneNumber, timestamp
  */
 router.post('/upload-recording', authenticateHandset, upload.single('audio'), async (req, res) => {
-    const { interactionId, leadId, disposition, phoneNumber, timestamp, recordingUrl, duration, callType } = req.body;
+    // Support both camelCase and snake_case for handset compatibility
+    const interactionId = req.body.interactionId || req.body.interaction_id;
+    const leadId = req.body.leadId || req.body.lead_id;
+    const disposition = req.body.disposition || req.body.outcome;
+    const phoneNumber = req.body.phoneNumber || req.body.phone_number;
+    const timestamp = req.body.timestamp;
+    const recordingUrl = req.body.recordingUrl || req.body.recording_url;
+    const duration = req.body.duration || req.body.call_duration || req.body.dur;
+    const callType = req.body.callType || req.body.call_type;
 
     console.log(`[Telephony] ──── INCOMING UPLOAD ────`);
     console.log(`[Telephony]   Tenant: ${req.tenantId}`);
@@ -355,7 +363,12 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
                     `INSERT INTO interactions (id, tenant_id, lead_id, user_id, type, date, note, outcome, recording_url, transcript, sentiment, duration)
                      VALUES ($1, $2, $3, $4, 'Call', NOW(), $5, $6, $7, $8, $9, $10)
                      ON CONFLICT (id) DO UPDATE SET 
+                        note = EXCLUDED.note,
+                        outcome = EXCLUDED.outcome,
+                        duration = EXCLUDED.duration,
                         recording_url = COALESCE(interactions.recording_url, EXCLUDED.recording_url),
+                        transcript = EXCLUDED.transcript,
+                        sentiment = EXCLUDED.sentiment,
                         updated_at = NOW()
                      RETURNING id`,
                     [finalId, req.tenantId, finalLeadId, req.user?.id || null, noteContent, callOutcome, audioUrl, transcriptLines, aiResult.sentiment, parsedDuration]

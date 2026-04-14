@@ -244,7 +244,7 @@ export default function CallRecords() {
     const downloadTranscript = async (interactionId, leadName) => {
         try {
             const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+            const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api');
             const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -537,7 +537,13 @@ export default function CallRecords() {
                                         <td className="px-6 py-4">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-700)' }}>
                                                 <Clock size={13} style={{ color: 'var(--text-muted)' }} />
-                                                {call.duration || '0:00'}
+                                                {(() => {
+                                                    if (!call.duration) return '0:00';
+                                                    const s = parseInt(call.duration, 10);
+                                                    const m = Math.floor(s / 60);
+                                                    const rs = s % 60;
+                                                    return `${m}:${rs.toString().padStart(2, '0')}`;
+                                                })()}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

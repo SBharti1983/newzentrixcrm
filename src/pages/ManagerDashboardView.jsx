@@ -55,6 +55,13 @@ export default function ManagerDashboardView({ user, data }) {
     const leadsStat = stats.leads || {};
     const bookings = stats.bookings || {};
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
+
     const formatRevenue = (v) => {
         if (!v) return '₹0';
         const cr = Number(v) / 10000000;
@@ -68,7 +75,7 @@ export default function ManagerDashboardView({ user, data }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: COLORS.slate950, letterSpacing: '-0.5px' }}>
-                        Good afternoon, {user?.name || 'Ravi Kumar'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: '12px', verticalAlign: 'middle' }}>Manager Dashboard</span>
+                        {getGreeting()}, {user?.name || 'Manager'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: '12px', verticalAlign: 'middle' }}>Manager Dashboard</span>
                     </h1>
                     <p style={{ margin: '4px 0 0', color: COLORS.slate600, fontSize: '0.9rem', fontWeight: 500 }}>Here's your team performance, pipeline health and priorities for this month.</p>
                 </div>

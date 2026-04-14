@@ -10,7 +10,7 @@ const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GE
  * @returns {Promise<any>}
  */
 async function generateAIResponse(prompt, isJson = true, customKey = null) {
-    const aiKey = customKey || process.env.GEMINI_API_KEY;
+    const aiKey = (customKey || process.env.GEMINI_API_KEY || '').trim();
     if (!aiKey) {
         throw new Error('GEMINI_API_KEY is not configured');
     }
@@ -22,31 +22,47 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
         }
 
-        // Use standard models available for this API key
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        // Use confirmed models for this specific API Key
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro", "gemini-2.0-flash-exp"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
-            try {
-                const model = localGenAI.getGenerativeModel({ 
-                    model: modelName,
-                    generationConfig: { temperature: 0 }
-                });
-                const result = await model.generateContent(finalPrompt);
-                const response = result.response;
-                let text = response.text();
-                
-                if (isJson) {
-                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                    return JSON.parse(text);
+            let attempts = 0;
+            const maxAttempts = 2; // Retry once if it's a transient error
+
+            while (attempts < maxAttempts) {
+                try {
+                    attempts++;
+                    const model = localGenAI.getGenerativeModel({ 
+                        model: modelName,
+                        generationConfig: { temperature: 0 }
+                    });
+                    const result = await model.generateContent(finalPrompt);
+                    const response = result.response;
+                    let text = response.text();
+                    
+                    if (isJson) {
+                        // Extract JSON block if AI wrapped it in triple backticks
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            text = jsonMatch[0];
+                        }
+                        return JSON.parse(text);
+                    }
+                    return text;
+                } catch (err) {
+                    lastError = err;
+                    console.warn(`[AI] Attempt ${attempts} with ${modelName} failed:`, err.message);
+                    
+                    // If transient (503/429) and we have attempts left, wait and retry
+                    if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                        await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+                        continue;
+                    }
+                    
+                    // If definitive 404 or exhausted retries, try next model in the list
+                    break; 
                 }
-                return text;
-            } catch (err) {
-                lastError = err;
-                console.warn(`[AI] Attempt with ${modelName} failed:`, err.message);
-                if (err.status === 404) continue; // Model not found, try next
-                if (err.status === 429 || err.status === 503) continue; // Quota hit, try next
-                throw err; // Real error
             }
         }
         throw lastError;
@@ -77,41 +93,49 @@ async function generateAudioTranscription(prompt, base64Audio, mimeType, isJson 
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
         }
 
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash-exp"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
-            try {
-                const model = localGenAI.getGenerativeModel({ 
-                    model: modelName,
-                    generationConfig: { temperature: 0 }
-                });
-                
-                const result = await model.generateContent([
-                    { inlineData: { data: base64Audio, mimeType: mimeType } },
-                    { text: finalPrompt }
-                ]);
+            let attempts = 0;
+            const maxAttempts = 2;
 
-                const response = result.response;
-                let text = response.text();
+            while (attempts < maxAttempts) {
+                try {
+                    attempts++;
+                    const model = localGenAI.getGenerativeModel({ 
+                        model: modelName,
+                        generationConfig: { temperature: 0 }
+                    });
+                    
+                    const result = await model.generateContent([
+                        { inlineData: { data: base64Audio, mimeType: mimeType } },
+                        { text: finalPrompt }
+                    ]);
 
-                if (isJson) {
-                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                    console.log('[AI-Audio] Raw AI response (first 500 chars):', text.substring(0, 500));
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        console.error("[AI] JSON Parse failed, raw text:", text);
-                        throw e;
+                    const response = result.response;
+                    let text = response.text();
+
+                    if (isJson) {
+                        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('[AI-Audio] JSON Parse Error:', e, 'Raw:', text);
+                            throw new Error('AI returned invalid JSON');
+                        }
                     }
+                    return text;
+                } catch (err) {
+                    lastError = err;
+                    console.warn(`[AI-Audio] Attempt ${attempts} with ${modelName} failed:`, err.message);
+                    
+                    if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                        await new Promise(r => setTimeout(r, 2000));
+                        continue;
+                    }
+                    break;
                 }
-                return text;
-            } catch (err) {
-                lastError = err;
-                console.warn(`[AI-Audio] Attempt with ${modelName} failed:`, err.message);
-                if (err.status === 404) continue;
-                if (err.status === 429 || err.status === 503) continue;
-                throw err;
             }
         }
         throw lastError;
@@ -171,9 +195,27 @@ async function transcribeFromUrl(audioUrl, prompt, customKey = null) {
     return generateAudioTranscription(prompt, base64Audio, mimeType, true, customKey);
 }
 
+
+
+// ... [existing code] ...
+
 module.exports = {
     generateAIResponse,
     generateAudioTranscription,
     transcribeFromUrl,
-    isAiEnabled: !!genAI
+    isAiEnabled: !!genAI,
+    // New high-density intelligence features powered by Gemini (replacing GLM)
+    generateGLMIntelligence: async (messages) => {
+        const prompt = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+        return generateAIResponse(prompt, false);
+    },
+    summarizeInteractionPulse: async (interactions) => {
+        const prompt = `Analyze these CRM interactions and provide a high-density intelligence summary. 
+        Focus on: 1. Sentiment 2. Urgency 3. Key Objections
+        
+        Interactions:
+        ${JSON.stringify(interactions, null, 2)}`;
+        
+        return generateAIResponse(`SYSTEM: You are an Elite Sales Intelligence Officer.\n\nUSER: ${prompt}`, false);
+    }
 };

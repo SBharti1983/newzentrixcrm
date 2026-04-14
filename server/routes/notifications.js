@@ -2,8 +2,48 @@ const express = require('express');
 const pool = require('../db/pool');
 const auth = require('../middleware/auth');
 
+const { PUBLIC_KEY } = require('../utils/push');
+
 const router = express.Router();
+router.get('/vapid-key', (req, res) => res.json({ publicKey: PUBLIC_KEY }));
+
 router.use(auth);
+
+// Subscribe to push
+router.post('/push/register', async (req, res) => {
+    try {
+        const { subscription } = req.body;
+        if (!subscription || !subscription.endpoint) 
+            return res.status(400).json({ error: 'Subscription object required' });
+
+        const { endpoint, keys } = subscription;
+        await pool.query(
+            `INSERT INTO push_subscriptions (user_id, tenant_id, endpoint, p256dh, auth) 
+             VALUES ($1, $2, $3, $4, $5) 
+             ON CONFLICT (user_id, endpoint) DO UPDATE 
+             SET p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`,
+            [req.user.id, req.tenantId, endpoint, keys.p256dh, keys.auth]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Push register error:', err);
+        res.status(500).json({ error: 'Failed to register push subscription' });
+    }
+});
+
+// Unsubscribe
+router.post('/push/unsubscribe', async (req, res) => {
+    try {
+        const { endpoint } = req.body;
+        await pool.query(
+            `DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2`,
+            [req.user.id, endpoint]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to unsubscribe' });
+    }
+});
 
 // ─── Role guard ──────────────────────────────────────────────────────
 const requireManager = (req, res, next) => {

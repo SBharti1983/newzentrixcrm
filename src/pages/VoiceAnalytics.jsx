@@ -19,7 +19,7 @@ const COLORS = ['#00b4d8', '#0077b6', '#90e0ef', '#03045e'];
 
 export default function VoiceAnalytics() {
     const { showToast } = useToast();
-    const { data: stats, loading } = useApi(() => fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/stats`, {
+    const { data: stats, loading } = useApi(() => fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/stats`, {
         headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
     }).then(r => r.json()));
 
@@ -138,8 +138,11 @@ export default function VoiceAnalytics() {
         { title: 'Total SIM Calls', value: summary.total_calls, change: '+12.5%', icon: <Phone size={24} />, color: '#00b4d8' },
         { title: 'Avg Duration', value: `${Math.round(summary.avg_duration || 0)}s`, change: '-2s', icon: <Clock size={24} />, color: '#7209b7' },
         { title: 'Success Rate', value: `${((summary.success_calls / (summary.total_calls || 1)) * 100).toFixed(1)}%`, change: '+4.1%', icon: <Activity size={24} />, color: '#10b981' },
-        { title: 'Connected SIMs', value: '4 Active', change: 'Stable', icon: <Smartphone size={24} />, color: '#f59e0b' },
+        { title: 'Connected SIMs', value: `${liveData?.fleetStatus?.activeDevices || 0} Active`, change: 'Live Fleet', icon: <Smartphone size={24} />, color: '#f59e0b' },
     ];
+
+    const outcomes = liveData?.callOutcomes || [];
+    const totalOutcomeCounts = outcomes.reduce((acc, curr) => acc + curr.value, 0);
 
     return (
         <div className="page-fade-in" style={{ padding: '32px' }}>
@@ -234,32 +237,23 @@ export default function VoiceAnalytics() {
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie 
-                                    data={[
-                                        { name: 'Connected', value: summary.success_calls || 10 },
-                                        { name: 'Busy', value: 4 },
-                                        { name: 'No Answer', value: 3 },
-                                        { name: 'Wrong No', value: 1 },
-                                    ]}
+                                    data={outcomes.length > 0 ? outcomes : [{ name: 'No Data', value: 1 }]}
                                     innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value"
                                 >
-                                    {COLORS.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                                    {outcomes.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                 </Pie>
                                 <Tooltip />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {[
-                            { label: 'Connected', val: '56%', color: '#00b4d8' },
-                            { label: 'No Answer', val: '22%', color: '#0077b6' },
-                            { label: 'Busy/Other', val: '22%', color: '#90e0ef' },
-                        ].map((l, i) => (
+                        {outcomes.slice(0, 3).map((l, i) => (
                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 12, height: 12, borderRadius: 4, background: l.color }} />
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{l.label}</span>
+                                    <div style={{ width: 12, height: 12, borderRadius: 4, background: COLORS[i % COLORS.length] }} />
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{l.name}</span>
                                 </div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{l.val}</span>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>{((l.value / (totalOutcomeCounts || 1)) * 100).toFixed(0)}%</span>
                             </div>
                         ))}
                     </div>
@@ -278,6 +272,7 @@ export default function VoiceAnalytics() {
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sales Agent</th>
+                            <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time stamp</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Talk Time</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Calls</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Rating</th>
@@ -295,10 +290,17 @@ export default function VoiceAnalytics() {
                                         }}>
                                             {agent.name.split(' ').map(n => n[0]).join('')}
                                         </div>
-                                        <div style={{ fontWeight: 800 }}>{agent.name}</div>
+                                        <div>
+                                            <div style={{ fontWeight: 800 }}>{agent.name}</div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td style={{ padding: '20px 0', fontWeight: 700 }}>{Math.floor(agent.calls * 4.2)}m 12s</td>
+                                <td style={{ padding: '20px 0', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    {agent.lastCall ? new Date(agent.lastCall).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'No Activity'}
+                                </td>
+                                <td style={{ padding: '20px 0', fontWeight: 700 }}>
+                                    {Math.floor(agent.talkTime / 60)}m {Math.round(agent.talkTime % 60)}s
+                                </td>
                                 <td style={{ padding: '20px 0', fontWeight: 700 }}>{agent.calls} Calls</td>
                                 <td style={{ padding: '20px 0' }}>
                                     <div style={{ display: 'flex', gap: 4, color: '#f59e0b' }}>

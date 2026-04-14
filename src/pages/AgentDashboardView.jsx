@@ -5,9 +5,9 @@ import {
 } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { 
-    Phone, Calendar, MapPin, CalendarCheck, ChevronDown, 
+    Phone, Mail, Calendar, MapPin, CalendarCheck, ChevronDown, 
     Bell, Search, MessageSquare, Flame, TrendingUp, Clock, UserCheck, 
-    ChevronRight, Users, LayoutDashboard, Briefcase, 
+    ChevronRight, Users, LayoutDashboard, Briefcase, Sparkles,
     CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone
 } from 'lucide-react';
 
@@ -28,13 +28,13 @@ const YEARLY_TREND = [
 ];
 
 const MONTHLY_TREND = [
-  { name: 'May 1', leads: 20, calls: 30, follow: 10, visits: 5 },
-  { name: 'May 6', leads: 35, calls: 45, follow: 15, visits: 10 },
-  { name: 'May 12', leads: 50, calls: 65, follow: 25, visits: 20 },
-  { name: 'May 18', leads: 40, calls: 50, follow: 18, visits: 15 },
-  { name: 'May 24', leads: 62, calls: 80, follow: 35, visits: 28 },
-  { name: 'May 27', leads: 42, calls: 58, follow: 33, visits: 24 },
-  { name: 'May 30', leads: 70, calls: 90, follow: 45, visits: 35 },
+  { name: 'Apr 1', leads: 20, calls: 30, follow: 10, visits: 5 },
+  { name: 'Apr 6', leads: 35, calls: 45, follow: 15, visits: 10 },
+  { name: 'Apr 12', leads: 50, calls: 65, follow: 25, visits: 20 },
+  { name: 'Apr 18', leads: 40, calls: 50, follow: 18, visits: 15 },
+  { name: 'Apr 24', leads: 62, calls: 80, follow: 35, visits: 28 },
+  { name: 'Apr 27', leads: 42, calls: 58, follow: 33, visits: 24 },
+  { name: 'Apr 30', leads: 70, calls: 90, follow: 45, visits: 35 },
 ];
 
 const CONVERSION_DATA = [
@@ -249,6 +249,61 @@ const LeadListItem = ({ name, type, time, info, details, img, isAvatar, onClick,
     </div>
 );
 
+const ActiveDealsCard = ({ deals = [] }) => (
+    <div style={{ 
+        background: '#fff', borderRadius: '24px', padding: '24px', 
+        border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+        display: 'flex', flexDirection: 'column', gap: '20px', flex: 1.2
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: 4, height: 16, background: COLORS.green, borderRadius: 2 }} />
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>Active Deals</h3>
+            </div>
+            <div style={{ background: '#ecfdf5', color: COLORS.green, padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 900 }}>
+                {deals.reduce((sum, d) => sum + (parseFloat(d.total_amount) || 0), 0) >= 10000000 
+                    ? `₹${(deals.reduce((sum, d) => sum + (parseFloat(d.total_amount) || 0), 0) / 10000000).toFixed(3)} Cr` 
+                    : `₹${(deals.reduce((sum, d) => sum + (parseFloat(d.total_amount) || 0), 0) / 100000).toFixed(1)} L`}
+            </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {deals.length > 0 ? deals.map((deal, idx) => (
+                <div key={idx} className="hover-lift" style={{ 
+                    padding: '20px', background: '#f8fafc', borderRadius: '20px', 
+                    border: '1.5px solid #f1f5f9', display: 'flex', 
+                    justifyContent: 'space-between', alignItems: 'center' 
+                }}>
+                    <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 950, color: COLORS.slate950, marginBottom: '6px' }}>{deal.unit_no || deal.unit_number || 'Unit B-402'}</div>
+                        <div style={{ 
+                            fontSize: '0.65rem', fontWeight: 900, 
+                            color: deal.status === 'Booked' ? COLORS.green : COLORS.blue,
+                            background: deal.status === 'Booked' ? '#ecfdf5' : '#eff6ff',
+                            padding: '3px 10px', borderRadius: '8px', textTransform: 'uppercase'
+                        }}>
+                            {deal.status}
+                        </div>
+                    </div>
+                    <div style={{ fontSize: '1rem', fontWeight: 950, color: COLORS.slate950 }}>
+                        {parseFloat(deal.total_amount) >= 10000000 
+                            ? `₹${(parseFloat(deal.total_amount) / 10000000).toFixed(2)} Cr` 
+                            : deal.total_amount ? `₹${(parseFloat(deal.total_amount) / 100000).toFixed(1)} L` : '--'}
+                    </div>
+                </div>
+            )) : (
+                <div style={{ 
+                    padding: '24px', background: '#f8fafc', borderRadius: '20px', 
+                    border: '2px dashed #e2e8f0', textAlign: 'center' 
+                }}>
+                    <div style={{ fontSize: '11px', color: COLORS.slate400, fontWeight: 600 }}>No active deals found</div>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
+
 // --- MAIN DASHBOARD VIEW ---
 export default function AgentDashboardView({ user, data = {}, recentLeads = [], loading }) {
     const navigate = useNavigate();
@@ -282,6 +337,12 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
         return `₹${val.toLocaleString()}`;
     };
 
+    const formatRevenue = (val) => {
+        if (!val) return '₹0';
+        const cr = val / 10000000;
+        return cr >= 1 ? `₹${cr.toFixed(1)} Cr` : `₹${(val / 100000).toFixed(0)} L`;
+    };
+
     const sparkLines = useMemo(() => [
         [{v: 20}, {v: 25}, {v: 22}, {v: 30}, {v: 28}, {v: 45}, {v: 58}],
         [{v: 40}, {v: 45}, {v: 55}, {v: 50}, {v: 60}, {v: 65}, {v: 72}],
@@ -289,6 +350,13 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
         [{v: 10}, {v: 12}, {v: 15}, {v: 14}, {v: 18}, {v: 20}, {v: 24}],
         [{v: 6}, {v: 7}, {v: 6.5}, {v: 8}, {v: 7.5}, {v: 9}, {v: 9.5}],
     ], []);
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 17) return 'Good afternoon';
+        return 'Good evening';
+    };
 
     return (
         <div style={{ 
@@ -300,7 +368,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
                     <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
-                        Good afternoon, {user?.name || 'Agent'} 👋
+                        {getGreeting()}, {user?.name || 'Agent'} 👋
                     </h1>
 
                     {/* Quick Stats Integrated */}
@@ -316,7 +384,11 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                             <Clock size={16} color={COLORS.blue} />
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: COLORS.slate400, textTransform: 'uppercase' }}>Avg Talk Time</span>
-                                <span style={{ fontSize: '1rem', fontWeight: 950, color: COLORS.slate950 }}>{((stats.telephony_stats?.calls_today || 0) * 1.5).toFixed(0)} min</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 950, color: COLORS.slate950 }}>
+                                    {stats.telephony_stats?.talk_time_today 
+                                        ? `${Math.floor(stats.telephony_stats.talk_time_today / 60)}m ${Math.round(stats.telephony_stats.talk_time_today % 60)}s` 
+                                        : '0m'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -442,7 +514,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                     </div>
                     <div style={{ height: '220px' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={trendPeriod === 'Month' ? MONTHLY_TREND : YEARLY_TREND} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                            <AreaChart data={trendPeriod === 'Month' ? (stats.trends && stats.trends.length > 0 ? stats.trends : MONTHLY_TREND) : YEARLY_TREND} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={COLORS.blue} stopOpacity={0.1}/><stop offset="95%" stopColor={COLORS.blue} stopOpacity={0}/></linearGradient>
                                     <linearGradient id="colorGreen" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={COLORS.green} stopOpacity={0.1}/><stop offset="95%" stopColor={COLORS.green} stopOpacity={0}/></linearGradient>
@@ -529,7 +601,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: `1px solid ${COLORS.border}`, paddingBottom: '12px' }}>
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: COLORS.slate950, margin: 0 }}>Today's Priorities</h3>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f97316', background: '#fff7ed', padding: '4px 10px', borderRadius: '14px' }}>5 Pending</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#f97316', background: '#fff7ed', padding: '4px 10px', borderRadius: '14px' }}>{followups.length} Pending</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                         <PriorityItem onClick={() => navigate('/followups')} icon={Calendar} label="Follow-ups Due" count={kpiData.followups} color={COLORS.orange} bg="#fff7ed" />
@@ -549,6 +621,11 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         <Calendar size={16} /> View Calendar
                     </button>
                 </div>
+            </div>
+
+            {/* Tactical Grid: Active Deals */}
+            <div style={{ display: 'flex', gap: '16px', minHeight: '320px' }}>
+                <ActiveDealsCard deals={stats.active_deals || []} />
             </div>
 
             {/* Bottom Section */}
@@ -592,49 +669,61 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                     </div>
                 </div>
 
-                {/* Performance Overview */}
-                <div style={{ 
-                    background: '#fff', borderRadius: '20px', padding: '20px', 
-                    border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' 
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate950, margin: 0 }}>Performance Overview</h3>
-                        <div 
-                            onClick={() => setPerformancePeriod(performancePeriod === 'Month' ? 'Year' : 'Month')}
-                            style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', padding: '4px 12px', borderRadius: '10px', border: `1px solid ${COLORS.border}`, fontSize: '0.75rem', fontWeight: 750, color: COLORS.slate950, cursor: 'pointer' }}
-                        >
-                            This {performancePeriod} <ChevronDown size={14} />
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '20px' }}>
-                        {[
-                            { label: 'Avg. Response Time', val: '24 mins', sub: '↓ 8% better', color: COLORS.green },
-                            { label: 'Deals in Pipeline', val: '12', sub: '↑ 2 new', color: COLORS.green },
-                            { label: 'Win Rate', val: '31%', sub: '↑ 4%', color: COLORS.green },
-                            { label: 'Avg. Deal Size', val: '₹1.58 Cr', sub: '↑ 6%', color: COLORS.green }
-                        ].map(m => (
-                            <div key={m.label} style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.slate600, marginBottom: '6px' }}>{m.label}</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '4px' }}>{m.val}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: m.color, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    {m.sub}
-                                </div>
+                {/* Performance Overview (Column 2) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ 
+                        background: '#fff', borderRadius: '20px', padding: '20px', 
+                        border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' 
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate950, margin: 0 }}>Performance Overview</h3>
+                            <div 
+                                onClick={() => setPerformancePeriod(performancePeriod === 'Month' ? 'Year' : 'Month')}
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#fff', padding: '4px 12px', borderRadius: '10px', border: `1px solid ${COLORS.border}`, fontSize: '0.75rem', fontWeight: 750, color: COLORS.slate950, cursor: 'pointer' }}
+                            >
+                                {performancePeriod} <ChevronDown size={14} />
                             </div>
-                        ))}
-                    </div>
+                        </div>
 
-                    <div>
-                        <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '12px' }}>Top Performing Projects</h4>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <ProjectChip title="Elan Epic" leads="12 Leads" img="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80" />
-                            <ProjectChip title="Alpine Heights" leads="8 Leads" img="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80" />
-                            <ProjectChip title="Aviation Sky Villa" leads="6 Leads" img="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80" />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                            {[
+                                { label: 'Avg. Response Time', val: `${stats.pipeline?.avg_response_time || 0} mins`, sub: stats.pipeline?.avg_response_time < 30 ? '↓ Optimal' : '↑ Needs action', color: stats.pipeline?.avg_response_time < 30 ? COLORS.green : COLORS.orange },
+                                { label: 'Deals in Pipeline', val: stats.leads?.active_leads || 0, sub: `↑ Live Pipeline`, color: COLORS.green },
+                                { label: 'Win Rate', val: `${stats.leads?.win_rate || 0}%`, sub: `Overall Performance`, color: COLORS.green },
+                                { label: 'Avg. Deal Size', val: formatRevenue(stats.pipeline?.avg_deal_size), sub: `↑ Portfolio Value`, color: COLORS.green }
+                            ].map(m => (
+                                <div key={m.label} style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.slate600, marginBottom: '6px' }}>{m.label}</div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '4px' }}>{m.val}</div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: m.color, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {m.sub}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div>
+                            <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '12px' }}>Top Performing Projects</h4>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                {stats.top_projects && stats.top_projects.length > 0 ? stats.top_projects.map((p, i) => (
+                                    <ProjectChip 
+                                        key={p.id || i}
+                                        title={p.name} 
+                                        leads={`${p.lead_count} Leads`} 
+                                        img={p.image_url || `https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80`} 
+                                    />
+                                )) : (
+                                    <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #e2e8f0', width: '100%', textAlign: 'center', fontSize: '0.8rem', color: COLORS.slate400 }}>
+                                        No project performance data available.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
+
                 </div>
 
-                {/* Hot Leads */}
+                {/* Hot Leads (Column 3) */}
                 <div style={{ 
                     background: '#fff', borderRadius: '20px', padding: '20px', 
                     border: `1px solid ${COLORS.border}`,
@@ -668,7 +757,6 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         )}
                     </div>
                 </div>
-
             </div>
 
              <style>{`

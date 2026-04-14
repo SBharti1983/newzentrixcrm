@@ -1,4 +1,5 @@
 const pool = require('../db/pool');
+const aiScreener = require('./aiScreener');
 
 /**
  * AutomationService handles the core logic for CRM workflows.
@@ -40,6 +41,11 @@ class AutomationService {
                     await this.logExecution(tenant_id, wf.id, lead_id, 'error', { error: err.message });
                 }
             }
+
+            // ── AI FIRST RESPONSE HANDSHAKE ──
+            aiScreener.triggerHandshake(lead, io).catch(err => {
+                console.error('[AI Handshake Loop] Failed:', err);
+            });
         } catch (err) {
             console.error('[Automation Service] Lead creation trigger failed:', err);
         }

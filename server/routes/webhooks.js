@@ -68,4 +68,21 @@ router.post('/:key/:provider', async (req, res) => {
     }
 });
 
+const aiScreener = require('../services/aiScreener');
+
+/**
+ * MOCK REPLY (For testing AI Sreener choice 1)
+ */
+router.post('/mock-reply', async (req, res) => {
+    const { lead_id, text } = req.body;
+    if (!lead_id || !text) return res.status(400).json({ error: 'lead_id and text required' });
+
+    try {
+        await aiScreener.processReply(lead_id, text, req.app.get('io'));
+        res.json({ success: true, message: 'Reply processed by AI' });
+    } catch (err) {
+        res.status(500).json({ error: 'AI processing failed' });
+    }
+});
+
 module.exports = router;

@@ -42,7 +42,7 @@ export default function FloatingDialer() {
 
         try {
             // Initiate SIM-integrated calling logic (triggers socket command on server)
-            const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/initiate`, {
+            const res = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/initiate`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function FloatingDialer() {
         setCallState('finishing');
         
         try {
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/${activeInteractionId}`, {
+            await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/${activeInteractionId}`, {
                 method: 'PATCH',
                 headers: { 
                     'Content-Type': 'application/json',

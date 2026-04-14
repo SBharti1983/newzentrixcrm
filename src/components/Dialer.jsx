@@ -65,7 +65,7 @@ export default function Dialer() {
                     if (prev === 'idle') {
                         setIsOpen(true);
                         setIsMinimized(false);
-                        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/leads/search?q=${num}`, {
+                        fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/leads/search?q=${num}`, {
                             headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
                         }).then(res => res.json()).then(leadData => {
                             if (leadData && leadData.length > 0) setActiveLead(leadData[0]);
@@ -114,7 +114,7 @@ export default function Dialer() {
             if (!agentId) return showToast('No Agent ID', 'error');
             const sid = agentId;
             const makeCallRef = ref(database, `agents/${sid}/outgoing_call`);
-            const logRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/initiate`, {
+            const logRes = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/initiate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
                 body: JSON.stringify({ leadId: lead?.id, phoneNumber: phoneToDial, method: 'GSM' })
@@ -143,7 +143,7 @@ export default function Dialer() {
     const handleHangup = async (outcome = 'Connected') => {
         if (activeInteractionId) {
             try {
-                await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5050/api'}/calls/${activeInteractionId}`, {
+                await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/${activeInteractionId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
                     body: JSON.stringify({ duration, outcome, note: `GSM Call completed.` })

@@ -9,20 +9,26 @@ export default function SuperAdmin() {
     const [tenants, setTenants] = useState([]);
     const [stats, setStats] = useState(null);
     const [subscriptions, setSubscriptions] = useState([]);
+    const [auditLogs, setAuditLogs] = useState([]);
+    const [utilizationAlerts, setUtilizationAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            const [tData, sData, subData] = await Promise.all([
+            const [tData, sData, subData, aData, uData] = await Promise.all([
                 superAdminApi.getTenants(),
                 superAdminApi.getStats(),
-                superAdminApi.getSubscriptions()
+                superAdminApi.getSubscriptions(),
+                superAdminApi.getAuditLogs(),
+                superAdminApi.getUtilizationAlerts()
             ]);
             setTenants(tData);
             setStats(sData);
             setSubscriptions(subData || []);
+            setAuditLogs(aData || []);
+            setUtilizationAlerts(uData || []);
             setError(null);
         } catch (err) {
             console.error('SuperAdmin Data Fetch Error:', err);
@@ -71,6 +77,8 @@ export default function SuperAdmin() {
         tenants={tenants} 
         stats={stats} 
         subscriptions={subscriptions} 
+        auditLogs={auditLogs}
+        utilizationAlerts={utilizationAlerts}
         onReload={fetchData} 
     />;
 }

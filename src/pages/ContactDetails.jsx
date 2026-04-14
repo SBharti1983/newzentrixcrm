@@ -50,6 +50,12 @@ export default function ContactDetails() {
     const [isDeleting, setIsDeleting] = useState(false);
     const [showFollowupModal, setShowFollowupModal] = useState(false);
     const [justLogged, setJustLogged] = useState(false);
+    const [isEditingInterest, setIsEditingInterest] = useState(false);
+    const [editInterestData, setEditInterestData] = useState({ budget: '', property_type: '' });
+    const [isAddingDeal, setIsAddingDeal] = useState(false);
+    const [newDealData, setNewDealData] = useState({ unit_number: '', project_name: '', total_amount: '' });
+    const [callOutcome, setCallOutcome] = useState('Connected');
+    const [callDuration, setCallDuration] = useState('');
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -217,7 +223,12 @@ export default function ContactDetails() {
                 });
                 showToast(`${activityType} Message Sent successfully!`, 'success');
             } else {
-                await leadsApi.addInteraction(id, { type: activityType, note: newNote });
+                const payload = { type: activityType, note: newNote };
+                if (activityType === 'Call') {
+                    payload.outcome = callOutcome || 'Connected';
+                    payload.duration = callDuration ? parseInt(callDuration, 10) : null;
+                }
+                await leadsApi.addInteraction(id, payload);
                 showToast('Interaction logged successfully', 'success');
             }
             setNewNote('');
@@ -444,7 +455,7 @@ export default function ContactDetails() {
                                     }
                                 }
                             },
-                            { icon: MapPin, label: 'Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
+                            { icon: MapPin, label: 'Plan Visit', color: '#f59e0b', action: () => navigate(`/site-visits?leadId=${id}`) },
                             { icon: ClipboardCheck, label: 'Offer', color: '#8b5cf6', action: () => navigate(`/agreements?leadId=${id}`) }
                         ].map(act => (
                             <button
@@ -483,7 +494,8 @@ export default function ContactDetails() {
                                 {[
                                     { label: 'Email Address', value: contact.email, icon: Mail, color: '#3b82f6' },
                                     { label: 'Phone Number', value: contact.phone, icon: Phone, color: '#10b981' },
-                                    { label: 'Lead Owner', value: contact.agent_name || 'Arjun Sharma', icon: UserPlus, color: '#8b5cf6' }
+                                    { label: 'Lead Owner', value: contact.created_by_name || 'Direct / System', icon: UserPlus, color: '#8b5cf6' },
+                                    { label: 'Assigned To', value: contact.agent_name || 'Unassigned', icon: Users, color: 'var(--accent-emerald)' }
                                 ].map(field => (
                                     <div key={field.label} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                         <div style={{
@@ -496,7 +508,7 @@ export default function ContactDetails() {
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{field.label}</div>
-                                            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{field.value || 'Not provided'}</div>
+                                            <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{field.value}</div>
                                         </div>
                                     </div>
                                 ))}
@@ -555,7 +567,9 @@ export default function ContactDetails() {
                                 <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Strategic Interest</h3>
                                 <Sparkles size={14} color="#f59e0b" />
                             </div>
-                            <div className="hover-lift" style={{
+                            <div className="hover-lift" 
+                                onClick={() => navigate('/projects')}
+                                style={{
                                 background: 'linear-gradient(135deg, #f8fafc, #ffffff)',
                                 padding: '16px', borderRadius: '20px',
                                 border: '1.5px solid #f1f5f9',
@@ -568,11 +582,11 @@ export default function ContactDetails() {
                                     fontWeight: 900, fontSize: '12px', flexShrink: 0,
                                     boxShadow: '0 8px 16px rgba(10,22,40,0.15)'
                                 }}>
-                                    {contact.project_name?.slice(0, 2).toUpperCase() || 'SP'}
+                                    {contact.project_name ? contact.project_name.slice(0, 2).toUpperCase() : '-'}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{contact.project_name || 'Signature Park'}</div>
-                                    <div style={{ fontSize: '12px', color: 'var(--accent-emerald)', fontWeight: 800, marginTop: 2 }}>Budget: ₹{contact.budget || '1.1Cr'}</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 900, color: 'var(--navy-900)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{contact.project_name || 'Unspecified'}</div>
+                                    <div style={{ fontSize: '12px', color: 'var(--accent-emerald)', fontWeight: 800, marginTop: 2 }}>Budget: {contact.budget ? '₹'+contact.budget : 'Unspecified'}</div>
                                 </div>
                                 <ArrowRight size={16} color="var(--slate-300)" />
                             </div>
@@ -705,17 +719,30 @@ export default function ContactDetails() {
                                     </div>
                                 </div>
                             ) : (
-                                <div style={{ textAlign: 'center', padding: '120px 40px', background: 'white', borderRadius: '32px', border: '2px dashed var(--slate-200)' }}>
-                                    <div style={{ width: 80, height: 80, background: 'var(--navy-50)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', position: 'relative' }}>
+                                <div style={{ textAlign: 'center', padding: '60px 40px', background: 'white', borderRadius: '32px', border: '2px dashed var(--slate-200)' }}>
+                                    <div style={{ width: 80, height: 80, background: 'var(--navy-50)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', position: 'relative' }}>
                                         <Brain size={40} color="var(--accent-violet)" />
                                         <div className="pulse-dot" style={{ position: 'absolute', top: -4, right: -4, width: 12, height: 12, background: 'var(--accent-violet)', borderRadius: '50%', border: '3px solid white' }} />
                                     </div>
-                                    <h3 style={{ margin: '0 0 12px', color: 'var(--navy-900)', fontSize: '24px', fontWeight: 900, letterSpacing: '-0.5px' }}>Analyze Interaction Patterns</h3>
-                                    <p style={{ fontSize: '16px', color: 'var(--slate-500)', maxWidth: 400, margin: '0 auto 36px', lineHeight: 1.6, fontWeight: 500 }}>
+                                    <h3 style={{ margin: '0 0 10px', color: 'var(--navy-900)', fontSize: '24px', fontWeight: 900, letterSpacing: '-0.5px' }}>Analyze Interaction Patterns</h3>
+                                    <p style={{ fontSize: '15px', color: 'var(--slate-500)', maxWidth: 400, margin: '0 auto 24px', lineHeight: 1.6, fontWeight: 500 }}>
                                         Deploy our AI engine to cross-reference multiple data points and generate a custom conversion strategy for {contact.name}.
                                     </p>
-                                    <button onClick={handleEnrich} className="btn h-xl" style={{ padding: '0 48px', height: 60, borderRadius: '18px', background: 'var(--navy-900)', color: 'white', fontWeight: 900, fontSize: '16px', boxShadow: '0 20px 40px rgba(10,22,40,0.2)' }}>
-                                        Unlock Full Intelligence
+                                    <button 
+                                        onClick={handleEnrich} 
+                                        disabled={enriching}
+                                        className="btn h-xl" 
+                                        style={{ 
+                                            padding: '0 48px', height: 56, borderRadius: '18px', 
+                                            background: enriching ? 'var(--navy-400)' : 'var(--navy-900)', 
+                                            color: 'white', fontWeight: 900, fontSize: '15px', 
+                                            boxShadow: '0 20px 40px rgba(10,22,40,0.2)',
+                                            margin: '0 auto',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10
+                                        }}
+                                    >
+                                        {enriching ? <RefreshCw className="animate-spin" size={18} /> : null}
+                                        {enriching ? 'Unlocking Intelligence...' : 'Unlock Full Intelligence'}
                                     </button>
                                 </div>
                             )}
@@ -844,23 +871,52 @@ export default function ContactDetails() {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Interest Profile */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                                        <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#3b82f6' }} />
-                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interest Profile</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#3b82f6' }} />
+                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interest Profile</h3>
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                if (!isEditingInterest) setEditInterestData({ budget: contact.budget || '', property_type: contact.property_type || '' });
+                                                else {
+                                                    // Save
+                                                    leadsApi.update(id, editInterestData).then(upd => { 
+                                                        setContact(prev => ({ ...prev, ...upd })); 
+                                                        showToast("Interest Profile updated", "success");
+                                                        loadData(); // Refresh interaction pulse
+                                                    }).catch(e => showToast("Update failed", "error"));
+                                                }
+                                                setIsEditingInterest(!isEditingInterest);
+                                            }}
+                                            style={{ background: 'none', border: 'none', color: isEditingInterest ? '#10b981' : '#3b82f6', fontSize: '10px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                        >
+                                            {isEditingInterest ? <CheckSquare size={12} /> : <Edit2 size={12} />}
+                                            {isEditingInterest ? 'Save' : 'Edit'}
+                                        </button>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {[
-                                            { label: 'Property Type', value: contact.property_type || 'Residential', Icon: Home, color: '#3b82f6' },
-                                            { label: 'Budget Range', value: `₹${contact.budget || '1.1Cr'}`, Icon: DollarSign, color: '#10b981' },
-                                            { label: 'Project', value: contact.project_name || 'Signature', Icon: Target, color: '#f59e0b' }
+                                            { key: 'property_type', label: 'Property Type', value: contact.property_type || 'Unspecified', Icon: Home, color: '#3b82f6' },
+                                            { key: 'budget', label: 'Budget Range', value: `${contact.budget ? '₹'+contact.budget : 'Unspecified'}`, Icon: DollarSign, color: '#10b981' },
+                                            { key: 'project_name', label: 'Project', value: contact.project_name || 'Unspecified', Icon: Target, color: '#f59e0b' }
                                         ].map(prop => (
                                             <div key={prop.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
                                                 <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${prop.color}08`, border: `1px solid ${prop.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                                     <prop.Icon size={13} color={prop.color} />
                                                 </div>
-                                                <div style={{ minWidth: 0 }}>
+                                                <div style={{ minWidth: 0, flex: 1 }}>
                                                     <div style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{prop.label}</div>
-                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
+                                                    {isEditingInterest && prop.key !== 'project_name' ? (
+                                                        <input 
+                                                            type="text" 
+                                                            value={editInterestData[prop.key]} 
+                                                            onChange={e => setEditInterestData({...editInterestData, [prop.key]: e.target.value})}
+                                                            style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', width: '100%', border: '1px solid #eef2f6', borderRadius: '4px', padding: '2px 4px', background: 'white' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
@@ -913,21 +969,57 @@ export default function ContactDetails() {
                                             <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#10b981' }} />
                                             <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Active Deals</h3>
                                         </div>
-                                        <div style={{ fontSize: '9px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '3px 8px', borderRadius: '6px' }}>₹1.195 Cr</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <div style={{ fontSize: '9px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.08)', padding: '3px 8px', borderRadius: '6px' }}>
+                                                {contact.deals && contact.deals.filter(d => d).length > 0 
+                                                    ? `₹${(contact.deals.filter(d => d).reduce((s,d) => s + parseFloat(d.total_amount||0), 0) / 100000).toLocaleString('en-IN', {maximumFractionDigits:2})} L` 
+                                                    : '₹0'}
+                                            </div>
+                                            <button 
+                                                onClick={() => setIsAddingDeal(!isAddingDeal)}
+                                                style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', padding: '3px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                            >
+                                                {isAddingDeal ? <X size={10} /> : <Plus size={10} />} {isAddingDeal ? 'Close' : 'Add'}
+                                            </button>
+                                        </div>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {[
-                                            { name: 'Unit B-402', val: '₹1.15 Cr', tag: 'Booked', tagColor: '#10b981' },
-                                            { name: 'Parking P12', val: '₹4.5 L', tag: 'Confirmed', tagColor: '#3b82f6' }
-                                        ].map((it, idx) => (
+                                        {isAddingDeal && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #10b98130' }}>
+                                                <input placeholder="Project Name" value={newDealData.project_name} onChange={e => setNewDealData({...newDealData, project_name: e.target.value})} style={{ fontSize: '11px', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0', width: '100%', boxSizing: 'border-box' }} />
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <input placeholder="Unit No" value={newDealData.unit_number} onChange={e => setNewDealData({...newDealData, unit_number: e.target.value})} style={{ fontSize: '11px', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0', flex: 1, minWidth: 0 }} />
+                                                    <input type="number" placeholder="Amount (₹)" value={newDealData.total_amount} onChange={e => setNewDealData({...newDealData, total_amount: e.target.value})} style={{ fontSize: '11px', padding: '6px', borderRadius: '6px', border: '1px solid #e2e8f0', flex: 1, minWidth: 0 }} />
+                                                </div>
+                                                <button 
+                                                    onClick={() => {
+                                                        if (!newDealData.total_amount) { showToast('Amount required', 'error'); return; }
+                                                        leadsApi.addDeal(id, newDealData).then(() => {
+                                                            showToast('Deal added', 'success');
+                                                            setIsAddingDeal(false);
+                                                            setNewDealData({ unit_number: '', project_name: '', total_amount: '' });
+                                                            loadData();
+                                                        }).catch(e => showToast('Failed to add deal', 'error'));
+                                                    }}
+                                                    style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '6px', fontSize: '11px', fontWeight: 800, cursor: 'pointer', marginTop: 4, width: '100%' }}
+                                                >
+                                                    Save Deal
+                                                </button>
+                                            </div>
+                                        )}
+                                        {(contact.deals && contact.deals.filter(d => d).length > 0) ? contact.deals.filter(d => d).slice(0, 3).map((deal, idx) => (
                                             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
                                                 <div>
-                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{it.name}</div>
-                                                    <div style={{ display: 'inline-flex', marginTop: 3, fontSize: '8px', fontWeight: 800, color: it.tagColor, background: `${it.tagColor}10`, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>{it.tag}</div>
+                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{deal.unit_number ? `Unit ${deal.unit_number}` : (deal.project_name || 'Booking')}</div>
+                                                    <div style={{ display: 'inline-flex', marginTop: 3, fontSize: '8px', fontWeight: 800, color: '#10b981', background: '#10b98110', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase' }}>{deal.status || 'Active'}</div>
                                                 </div>
-                                                <div style={{ fontSize: '13px', fontWeight: 900, color: '#059669', letterSpacing: '-0.3px' }}>{it.val}</div>
+                                                <div style={{ fontSize: '13px', fontWeight: 900, color: '#059669', letterSpacing: '-0.3px' }}>{deal.total_amount ? `₹${(deal.total_amount / 100000).toLocaleString('en-IN', {maximumFractionDigits:2})} L` : 'N/A'}</div>
                                             </div>
-                                        ))}
+                                        )) : (
+                                            <div style={{ textAlign: 'center', padding: '16px 10px', color: 'var(--slate-400)' }}>
+                                                <div style={{ fontSize: '11px', fontWeight: 700 }}>No active deals yet</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -938,29 +1030,33 @@ export default function ContactDetails() {
                                         <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Assigned Team</h3>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                        {[
-                                            { name: 'Siddharth M.', role: 'Senior Manager', initial: 'SM', color: '#3b82f6', online: true },
-                                            { name: 'Priya Singh', role: 'Sales Executive', initial: 'PS', color: '#f59e0b', online: false }
-                                        ].map((it, idx) => (
+                                        {(contact.team && contact.team.filter(t => t).length > 0) ? contact.team.filter(t => t).slice(0, 3).map((member, idx) => {
+                                            const roleColors = { 'admin': '#3b82f6', 'sales_manager': '#8b5cf6', 'team_leader': '#f59e0b', 'agent': '#10b981' };
+                                            const color = roleColors[member.role] || '#64748b';
+                                            return (
                                             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
                                                 <div style={{ position: 'relative' }}>
-                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: `${it.color}12`, color: it.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '10px', border: `1.5px solid ${it.color}20` }}>{it.initial}</div>
-                                                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: it.online ? '#10b981' : '#94a3b8', border: '2px solid #f8fafc' }} />
+                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: `${color}12`, color: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '10px', border: `1.5px solid ${color}20` }}>{member.name ? member.name[0].toUpperCase() : '?'}</div>
+                                                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: '#10b981', border: '2px solid #f8fafc' }} />
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</div>
-                                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{it.role}</div>
+                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.name}</div>
+                                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, textTransform: 'capitalize' }}>{(member.role || '').replace('_', ' ')}</div>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: 6 }}>
-                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => window.open(`tel:${member.phone}`)}>
                                                         <Phone size={12} color="var(--slate-400)" />
                                                     </div>
-                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', border: '1px solid #eef2f6', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => window.open(`mailto:${member.email}`)}>
                                                         <Mail size={12} color="var(--slate-400)" />
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        )}) : (
+                                            <div style={{ textAlign: 'center', padding: '16px 10px', color: 'var(--slate-400)' }}>
+                                                <div style={{ fontSize: '11px', fontWeight: 700 }}>Unassigned</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -1080,6 +1176,35 @@ export default function ContactDetails() {
 
                                 {showActivityBox && activityType !== 'Move to Nurture' && (
                                     <div className="animate-fadeIn">
+                                        {activityType === 'Call' && (
+                                            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Call Outcome</label>
+                                                    <select 
+                                                        value={callOutcome} 
+                                                        onChange={e => setCallOutcome(e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px', fontWeight: 700 }}
+                                                    >
+                                                        <option value="Connected">Connected</option>
+                                                        <option value="No Answer">No Answer</option>
+                                                        <option value="Busy">Busy</option>
+                                                        <option value="Switch Off">Switch Off</option>
+                                                        <option value="Not Interested">Not Interested</option>
+                                                        <option value="Wrong Number">Wrong Number</option>
+                                                    </select>
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>Duration (seconds)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        placeholder="e.g. 45"
+                                                        value={callDuration}
+                                                        onChange={e => setCallDuration(e.target.value)}
+                                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px', fontWeight: 700 }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
                                         <textarea
                                             value={newNote}
                                             onChange={e => setNewNote(e.target.value)}
@@ -1203,7 +1328,23 @@ export default function ContactDetails() {
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                                     <div>
                                                         <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)' }}>{item.type} Interaction</div>
-                                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>{item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>
+                                                            {item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
+                                                        {(item.outcome || item.duration) && (
+                                                            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                                                {item.outcome && (
+                                                                    <div style={{ fontSize: '9px', fontWeight: 900, padding: '3px 8px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.08)', color: '#3b82f6', textTransform: 'uppercase' }}>
+                                                                        {item.outcome}
+                                                                    </div>
+                                                                )}
+                                                                {item.duration && (
+                                                                    <div style={{ fontSize: '9px', fontWeight: 900, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.08)', color: '#10b981', textTransform: 'uppercase' }}>
+                                                                        {Math.floor(item.duration / 60)}m {item.duration % 60}s
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     {item.entry_type !== 'system' && (
                                                         <div style={{ display: 'flex', gap: 6, position: 'relative', zIndex: 5 }}>

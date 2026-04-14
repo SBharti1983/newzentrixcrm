@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useBranding } from '../context/BrandingContext';
 import { authApi } from '../api/client';
 import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shield, Zap, BarChart3, CheckCircle2, Phone } from 'lucide-react';
 
@@ -157,18 +158,27 @@ const styleSheet = `
 `;
 
 export default function Login() {
-    const { login, loginError, loading } = useAuth();
+    const { login } = useAuth();
+    const { branding } = useBranding();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
     const [showPwd, setShowPwd] = useState(false);
-    const [selectedRole, setSelectedRole] = useState('Agent');
+    const formRef = useRef();
     const [mounted, setMounted] = useState(false);
 
+    const PRIMARY_COLOR = branding?.primary_color || '#6366f1';
     const [subdomain] = useState(getSubdomain());
-    const [tenantName, setTenantName] = useState('Zentrix CRM');
-    const [tenantLogo, setTenantLogo] = useState('Z');
-    const [tenantColor, setTenantColor] = useState('linear-gradient(135deg, #6366f1, #06b6d4)');
-    const [bgGradient, setBgGradient] = useState('linear-gradient(140deg, #050d1a 0%, #0c1e3d 35%, #132b55 60%, #0a1628 100%)');
+    
+    // Derived branding states
+    const tenantName = branding?.company_name || 'Zentrix CRM';
+    const tenantLogo = branding?.logo_url ? (
+        <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
+    ) : (branding?.logo_icon || 'Z');
+    
+    const tenantColor = branding?.primary_color || '#6366f1';
+    const bgGradient = `linear-gradient(145deg, #050d17 0%, ${tenantColor}18 45%, ${tenantColor}0a 75%, #050912 100%)`;
 
     const styleRef = useRef(null);
 
@@ -190,24 +200,22 @@ export default function Login() {
     }, []);
 
     useEffect(() => {
-        if (subdomain) {
-            authApi.getTenant(subdomain).then(data => {
-                setTenantName(data.name);
-                setTenantLogo(data.logo_url ? <img src={data.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 14 }} /> : data.name[0]);
-                if (data.primary_color) {
-                    setTenantColor(data.primary_color);
-                    // For enterprise emerald branding, use a deep navy/charcoal base with emerald glow
-                    setBgGradient(`linear-gradient(145deg, #050d17 0%, ${data.primary_color}18 45%, ${data.primary_color}0a 75%, #050912 100%)`);
-                }
-            }).catch(() => {
-                console.log("No specific branding for subdomain", subdomain);
-            });
-        }
+        // Branding is now handled by the global BrandingContext provider
     }, [subdomain]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await login(email, password, subdomain);
+        setLoading(true);
+        setLoginError('');
+        try {
+            const success = await login(email, password, subdomain);
+            // login navigates on success via context user state change
+        } catch (err) {
+            // err.message contains the backend error (e.g. 'Invalid email or password')
+            setLoginError(err.message || 'Authentication failed. Please check your credentials.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const anim = (delay) => mounted ? {

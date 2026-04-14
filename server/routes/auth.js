@@ -206,6 +206,7 @@ router.post('/login', async (req, res) => {
         console.log(`[AUTH] Password match for ${email}: ${valid}`);
 
         if (!valid) {
+            console.log(`[AUTH] Invalid password for: ${email}`);
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 

@@ -5,6 +5,7 @@ import { PageLoader, PageError } from '../components/Feedback';
 import { leadsApi, projectsApi, usersApi, notificationsApi, channelPartnersApi } from '../api/client';
 import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
+import { useAuth } from '../hooks/useAuth';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
 import { dialerEvents } from '../constants/events';
 
@@ -70,6 +71,7 @@ const DEFAULT_FORM = {
 export default function Leads() {
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const { user } = useAuth();
     const [search, setSearch] = useState('');
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
@@ -96,35 +98,46 @@ export default function Leads() {
     const [bulkLoading, setBulkLoading] = useState(false);
 
     // API params — rebuild on filter change
-    const params = useMemo(() => {
-        const p = { limit, page };
-        if (filterStage !== 'All') p.stage = filterStage;
-        if (filterSource !== 'All') p.source = filterSource;
-        if (filterStatus !== 'All') p.status = filterStatus;
-        if (filterAgent !== 'All') p.agent = filterAgent;
-        if (filterNurtureDue) p.nurture_due = 'true';
-        if (startDate) p.startDate = startDate;
-        if (endDate) p.endDate = endDate;
-        if (search.trim()) p.q = search.trim();
-        return p;
+    const [leadsRes, setLeadsRes] = useState(null);
+    const [leadsLoading, setLeadsLoading] = useState(true);
+    const [users, setUsers] = useState(null);
+    const [projects, setProjects] = useState([]);
+    const [channelPartners, setChannelPartners] = useState([]);
+
+    const fetchLeads = useCallback(async () => {
+        setLeadsLoading(true);
+        try {
+            const p = { limit, page };
+            if (filterStage !== 'All') p.stage = filterStage;
+            if (filterSource !== 'All') p.source = filterSource;
+            if (filterStatus !== 'All') p.status = filterStatus;
+            if (filterAgent !== 'All') p.agent = filterAgent;
+            if (filterNurtureDue) p.nurture_due = 'true';
+            if (startDate) p.startDate = startDate;
+            if (endDate) p.endDate = endDate;
+            if (search.trim()) p.q = search.trim();
+
+            const res = await leadsApi.list(p);
+            setLeadsRes(res);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLeadsLoading(false);
+        }
     }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, search, filterNurtureDue, startDate, endDate]);
 
-    const { data: leadsRes, loading, error, refetch } = useApi(
-        useCallback(() => leadsApi.list(params), [params]),
-        [filterStage, filterSource, filterStatus, filterAgent, search, page, limit, filterNurtureDue, startDate, endDate]
-    );
-
-    // Reset selection and page when filtering changes
     useEffect(() => {
-        setSelectedIds(new Set());
-        setPage(1);
-    }, [filterStage, filterSource, filterStatus, filterAgent, search, filterNurtureDue, startDate, endDate]);
-    const { data: projects } = useApi(useCallback(() => projectsApi.list({ status: 'Active' }), []));
-    const { data: users } = useApi(useCallback(() => usersApi.list(), []));
-    const { data: channelPartners } = useApi(useCallback(() => channelPartnersApi.list(), []));
+        fetchLeads();
+    }, [fetchLeads]);
+
+    useEffect(() => {
+        usersApi.list().then(setUsers).catch(console.error);
+        projectsApi.list({ status: 'Active' }).then(setProjects).catch(console.error);
+        channelPartnersApi.list().then(setChannelPartners).catch(console.error);
+    }, []);
 
     const leads = leadsRes?.data || [];
-    const agents = (users || []).filter(u => ['agent', 'sales_manager'].includes(u.role));
+    const agents = Array.isArray(users) ? users.filter(u => ['agent', 'sales_manager', 'team_leader', 'admin'].includes(u.role)) : [];
 
     const openAdd = () => { setForm(DEFAULT_FORM); setEditingId(null); setShowModal(true); };
     const openEdit = (lead) => {
@@ -168,9 +181,8 @@ export default function Leads() {
             setShowModal(false);
             // Await refetch so errors are caught here instead of crashing silently
             try {
-                await refetch();
+                await fetchLeads();
             } catch (_refetchErr) {
-                // Refetch error is non-critical — useApi already sets error state
                 console.warn('[Leads] Refetch after save failed, data will refresh on next interaction.');
             }
         } catch (err) {
@@ -188,7 +200,7 @@ export default function Leads() {
         try {
             await leadsApi.delete(id);
             showToast('Lead deleted', 'success');
-            refetch();
+            fetchLeads();
         } catch (err) {
             showToast(err.error || 'Failed to delete lead', 'error');
         }
@@ -245,7 +257,7 @@ export default function Leads() {
             }
             setSelectedIds(new Set());
             setBulkAction(null);
-            refetch();
+            fetchLeads();
         } catch (err) {
             showToast(err.error || 'Bulk operation failed', 'error');
         } finally {
@@ -262,7 +274,7 @@ export default function Leads() {
         formData.append('file', file);
         try {
             setBulkLoading(true);
-            const res = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5050/api') + '/leads/import', {
+            const res = await fetch((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')) + '/leads/import', {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${sessionStorage.getItem('zentrix_token')}` },
                 body: formData
@@ -270,7 +282,7 @@ export default function Leads() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Upload failed');
             showToast(`Imported ${data.imported} leads (${data.duplicates} duplicates skipped)`, 'success');
-            refetch();
+            fetchLeads();
         } catch (err) {
             showToast(err.message || 'Failed to import leads', 'error');
         } finally {
@@ -282,7 +294,7 @@ export default function Leads() {
     return (
         <div className="animate-fadeIn">
             {/* Header */}
-            <div className="page-header" style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
                 <div className="page-header-left">
                     <h1 className="page-title">Lead Management</h1>
                     <p className="page-subtitle">{leadsRes?.total || 0} total leads</p>
@@ -291,8 +303,8 @@ export default function Leads() {
 
                 <div className="page-actions" style={{ marginRight: 20 }}>
                     <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImport} />
-                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} title="Refresh Data">
-                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                    <button className="btn btn-secondary btn-sm" onClick={() => fetchLeads()} title="Refresh Data">
+                        <RotateCw size={14} className={leadsLoading ? 'animate-spin' : ''} /> Refresh
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading}>
                         <Filter size={14} /> Import
@@ -304,31 +316,31 @@ export default function Leads() {
             </div>
 
             {/* Filters */}
-            <div className="card mb-4" style={{ padding: '10px 16px', borderRadius: 12 }}>
+            <div className="card mb-2" style={{ padding: '8px 16px', borderRadius: 12 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto' }}>
                     <div className="search-bar" style={{ width: 220, minWidth: 180, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
                         <Search size={14} style={{ color: 'var(--text-muted)' }} />
                         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads..." style={{ background: 'transparent' }} />
                     </div>
                     
-                    <select className="form-control form-control-sm" style={{ width: 120, minWidth: 100 }} value={filterStage} onChange={e => setFilterStage(e.target.value)}>
+                    <select className="form-control form-control-sm" style={{ width: 120, minWidth: 100 }} value={filterStage} onChange={e => { setPage(1); setFilterStage(e.target.value); }}>
                         <option value="All">All Stages</option>
                         {STAGES.map(s => <option key={s}>{s}</option>)}
                     </select>
-                    <select className="form-control form-control-sm" style={{ width: 115, minWidth: 95 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <select className="form-control form-control-sm" style={{ width: 115, minWidth: 95 }} value={filterStatus} onChange={e => { setPage(1); setFilterStatus(e.target.value); }}>
                         <option value="All">All Statuses</option>
                         <option value="Active">Active</option>
                         <option value="Nurture">Nurture</option>
                         <option value="Won">Won</option>
                         <option value="Lost">Lost</option>
                     </select>
-                    <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterSource} onChange={e => setFilterSource(e.target.value)}>
+                    <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterSource} onChange={e => { setPage(1); setFilterSource(e.target.value); }}>
                         <option value="All">All Sources</option>
                         {SOURCES.map(s => <option key={s}>{s}</option>)}
                     </select>
 
-                    {agents && agents.length > 0 && (
-                        <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
+                    {user?.role !== 'agent' && (
+                        <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterAgent} onChange={e => { setPage(1); setFilterAgent(e.target.value); }}>
                             <option value="All">All Agents</option>
                             <option value="Unassigned">Unassigned</option>
                             {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -338,7 +350,7 @@ export default function Leads() {
                     <button 
                         className={`btn btn-sm ${filterNurtureDue ? 'btn-primary' : 'btn-ghost'}`} 
                         style={{ color: filterNurtureDue ? 'white' : 'var(--accent-rose)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}
-                        onClick={() => setFilterNurtureDue(!filterNurtureDue)}
+                        onClick={() => { setPage(1); setFilterNurtureDue(!filterNurtureDue); }}
                     >
                         🎯 Nurture Due
                     </button>
@@ -377,7 +389,7 @@ export default function Leads() {
                                 type="date" 
                                 style={{ 
                                     border: 'none', background: 'transparent', fontSize: '0.72rem', 
-                                    padding: 0, color: startDate ? '#1e293b' : '#94a3b8', width: 85,
+                                    padding: 0, color: startDate ? '#1e293b' : '#94a3b8', width: 75,
                                     fontWeight: startDate ? 700 : 500, cursor: 'pointer', outline: 'none'
                                 }} 
                                 value={startDate}
@@ -397,42 +409,34 @@ export default function Leads() {
                                 type="date" 
                                 style={{ 
                                     border: 'none', background: 'transparent', fontSize: '0.72rem', 
-                                    padding: 0, color: endDate ? '#1e293b' : '#94a3b8', width: 85,
+                                    padding: 0, color: endDate ? '#1e293b' : '#94a3b8', width: 75,
                                     fontWeight: endDate ? 700 : 500, cursor: 'pointer', outline: 'none'
                                 }} 
                                 value={endDate}
                                 onChange={e => setEndDate(e.target.value)}
                             />
-                            {(startDate || endDate) && (
-                                <button 
-                                    onClick={() => { setStartDate(''); setEndDate(''); }}
-                                    style={{ 
-                                        border: 'none', background: 'rgba(239,68,68,0.1)', cursor: 'pointer', 
-                                        display: 'flex', alignItems: 'center', padding: '2px', borderRadius: 4,
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.2)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
-                                >
-                                    <X size={10} color="#ef4444" />
-                                </button>
-                            )}
                         </div>
-                    </div>
                 </div>
             </div>
-
-            {/* Main Content */}
-            {loading ? <PageLoader /> : error ? <PageError message={typeof error === 'string' ? error : 'Failed to load data'} onRetry={refetch} /> : (
-                <>
-                {leads.length === 0 ? (
-                    <div className="empty-state">
-                        <div className="empty-state-icon">🔍</div>
-                        <div className="empty-state-title">No leads found</div>
-                        <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
+        </div>
+            <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                {leadsLoading && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(255,255,255,0.7)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)'
+                    }}>
+                        <div className="animate-spin" style={{ width: 40, height: 40, border: '4px solid var(--navy-500)', borderTopColor: 'transparent', borderRadius: '50%' }} />
                     </div>
-                ) : (
-                <div className="table-wrapper" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 280px)', background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', paddingBottom: 60 }}>
+                )}
+
+                <div className="table-wrapper" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+                    {leads.length === 0 && !leadsLoading ? (
+                        <div className="empty-state" style={{ padding: '80px 0' }}>
+                            <div className="empty-state-icon">🔍</div>
+                            <div className="empty-state-title">No leads found</div>
+                            <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
+                        </div>
+                    ) : (
                         <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead>
                                 <tr>
@@ -444,38 +448,15 @@ export default function Leads() {
                                             style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                         />
                                     </th>
-                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Budget', 'Score', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
-                                        const widths = {
-                                            'Lead': '150px',
-                                            'Contact': '150px',
-                                            'Status': '75px',
-                                            'Stage': '95px',
-                                            'Source': '85px',
-                                            'Budget': '80px',
-                                            'Score': '55px',
-                                            'Create Date': '95px',
-                                            'Assigned To': '100px',
-                                            'Last Contact': '110px',
-                                            'Actions': '115px'
-                                        };
+                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
+                                        const widths = { 'Lead': '150px', 'Contact': '150px', 'Status': '75px', 'Stage': '95px', 'Source': '85px', 'Score': '55px', 'Created By': '85px', 'Create Date': '95px', 'Assigned To': '100px', 'Last Contact': '110px', 'Actions': '115px' };
                                         const isSticky = h === 'Actions';
                                         return (
                                             <th key={h} style={{ 
-                                                width: widths[h] || 'auto',
-                                                minWidth: widths[h] || 'auto',
-                                                textAlign: 'center',
-                                                padding: '8px 6px',
-                                                fontSize: '0.7rem',
-                                                textTransform: 'uppercase',
-                                                fontWeight: 800,
-                                                color: 'var(--slate-500)',
-                                                borderBottom: '1px solid var(--border-light)',
-                                                background: 'var(--slate-50)',
-                                                position: isSticky ? 'sticky' : 'static',
-                                                right: isSticky ? 0 : 'auto',
-                                                zIndex: isSticky ? 30 : 1,
-                                                boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none',
-                                                whiteSpace: 'nowrap'
+                                                width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center', padding: '12px 6px', fontSize: '0.7rem',
+                                                textTransform: 'uppercase', fontWeight: 800, color: 'var(--slate-500)', borderBottom: '1px solid var(--border-light)',
+                                                background: 'var(--slate-50)', position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
+                                                zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none', whiteSpace: 'nowrap'
                                             }}>{h}</th>
                                         );
                                     })}
@@ -485,87 +466,29 @@ export default function Leads() {
                                 {leads.map(lead => {
                                     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
                                     return (
-                                    <tr
-                                        key={lead.id}
-                                        onClick={() => navigate(`/leads/${lead.id}`)}
-                                        onMouseEnter={() => setHoveredRow(lead.id)}
-                                        onMouseLeave={() => setHoveredRow(null)}
-                                        style={{ cursor: 'pointer', background: selectedIds.has(lead.id) ? 'var(--navy-50)' : undefined }}
-                                    >
+                                    <tr key={lead.id} onClick={() => navigate(`/leads/${lead.id}`)} onMouseEnter={() => setHoveredRow(lead.id)} onMouseLeave={() => setHoveredRow(null)} style={{ cursor: 'pointer', background: selectedIds.has(lead.id) ? 'var(--navy-50)' : undefined }}>
                                         <td onClick={e => e.stopPropagation()} style={{ paddingRight: 0 }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.has(lead.id)}
-                                                onChange={() => toggleSelect(lead.id)}
-                                                style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
-                                            />
+                                            <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleSelect(lead.id)} style={{ cursor: 'pointer', transform: 'scale(1.1)' }} />
                                         </td>
-                                        <td style={{ padding: '4px 8px' }}>
+                                        <td style={{ padding: '8px 8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 24, height: 24, fontSize: '10px' }}>
+                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
                                                     {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
                                                 </div>
                                                 <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                                    <div style={{ 
-                                                        height: 14, 
-                                                        opacity: hoveredRow === lead.id ? 1 : 0, 
-                                                        visibility: hoveredRow === lead.id ? 'visible' : 'hidden',
-                                                        transition: 'all 0.15s ease',
-                                                        display: 'flex',
-                                                        alignItems: 'center'
-                                                    }}>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setPreviewLeadId(lead.id); }}
-                                                            style={{ 
-                                                                background: '#ffffff', 
-                                                                border: '1px solid #cbd6e2', 
-                                                                borderRadius: 3, 
-                                                                padding: '0px 4px', 
-                                                                fontSize: '9px', 
-                                                                color: '#516f90', 
-                                                                cursor: 'pointer',
-                                                                fontWeight: 600,
-                                                                whiteSpace: 'nowrap',
-                                                                lineHeight: '1.2'
-                                                            }}
-                                                        >
-                                                            Preview
-                                                        </button>
+                                                    <div style={{ height: 14, opacity: hoveredRow === lead.id ? 1 : 0, visibility: hoveredRow === lead.id ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
+                                                        <button onClick={(e) => { e.stopPropagation(); setPreviewLeadId(lead.id); }} style={{ background: '#ffffff', border: '1px solid #cbd6e2', borderRadius: 3, padding: '0px 4px', fontSize: '9px', color: '#516f90', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: '1.2' }}>Preview</button>
                                                     </div>
-                                                    <div 
-                                                        data-tooltip={lead.name || ''}
-                                                        style={{ 
-                                                            fontWeight: 700, 
-                                                            fontSize: '0.8rem', 
-                                                            whiteSpace: 'nowrap', 
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            color: 'var(--navy-900)',
-                                                            lineHeight: 1.1
-                                                        }}
-                                                    >
-                                                        {lead.name || '—'}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}
-                                                    </div>
+                                                    <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{lead.name || '—'}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                                        <td style={{ padding: '8px 8px', textAlign: 'center' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                                                    <span style={{ 
-                                                        color: lead.email ? 'var(--text-secondary)' : '#ef4444', 
-                                                        overflowWrap: 'anywhere',
-                                                        lineHeight: 1,
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        fontSize: lead.email ? 'inherit' : '0.65rem',
-                                                        fontWeight: lead.email ? 'inherit' : 700
-                                                    }}>{lead.email || 'Email missing'}</span>
+                                                    <span style={{ color: lead.email ? 'var(--text-secondary)' : '#ef4444', overflowWrap: 'anywhere', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: lead.email ? 'inherit' : '0.65rem', fontWeight: lead.email ? 'inherit' : 700 }}>{lead.email || 'Email missing'}</span>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                                     <Phone size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -573,56 +496,37 @@ export default function Leads() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style={{ textAlign: 'center', padding: '4px' }}>
-                                            <span style={{ 
-                                                fontSize: '0.7rem', 
-                                                fontWeight: 600, 
-                                                padding: '2px 6px', 
-                                                borderRadius: 10, 
-                                                background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9',
-                                                color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569'
-                                            }}>
-                                                {lead.status || 'Active'}
-                                            </span>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}>
+                                            <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9', color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569' }}>{lead.status || 'Active'}</span>
                                         </td>
-                                        <td style={{ textAlign: 'center', padding: '4px' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '1px 6px' }}>{lead.stage || '—'}</span></td>
-                                        <td style={{ textAlign: 'center', padding: '4px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '1px 6px' }}>{lead.source || '—'}</span></td>
-                                        <td style={{ fontWeight: 600, textAlign: 'center', fontSize: '0.75rem', padding: '4px' }}>{lead.budget || '—'}</td>
-                                        <td style={{ textAlign: 'center', padding: '4px' }}>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.stage || '—'}</span></td>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
-                                                <div className="progress-bar" style={{ width: 35, height: 4 }}>
-                                                    <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
-                                                </div>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 700 }}>{leadScore}</span>
+                                                <div className="progress-bar" style={{ width: 35, height: 4 }}><div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} /></div>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 800 }}>{leadScore}</span>
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '4px' }}>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name || 'System'}</span>
+                                        </td>
+                                        <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
                                             {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                                         </td>
-                                        <td style={{ textAlign: 'center', padding: '4px' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
-                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 22, height: 22, fontSize: '9px' }}>
-                                                    {lead.agent_avatar || '?'}
-                                                </div>
-                                                <span style={{ fontSize: '0.7rem' }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
+                                        <td style={{ textAlign: 'center', padding: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                                                <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>{lead.agent_avatar || '?'}</div>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '4px' }}>
+                                        <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
                                             {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                                         </td>
-                                        <td onClick={e => e.stopPropagation()} style={{ 
-                                            textAlign: 'center',
-                                            position: 'sticky',
-                                            right: 0,
-                                            background: hoveredRow === lead.id ? 'var(--slate-50)' : selectedIds.has(lead.id) ? 'var(--navy-50)' : 'white',
-                                            zIndex: 30,
-                                            boxShadow: '-2px 0 5px rgba(0,0,0,0.05)',
-                                            padding: '4px 6px'
-                                        }}>
+                                        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center', position: 'sticky', right: 0, background: hoveredRow === lead.id ? 'var(--slate-100)' : selectedIds.has(lead.id) ? 'var(--navy-50)' : 'white', zIndex: 30, boxShadow: '-2px 0 5px rgba(0,0,0,0.05)', padding: '4px 6px' }}>
                                             <div style={{ display: 'flex', gap: 6, justifyContent: 'center', minWidth: '90px' }}>
-                                                <button className="btn btn-ghost" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} data-tooltip="Call" style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
-                                                <button className="btn btn-ghost" onClick={() => openEdit(lead)} data-tooltip="Edit" style={{ width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Edit2 size={14} /></button>
-                                                <button className="btn btn-ghost" onClick={() => deleteLead(lead.id)} data-tooltip="Delete" style={{ color: 'var(--accent-rose)', width: 32, height: 32, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Trash2 size={14} /></button>
+                                                <button className="btn btn-ghost" onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)} style={{ width: 32, height: 32, padding: 0 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
+                                                <button className="btn btn-ghost" onClick={() => openEdit(lead)} style={{ width: 32, height: 32, padding: 0 }}><Edit2 size={14} /></button>
+                                                <button className="btn btn-ghost" onClick={() => deleteLead(lead.id)} style={{ color: 'var(--accent-rose)', width: 32, height: 32, padding: 0 }}><Trash2 size={14} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -630,49 +534,67 @@ export default function Leads() {
                                 })}
                             </tbody>
                         </table>
+                    )}
+                </div>
 
-                        {/* Pagination Section */}
-                        <div style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '12px 20px', borderTop: '1px solid var(--border-light)',
-                            position: 'sticky', bottom: 0, background: 'var(--slate-50)', zIndex: 40,
-                            borderRadius: '0 0 12px 12px'
-                        }}>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, leadsRes?.total || 0)} of {leadsRes?.total || 0} leads
-                            </div>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page === 1}
-                                    style={{ background: 'white', borderRadius: 8, height: 32, padding: '0 12px' }}
-                                >
-                                    Previous
-                                </button>
-                                <div style={{ 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                    background: 'white', height: 32, borderRadius: 8, 
-                                    border: '1px solid var(--border-light)', fontSize: '0.75rem', 
-                                    fontWeight: 700, padding: '0 12px' 
-                                }}>
-                                    Page {page}
-                                </div>
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => setPage(p => p + 1)}
-                                    disabled={leads.length < limit || (page * limit) >= (leadsRes?.total || 0)}
-                                    style={{ background: 'white', borderRadius: 8, height: 32, padding: '0 12px' }}
-                                >
-                                    Next
-                                </button>
-                            </div>
+                {/* Pagination Section - Now ALWAYS stable and positioned correctly */}
+                <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 20px', borderTop: '1px solid var(--border-light)',
+                    background: 'var(--slate-50)', borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: 12,
+                    zIndex: 100, position: 'relative'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, leadsRes?.total || 0)} of {leadsRes?.total || 0} leads
+                        </div>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            <span>Rows:</span>
+                            <select 
+                                className="form-control form-control-sm" 
+                                style={{ width: 65, height: 28, fontSize: '0.75rem', padding: '0 8px', cursor: 'pointer' }}
+                                value={limit}
+                                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                            >
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
                         </div>
                     </div>
-                )}
-                </>
-                )
-            }
+                    
+                    <div style={{ display: 'flex', gap: 8, marginRight: '100px' }}>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => { setPage(p => Math.max(1, p - 1)); showToast(`Loading page ${page - 1}...`, 'info'); }}
+                            disabled={page === 1 || leadsLoading}
+                            style={{ borderRadius: 8, height: 34, padding: '0 16px', fontWeight: 700 }}
+                        >
+                            Previous
+                        </button>
+                        <div style={{ 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                            background: 'white', height: 34, borderRadius: 8, 
+                            border: '1px solid var(--border-light)', fontSize: '0.75rem', 
+                            fontWeight: 800, padding: '0 16px', color: 'var(--navy-600)'
+                        }}>
+                            Page {page}
+                        </div>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => { setPage(p => p + 1); showToast(`Loading page ${page + 1}...`, 'info'); }}
+                            disabled={(leads.length < limit && !leadsLoading) || (page * limit) >= (leadsRes?.total || 0) || leadsLoading}
+                            style={{ borderRadius: 8, height: 34, padding: '0 16px', fontWeight: 700 }}
+                        >
+                            Next
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
 
             {/* Add/Edit Modal */}
             {showModal && (

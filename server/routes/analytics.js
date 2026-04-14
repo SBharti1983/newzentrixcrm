@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const auth = require('../middleware/auth');
+const { db: firebaseDB } = require('../utils/firebase');
 const router = express.Router();
 router.use(auth);
 
@@ -17,7 +18,7 @@ router.get('/', async (req, res) => {
         const [
             leadsBySource, leadsByMonth, conversionFunnel,
             agentPerformance, revenueByProject, dailyActivity,
-            interactionOutcomes, agentCalls
+            interactionOutcomes, agentCalls, fleetStatusSnap
         ] = await Promise.all([
             // Leads by source
             pool.query(`SELECT source, COUNT(*) as count FROM leads WHERE tenant_id=$1 GROUP BY source ORDER BY count DESC`, [tid]),
@@ -85,12 +86,15 @@ router.get('/', async (req, res) => {
 
             // Calls by Agent
             pool.query(`
-                SELECT u.name, COUNT(i.id) as calls
+                SELECT u.name, COUNT(i.id) as calls, SUM(COALESCE(i.duration, 0)) as talk_time, MAX(i.date) as last_call
                 FROM users u
                 JOIN interactions i ON i.user_id = u.id
                 WHERE u.tenant_id=$1 AND i.type='Call'
                 GROUP BY u.id
-                ORDER BY calls DESC`, [tid])
+                ORDER BY talk_time DESC`, [tid]),
+
+            // Real-time Fleet Status from Firebase
+            firebaseDB ? firebaseDB.ref(`telephony_mdm_config/${tid}/fleet_status`).once('value') : Promise.resolve(null)
         ]);
 
         const totalLeads = parseInt(leadsBySource.rows.reduce((s, row) => s + parseInt(row.count), 0));
@@ -117,7 +121,16 @@ router.get('/', async (req, res) => {
                 site_visits: parseInt(r.site_visits)
             })),
             callOutcomes: interactionOutcomes.rows.map(r => ({ name: r.outcome || 'Connected', value: parseInt(r.count) })),
-            agentCalls: agentCalls.rows.map(r => ({ name: r.name, calls: parseInt(r.calls) })),
+            agentCalls: agentCalls.rows.map(r => ({ 
+                name: r.name, 
+                calls: parseInt(r.calls),
+                talkTime: parseInt(r.talk_time) || 0,
+                lastCall: r.last_call
+            })),
+            fleetStatus: {
+                activeDevices: fleetStatusSnap ? Object.values(fleetStatusSnap.val() || {}).filter(v => v === 'Online').length : 0,
+                totalMapped: fleetStatusSnap ? Object.keys(fleetStatusSnap.val() || {}).length : 0
+            },
             revenueByProject: revenueByProject.rows,
             dailyActivity: dailyActivity.rows
         });

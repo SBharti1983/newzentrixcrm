@@ -159,31 +159,81 @@ router.patch('/:id/inventory/:unitId', async (req, res) => {
 
 // DELETE /api/projects/:id - delete a project
 router.delete('/:id', async (req, res) => {
+    const client = await pool.connect();
     try {
         if (!['superadmin', 'admin'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
-        // First, check if there's inventory associated with this project
-        const { rows: inventory } = await pool.query(
-            `SELECT COUNT(*) FROM inventory WHERE project_id = $1 AND tenant_id = $2`,
-            [req.params.id, req.tenantId]
-        );
+        await client.query('BEGIN');
 
-        if (parseInt(inventory[0].count) > 0) {
-            return res.status(400).json({ error: 'Cannot delete project with active inventory. Delete units first.' });
+        const projectId = req.params.id;
+        const tenantId = req.tenantId;
+
+        // Verify project exists
+        const { rows: projectRows } = await client.query(
+            `SELECT name FROM projects WHERE id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+        if (!projectRows[0]) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Project not found' });
         }
 
-        const { rowCount } = await pool.query(
-            `DELETE FROM projects WHERE id = $1 AND tenant_id = $2`,
-            [req.params.id, req.tenantId]
+        const projectName = projectRows[0].name;
+
+        // 1. Nullify lead references to this project
+        await client.query(
+            `UPDATE leads SET project_id = NULL WHERE project_id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
         );
 
-        if (rowCount === 0) return res.status(404).json({ error: 'Project not found' });
-        res.json({ message: 'Project deleted successfully' });
+        // 2. Nullify enquiry references
+        await client.query(
+            `UPDATE enquiries SET project_id = NULL WHERE project_id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+
+        // 3. Delete site visits for this project
+        await client.query(
+            `DELETE FROM site_visits WHERE project_id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+
+        // 4. Handle bookings (Nullify project reference)
+        await client.query(
+            `UPDATE bookings SET project_id = NULL WHERE project_id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+
+        // 5. Delete inventory units associated with this project
+        await client.query(
+            `DELETE FROM inventory WHERE project_id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+
+        // 6. Delete the project itself
+        await client.query(
+            `DELETE FROM projects WHERE id = $1 AND tenant_id = $2`,
+            [projectId, tenantId]
+        );
+
+        await client.query('COMMIT');
+        res.json({ message: `Project "${projectName}" deleted successfully` });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('DELETE /projects/:id error:', err);
+        
+        // Handle remaining FK constraint violations gracefully
+        if (err.code === '23503') {
+            return res.status(400).json({ 
+                error: `Cannot delete: this project is still referenced by other records (${err.constraint || 'unknown constraint'}). Please unlink related data first.` 
+            });
+        }
         res.status(500).json({ error: 'Failed to delete project' });
+    } finally {
+        client.release();
     }
 });
+
 
 module.exports = router;

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useBranding } from '../context/BrandingContext';
 import { usePresence } from '../context/PresenceContext';
 import { searchApi } from '../api/client';
 import NotificationDropdown from './NotificationDropdown';
@@ -33,6 +34,7 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { branding } = useBranding();
     const [searchVal, setSearchVal] = useState('');
     const [results, setResults] = useState({ leads: [], projects: [] });
     const [searching, setSearching] = useState(false);
@@ -41,7 +43,7 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     const [showHelp, setShowHelp] = useState(false);
     const dropdownRef = useRef(null);
 
-    const page = PAGE_TITLES[location.pathname] || { title: 'Zentrix CRM', subtitle: '' };
+    const page = PAGE_TITLES[location.pathname] || { title: branding?.company_name || 'Zentrix CRM', subtitle: '' };
 
     const headerClass = [
         'header',

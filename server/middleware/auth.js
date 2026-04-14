@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-module.exports = function auth(req, res, next) {
+module.exports = async function auth(req, res, next) {
     // 1. Support for Static Zapier Token (API Key)
     const zapierToken = req.headers['x-zapier-token'] || req.query.token;
     const authHeader = req.headers.authorization;
@@ -28,6 +28,18 @@ module.exports = function auth(req, res, next) {
         const SUPER_ADMIN_EMAILS = ['rohan.mishra@zentrixcrm.com', 'arjun@zentrix.com'];
         if (SUPER_ADMIN_EMAILS.includes(req.user.email.toLowerCase())) {
             req.user.role = 'superadmin';
+        }
+
+        // --- TENANT LOCK CHECK ---
+        const pool = require('../db/pool');
+        const { rows: [tenant] } = await pool.query('SELECT is_active FROM tenants WHERE id = $1', [payload.tenantId]);
+        
+        if (tenant && !tenant.is_active && req.user.role !== 'superadmin') {
+            return res.status(403).json({ 
+                error: 'Account Suspended', 
+                code: 'ACCOUNT_LOCKED',
+                message: 'Your workspace access is currently restricted due to a billing event or administrative suspension.' 
+            });
         }
 
         req.tenantId = payload.tenantId;

@@ -9,8 +9,11 @@ import { useToast } from './hooks/useToast';
 import Dialer from './components/Dialer';
 import ZapierAssistant from './components/ZapierAssistant';
 import AgentCopilotWidget from './components/AgentCopilotWidget';
+import MobileActionHub from './components/MobileActionHub';
+import InstallPWA from './components/InstallPWA';
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
+import { BrandingProvider, useBranding } from './context/BrandingContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
@@ -56,7 +59,28 @@ import CommandCenter from './pages/CommandCenter';
 import Reports from './pages/Reports';
 import TeamHierarchy from './pages/TeamHierarchy';
 import WorkspaceManagement from './pages/WorkspaceManagement';
+import PublicSignup from './pages/PublicSignup';
 import './index.css';
+
+// --- UI Overlays ---
+function LockoutOverlay() {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 10000, 
+      background: 'rgba(10, 22, 40, 0.95)', backdropFilter: 'blur(12px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center'
+    }}>
+      <div style={{ maxWidth: 400, padding: 40 }}>
+        <div style={{ fontSize: '4rem', marginBottom: 20 }}>❄️</div>
+        <h2 style={{ color: 'white', fontWeight: 900, marginBottom: 16 }}>Operational Lockout</h2>
+        <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
+          This workspace has been temporarily suspended by the Zentrix Systems administrator. 
+          Please settle outstanding dues or contact support to restore access.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // ─── Role-based access guard ────────────────────────────────────────
 function RoleGuard({ path, children }) {
@@ -84,9 +108,17 @@ function RoleGuard({ path, children }) {
 function ProtectedApp() {
   const { user, logout } = useAuth();
   const { addToast } = useToast();
+  const { branding } = useBranding();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isLocked, setIsLocked] = useState(false);
+
+  useEffect(() => {
+    const handleLock = () => setIsLocked(true);
+    window.addEventListener('zentrix_lockout', handleLock);
+    return () => window.removeEventListener('zentrix_lockout', handleLock);
+  }, []);
 
   const { trackPage, socket } = usePresence();
   const location = useLocation();
@@ -139,7 +171,9 @@ function ProtectedApp() {
   };
 
   return (
-    <div className="app-layout">
+    <>
+      {isLocked && <LockoutOverlay />}
+      <div className="app-layout">
       {/* Mobile backdrop */}
       {isMobile && mobileOpen && (
         <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
@@ -161,6 +195,7 @@ function ProtectedApp() {
         <main className="page-content">
           <Routes>
             <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : <Dashboard />}</RoleGuard>} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/leads" element={<RoleGuard path="/leads"><Leads /></RoleGuard>} />
             <Route path="/nurture-leads" element={<RoleGuard path="/nurture-leads"><NurtureLeads /></RoleGuard>} />
             <Route path="/leads/:id" element={<RoleGuard path="/leads"><ContactDetails /></RoleGuard>} />
@@ -203,8 +238,11 @@ function ProtectedApp() {
         </main>
       </div>
       {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
+      {isMobile && (user?.role === 'agent' || user?.role === 'sales_manager') && <MobileActionHub />}
       <Dialer />
+      {isMobile && branding.pwa_enabled && <InstallPWA />}
     </div>
+    </>
   );
 }
 
@@ -213,11 +251,13 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <PresenceProvider>
+          <BrandingProvider>
           <ErrorBoundary>
             <BrowserRouter>
               <Routes>
                 <Route path="/login" element={<LoginRedirect />} />
                 <Route path="/register" element={<RegisterRedirect />} />
+                <Route path="/signup" element={<PublicSignup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/enquiry" element={<Enquiry />} />
@@ -228,6 +268,7 @@ export default function App() {
               </Routes>
             </BrowserRouter>
           </ErrorBoundary>
+          </BrandingProvider>
         </PresenceProvider>
       </ToastProvider>
     </AuthProvider>

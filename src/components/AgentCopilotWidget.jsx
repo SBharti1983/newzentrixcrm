@@ -32,7 +32,9 @@ export default function AgentCopilotWidget() {
             const res = await copilotApi.ask({ query: userMsg });
             setMessages(prev => [...prev, { role: 'assistant', text: res.answer }]);
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', text: "⚠️ Error connecting to AI core." }]);
+            console.error('[COPILOT X-DEBUG]', err);
+            const errorMsg = err.error || err.message || "Unreachable AI Core";
+            setMessages(prev => [...prev, { role: 'assistant', text: `🆔 [X-TRACE-77]: ${errorMsg}` }]);
         } finally {
             setLoading(false);
         }

@@ -3,13 +3,17 @@
  * Centralized HTTP layer — all API calls go through here
  */
 
-const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 const isProd = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.PROD : false;
+// In dev mode, use relative '/api' so requests go through the Vite proxy (vite.config.js).
+// In production, use the full Railway backend URL.
 const defaultApiUrl = isProd 
     ? 'https://zentrixcrm-production-cd2d.up.railway.app/api'
-    : `http://${hostname}:5050/api`;
+    : '/api';
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
+
+// For public endpoints (doesn't require auth token)
+const PUBLIC_BASE_URL = BASE_URL;
 
 // ─── Token helpers ────────────────────────────────────────────────
 export function getToken() {
@@ -57,6 +61,16 @@ async function api(path, options = {}) {
             window.location.href = '/login';
             throw new Error('Session expired');
         }
+    }
+
+    if (res.status === 403) {
+        try {
+            const clone = res.clone();
+            const json = await clone.json();
+            if (json.code === 'ACCOUNT_LOCKED') {
+                window.dispatchEvent(new CustomEvent('zentrix_lockout'));
+            }
+        } catch (e) {}
     }
 
     if (!res.ok) {
@@ -128,6 +142,7 @@ export const leadsApi = {
     generatePhysicalReport: (csvContent, filename) => api('/leads/generate-physical-report', { method: 'POST', body: { csvContent, filename } }),
     aiScore: (id) => api(`/leads/${id}/ai-score`, { method: 'POST' }),
     getMatches: (id) => api(`/leads/${id}/matches`),
+    addDeal: (id, data) => api(`/leads/${id}/deals`, { method: 'POST', body: data }),
 };
 
 // ─── Projects ─────────────────────────────────────────────────────
@@ -291,7 +306,10 @@ export const notificationsApi = {
 // ─── Super Admin ──────────────────────────────────────────────────
 export const superAdminApi = {
     getTenants: () => api('/superadmin/tenants'),
+    nudgeTenant: (id) => api(`/superadmin/tenants/${id}/nudge`, { method: 'POST' }),
     getSubscriptions: () => api('/superadmin/subscriptions'),
+    getAuditLogs: () => api('/superadmin/audit-logs'),
+    getUtilizationAlerts: () => api('/superadmin/utilization-alerts'),
     recordManualSubscription: (data) => api('/superadmin/subscriptions/manual', { method: 'POST', body: data }),
     createTenant: (data) => api('/superadmin/tenants', { method: 'POST', body: data }),
     updateTenant: (id, data) => api(`/superadmin/tenants/${id}`, { method: 'PATCH', body: data }),
@@ -321,4 +339,9 @@ export const brokerApi = {
     getLeads: () => api('/broker/leads'),
     createLead: (data) => api('/broker/leads', { method: 'POST', body: data }),
     getCommissions: () => api('/broker/commissions'),
+};
+
+// Public API
+export const publicApi = {
+    getBranding: (hostname) => api(`/public/branding?hostname=${encodeURIComponent(hostname)}`),
 };

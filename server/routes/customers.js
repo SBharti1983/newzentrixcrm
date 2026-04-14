@@ -71,6 +71,15 @@ router.post('/', async (req, res) => {
     try {
         const { lead_id, name, email, phone, alt_phone, city, address, pan_number, aadhar_number, dob, segment, status, join_date, notes } = req.body;
         if (!name) return res.status(400).json({ error: 'Customer name is required' });
+
+        // Check for existing customer with same lead_id
+        if (lead_id) {
+            const existing = await pool.query('SELECT * FROM customers WHERE lead_id = $1 AND tenant_id = $2', [lead_id, req.tenantId]);
+            if (existing.rows[0]) {
+                return res.json(existing.rows[0]);
+            }
+        }
+
         const { rows } = await pool.query(
             `INSERT INTO customers(tenant_id, lead_id, name, email, phone, alt_phone, city, address, pan_number, aadhar_number, dob, segment, status, join_date, notes)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING * `,
