@@ -184,7 +184,9 @@ export default function NurtureLeads() {
                                                 </div>
                                                 <div>
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        {new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime()) 
+                                                            ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                            : 'Not Scheduled'}
                                                         {isOverdue && <AlertCircle size={12} color="#dc2626" />}
                                                     </div>
                                                     <div style={{ fontSize: '0.65rem', fontWeight: 800, color: isOverdue ? '#dc2626' : isDueToday ? '#2563eb' : 'var(--text-muted)' }}>
