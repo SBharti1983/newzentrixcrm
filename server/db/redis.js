@@ -72,4 +72,4 @@ const cacheDb = {
     }
 };
 
-module.exports = cacheDb;
+module.exports = { ...cacheDb, client: redisClient };
