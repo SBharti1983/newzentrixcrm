@@ -11,14 +11,14 @@ const defaultApiUrl = isProd
     : '/api';
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 
-// Safety check: if we are on a production domain but BASE_URL is relative, force the default prod API
+// Safety check: if we are on a production domain, FORCE the default prod API to avoid connectivity issues
 if (typeof window !== 'undefined' && 
-    (window.location.hostname.includes('zentrixcrm.com') || window.location.hostname.includes('vercel.app')) &&
-    BASE_URL.startsWith('/')) {
+    (window.location.hostname.includes('zentrixcrm.com') || window.location.hostname.includes('vercel.app'))) {
     BASE_URL = 'https://zentrixcrm-production-cd2d.up.railway.app/api';
 }
 
 BASE_URL = BASE_URL.replace(/\/$/, '');
+console.log('[API DEBUG] Base URL:', BASE_URL);
 
 // For public endpoints (doesn't require auth token)
 const PUBLIC_BASE_URL = BASE_URL;

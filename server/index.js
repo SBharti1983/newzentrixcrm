@@ -133,9 +133,12 @@ app.use(cors({
             /^https:\/\/(.*\.)?zentrixcrm\.com$/.test(origin) ||
             /^https:\/\/(.*\.)?vercel\.app$/.test(origin) ||
             /^http:\/\/(.*\.)?localhost(:\d+)?$/.test(origin) ||
-            /^http:\/\/10\.122\.82\.250(:\d+)?$/.test(origin)) {
+            /^http:\/\/10\.122\.82\.250(:\d+)?$/.test(origin) ||
+            !origin // Allow non-browser requests/tools
+        ) {
             callback(null, true);
         } else {
+            console.error(`[CORS REJECTED] Origin: ${origin}`);
             callback(new Error(`CORS Error: Origin ${origin} not allowed`));
         }
     },
