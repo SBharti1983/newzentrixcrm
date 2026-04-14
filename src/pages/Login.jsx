@@ -177,8 +177,8 @@ export default function Login() {
         <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
     ) : (branding?.logo_icon || 'Z');
     
-    const tenantColor = branding?.primary_color || '#6366f1';
-    const bgGradient = `linear-gradient(145deg, #050d17 0%, ${tenantColor}18 45%, ${tenantColor}0a 75%, #050912 100%)`;
+    const tenantColor = branding?.primary_color || '#1e3a8a'; // Deep Navy as default
+    const bgGradient = `linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)`; // Light neutral background
 
     const styleRef = useRef(null);
 
@@ -237,6 +237,7 @@ export default function Login() {
                 flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 padding: '48px 56px', position: 'relative', zIndex: 1,
                 maxWidth: 720,
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Original Zentrix Blue
             }} className="login-left-panel">
 
                 {/* Logo */}
