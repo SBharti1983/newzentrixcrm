@@ -12,11 +12,20 @@ const vapidKeys = {
 const PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || vapidKeys.publicKey;
 const PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || vapidKeys.privateKey;
 
-webpush.setVapidDetails(
-    'mailto:support@zentrixcrm.com',
-    PUBLIC_KEY,
-    PRIVATE_KEY
-);
+try {
+    if (PUBLIC_KEY && PRIVATE_KEY && PUBLIC_KEY !== 'placeholder' && PRIVATE_KEY !== 'placeholder') {
+        webpush.setVapidDetails(
+            'mailto:support@zentrixcrm.com',
+            PUBLIC_KEY,
+            PRIVATE_KEY
+        );
+        console.log('[PUSH] VAPID details initialized successfully');
+    } else {
+        console.warn('[PUSH] VAPID keys missing or placeholder—push notifications disabled');
+    }
+} catch (err) {
+    console.error('[PUSH] Failed to set VAPID details—push notifications disabled:', err.message);
+}
 
 const sendPushNotification = async (subscription, payload) => {
     try {
