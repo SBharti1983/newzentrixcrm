@@ -11,7 +11,7 @@ const DEFAULT_BRANDING = {
     primary_color: '#6366f1',
     sidebar_color: '#0a1628',
     accent_color: '#06b6d4',
-    favicon_url: '',
+    favicon_url: '/zentrix_fav.png',
     tagline: 'Real Estate Intelligence Platform',
     powered_by: true,      // show "Powered by Zentrix CRM"
     custom_domain: '',
@@ -91,12 +91,11 @@ export function BrandingProvider({ children }) {
         const wb = branding;
 
         // Dynamically update favicon
-        if (wb.favicon_url) {
-            const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
-            link.rel = 'icon';
-            link.href = wb.favicon_url;
-            if (!link.parentNode) document.head.appendChild(link);
-        }
+        const currentFavicon = wb.favicon_url || wb.logo_url || '/zentrix_fav.png';
+        const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+        link.rel = 'icon';
+        link.href = currentFavicon;
+        if (!link.parentNode) document.head.appendChild(link);
 
         // Update document title
         document.title = wb.company_name || 'Zentrix CRM';
