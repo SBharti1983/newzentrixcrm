@@ -4,6 +4,8 @@ const auth = require('../middleware/auth');
 const { validateLead } = require('../middleware/validators');
 const automationService = require('../services/automationService');
 const { sendPushNotification } = require('../utils/push');
+const { cacheResponse } = require('../middleware/cache');
+const redis = require('../db/redis');
 
 const router = express.Router();
 router.use(auth);
@@ -218,7 +220,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /api/leads — list with filters + search + pagination
-router.get('/', async (req, res) => {
+router.get('/', cacheResponse(60), async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
     const { stage, source, priority, agent, q, channel_partner_id, status, startDate, endDate } = req.query;
@@ -363,9 +365,15 @@ router.post('/bulk-update', async (req, res) => {
                 type: 'lead_assigned',
             });
         }
+        await pool.query('COMMIT');
+
+        // Flush cache on lead update
+        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+        redis.del(`dash:${req.tenantId}:*`);
 
         res.json({ message: 'Leads updated successfully', count: rows.length });
     } catch (err) {
+        await pool.query('ROLLBACK');
         console.error('Bulk update error:', err);
         res.status(500).json({ error: 'Failed to bulk update leads' });
     }
@@ -381,12 +389,20 @@ router.post('/bulk-delete', async (req, res) => {
         return res.status(400).json({ error: 'leadIds array is required' });
     }
     try {
+        await pool.query('BEGIN');
         const { rowCount } = await pool.query(
             `DELETE FROM leads WHERE id = ANY($1) AND tenant_id = $2`,
             [leadIds, req.tenantId]
         );
+        await pool.query('COMMIT');
+
+        // Flush cache on lead deletion
+        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+        redis.del(`dash:${req.tenantId}:*`);
+
         res.json({ message: 'Leads deleted successfully', count: rowCount });
     } catch (err) {
+        await pool.query('ROLLBACK');
         console.error('Bulk delete error:', err);
         res.status(500).json({ error: 'Failed to bulk delete leads' });
     }
@@ -436,6 +452,7 @@ router.post('/', validateLead, async (req, res) => {
         const safeChannelPartnerId = emptyToNull(channel_partner_id);
         const safeScore = (typeof score === 'number' && !isNaN(score)) ? score : 50;
 
+        await pool.query('BEGIN');
         const { rows } = await pool.query(
             `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at, nurture_reason, reconnect_date)
              VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18) RETURNING *`,
@@ -483,9 +500,15 @@ router.post('/', validateLead, async (req, res) => {
                 data: rows[0]
             });
         }
+        await pool.query('COMMIT');
+
+        // Flush cache on lead creation
+        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+        redis.del(`dash:${req.tenantId}:*`);
 
         res.status(201).json(rows[0]);
     } catch (err) {
+        await pool.query('ROLLBACK');
         console.error('[POST /leads] Error:', err.message, err.detail || '');
         // Always return a clean string error to prevent frontend rendering crashes
         const errMsg = typeof err.message === 'string' ? err.message : 'Failed to create lead';

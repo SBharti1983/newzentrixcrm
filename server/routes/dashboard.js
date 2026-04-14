@@ -1,12 +1,13 @@
 const express = require('express');
 const pool = require('../db/pool');
 const auth = require('../middleware/auth');
+const { cacheResponse } = require('../middleware/cache');
 
 const router = express.Router();
 router.use(auth);
 
 // GET /api/dashboard — all KPIs in one call
-router.get('/', async (req, res) => {
+router.get('/', cacheResponse(300), async (req, res) => {
     const tid = req.tenantId;
     const uid = req.user.id;
     const isManager = ['admin', 'sales_manager', 'team_leader'].includes(req.user.role);
