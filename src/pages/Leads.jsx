@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback, useRef, useMemo, memo } from 'react';
+import { FixedSizeList as List } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
@@ -61,23 +63,42 @@ const SOURCES = [
 ];
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
-// Optimized Memoized Row Component
-const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }) => {
+// Optimized Memoized Row Component for Virtualization
+const LeadRow = memo(({ index, style, data }) => {
+    const { leads, isSelectedMap, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate } = data;
+    const lead = leads[index];
+    if (!lead) return null;
+    
+    const isSelected = isSelectedMap.has(lead.id);
     const [hovered, setHovered] = useState(false);
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
 
+    const columnStyles = {
+        padding: '8px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '0.72rem', color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-light)',
+        overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis'
+    };
+
     return (
-        <tr 
+        <div 
+            style={{ 
+                ...style, 
+                display: 'flex', 
+                alignItems: 'center',
+                background: isSelected ? 'var(--navy-50)' : hovered ? 'var(--slate-50)' : 'white',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease'
+            }}
             onClick={() => onNavigate(lead.id)} 
             onMouseEnter={() => setHovered(true)} 
-            onMouseLeave={() => setHovered(false)} 
-            style={{ cursor: 'pointer', background: isSelected ? 'var(--navy-50)' : undefined }}
+            onMouseLeave={() => setHovered(false)}
         >
-            <td onClick={e => e.stopPropagation()} style={{ paddingRight: 0 }}>
+            <div style={{ ...columnStyles, width: 40, paddingRight: 0 }} onClick={e => e.stopPropagation()}>
                 <input type="checkbox" checked={isSelected} onChange={() => onSelect(lead.id)} style={{ cursor: 'pointer', transform: 'scale(1.1)' }} />
-            </td>
-            <td style={{ padding: '8px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            </div>
+            
+            <div style={{ ...columnStyles, width: 150, justifyContent: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, width: '100%' }}>
                     <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
                         {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
                     </div>
@@ -85,71 +106,97 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview,
                         <div style={{ height: 14, opacity: hovered ? 1 : 0, visibility: hovered ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
                             <button onClick={(e) => { e.stopPropagation(); onPreview(lead.id); }} style={{ background: '#ffffff', border: '1px solid #cbd6e2', borderRadius: 3, padding: '0px 4px', fontSize: '9px', color: '#516f90', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: '1.2' }}>Preview</button>
                         </div>
-                        <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{lead.name || '—'}</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{lead.name || '—'}</div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
                     </div>
                 </div>
-            </td>
-            <td style={{ padding: '8px 8px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            </div>
+
+            <div style={{ ...columnStyles, width: 150 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: 'center' }}>
                         <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <span style={{ color: lead.email ? 'var(--text-secondary)' : '#ef4444', overflowWrap: 'anywhere', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: lead.email ? 'inherit' : '0.65rem', fontWeight: lead.email ? 'inherit' : 700 }}>{lead.email || 'Email missing'}</span>
+                        <span style={{ color: lead.email ? 'var(--text-secondary)' : '#ef4444', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: lead.email ? 'inherit' : '0.65rem', fontWeight: lead.email ? 'inherit' : 700 }}>{lead.email || 'Email missing'}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Phone size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                         <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</span>
                     </div>
                 </div>
-            </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            </div>
+
+            <div style={{ ...columnStyles, width: 75 }}>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9', color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569' }}>{lead.status || 'Active'}</span>
-            </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.stage || '—'}</span></td>
-            <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            </div>
+
+            <div style={{ ...columnStyles, width: 95 }}>
+                <span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.stage || '—'}</span>
+            </div>
+
+            <div style={{ ...columnStyles, width: 85 }}>
+                <span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span>
+            </div>
+
+            <div style={{ ...columnStyles, width: 55 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
                     <div className="progress-bar" style={{ width: 35, height: 4 }}><div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} /></div>
                     <span style={{ fontSize: '0.72rem', fontWeight: 800 }}>{leadScore}</span>
                 </div>
-            </td>
+            </div>
+
             {filterNurtureDue && (
                 <>
-                    <td style={{ textAlign: 'center', padding: '8px' }}>
+                    <div style={{ ...columnStyles, width: 100 }}>
                         <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-rose)', background: 'var(--rose-50)', borderRadius: 6, padding: '2px 4px' }}>
                             {lead.reconnect_date ? new Date(lead.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today'}
                         </div>
-                    </td>
-                    <td style={{ textAlign: 'center', padding: '8px' }}>
+                    </div>
+                    <div style={{ ...columnStyles, width: 120 }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--slate-600)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={lead.nurture_reason}>
                             {lead.nurture_reason || '—'}
                         </div>
-                    </td>
+                    </div>
                 </>
             )}
-            <td style={{ textAlign: 'center', padding: '8px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name || 'System'}</span>
-            </td>
-            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
-                {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-            </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+
+            <div style={{ ...columnStyles, width: 85 }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name?.split(' ')[0] || 'System'}</span>
+            </div>
+
+            <div style={{ ...columnStyles, width: 95 }}>
+                {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+            </div>
+
+            <div style={{ ...columnStyles, width: 100 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>{lead.agent_avatar || '?'}</div>
                     <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
                 </div>
-            </td>
-            <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
+            </div>
+
+            <div style={{ ...columnStyles, width: 110 }}>
                 {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
-            </td>
-            <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center', position: 'sticky', right: 0, background: hovered ? 'var(--slate-100)' : isSelected ? 'var(--navy-50)' : 'white', zIndex: 30, boxShadow: '-2px 0 5px rgba(0,0,0,0.05)', padding: '4px 6px' }}>
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', minWidth: '90px' }}>
-                    <button className="btn btn-ghost" onClick={() => onCall(lead.id, lead.phone, lead.name)} style={{ width: 32, height: 32, padding: 0 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
-                    <button className="btn btn-ghost" onClick={() => onEdit(lead)} style={{ width: 32, height: 32, padding: 0 }}><Edit2 size={14} /></button>
-                    <button className="btn btn-ghost" onClick={() => onDelete(lead.id)} style={{ color: 'var(--accent-rose)', width: 32, height: 32, padding: 0 }}><Trash2 size={14} /></button>
+            </div>
+
+            <div 
+                style={{ 
+                    ...columnStyles, 
+                    width: 115, 
+                    position: 'sticky', 
+                    right: 0, 
+                    background: hovered ? 'var(--slate-100)' : isSelected ? 'var(--navy-50)' : 'white', 
+                    zIndex: 2, 
+                    boxShadow: '-2px 0 5px rgba(0,0,0,0.05)' 
+                }}
+                onClick={e => e.stopPropagation()}
+            >
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', width: '100%' }}>
+                    <button className="btn btn-ghost" onClick={() => onCall(lead.id, lead.phone, lead.name)} style={{ width: 28, height: 28, padding: 0 }}><Phone size={13} style={{ color: '#00a38d' }} /></button>
+                    <button className="btn btn-ghost" onClick={() => onEdit(lead)} style={{ width: 28, height: 28, padding: 0 }}><Edit2 size={13} /></button>
+                    <button className="btn btn-ghost" onClick={() => onDelete(lead.id)} style={{ color: 'var(--accent-rose)', width: 28, height: 28, padding: 0 }}><Trash2 size={13} /></button>
                 </div>
-            </td>
-        </tr>
+            </div>
+        </div>
     );
 });
 
@@ -531,7 +578,7 @@ export default function Leads() {
                     </div>
                 )}
 
-                <div className="table-wrapper" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+                <div className="table-wrapper" style={{ overflowX: 'auto', flex: 1, minHeight: 400 }}>
                     {leads.length === 0 && !leadsLoading ? (
                         <div className="empty-state" style={{ padding: '80px 0' }}>
                             <div className="empty-state-icon">🔍</div>
@@ -539,48 +586,63 @@ export default function Leads() {
                             <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
                         </div>
                     ) : (
-                        <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px', borderCollapse: 'separate', borderSpacing: 0 }}>
-                            <thead>
-                                <tr>
-                                    <th style={{ width: 40, paddingRight: 0 }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={leads.length > 0 && selectedIds.size === leads.length}
-                                            onChange={toggleSelectAll}
-                                            style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
-                                        />
-                                    </th>
-                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
-                                        const widths = { 'Lead': '150px', 'Contact': '150px', 'Status': '75px', 'Stage': '95px', 'Source': '85px', 'Score': '55px', 'Re-connect': '100px', 'Reason': '120px', 'Created By': '85px', 'Create Date': '95px', 'Assigned To': '100px', 'Last Contact': '110px', 'Actions': '115px' };
-                                        const isSticky = h === 'Actions';
-                                        return (
-                                            <th key={h} style={{ 
-                                                width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center', padding: '12px 6px', fontSize: '0.7rem',
-                                                textTransform: 'uppercase', fontWeight: 800, color: 'var(--slate-500)', borderBottom: '1px solid var(--border-light)',
-                                                background: 'var(--slate-50)', position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
-                                                zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none', whiteSpace: 'nowrap'
-                                            }}>{h}</th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {leads.map(lead => (
-                                    <LeadRow 
-                                        key={lead.id} 
-                                        lead={lead} 
-                                        isSelected={selectedIds.has(lead.id)}
-                                        filterNurtureDue={filterNurtureDue}
-                                        onSelect={toggleSelect}
-                                        onPreview={setPreviewLeadId}
-                                        onDelete={deleteLead}
-                                        onEdit={openEdit}
-                                        onCall={dialerEvents.call}
-                                        onNavigate={(id) => navigate(`/leads/${id}`)}
+                        <div style={{ width: '100%', minWidth: '1350px', height: 'calc(100vh - 350px)', display: 'flex', flexDirection: 'column' }}>
+                            {/* Virtual Header */}
+                            <div style={{ 
+                                display: 'flex', background: 'var(--slate-50)', borderBottom: '1px solid var(--border-light)',
+                                position: 'sticky', top: 0, zIndex: 10, fontWeight: 800, color: 'var(--slate-500)', fontSize: '0.7rem'
+                            }}>
+                                <div style={{ width: 40, padding: '12px 6px', textAlign: 'center' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={leads.length > 0 && selectedIds.size === leads.length}
+                                        onChange={toggleSelectAll}
+                                        style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                     />
+                                </div>
+                                {[
+                                    {label: 'Lead', w: 150}, {label: 'Contact', w: 150}, {label: 'Status', w: 75}, 
+                                    {label: 'Stage', w: 95}, {label: 'Source', w: 85}, {label: 'Score', w: 55}, 
+                                    ...(filterNurtureDue ? [{label: 'Re-connect', w: 100}, {label: 'Reason', w: 120}] : []), 
+                                    {label: 'Created By', w: 85}, {label: 'Create Date', w: 95}, 
+                                    {label: 'Assigned To', w: 100}, {label: 'Last Contact', w: 110}, {label: 'Actions', w: 115, sticky: true}
+                                ].map((col) => (
+                                    <div key={col.label} style={{ 
+                                        width: col.w, minWidth: col.w, padding: '12px 6px', textAlign: 'center',
+                                        textTransform: 'uppercase', background: 'var(--slate-50)',
+                                        position: col.sticky ? 'sticky' : 'static', right: col.sticky ? 0 : 'auto', zIndex: col.sticky ? 5 : 1,
+                                        boxShadow: col.sticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none'
+                                    }}>{col.label}</div>
                                 ))}
-                            </tbody>
-                        </table>
+                            </div>
+
+                            {/* Virtual List */}
+                            <div style={{ flex: 1 }}>
+                                <AutoSizer>
+                                    {({ height, width }) => (
+                                        <List
+                                            height={height}
+                                            itemCount={leads.length}
+                                            itemSize={52}
+                                            width={width}
+                                            itemData={{
+                                                leads,
+                                                isSelectedMap: selectedIds,
+                                                filterNurtureDue,
+                                                onSelect: toggleSelect,
+                                                onPreview: setPreviewLeadId,
+                                                onDelete: deleteLead,
+                                                onEdit: openEdit,
+                                                onCall: dialerEvents.call,
+                                                onNavigate: (id) => navigate(`/leads/${id}`)
+                                            }}
+                                        >
+                                            {LeadRow}
+                                        </List>
+                                    )}
+                                </AutoSizer>
+                            </div>
+                        </div>
                     )}
                 </div>
 
