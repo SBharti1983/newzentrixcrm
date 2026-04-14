@@ -201,13 +201,12 @@ const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor,
     </div>
 );
 
-const ProjectChip = ({ title, leads, img }) => (
+const ProjectChip = ({ title, img }) => (
     <div style={{ flex: 1 }}>
         <div style={{ width: '100%', height: '85px', borderRadius: '12px', overflow: 'hidden', marginBottom: '8px' }}>
             <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <div style={{ fontSize: '0.9rem', fontWeight: 800, color: COLORS.slate950 }}>{title}</div>
-        <div style={{ fontSize: '0.75rem', color: COLORS.slate500, fontWeight: 700 }}>{leads}</div>
     </div>
 );
 
@@ -623,10 +622,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                 </div>
             </div>
 
-            {/* Tactical Grid: Active Deals */}
-            <div style={{ display: 'flex', gap: '16px', minHeight: '320px' }}>
-                <ActiveDealsCard deals={stats.active_deals || []} />
-            </div>
+
 
             {/* Bottom Section */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1.2fr', gap: '16px' }}>
@@ -709,7 +705,6 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                                     <ProjectChip 
                                         key={p.id || i}
                                         title={p.name} 
-                                        leads={`${p.lead_count} Leads`} 
                                         img={p.image_url || `https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80`} 
                                     />
                                 )) : (
