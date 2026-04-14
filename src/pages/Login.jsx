@@ -237,7 +237,7 @@ export default function Login() {
                 flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
                 padding: '48px 56px', position: 'relative', zIndex: 1,
                 maxWidth: 720,
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Original Zentrix Blue
+                background: 'linear-gradient(135deg, #050d21 0%, #172554 100%)', // Match the global Midnight Navy
             }} className="login-left-panel">
 
                 {/* Logo */}
