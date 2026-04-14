@@ -272,7 +272,7 @@ export default function VoiceAnalytics() {
                     <thead>
                         <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Sales Agent</th>
-                            <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Time stamp</th>
+                            <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Date</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Talk Time</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Calls</th>
                             <th style={{ padding: '0 0 16px 0', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Rating</th>
@@ -296,7 +296,7 @@ export default function VoiceAnalytics() {
                                     </div>
                                 </td>
                                 <td style={{ padding: '20px 0', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    {agent.lastCall ? new Date(agent.lastCall).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'No Activity'}
+                                    {agent.lastCall ? new Date(agent.lastCall).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'No Activity'}
                                 </td>
                                 <td style={{ padding: '20px 0', fontWeight: 700 }}>
                                     {Math.floor(agent.talkTime / 60)}m {Math.round(agent.talkTime % 60)}s
