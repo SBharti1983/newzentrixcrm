@@ -212,9 +212,3 @@ server.listen(PORT, () => {
     startRetentionScheduler();
 });
 
-
-   
-    
- / /   T R I G G E R  
- / /   F I N A L   L O G G I N G  
- 

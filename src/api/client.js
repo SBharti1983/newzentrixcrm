@@ -7,7 +7,7 @@ const isProd = typeof import.meta !== 'undefined' && import.meta.env ? import.me
 // In dev mode, use relative '/api' so requests go through the Vite proxy (vite.config.js).
 // In production, use the full Railway backend URL.
 const defaultApiUrl = isProd 
-    ? 'https://zentrixcrm-production-cd2d.up.railway.app/api'
+    ? 'https://zentrixcrmindia-production.up.railway.app/api'
     : '/api';
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
