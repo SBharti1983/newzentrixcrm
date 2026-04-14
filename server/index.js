@@ -193,10 +193,17 @@ app.get('/', (req, res) => { res.json({ message: 'ZentrixCRM API Running', healt
 
 app.get('/api/health', async (req, res) => {
     const pool = require('./db/pool');
+    const redis = require('./db/redis');
+    const health = { status: 'ok', services: { db: false, redis: false } };
+    
     try {
-        const { rows } = await pool.query('SELECT NOW() as time');
-        res.json({ status: 'ok', time: rows[0].time });
-    } catch { res.status(503).json({ status: 'db_error' }); }
+        await pool.query('SELECT 1');
+        health.services.db = true;
+    } catch (e) { health.status = 'partial_error'; }
+
+    health.services.redis = redis.client?.isOpen || false;
+    
+    res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
