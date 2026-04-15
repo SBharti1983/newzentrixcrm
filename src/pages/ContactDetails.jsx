@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageLoader, PageError } from '../components/Feedback';
 import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw, Volume2 } from 'lucide-react';
-import { leadsApi, zapierApi, notificationsApi } from '../api/client';
+import { leadsApi, zapierApi, notificationsApi, aiApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
@@ -57,6 +57,7 @@ export default function ContactDetails() {
     const [newDealData, setNewDealData] = useState({ unit_number: '', project_name: '', total_amount: '' });
     const [callOutcome, setCallOutcome] = useState('Connected');
     const [callDuration, setCallDuration] = useState('');
+    const [generatingContent, setGeneratingContent] = useState(false);
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -98,7 +99,7 @@ export default function ContactDetails() {
         setGeneratingContent(true);
         try {
             const prompt = `Rewrite this draft professionally for ${activityType}: "${newNote}"`;
-            const res = await leadsApi.generateAIPitch(id, null, prompt);
+            const res = await aiApi.generatePitch({ leadId: id, prompt });
             if (res.hook) setNewNote(res.headline + '\n\n' + res.hook);
         } catch (e) {
             showToast("AI Generation failed", "error");
