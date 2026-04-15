@@ -123,11 +123,12 @@ export default function CommandCenter() {
         }
     };
 
-    const filteredLeads = leads.filter(l => 
-        l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        (l.phone && l.phone.includes(searchTerm)) ||
-        (l.city && l.city.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredLeads = leads.filter(l => {
+        const nameMatch = (l.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const phoneMatch = (l.phone || '').includes(searchTerm);
+        const cityMatch = (l.city || '').toLowerCase().includes(searchTerm.toLowerCase());
+        return nameMatch || phoneMatch || cityMatch;
+    });
 
     if (loading) return <PageLoader />;
 
@@ -208,8 +209,8 @@ export default function CommandCenter() {
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{l.city}</div>
                                         </div>
                                         <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: 900, color: lIntel.closingProbability > 70 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
-                                                {lIntel.closingProbability}%
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 900, color: (lIntel?.closingProbability || 0) > 70 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
+                                                {lIntel?.closingProbability || 0}%
                                             </div>
                                             <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Prob.</div>
                                         </div>
@@ -217,7 +218,7 @@ export default function CommandCenter() {
                                     <div style={{ height: 6, width: '100%', background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden' }}>
                                         <div style={{ 
                                             height: '100%', 
-                                            width: `${lIntel.closingProbability}%`, 
+                                            width: `${lIntel?.closingProbability || 0}%`, 
                                             background: activeLeadId === l.id ? 'linear-gradient(90deg, var(--accent-violet), var(--accent-cyan))' : 'var(--slate-300)',
                                             transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
                                         }} />
@@ -368,10 +369,10 @@ export default function CommandCenter() {
                             <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Index</h4>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '4.5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.1em' }}>{intel?.closingProbability}%</div>
+                            <div style={{ fontSize: '4.5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.1em' }}>{intel?.closingProbability || 0}%</div>
                             <div style={{ marginTop: 20, padding: '10px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                                 <TrendingUp size={16} color="var(--accent-emerald)" />
-                                <span style={{ color: 'var(--slate-500)', fontSize: '0.8rem', fontWeight: 700 }}>Peak Velocity Reached</span>
+                                <span style={{ color: 'var(--slate-500)', fontSize: '0.8rem', fontWeight: 700 }}>{intel ? 'Peak Velocity Reached' : 'Awaiting Engagement'}</span>
                             </div>
                         </div>
                     </div>

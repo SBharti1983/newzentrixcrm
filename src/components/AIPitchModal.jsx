@@ -94,43 +94,53 @@ export default function AIPitchModal({ lead, onClose, fixedProject }) {
                     ) : (
                         <div className="animate-fadeIn">
                             {/* Headline & Hook */}
-                            <div style={{ marginBottom: 24 }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 8, lineHeight: 1.3 }}>{pitch.headline}</div>
-                                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic', borderLeft: '3px solid var(--accent-cyan)', paddingLeft: 16 }}>
-                                    "{pitch.hook}"
-                                </p>
-                            </div>
+                            {pitch ? (
+                                <>
+                                    <div style={{ marginBottom: 24 }}>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', marginBottom: 8, lineHeight: 1.3 }}>{pitch.headline}</div>
+                                        <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic', borderLeft: '3px solid var(--accent-cyan)', paddingLeft: 16 }}>
+                                            "{pitch.hook}"
+                                        </p>
+                                    </div>
 
-                            {/* Value Props */}
-                            <div style={{ background: 'var(--slate-50)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-light)', marginBottom: 24 }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.05em' }}>Key Value Proposition</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                    {pitch.value_propositions.map((prop, i) => (
-                                        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                                            <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                                                <CheckCircle2 size={12} color="white" />
-                                            </div>
-                                            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--navy-800)' }}>{prop}</span>
+                                    {/* Value Props */}
+                                    <div style={{ background: 'var(--slate-50)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-light)', marginBottom: 24 }}>
+                                        <div style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.05em' }}>Key Value Proposition</div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                            {(pitch.value_propositions || []).map((prop, i) => (
+                                                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                                                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
+                                                        <CheckCircle2 size={12} color="white" />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.92rem', fontWeight: 600, color: 'var(--navy-800)' }}>{prop}</span>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    {/* CTA */}
+                                    <div style={{ marginBottom: 32 }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-violet)', textTransform: 'uppercase', marginBottom: 8 }}>Call to Action</div>
+                                        <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)' }}>{pitch.cta}</div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <button className="btn btn-secondary" onClick={handleCopy} style={{ height: 48, borderRadius: 14 }}>
+                                            <Copy size={16} /> Copy Text
+                                        </button>
+                                        <button className="btn btn-primary" onClick={handleSendWhatsApp} disabled={sending} style={{ height: 48, borderRadius: 14, background: '#25D366', border: 'none' }}>
+                                            {sending ? <RefreshCw size={16} className="animate-spin" /> : <><MessageSquare size={16} /> Send WhatsApp</>}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px' }}>
+                                    <AlertTriangle size={32} color="var(--accent-amber)" style={{ marginBottom: 16 }} />
+                                    <p style={{ color: 'var(--text-muted)' }}>Could not generate pitch. Please try again.</p>
+                                    <button onClick={generatePitch} className="btn btn-ghost btn-sm" style={{ marginTop: 12 }}>Retry</button>
                                 </div>
-                            </div>
-
-                            {/* CTA */}
-                            <div style={{ marginBottom: 32 }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--accent-violet)', textTransform: 'uppercase', marginBottom: 8 }}>Call to Action</div>
-                                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)' }}>{pitch.cta}</div>
-                            </div>
-
-                            {/* Actions */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                <button className="btn btn-secondary" onClick={handleCopy} style={{ height: 48, borderRadius: 14 }}>
-                                    <Copy size={16} /> Copy Text
-                                </button>
-                                <button className="btn btn-primary" onClick={handleSendWhatsApp} disabled={sending} style={{ height: 48, borderRadius: 14, background: '#25D366', border: 'none' }}>
-                                    {sending ? <RefreshCw size={16} className="animate-spin" /> : <><MessageSquare size={16} /> Send WhatsApp</>}
-                                </button>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
