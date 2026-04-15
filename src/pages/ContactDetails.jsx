@@ -58,6 +58,13 @@ export default function ContactDetails() {
     const [callOutcome, setCallOutcome] = useState('Connected');
     const [callDuration, setCallDuration] = useState('');
     const [generatingContent, setGeneratingContent] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -777,7 +784,7 @@ export default function ContactDetails() {
                                     </div>
                                     <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, background: '#f8fafc', padding: '1px 8px', borderRadius: '6px', border: '1px solid #f1f5f9' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
                                     {[
                                         { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b', trend: '+4.2%' },
                                         { label: 'Source', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6' },
@@ -814,7 +821,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Dual Intelligence Cards */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* AI Strategic Window Card */}
                                 <div style={{ 
                                     borderRadius: '12px', 
@@ -897,7 +904,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Interest Profile + Interaction Pulse */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Interest Profile */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -990,7 +997,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Active Deals + Assigned Team */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Active Deals */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid #e8edf3', background: 'white', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
