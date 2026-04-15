@@ -143,15 +143,55 @@ export default function Dialer() {
     }, []);
 
     const handleHangup = async (outcome = 'Connected') => {
-        if (activeInteractionId) {
+        const iid = activeInteractionId;
+        const lid = activeLead?.id;
+        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+
+        if (iid) {
             try {
-                await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/${activeInteractionId}`, {
+                const res = await fetch(`${apiUrl}/calls/${iid}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
-                    body: JSON.stringify({ duration, outcome, note: `GSM Call completed.` })
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` 
+                    },
+                    body: JSON.stringify({ 
+                        duration, 
+                        outcome, 
+                        note: `GSM Call completed. Disposition: ${outcome}` 
+                    })
                 });
-            } catch (err) {}
+
+                if (res.ok) {
+                    showToast(`Call logged as ${outcome}`, 'success');
+                    
+                    // Auto-update Lead Stage/Status for critical dispositions
+                    if (lid) {
+                        let leadUpdates = null;
+                        if (outcome === 'Interested') leadUpdates = { stage: 'Interested' };
+                        if (outcome === 'Not Interested' || outcome === 'Invalid / Wrong Number') leadUpdates = { stage: 'Lost', status: 'Lost' };
+                        
+                        if (leadUpdates) {
+                            await fetch(`${apiUrl}/leads/${lid}`, {
+                                method: 'PATCH',
+                                headers: { 
+                                    'Content-Type': 'application/json', 
+                                    'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` 
+                                },
+                                body: JSON.stringify(leadUpdates)
+                            });
+                        }
+                    }
+                } else {
+                    throw new Error('Failed to save call log');
+                }
+            } catch (err) {
+                console.error('[DIALER] Log error:', err);
+                showToast('Call logged locally. Sync failed.', 'warning');
+            }
         }
+
+        // Reset UI
         setCallState('idle');
         setDuration(0);
         setActiveLead(null);
