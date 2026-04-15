@@ -163,7 +163,7 @@ export default function NurtureLeads() {
                                                 <div className="avatar" style={{ width: 36, height: 36, borderRadius: '10px', background: `hsl(${(lead.id || '0').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 360}, 60%, 55%)`, color: 'white', fontWeight: 900, fontSize: '0.9rem', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{lead.name?.[0]}</div>
                                                 <div>
                                                     <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-950)' }}>{lead.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, whiteSpace: 'nowrap' }}>
                                                         <Phone size={10} style={{ color: 'var(--slate-400)' }}/> {lead.phone}
                                                     </div>
                                                 </div>

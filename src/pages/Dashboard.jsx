@@ -15,7 +15,7 @@ import {
     ShieldCheck,
     Trophy,
 } from 'lucide-react';
-import InstallPWA from '../components/InstallPWA';
+
 
 const STAGE_COLORS = { 
     'New Lead': '#3b82f6', 'Connected': '#6366f1', 'Qualified': '#06b6d4',
@@ -166,7 +166,6 @@ export default function Dashboard() {
 
     return (
         <>
-            <InstallPWA />
             {dashboardView}
         </>
     );

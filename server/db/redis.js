@@ -6,13 +6,14 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const redisClient = createClient({
     url: redisUrl,
     socket: {
+        connectTimeout: 10000, // 10s timeout
         reconnectStrategy: (retries) => {
-            // If it fails to connect after 3 tries, stop trying so we don't block the app.
-            if (retries > 3) {
-                console.warn('[REDIS] Could not connect to Redis. Disabling cache fallback.');
+            if (retries > 10) {
+                console.warn(`[REDIS] Failed to connect to ${redisUrl} after 10 attempts. Disabling cache.`);
                 return new Error('Redis connection exhausted');
             }
-            return Math.min(retries * 50, 500); // retry quickly
+            const delay = Math.min(retries * 100, 3000);
+            return delay;
         }
     }
 });

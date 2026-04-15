@@ -1,5 +1,6 @@
 const pool = require('../db/pool');
 const aiScreener = require('./aiScreener');
+const { sendWhatsappMessage } = require('../utils/whatsapp');
 
 /**
  * AutomationService handles the core logic for CRM workflows.
@@ -33,6 +34,9 @@ class AutomationService {
                     } else if (wf.action_type === 'notify_manager') {
                         await this.executeNotify(wf, lead, io);
                         details.message = `Managers notified for high-value lead.`;
+                    } else if (wf.action_type === 'send_whatsapp') {
+                        await this.executeWhatsappMessage(wf, lead, io);
+                        details.message = `Automated WhatsApp sent to ${lead.name}`;
                     }
 
                     await this.logExecution(tenant_id, wf.id, lead_id, status, details);
@@ -84,6 +88,8 @@ class AutomationService {
                         details.message = `Client message (${wf.action_config.channel}) sent for ${newStage}.`;
                     } else if (wf.action_type === 'notify_manager') {
                         await this.executeNotify(wf, lead, io);
+                    } else if (wf.action_type === 'send_whatsapp') {
+                        await this.executeWhatsappMessage(wf, lead, io);
                     }
 
                     await this.logExecution(tenant_id, wf.id, lead_id, status, details);
@@ -175,6 +181,44 @@ class AutomationService {
                 message: `${channel} sent to ${lead_name} automatically.`,
                 type: 'info'
             });
+        }
+    }
+
+    /**
+     * Sends a real-time personalized WhatsApp message
+     */
+    async executeWhatsappMessage(wf, lead, io) {
+        const { tenant_id, id: lead_id, name, phone } = lead;
+        const config = wf.action_config || {};
+        const template = config.message || `Hi ${name.split(' ')[0]}, thanks for your interest! We will get back to you shortly.`;
+        
+        // Personalization
+        let body = template.replace(/\{\{name\}\}/gi, name.split(' ')[0]);
+        body = body.replace(/\{\{stage\}\}/gi, lead.stage);
+
+        if (phone) {
+            const success = await sendWhatsappMessage(tenant_id, phone, body);
+            
+            if (success) {
+                // Log Interaction
+                await pool.query(
+                    `INSERT INTO interactions (tenant_id, lead_id, user_id, type, date, note, outcome)
+                     VALUES ($1, $2, $3, 'Message', NOW(), $4, 'Delivered')`,
+                    [tenant_id, lead_id, null, `Automated WA: ${wf.name}\n${body}`]
+                );
+
+                if (io) {
+                    io.to(`tenant_${tenant_id}`).emit('notification', {
+                        title: 'WhatsApp Automation',
+                        message: `Auto-message sent to ${name}`,
+                        type: 'whatsapp_sent'
+                    });
+                }
+            } else {
+                throw new Error('WhatsApp dispatch failed - check API keys');
+            }
+        } else {
+            throw new Error('No phone number provided for WhatsApp');
         }
     }
 

@@ -52,6 +52,7 @@ export default function ContactDetails() {
     const [justLogged, setJustLogged] = useState(false);
     const [isEditingInterest, setIsEditingInterest] = useState(false);
     const [editInterestData, setEditInterestData] = useState({ budget: '', property_type: '' });
+    const [recalculatingScore, setRecalculatingScore] = useState(false);
     const [isAddingDeal, setIsAddingDeal] = useState(false);
     const [newDealData, setNewDealData] = useState({ unit_number: '', project_name: '', total_amount: '' });
     const [callOutcome, setCallOutcome] = useState('Connected');
@@ -93,24 +94,41 @@ export default function ContactDetails() {
     };
 
     const handleAIGenerate = async () => {
+        if (!newNote) return;
         setGeneratingContent(true);
-        showToast(`Drafting ${activityType}...`, 'info');
         try {
-            const result = await zapierApi.generateContent({
-                leadId: id,
-                channel: activityType.toLowerCase(),
-                tone: 'professional and persuasive',
-                goal: 'Nurture relationship and request a prompt follow-up or site visit.'
-            });
-            const draft = result.subject ? `Subject: ${result.subject}\n\n${result.body}` : result.body;
-            setNewNote(draft);
-            if (result.tips) {
-                showToast(`Agent Tip: ${result.tips}`, 'success');
-            }
-        } catch (_e) {
-            showToast('Failed to auto-generate content', 'error');
+            const prompt = `Rewrite this draft professionally for ${activityType}: "${newNote}"`;
+            const res = await leadsApi.generateAIPitch(id, null, prompt);
+            if (res.hook) setNewNote(res.headline + '\n\n' + res.hook);
+        } catch (e) {
+            showToast("AI Generation failed", "error");
         } finally {
             setGeneratingContent(false);
+        }
+    };
+
+    const handleRecalculateScore = async () => {
+        setRecalculatingScore(true);
+        try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/leads/${id}/ai-score`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            if (data.newScore !== undefined) {
+                setContact(prev => ({ ...prev, score: data.newScore }));
+                showToast(`AI Intelligence Refresh: Lead Score is now ${data.newScore}`, "success");
+            } else {
+                throw new Error(data.error || 'Failed to refresh score');
+            }
+        } catch (err) {
+            console.error('Recalculate error:', err);
+            showToast("AI Refresh failed. Check connectivity.", "error");
+        } finally {
+            setRecalculatingScore(false);
         }
     };
 
@@ -838,8 +856,18 @@ export default function ContactDetails() {
                                         <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                             <Sparkles size={12} color="#f59e0b" />
                                         </div>
-                                        <div>
-                                            <div style={{ fontSize: '7px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ fontSize: '7px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
+                                                <button 
+                                                    onClick={handleRecalculateScore} 
+                                                    disabled={recalculatingScore}
+                                                    title="Recalculate with AI Intelligence"
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                                                >
+                                                    <RotateCw size={8} color={recalculatingScore ? "#f59e0b" : "rgba(255,255,255,0.3)"} className={recalculatingScore ? "animate-spin" : ""} />
+                                                </button>
+                                            </div>
                                             <div style={{ fontSize: '18px', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.3px' }}>{contact.score || 88}<span style={{ fontSize: '9px', opacity: 0.5 }}>%</span></div>
                                         </div>
                                     </div>

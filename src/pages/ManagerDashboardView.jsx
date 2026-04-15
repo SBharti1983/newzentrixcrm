@@ -112,7 +112,7 @@ export default function ManagerDashboardView({ user, data }) {
             </div>
 
             {/* KPI Metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
+            <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 <MetricCard title="Team Revenue" val={formatRevenue(bookings.total_value)} growth="+ 19.6%" icon={Layout} color="#6366f1" />
                 <MetricCard title="Team Bookings" val={bookings.total || 0} growth="+ 16.6%" icon={Award} color="#8b5cf6" />
                 <MetricCard title="Team Leads" val={leadsStat.active_leads || 0} growth="+ 13.9%" icon={Users} color="#3b82f6" />
@@ -122,7 +122,7 @@ export default function ManagerDashboardView({ user, data }) {
             </div>
 
             {/* Main Content Areas */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+            <div className="dash-charts-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '32px', marginBottom: '32px' }}>
                 
                 {/* Team Pipeline Overview */}
                 <div style={{ ...KPI_STYLE, gridColumn: 'span 1' }}>
@@ -217,7 +217,7 @@ export default function ManagerDashboardView({ user, data }) {
             </div>
 
             {/* Bottom Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.3fr)', gap: '32px' }}>
+            <div className="dash-bottom-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.3fr)', gap: '32px' }}>
                 
                 {/* Deals Requiring Attention */}
                 <div style={KPI_STYLE}>

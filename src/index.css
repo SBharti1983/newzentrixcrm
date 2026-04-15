@@ -1,6 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* ─── CSS Custom Properties ─────────────────────────────────────── */
+/* â”€â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :root {
   /* Navy/Slate Color Palette */
   --navy-950: #040d1a;
@@ -95,7 +95,7 @@
   --ent-glass-border: rgba(255, 255, 255, 0.4);
 }
 
-/* ─── Enterprise Utilities ────────────────────────────────────────── */
+/* â”€â”€â”€ Enterprise Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .ent-page-container {
   padding: 32px 40px;
   max-width: 1600px;
@@ -139,7 +139,7 @@
   text-transform: uppercase;
 }
 
-/* ─── Reset & Base ───────────────────────────────────────────────── */
+/* â”€â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *,
 *::before,
 *::after {
@@ -167,7 +167,7 @@ body {
   min-height: 100vh;
 }
 
-/* ─── Keyframes ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -332,7 +332,7 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ─── Typography ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Typography â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 h1,
 h2,
 h3,
@@ -380,7 +380,7 @@ a:hover {
   color: var(--navy-700);
 }
 
-/* ─── Scrollbar ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -399,7 +399,7 @@ a:hover {
   background: var(--slate-400);
 }
 
-/* ─── Layout ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .app-layout {
   display: flex;
   width: 100%;
@@ -429,7 +429,7 @@ a:hover {
   min-height: calc(100vh - var(--header-height));
 }
 
-/* ─── Sidebar ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .sidebar {
   position: fixed;
   top: 0;
@@ -642,7 +642,7 @@ a:hover {
   width: 0;
 }
 
-/* ─── Header ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .header {
   position: fixed;
   top: 0;
@@ -771,7 +771,7 @@ a:hover {
   border: 2px solid white;
 }
 
-/* ─── Cards ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -810,7 +810,7 @@ a:hover {
   padding: 20px 24px 24px;
 }
 
-/* ─── Stat Cards ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .stat-card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -893,7 +893,7 @@ a:hover {
   color: var(--accent-rose-dark);
 }
 
-/* ─── Buttons ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1017,7 +1017,7 @@ a:hover {
   padding: 9px;
 }
 
-/* ─── Badges / Pills ─────────────────────────────────────────────── */
+/* â”€â”€â”€ Badges / Pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1073,7 +1073,7 @@ a:hover {
   color: #0f766e;
 }
 
-/* ─── Forms ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .form-group {
   margin-bottom: 20px;
 }
@@ -1150,7 +1150,7 @@ select.form-control {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
-/* ─── Tables ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .table-wrapper {
   overflow-x: auto;
   border-radius: var(--border-radius-lg);
@@ -1200,7 +1200,7 @@ tbody tr:hover {
   background: var(--slate-50);
 }
 
-/* ─── Page Header ────────────────────────────────────────────────── */
+/* â”€â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -1227,7 +1227,7 @@ tbody tr:hover {
   align-items: center;
 }
 
-/* ─── Grid Layouts ───────────────────────────────────────────────── */
+/* â”€â”€â”€ Grid Layouts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .grid {
   display: grid;
   gap: 20px;
@@ -1249,7 +1249,7 @@ tbody tr:hover {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-/* ─── Pipeline / Kanban (base) ──────────────────────────────────── */
+/* â”€â”€â”€ Pipeline / Kanban (base) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 /* NOTE: main layout overrides are in the Kanban Board section below */
 .pipeline-board {
   display: flex;
@@ -1372,7 +1372,7 @@ tbody tr:hover {
   border-top: 1px solid var(--slate-100);
 }
 
-/* ─── Slide-over panel ───────────────────────────────────────────── */
+/* â”€â”€â”€ Slide-over panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -1385,13 +1385,13 @@ tbody tr:hover {
   }
 }
 
-/* ─── Drag ghost styling ─────────────────────────────────────────── */
+/* â”€â”€â”€ Drag ghost styling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pipeline-card[draggable="true"]:active {
   box-shadow: var(--shadow-xl);
   transform: rotate(2deg) scale(1.02);
 }
 
-/* ─── Avatar ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .avatar {
   width: 36px;
   height: 36px;
@@ -1418,7 +1418,7 @@ tbody tr:hover {
   font-size: 1rem;
 }
 
-/* ─── Modal ──────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1471,7 +1471,7 @@ tbody tr:hover {
   padding: 0 28px 24px;
 }
 
-/* ─── Progress Bar ───────────────────────────────────────────────── */
+/* â”€â”€â”€ Progress Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .progress-bar {
   height: 6px;
   background: var(--slate-200);
@@ -1486,7 +1486,7 @@ tbody tr:hover {
   transition: width var(--transition-slow);
 }
 
-/* ─── Tabs ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .tabs {
   display: flex;
   gap: 2px;
@@ -1517,7 +1517,7 @@ tbody tr:hover {
   color: var(--text-primary);
 }
 
-/* ─── Animations ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1604,7 +1604,7 @@ tbody tr:hover {
   animation: slideInRight 0.3s ease;
 }
 
-/* ─── Spinner ─────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .spinner {
   display: inline-block;
   width: 16px;
@@ -1616,7 +1616,7 @@ tbody tr:hover {
   flex-shrink: 0;
 }
 
-/* ─── Notification / WhatsApp Button ─────────────────────────────── */
+/* â”€â”€â”€ Notification / WhatsApp Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .btn-whatsapp {
   background: linear-gradient(135deg, #25d366, #128c7e);
   color: white;
@@ -1643,7 +1643,7 @@ tbody tr:hover {
   color: var(--navy-700);
 }
 
-/* ─── Command Center ────────────────────────────────────────── */
+/* â”€â”€â”€ Command Center â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .command-center-root {
   padding: 12px 24px 24px;
   height: calc(100vh - 100px);
@@ -1740,7 +1740,7 @@ tbody tr:hover {
   font-size: 0.875rem;
 }
 
-/* ─── Tooltip ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-tooltip] {
   position: relative;
 }
@@ -1767,14 +1767,14 @@ tbody tr:hover {
   opacity: 1;
 }
 
-/* ─── Divider ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .divider {
   height: 1px;
   background: var(--border-light);
   margin: 16px 0;
 }
 
-/* ─── Utility ────────────────────────────────────────────────────── */
+/* â”€â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .flex {
   display: flex;
 }
@@ -1823,7 +1823,7 @@ tbody tr:hover {
   margin-bottom: 24px;
 }
 
-/* ─── Kanban Board ───────────────────────────────────────────────── */
+/* â”€â”€â”€ Kanban Board â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pipeline-board {
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
@@ -1884,7 +1884,7 @@ tbody tr:hover {
   display: none;
 }
 
-/* ─── Kanban Card ────────────────────────────────────────────────── */
+/* â”€â”€â”€ Kanban Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .kanban-card {
   background: white;
   border-radius: 10px;
@@ -2022,7 +2022,7 @@ tbody tr:hover {
   gap: 3px;
 }
 
-/* ─── Premium System Animations ───────────────────────────────────── */
+/* â”€â”€â”€ Premium System Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes pulse-glow {
   0% {
     transform: scale(0.95);
@@ -2097,16 +2097,16 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-/* ─── Responsive ─────────────────────────────────────────────────── */
+/* â”€â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* ── Tablet: ≤1200px ─────────────────────────────────────────────── */
+/* â”€â”€ Tablet: â‰¤1200px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 1200px) {
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* ── Tablet-small / landscape phone: ≤900px ──────────────────────── */
+/* â”€â”€ Tablet-small / landscape phone: â‰¤900px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 900px) {
   .grid-3 {
     grid-template-columns: repeat(2, 1fr);
@@ -2121,10 +2121,10 @@ tbody tr:hover {
   }
 }
 
-/* ── Mobile breakpoint: ≤768px ───────────────────────────────────── */
+/* â”€â”€ Mobile breakpoint: â‰¤768px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 768px) {
 
-  /* ─ Sidebar: off-screen overlay ─ */
+  /* â”€ Sidebar: off-screen overlay â”€ */
   .sidebar.mobile-sidebar {
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2165,12 +2165,12 @@ tbody tr:hover {
     color: white;
   }
 
-  /* ─ Main content: full width on mobile ─ */
+  /* â”€ Main content: full width on mobile â”€ */
   .main-content.mobile {
     margin-left: 0 !important;
   }
 
-  /* ─ Header: full width on mobile ─ */
+  /* â”€ Header: full width on mobile â”€ */
   .header.mobile-header {
     left: 0 !important;
   }
@@ -2183,12 +2183,12 @@ tbody tr:hover {
     font-size: 0.72rem;
   }
 
-  /* ─ Page content ─ */
+  /* â”€ Page content â”€ */
   .page-content {
     padding: 16px 14px;
   }
 
-  /* ─ Stat cards ─ */
+  /* â”€ Stat cards â”€ */
   .stat-value {
     font-size: 1.5rem;
   }
@@ -2198,7 +2198,7 @@ tbody tr:hover {
     height: 38px;
   }
 
-  /* ─ Cards ─ */
+  /* â”€ Cards â”€ */
   .card-header {
     padding: 16px 16px 0;
     flex-wrap: wrap;
@@ -2209,7 +2209,7 @@ tbody tr:hover {
     padding: 16px;
   }
 
-  /* ─ Tables ─ */
+  /* â”€ Tables â”€ */
   .table-wrapper {
     border-radius: var(--border-radius-md);
     -webkit-overflow-scrolling: touch;
@@ -2239,7 +2239,7 @@ tbody tr:hover {
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
   }
 
-  /* ─ Modals: full-screen on mobile ─ */
+  /* â”€ Modals: full-screen on mobile â”€ */
   .modal-overlay {
     padding: 0;
     align-items: flex-end;
@@ -2275,14 +2275,14 @@ tbody tr:hover {
     justify-content: center;
   }
 
-  /* ─ Filter rows / action bars ─ */
+  /* â”€ Filter rows / action bars â”€ */
   .filter-bar,
   .page-actions {
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  /* ─ Buttons ─ */
+  /* â”€ Buttons â”€ */
   .btn {
     padding: 10px 16px;
     font-size: 0.82rem;
@@ -2293,12 +2293,12 @@ tbody tr:hover {
     font-size: 0.78rem;
   }
 
-  /* ─ Utility hide classes ─ */
+  /* â”€ Utility hide classes â”€ */
   .hide-mobile {
     display: none !important;
   }
 
-  /* ─ Grid overrides ─ */
+  /* â”€ Grid overrides â”€ */
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -2310,7 +2310,7 @@ tbody tr:hover {
   }
 }
 
-/* ── Small phone: ≤640px ─────────────────────────────────────────── */
+/* â”€â”€ Small phone: â‰¤640px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 640px) {
 
   .grid-3,
@@ -2381,7 +2381,7 @@ tbody tr:hover {
   }
 }
 
-/* ── Very small phone: ≤480px ────────────────────────────────────── */
+/* â”€â”€ Very small phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 480px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -2405,14 +2405,14 @@ tbody tr:hover {
   }
 }
 
-/* ── Login page mobile ───────────────────────────────────────────── */
+/* â”€â”€ Login page mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 900px) {
   .login-left-panel {
     display: none !important;
   }
 }
 
-/* ── Float animation for Register/Login backgrounds ──────────────── */
+/* â”€â”€ Float animation for Register/Login backgrounds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes float {
   0% {
     transform: translateY(0) scale(1);
@@ -2423,7 +2423,7 @@ tbody tr:hover {
   }
 }
 
-/* ── Slide-up animation for mobile modals ────────────────────────── */
+/* â”€â”€ Slide-up animation for mobile modals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -2436,7 +2436,7 @@ tbody tr:hover {
   }
 }
 
-/* ─── Payment Tracker — Timeline ─────────────────────────────────── */
+/* â”€â”€â”€ Payment Tracker â€” Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .payment-timeline {
   position: relative;
   padding-left: 32px;
@@ -2453,7 +2453,7 @@ tbody tr:hover {
   border-radius: 2px;
 }
 
-/* ─── Drag-Drop Upload Zone ──────────────────────────────────────── */
+/* â”€â”€â”€ Drag-Drop Upload Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dropzone {
   border: 2px dashed var(--border-medium);
   border-radius: var(--border-radius-md);
@@ -2477,7 +2477,7 @@ tbody tr:hover {
   transform: scale(1.01);
 }
 
-/* ─── Document Cards ─────────────────────────────────────────────── */
+/* â”€â”€â”€ Document Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .doc-card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -2494,7 +2494,7 @@ tbody tr:hover {
   border-color: var(--navy-200);
 }
 
-/* ─── Checklist Items ────────────────────────────────────────────── */
+/* â”€â”€â”€ Checklist Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .checklist-item {
   display: flex;
   align-items: center;
@@ -2511,7 +2511,7 @@ tbody tr:hover {
   border-color: rgba(16, 185, 129, 0.25);
 }
 
-/* ─── Empty State Extended ───────────────────────────────────────── */
+/* â”€â”€â”€ Empty State Extended â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .empty-state-desc {
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -2519,12 +2519,12 @@ tbody tr:hover {
   text-align: center;
 }
 
-/* ─── mb-6 utility ───────────────────────────────────────────────── */
+/* â”€â”€â”€ mb-6 utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .mb-6 {
   margin-bottom: 24px;
 }
 
-/* ─── Site Visit Planner Replication Styles ─────────────────────── */
+/* â”€â”€â”€ Site Visit Planner Replication Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .site-visit-planner-layout {
   padding-bottom: 40px;
 }
@@ -2877,7 +2877,7 @@ tbody tr:hover {
   color: #dc2626;
 }
 
-/* ─── Site Visits Responsive ────────────────────────────────────── */
+/* â”€â”€â”€ Site Visits Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 900px) {
   .site-visit-header-premium {
     flex-direction: column;
@@ -2903,7 +2903,7 @@ tbody tr:hover {
 }
 
 
-/* ─── Dashboard — Refined Layout ─────────────────────────────────── */
+/* â”€â”€â”€ Dashboard â€” Refined Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .dash-root {
   max-width: 1440px;
   margin: 0 auto;
@@ -3635,7 +3635,7 @@ tbody tr:hover {
   font-weight: 800;
 }
 
-/* ─── Inventory Responsive ───────────────────────────────────────── */
+/* â”€â”€â”€ Inventory Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .inventory-ribbon {
   background: linear-gradient(135deg, var(--navy-900), #0f172a);
   padding: 12px 20px;
@@ -3730,7 +3730,7 @@ tbody tr:hover {
   border-color: var(--navy-900);
 }
 
-/* ─── Contact Preview Sidebar (CPS) ──────────────────────────────── */
+/* â”€â”€â”€ Contact Preview Sidebar (CPS) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .cps-overlay {
   position: fixed;
   inset: 0;
@@ -4406,7 +4406,7 @@ tbody tr:hover {
   /* Chrome/Safari */
 }
 
-/* ─── Mobile Responsiveness ──────────────────────────────────────── */
+/* â”€â”€â”€ Mobile Responsiveness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 768px) {
 
   /* Contact Details Stacking */
@@ -4544,7 +4544,7 @@ tbody tr:hover {
     z-index: 95;
   }
 
-  /* ─── Dashboard Mobile Overrides ────────────────────────────────── */
+  /* â”€â”€â”€ Dashboard Mobile Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   .dash-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
@@ -4585,7 +4585,7 @@ tbody tr:hover {
     padding: 12px 16px !important;
   }
 
-  /* ─── Contact Details: Bottom Dock ─────────────────────────────── */
+  /* â”€â”€â”€ Contact Details: Bottom Dock â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   .contact-details-layout>div[style*="position: fixed"][style*="bottom"] {
     bottom: 12px !important;
     padding: 8px 10px !important;
@@ -4601,14 +4601,14 @@ tbody tr:hover {
     padding: 8px 14px !important;
   }
 
-  /* ─── CPS Sidebar: full width on mobile ────────────────────────── */
+  /* â”€â”€â”€ CPS Sidebar: full width on mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   .cps-panel {
     width: 100% !important;
     max-width: 100% !important;
   }
 }
 
-/* ── Small phone: ≤480px ─────────────────────────────────────────── */
+/* â”€â”€ Small phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (max-width: 480px) {
   .dash-stats-grid {
     grid-template-columns: 1fr !important;
@@ -4674,3 +4674,226 @@ tbody tr:hover {
     display: none !important;
   }
 }
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   COMPREHENSIVE MOBILE RESPONSIVENESS â€” Dashboard / Leads / Pipeline
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Tablet: â‰¤1024px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 1024px) {
+  .page-content {
+    padding: 14px 16px !important;
+  }
+
+  .ent-page-container {
+    padding: 20px 16px !important;
+  }
+
+  /* Agent Dashboard KPI: 6â†’3 */
+  .agent-dash-kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Agent Dashboard grids: shrink */
+  .agent-dash-main-grid {
+    grid-template-columns: 1.5fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .agent-dash-bottom-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Pipeline grid-4â†’2 */
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Command Center */
+  .command-center-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Header search bar */
+  .search-bar {
+    width: 180px !important;
+  }
+}
+
+
+/* â”€â”€ Phone: â‰¤768px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 768px) {
+
+  /* â•â•â• DASHBOARD â€” Agent View â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+  .agent-dash-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .agent-dash-header > div {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: flex-start !important;
+  }
+
+  .agent-dash-header h1 {
+    font-size: 1.15rem !important;
+  }
+
+  .agent-dash-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .agent-dash-main-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .agent-dash-bottom-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .agent-dash-perf-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* â•â•â• DASHBOARD â€” Manager/Admin View â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+  .dash-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .dash-charts-row,
+  .dash-bottom-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .dash-briefing-cards {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .dash-briefing {
+    padding: 18px 16px !important;
+    border-radius: 16px !important;
+  }
+
+  /* â•â•â• LEADS PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+  .page-actions {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+  }
+
+  .table-wrapper table {
+    min-width: 800px !important;
+  }
+
+  /* â•â•â• PIPELINE PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .grid.grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .grid.grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .pipeline-board {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px !important;
+    gap: 8px !important;
+  }
+
+  .pipeline-column {
+    min-width: 82vw !important;
+    max-width: 82vw !important;
+    scroll-snap-align: center;
+    flex-shrink: 0 !important;
+  }
+
+  .pipeline-top-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal, .modal-lg {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 10px auto !important;
+  }
+
+  .card:hover,
+  .hover-lift:hover {
+    transform: none !important;
+  }
+
+  .search-bar {
+    width: 100% !important;
+    max-width: 200px;
+  }
+}
+
+
+/* â”€â”€ Small Phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@media (max-width: 480px) {
+  .page-content {
+    padding: 10px 8px !important;
+  }
+
+  .agent-dash-kpi-grid {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .grid.grid-4 {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .pipeline-column {
+    min-width: 92vw !important;
+    max-width: 92vw !important;
+  }
+
+  .page-title {
+    font-size: 1.2rem !important;
+  }
+
+  .page-subtitle {
+    font-size: 0.75rem !important;
+  }
+
+  .dash-stat-value {
+    font-size: 1.3rem !important;
+  }
+
+  .dash-stat-card {
+    padding: 12px 14px !important;
+  }
+}
+

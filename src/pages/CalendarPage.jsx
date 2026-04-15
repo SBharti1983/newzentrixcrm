@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { followupsApi, siteVisitsApi } from '../api/client';
-import { ChevronLeft, ChevronRight, Plus, Phone, MapPin, Mail, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Phone, MapPin, Mail, Calendar, CheckCircle2 } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -75,8 +76,8 @@ function toDateStr(year, month, day) {
 }
 
 export default function CalendarPage() {
-    const { data: fuRes } = useApi(() => followupsApi.list({ limit: 500 }));
-    const { data: svRes } = useApi(() => siteVisitsApi.list({ limit: 500 }));
+    const { data: fuRes, refetch: refetchFU } = useApi(() => followupsApi.list({ limit: 500 }));
+    const { data: svRes, refetch: refetchSV } = useApi(() => siteVisitsApi.list({ limit: 500 }));
 
     const followups = fuRes?.data || fuRes || [];
     const siteVisits = svRes?.data || svRes || [];
@@ -87,6 +88,55 @@ export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState(null);
     const [view, setView] = useState('month');
     const [filterType, setFilterType] = useState('All');
+    const [draggingEvent, setDraggingEvent] = useState(null);
+    const [dragOverDate, setDragOverDate] = useState(null);
+    const { showToast } = useToast();
+
+    const refetchAll = () => {
+        refetchFU();
+        refetchSV();
+    };
+
+    const handleDragStart = (e, ev) => {
+        setDraggingEvent(ev);
+        e.dataTransfer.setData('text/plain', ev.id);
+        e.dataTransfer.effectAllowed = 'move';
+        // Add a slight tilt or ghost effect if possible, but keep it simple for now
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const handleDrop = async (e, dateStr) => {
+        e.preventDefault();
+        if (!draggingEvent) return;
+
+        const originalDate = draggingEvent.date;
+        if (originalDate === dateStr) {
+            setDraggingEvent(null);
+            return;
+        }
+
+        const id = draggingEvent.id.replace(/^fu-|^sv-/, '');
+        const source = draggingEvent.source;
+
+        try {
+            if (source === 'followup') {
+                await followupsApi.update(id, { scheduled_at: `${dateStr}T10:00:00Z` });
+            } else {
+                await siteVisitsApi.update(id, { scheduled_at: `${dateStr}T11:00:00Z` });
+            }
+            showToast(`Rescheduled ${draggingEvent.title} to ${dateStr}`, 'success');
+            refetchAll();
+        } catch (err) {
+            showToast('Failed to reschedule activity', 'error');
+        } finally {
+            setDraggingEvent(null);
+            setDragOverDate(null);
+        }
+    };
 
     const events = buildEvents(followups, siteVisits);
 
@@ -198,15 +248,24 @@ export default function CalendarPage() {
                                     const isPast = dateStr < today;
 
                                     return (
-                                        <div key={day} onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                                        <div key={day} 
+                                            onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                                            onDragOver={handleDragOver}
+                                            onDragEnter={() => draggingEvent && setDragOverDate(dateStr)}
+                                            onDragLeave={() => setDragOverDate(null)}
+                                            onDrop={(e) => handleDrop(e, dateStr)}
                                             style={{
-                                                minHeight: 72, padding: '4px', borderRadius: 'var(--border-radius-md)',
-                                                background: isSelected ? 'var(--navy-50)' : isToday ? 'rgba(59,99,184,0.04)' : 'transparent',
-                                                border: `1.5px solid ${isSelected ? 'var(--navy-300)' : isToday ? 'var(--navy-200)' : 'transparent'}`,
-                                                cursor: 'pointer', transition: 'all 0.12s',
+                                                minHeight: 85, padding: '4px', borderRadius: 'var(--border-radius-md)',
+                                                background: dragOverDate === dateStr ? 'rgba(59,99,184,0.15)' : isSelected ? 'var(--navy-50)' : isToday ? 'rgba(59,99,184,0.04)' : 'transparent',
+                                                border: `1.5px solid ${dragOverDate === dateStr ? 'var(--navy-600)' : isSelected ? 'var(--navy-300)' : isToday ? 'var(--navy-200)' : 'transparent'}`,
+                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                position: 'relative',
+                                                boxShadow: dragOverDate === dateStr ? 'inset 0 0 10px rgba(59,99,184,0.1)' : 'none',
+                                                transform: dragOverDate === dateStr ? 'scale(1.02)' : 'none',
+                                                zIndex: dragOverDate === dateStr ? 10 : 1
                                             }}
-                                            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--slate-50)'; }}
-                                            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = isToday ? 'rgba(59,99,184,0.04)' : 'transparent'; }}
+                                            onMouseEnter={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = 'var(--slate-50)'; }}
+                                            onMouseLeave={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = isToday ? 'rgba(59,99,184,0.04)' : 'transparent'; }}
                                         >
                                             {/* Day number */}
                                             <div style={{
@@ -221,11 +280,18 @@ export default function CalendarPage() {
                                                 {dayEvents.slice(0, 3).map((ev, j) => {
                                                     const ec = EVENT_TYPE[ev.type] || EVENT_TYPE.Meeting;
                                                     return (
-                                                        <div key={j} style={{
-                                                            fontSize: '0.62rem', fontWeight: 700, padding: '1px 4px',
-                                                            borderRadius: 3, background: ec.bg, color: ec.color,
-                                                            overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                                                        }}>{ec.icon} {ev.title}</div>
+                                                        <div 
+                                                            key={j} 
+                                                            draggable="true"
+                                                            onDragStart={(e) => handleDragStart(e, { ...ev, date: dateStr })}
+                                                            style={{
+                                                                fontSize: '0.62rem', fontWeight: 700, padding: '1px 4px',
+                                                                borderRadius: 3, background: ec.bg, color: ec.color,
+                                                                overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                                                                cursor: 'grab',
+                                                                opacity: draggingEvent?.id === ev.id ? 0.4 : 1,
+                                                                transform: draggingEvent?.id === ev.id ? 'scale(0.95)' : 'none',
+                                                            }}>{ec.icon} {ev.title}</div>
                                                     );
                                                 })}
                                                 {dayEvents.length > 3 && (

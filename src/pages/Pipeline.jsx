@@ -242,7 +242,7 @@ export default function Pipeline() {
                 </div>
             </div>
 
-            <div className="card" style={{ padding: '3px 4px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box', overflowX: 'auto' }}>
+            <div className="card pipeline-top-metrics" style={{ padding: '3px 4px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box', overflowX: 'auto' }}>
                 <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
                     {PIPELINE_STAGES.map((stage, i) => {
                         const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
@@ -374,8 +374,8 @@ export default function Pipeline() {
                                     <div style={{ textAlign: 'right', width: 80 }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'stretch', flex: 1 }}>
-                                <div style={{ position: 'relative', height: '100%', minHeight: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div className="pipeline-funnel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'stretch', flex: 1 }}>
+                                <div className="pipeline-funnel-graph" style={{ position: 'relative', height: '100%', minHeight: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <svg width="100%" height="250" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid meet">
                                         <defs>
                                             <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dx="0" dy="2" /><feComponentTransfer><feFuncA type="linear" slope="0.1" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>

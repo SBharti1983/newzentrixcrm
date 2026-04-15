@@ -1255,7 +1255,6 @@ function WhiteLabelPanel({ branding, updateBranding, showToast }) {
         support_phone: branding?.support_phone || '',
         login_banner_text: branding?.login_banner_text || '',
         footer_text: branding?.footer_text || '',
-        pwa_enabled: branding?.pwa_enabled !== false,
     });
     const [wlSaving, setWlSaving] = useState(false);
 
@@ -1276,7 +1275,6 @@ function WhiteLabelPanel({ branding, updateBranding, showToast }) {
                 support_phone: branding.support_phone || prev.support_phone,
                 login_banner_text: branding.login_banner_text || prev.login_banner_text,
                 footer_text: branding.footer_text || prev.footer_text,
-                pwa_enabled: branding.pwa_enabled !== false,
             }));
         }
     }, [branding]);
@@ -1407,22 +1405,7 @@ function WhiteLabelPanel({ branding, updateBranding, showToast }) {
                     </div>
                 </div>
 
-                <div className="card" style={{ padding: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                            <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)', marginBottom: '4px' }}>Mobile App (PWA) Support</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '350px' }}>
-                                Allow agents to install the CRM as an app on their home screen.
-                            </div>
-                        </div>
-                        <label style={{ position: 'relative', display: 'inline-block', width: '52px', height: '28px', cursor: 'pointer', flexShrink: 0 }}>
-                            <input type="checkbox" checked={localBrand.pwa_enabled} onChange={e => setLocalBrand({ ...localBrand, pwa_enabled: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
-                            <span style={{ position: 'absolute', inset: 0, borderRadius: '99px', background: localBrand.pwa_enabled ? '#10b981' : '#cbd5e1', transition: 'all 0.3s' }}>
-                                <span style={{ position: 'absolute', width: '22px', height: '22px', borderRadius: '50%', background: 'white', top: '3px', left: localBrand.pwa_enabled ? '27px' : '3px', transition: 'all 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.15)' }} />
-                            </span>
-                        </label>
-                    </div>
-                </div>
+
             </div>
 
             {/* Save Button */}

@@ -10,7 +10,7 @@ import Dialer from './components/Dialer';
 import ZapierAssistant from './components/ZapierAssistant';
 import AgentCopilotWidget from './components/AgentCopilotWidget';
 import MobileActionHub from './components/MobileActionHub';
-import InstallPWA from './components/InstallPWA';
+// PWA removed
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import { BrandingProvider, useBranding } from './context/BrandingContext';
@@ -64,14 +64,6 @@ const PublicSignup = lazy(() => import('./pages/PublicSignup'));
 
 // --- Pre-loaded Critical Components ---
 import { PageLoader } from './components/Feedback';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import Dialer from './components/Dialer';
-import ZapierAssistant from './components/ZapierAssistant';
-import AgentCopilotWidget from './components/AgentCopilotWidget';
-import MobileActionHub from './components/MobileActionHub';
-import InstallPWA from './components/InstallPWA';
-import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
 // --- UI Overlays ---
@@ -254,7 +246,7 @@ function ProtectedApp() {
       {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
       {isMobile && (user?.role === 'agent' || user?.role === 'sales_manager') && <MobileActionHub />}
       <Dialer />
-      {isMobile && branding.pwa_enabled && <InstallPWA />}
+
     </div>
     </>
   );

@@ -321,18 +321,31 @@ export default function Automations() {
                                         value={formData.action_type}
                                         onChange={e => setFormData({ ...formData, action_type: e.target.value })}
                                     >
-                                        <option value="send_client_message">Send Client Message (Email/WhatsApp)</option>
+                                        <option value="send_whatsapp">Send WhatsApp Message (Real-Time)</option>
+                                        <option value="send_client_message">Send Client Email</option>
                                         <option value="create_followup">Create Shared Follow-up Task</option>
                                         <option value="notify_manager">Alert Manager for Review</option>
                                         <option value="assign_agent">Intelligent Agent Assignment</option>
                                     </select>
 
+                                    {formData.action_type === 'send_whatsapp' && (
+                                        <div style={{ marginTop: 12 }}>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>MESSAGE TEMPLATE (Variables: {'{{name}}'}, {'{{stage}}'})</div>
+                                            <textarea 
+                                                className="form-control" 
+                                                rows="3" 
+                                                placeholder="Hi {{name}}, thanks for your interest in Zentrix Projects! Our team will contact you soon."
+                                                onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, message: e.target.value } })}
+                                                style={{ fontSize: '0.85rem' }}
+                                            />
+                                        </div>
+                                    )}
+
                                     {formData.action_type === 'send_client_message' && (
                                         <div style={{ marginTop: 12 }}>
-                                            <select className="form-control" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, channel: e.target.value } })}>
-                                                <option value="Email">Send via Email</option>
-                                                <option value="WhatsApp">Send via WhatsApp</option>
-                                            </select>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>EMAIL SUBJECT</div>
+                                            <input className="form-control" placeholder="Subject" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, subject: e.target.value } })} style={{ marginBottom: 8 }} />
+                                            <textarea className="form-control" placeholder="Email Body" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, body: e.target.value } })} rows="3" />
                                         </div>
                                     )}
 

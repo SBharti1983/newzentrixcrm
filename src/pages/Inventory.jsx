@@ -1,4 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
+import {
+    AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { projectsApi } from '../api/client';
@@ -270,7 +274,6 @@ export default function Inventory() {
                 </div>
             </div>
 
-            {/* 🔍 Global Portfolio Controls */}
             <div style={{ display: 'flex', gap: '20px', marginBottom: '40px', alignItems: 'center' }}>
                 <div className="premium-card" style={{ flex: 1, padding: '4px 20px', display: 'flex', alignItems: 'center', gap: '16px', background: 'white' }}>
                     <Search size={22} color={COLORS.slate400} />

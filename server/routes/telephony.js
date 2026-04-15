@@ -6,6 +6,7 @@ const pool = require('../db/pool');
 const { generateAudioTranscription, transcribeFromUrl, isAiEnabled } = require('../utils/ai');
 const { uploadToFirebase } = require('../utils/cloudStorage');
 const { isStorageEnabled } = require('../utils/firebase');
+const { calculateLeadScore } = require('../utils/scoring');
 const crypto = require('crypto');
 
 /**
@@ -61,7 +62,7 @@ async function authenticateHandset(req, res, next) {
         const dbSecret = settings.telephony_secret;
         
         if (!dbSecret || dbSecret !== secret) {
-            console.log(`[Telephony] Auth failed: Secret mismatch for Tenant ${tenantId}`);
+            console.log('[Telephony] Auth failed: Secret mismatch for Tenant ${tenantId}');
             return res.status(401).json({ error: 'Unauthorized: Invalid secret' });
         }
 
@@ -441,6 +442,13 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
             }
         }
 
+        // --- AUTOMATIC AI RE-SCORING TRIGGER ---
+        if (finalLeadId) {
+            calculateLeadScore(finalLeadId, req.tenantId).catch(err => {
+                console.error('[AUTO SCORING] Background job failed:', err.message);
+            });
+        }
+
         res.json({
             success: true,
             transcript: aiResult.transcript,
@@ -466,7 +474,7 @@ router.get('/transcript/:interactionId', hybridAuth, async (req, res) => {
 
         const result = await pool.query(`
             SELECT i.transcript, i.note, i.sentiment, i.outcome, i.duration, i.date, i.type,
-                   i.recording_url, i.rapport_score, i.closing_score,
+                   i.recording_url, i.rapport_score, i.closing_score, i.lead_id,
                    l.name as lead_name, l.phone as lead_phone, l.email as lead_email,
                    u.name as agent_name
             FROM interactions i
@@ -548,6 +556,14 @@ router.get('/transcript/:interactionId', hybridAuth, async (req, res) => {
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
         res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+        
+        // --- AUTOMATIC AI RE-SCORING TRIGGER ---
+        if (row.lead_id) {
+            calculateLeadScore(row.lead_id, req.tenantId).catch(err => {
+                console.error('[AUTO SCORING] Background job failed:', err.message);
+            });
+        }
+
         res.send(txtContent);
 
     } catch (err) {

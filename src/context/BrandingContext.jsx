@@ -72,7 +72,6 @@ export function BrandingProvider({ children }) {
                 footer_text: settings.footer_text || '',
                 support_email: settings.support_email || DEFAULT_BRANDING.support_email,
                 support_phone: settings.support_phone || DEFAULT_BRANDING.support_phone,
-                pwa_enabled: settings.pwa_enabled !== false,
             };
             setBranding(wb);
             sessionStorage.setItem('zentrix_branding', JSON.stringify(wb));
@@ -84,7 +83,7 @@ export function BrandingProvider({ children }) {
         }
     }, [user]);
 
-    // Apply branding side-effects (Title, Favicon, PWA Manifest)
+    // Apply branding side-effects (Title, Favicon)
     useEffect(() => {
         if (!loaded || !branding) return;
 
@@ -100,23 +99,7 @@ export function BrandingProvider({ children }) {
         // Update document title
         document.title = wb.company_name || 'Zentrix CRM';
 
-        // ─── Dynamic PWA Manifest ─────────────────────────────────
-        const manifestLink = document.querySelector("link[rel='manifest']");
-        
-        if (wb.pwa_enabled) {
-            const manifestURL = `/api/public/manifest.json?hostname=${encodeURIComponent(window.location.hostname)}`;
-            const link = manifestLink || document.createElement('link');
-            link.rel = 'manifest';
-            link.href = manifestURL;
-            if (!link.parentNode) document.head.appendChild(link);
-        } else {
-            if (manifestLink) manifestLink.remove();
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(regs => {
-                    for (let reg of regs) reg.unregister();
-                });
-            }
-        }
+        // PWA support removed
     }, [branding, loaded]);
 
     useEffect(() => {

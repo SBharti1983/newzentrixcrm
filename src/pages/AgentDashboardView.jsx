@@ -364,7 +364,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             background: '#f8fafc', overflowY: 'auto'
         }}>
             {/* Upper Header Segment */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div className="agent-dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
                     <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
                         {getGreeting()}, {user?.name || 'Agent'} 👋
@@ -468,7 +468,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                 </div>
             </div>
             {/* KPI Cards Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+            <div className="agent-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
                 <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
                 <KPI onClick={() => navigate('/pipeline')} title="Pipeline Value" value={formatCurrency(kpiData.pipelineValue)} perc={`${kpiData.totalLeads} Active`} isUp icon={Briefcase} color={COLORS.orange} sparkData={sparkLines[1]} sparkColor={COLORS.orange} />
                 <KPI onClick={() => navigate('/followups')} title="Follow-ups Due" value={kpiData.followups} perc="Pending" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" />
@@ -478,7 +478,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             </div>
 
             {/* Main Content Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+            <div className="agent-dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
                 
                 {/* Activity Trend */}
                 <div style={{ 
@@ -625,7 +625,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
 
 
             {/* Bottom Section */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1.2fr', gap: '16px' }}>
+            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1.2fr', gap: '16px' }}>
                 
                 {/* Activities */}
                 <div style={{ 
@@ -681,7 +681,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
+                        <div className="agent-dash-perf-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
                             {[
                                 { label: 'Avg. Response Time', val: `${stats.pipeline?.avg_response_time || 0} mins`, sub: stats.pipeline?.avg_response_time < 30 ? '↓ Optimal' : '↑ Needs action', color: stats.pipeline?.avg_response_time < 30 ? COLORS.green : COLORS.orange },
                                 { label: 'Deals in Pipeline', val: stats.leads?.active_leads || 0, sub: `↑ Live Pipeline`, color: COLORS.green },

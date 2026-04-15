@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const auth = require('../middleware/auth');
+const { calculateLeadScore } = require('../utils/scoring');
 const router = express.Router();
 router.use(auth);
 
@@ -133,6 +134,13 @@ router.patch('/:id', async (req, res) => {
                 console.log(`[Calls] AI Coaching Audit persisted for Interaction: ${id}`);
             }).catch(err => {
                 console.error(`[Calls] AI Background Task Failed:`, err);
+            });
+        }
+
+        // --- AUTOMATIC AI RE-SCORING TRIGGER ---
+        if (rows[0]?.lead_id) {
+            calculateLeadScore(rows[0].lead_id, tid).catch(err => {
+                console.error('[AUTO SCORING] Background job failed:', err.message);
             });
         }
 
