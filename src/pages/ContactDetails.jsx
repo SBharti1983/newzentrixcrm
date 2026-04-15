@@ -7,6 +7,7 @@ import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
 import FollowupModal from '../components/FollowupModal';
+import { useMobile } from '../hooks/useMobile';
 
 const LIFECYCLE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const LIFECYCLE_COLORS = {
@@ -58,13 +59,7 @@ export default function ContactDetails() {
     const [callOutcome, setCallOutcome] = useState('Connected');
     const [callDuration, setCallDuration] = useState('');
     const [generatingContent, setGeneratingContent] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-
-    useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 1024);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+    const isMobile = useMobile();
 
     const handleVoice = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

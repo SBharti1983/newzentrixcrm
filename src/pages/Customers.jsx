@@ -3,6 +3,8 @@ import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { customersApi } from '../api/client';
 import { Phone, Mail, MapPin, Plus, X, Clock, MessageCircle } from 'lucide-react';
+import { dialerEvents } from '../constants/events';
+import { useMobile } from '../hooks/useMobile';
 
 const SEGMENT_BADGE = {
     'Ultra Premium': 'badge-violet',
@@ -18,6 +20,7 @@ const INTERACTION_ICONS = {
 
 export default function Customers() {
     const { data: rawCustomers, loading, error, refetch } = useApi(() => customersApi.list());
+    const isMobile = useMobile();
     const customers = rawCustomers || [];
     const [selected, setSelected] = useState(null);
     const [search, setSearch] = useState('');
@@ -35,25 +38,28 @@ export default function Customers() {
     if (error) return <PageError message={error} onRetry={refetch} />;
 
     return (
-        <div className="animate-fadeIn" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 420px', gap: 24, height: 'calc(100vh - 120px)' }}>
+        <div className="animate-fadeIn" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 420px', gap: 24, height: isMobile ? 'auto' : 'calc(100vh - 120px)' }}>
             {/* Left: Customer Registry */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflowY: 'auto', paddingRight: 8 }}>
+            <div style={{ display: (isMobile && selected) ? 'none' : 'flex', flexDirection: 'column', gap: 20, overflowY: isMobile ? 'visible' : 'auto', paddingRight: isMobile ? 0 : 8 }}>
                 <div className="glass-panel" style={{ 
-                    padding: '28px 32px', 
+                    padding: isMobile ? '20px' : '28px 32px', 
                     borderRadius: 24,
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
                     background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
                     border: '1px solid rgba(255,255,255,0.8)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.03)'
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.03)',
+                    flexDirection: isMobile ? 'column' : 'row',
+                    gap: isMobile ? 16 : 0,
+                    textAlign: isMobile ? 'center' : 'left'
                 }}>
                     <div>
-                        <h1 className="text-gradient-premium" style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Client Registry</h1>
-                        <p style={{ margin: '4px 0 0', fontSize: '1rem', fontWeight: 600, color: 'var(--slate-500)' }}>{customers.length} verified executive profiles</p>
+                        <h1 className="text-gradient-premium" style={{ margin: 0, fontSize: isMobile ? '1.8rem' : '2.2rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Client Registry</h1>
+                        <p style={{ margin: '4px 0 0', fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: 600, color: 'var(--slate-500)' }}>{customers.length} verified executive profiles</p>
                     </div>
-                    <button className="btn btn-primary" style={{ padding: '14px 28px', borderRadius: 16, boxShadow: '0 8px 20px rgba(10,22,40,0.15)' }}>
-                        <Plus size={20} /> ONBOARD CLIENT
+                    <button className="btn btn-primary" style={{ padding: isMobile ? '12px 20px' : '14px 28px', borderRadius: 16, boxShadow: '0 8px 20px rgba(10,22,40,0.15)', width: isMobile ? '100%' : 'auto' }}>
+                        <Plus size={20} /> {isMobile ? 'ONBOARD' : 'ONBOARD CLIENT'}
                     </button>
                 </div>
 
@@ -62,7 +68,8 @@ export default function Customers() {
                     padding: '12px 16px', 
                     borderRadius: 16, 
                     display: 'flex', 
-                    alignItems: 'center', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: isMobile ? 'stretch' : 'center', 
                     gap: 12,
                     border: '1px solid var(--slate-200)',
                     background: 'rgba(255,255,255,0.6)'
@@ -71,15 +78,17 @@ export default function Customers() {
                         <input 
                             value={search} 
                             onChange={e => setSearch(e.target.value)} 
-                            placeholder="Identify customer by name, email or city..." 
+                            placeholder={isMobile ? "Search clients..." : "Identify customer by name, email or city..."} 
                             style={{ fontSize: '0.9rem' }}
                         />
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                        {['All', 'Ultra Premium', 'Premium'].map(s => (
-                            <button key={s} className="btn btn-ghost btn-sm" style={{ borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>{s}</button>
-                        ))}
-                    </div>
+                    {!isMobile && (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                            {['All', 'Ultra Premium', 'Premium'].map(s => (
+                                <button key={s} className="btn btn-ghost btn-sm" style={{ borderRadius: 8, fontSize: '0.75rem', fontWeight: 700 }}>{s}</button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Customer Matrix */}
@@ -128,11 +137,19 @@ export default function Customers() {
                                             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>VERIFIED · #CST-{1000 + (c.id || 0)}</span>
                                         </div>
                                         
-                                        <div style={{ display: 'flex', gap: 40 }}>
+                                        <div style={{ display: 'flex', gap: isMobile ? 12 : 40, flexDirection: isMobile ? 'column' : 'row' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIMARY CHANNEL</span>
                                                 <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--slate-700)', display: 'flex', alignItems: 'center', gap: 8 }}>
                                                     <Mail size={14} style={{ color: 'var(--navy-400)' }} /> {c.email}
+                                                </div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--slate-700)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); dialerEvents.call(c.id, c.phone, c.name); }}
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--accent-emerald)', padding: 0, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontWeight: 700 }}
+                                                    >
+                                                        <Phone size={14} /> {c.phone}
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -141,9 +158,11 @@ export default function Customers() {
                                                     {c.total_purchased || c.totalPurchased || 'PENDING ASSETS'}
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: 'auto', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginLeft: isMobile ? 0 : 'auto', textAlign: isMobile ? 'left' : 'right' }}>
                                                 <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>LIFETIME STATUS</span>
-                                                <span className={`badge ${STATUS_BADGE[c.status] || 'badge-slate'}`} style={{ padding: '4px 14px', borderRadius: 8, fontSize: '0.75rem' }}>{c.status}</span>
+                                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                    <span className={`badge ${STATUS_BADGE[c.status] || 'badge-slate'}`} style={{ padding: '4px 14px', borderRadius: 8, fontSize: '0.75rem' }}>{c.status}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -155,7 +174,7 @@ export default function Customers() {
             </div>
 
             {/* Right: Intel Profile Sidebar */}
-            <div style={{ overflowY: 'auto', paddingRight: 4 }}>
+            <div style={{ display: (isMobile && !selected) ? 'none' : 'block', overflowY: isMobile ? 'visible' : 'auto', paddingRight: isMobile ? 0 : 4 }}>
                 {selected ? (
                     <div className="glass-card animate-fadeIn" style={{ 
                         position: 'sticky', top: 0, borderRadius: 28, 
@@ -190,8 +209,8 @@ export default function Customers() {
                                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginTop: 4 }}>{selected.segment} · Partner since {selected.join_date ? new Date(selected.join_date).getFullYear() : '2024'}</p>
                                 
                                 <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                                    <button className="btn btn-white btn-sm" style={{ borderRadius: 10, padding: '8px 16px', fontWeight: 700 }} onClick={() => dialerEvents.call(selected.id, selected.phone, selected.name)}><Phone size={14} /> Call Now</button>
                                     <button className="btn btn-white btn-sm" style={{ borderRadius: 10, padding: '8px 16px', fontWeight: 700 }}><MessageCircle size={14} /> WhatsApp</button>
-                                    <button className="btn btn-ghost btn-sm" style={{ color: 'white', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10 }}><Mail size={14} /></button>
                                 </div>
                             </div>
                         </div>

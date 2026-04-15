@@ -9,6 +9,7 @@ import {
     Bell, Search, Plus, MapPin, Phone, MessageSquare, 
     ChevronRight, CheckCircle, AlertCircle, Layout, Crown, Award
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 const COLORS = {
     brand: '#6366f1',
@@ -49,6 +50,7 @@ const KPI_STYLE = {
 export default function ManagerDashboardView({ user, data }) {
     const navigate = useNavigate();
     const [period, setPeriod] = useState('This Month');
+    const isMobile = useMobile();
     
     const stats = data || {};
     const members = stats.members || [];
@@ -69,33 +71,37 @@ export default function ManagerDashboardView({ user, data }) {
     };
 
     return (
-        <div style={{ padding: '24px 32px', background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
+        <div style={{ padding: isMobile ? '16px' : '24px 32px', background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
             
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: isMobile ? '20px' : '32px', gap: isMobile ? 12 : 0 }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: COLORS.slate950, letterSpacing: '-0.5px' }}>
-                        {getGreeting()}, {user?.name || 'Manager'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: '12px', verticalAlign: 'middle' }}>Manager Dashboard</span>
+                        {getGreeting()}, {user?.name || 'Manager'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: isMobile ? '0' : '12px', marginTop: isMobile ? '8px' : '0', display: isMobile ? 'inline-block' : 'inline', verticalAlign: 'middle' }}>Manager Dashboard</span>
                     </h1>
                     <p style={{ margin: '4px 0 0', color: COLORS.slate600, fontSize: '0.9rem', fontWeight: 500 }}>Here's your team performance, pipeline health and priorities for this month.</p>
                 </div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
                     {/* Filters */}
-                    <div style={{ display: 'flex', background: '#fff', borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', cursor: 'pointer' }}>
-                            <Clock size={16} color={COLORS.slate600} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate900 }}>This Month</span>
-                            <ChevronDown size={14} color={COLORS.slate400} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', background: '#fff', borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', cursor: 'pointer' }}>
-                            <MapPin size={16} color={COLORS.slate600} />
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate900 }}>All Locations</span>
-                            <ChevronDown size={14} color={COLORS.slate400} />
-                        </div>
-                    </div>
+                    {!isMobile && (
+                        <>
+                            <div style={{ display: 'flex', background: '#fff', borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', cursor: 'pointer' }}>
+                                    <Clock size={16} color={COLORS.slate600} />
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate900 }}>This Month</span>
+                                    <ChevronDown size={14} color={COLORS.slate400} />
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', background: '#fff', borderRadius: '12px', padding: '4px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 16px', cursor: 'pointer' }}>
+                                    <MapPin size={16} color={COLORS.slate600} />
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate900 }}>All Locations</span>
+                                    <ChevronDown size={14} color={COLORS.slate400} />
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                     <div style={{ position: 'relative', width: 40, height: 40, background: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', cursor: 'pointer' }}>
                         <Bell size={20} color={COLORS.slate600} />
@@ -104,15 +110,15 @@ export default function ManagerDashboardView({ user, data }) {
 
                     <div 
                         onClick={() => navigate('/leads')}
-                        style={{ background: COLORS.brand, padding: '10px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)' }}
+                        style={{ background: COLORS.brand, padding: isMobile ? '10px 16px' : '10px 24px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)', flex: isMobile ? 1 : 'none', justifyContent: 'center' }}
                     >
-                        <Plus size={18} /> Add Lead <ChevronDown size={14} />
+                        <Plus size={18} /> Add Lead
                     </div>
                 </div>
             </div>
 
             {/* KPI Metrics */}
-            <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
+            <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 <MetricCard title="Team Revenue" val={formatRevenue(bookings.total_value)} growth="+ 19.6%" icon={Layout} color="#6366f1" />
                 <MetricCard title="Team Bookings" val={bookings.total || 0} growth="+ 16.6%" icon={Award} color="#8b5cf6" />
                 <MetricCard title="Team Leads" val={leadsStat.active_leads || 0} growth="+ 13.9%" icon={Users} color="#3b82f6" />
@@ -122,7 +128,7 @@ export default function ManagerDashboardView({ user, data }) {
             </div>
 
             {/* Main Content Areas */}
-            <div className="dash-charts-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+            <div className="dash-charts-row" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '32px', marginBottom: '32px' }}>
                 
                 {/* Team Pipeline Overview */}
                 <div style={{ ...KPI_STYLE, gridColumn: 'span 1' }}>
@@ -217,7 +223,7 @@ export default function ManagerDashboardView({ user, data }) {
             </div>
 
             {/* Bottom Section */}
-            <div className="dash-bottom-row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.3fr)', gap: '32px' }}>
+            <div className="dash-bottom-row" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.3fr)', gap: isMobile ? '16px' : '32px' }}>
                 
                 {/* Deals Requiring Attention */}
                 <div style={KPI_STYLE}>

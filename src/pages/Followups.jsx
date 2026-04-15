@@ -3,8 +3,10 @@ import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { followupsApi, leadsApi, usersApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
-import { Plus, X, CheckCircle, Clock, AlertCircle, Calendar, Send } from 'lucide-react';
+import { Plus, X, CheckCircle, Clock, AlertCircle, Calendar, Send, Phone } from 'lucide-react';
+import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
+import { useMobile } from '../hooks/useMobile';
 
 const TYPE_ICON = { Call: '📞', Email: '📧', WhatsApp: '💬', 'Site Visit': '🏠', Meeting: '🤝' };
 const PRIORITY_BADGE = { High: 'badge-red', Medium: 'badge-amber', Low: 'badge-slate' };
@@ -16,6 +18,7 @@ const DEFAULT_FORM = {
 
 export default function Followups() {
     const { showToast } = useToast();
+    const isMobile = useMobile();
     const { data: followupsRes, loading, error, refetch } = useApi(() => followupsApi.list({ limit: 200 }));
     const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 200 }));
     const { data: usersRes } = useApi(() => usersApi.list());
@@ -64,20 +67,20 @@ export default function Followups() {
 
     return (
         <div className="animate-fadeIn">
-            <div className="page-header">
+            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
                 <div>
                     <h1 className="page-title">Follow-Up Scheduler</h1>
                     <p className="page-subtitle">{pending} pending · {highPriority} high priority</p>
                 </div>
-                <div className="page-actions">
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                        <Plus size={15} /> Schedule Follow-Up
+                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto' }}>
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: isMobile ? '100%' : 'auto' }}>
+                        <Plus size={15} /> {isMobile ? 'Schedule' : 'Schedule Follow-Up'}
                     </button>
                 </div>
             </div>
 
             {/* Stats */}
-            <div className="grid grid-3 mb-4">
+            <div className="grid grid-3 mb-4" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12 }}>
                 {[
                     { label: 'Pending', count: pending, icon: <Clock size={20} />, color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.08)' },
                     { label: 'Completed', count: completed, icon: <CheckCircle size={20} />, color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.08)' },
@@ -117,79 +120,109 @@ export default function Followups() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {filtered.map(f => (
                     <div key={f.id} className="card" style={{
-                        padding: '16px 20px',
-                        display: 'flex', alignItems: 'center', gap: 16,
+                        padding: isMobile ? '12px 14px' : '16px 20px',
+                        display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 16,
                         opacity: f.status === 'Completed' ? 0.65 : 1,
                         transition: 'all var(--transition-fast)',
+                        flexDirection: isMobile ? 'column' : 'row'
                     }}>
-                        {/* Toggle */}
-                        <button
-                            onClick={() => toggle(f.id, f.status)}
-                            style={{
-                                width: 28, height: 28, borderRadius: '50%', border: '2px solid',
-                                borderColor: f.status === 'Completed' ? 'var(--accent-emerald)' : 'var(--border-medium)',
-                                background: f.status === 'Completed' ? 'var(--accent-emerald)' : 'white',
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                            {/* Toggle */}
+                            <button
+                                onClick={() => toggle(f.id, f.status)}
+                                style={{
+                                    width: 24, height: 24, borderRadius: '50%', border: '2px solid',
+                                    borderColor: f.status === 'Completed' ? 'var(--accent-emerald)' : 'var(--border-medium)',
+                                    background: f.status === 'Completed' ? 'var(--accent-emerald)' : 'white',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition-fast)',
+                                    color: 'white',
+                                }}
+                            >
+                                {f.status === 'Completed' && <CheckCircle size={12} />}
+                            </button>
+
+                            {/* Icon */}
+                            <div style={{
+                                width: 36, height: 36, borderRadius: 'var(--border-radius-md)',
+                                background: f.priority === 'High' ? 'rgba(244,63,94,0.1)' : f.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'var(--slate-100)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition-fast)',
-                                color: 'white',
-                            }}
-                        >
-                            {f.status === 'Completed' && <CheckCircle size={14} />}
-                        </button>
-
-                        {/* Icon */}
-                        <div style={{
-                            width: 40, height: 40, borderRadius: 'var(--border-radius-md)',
-                            background: f.priority === 'High' ? 'rgba(244,63,94,0.1)' : f.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'var(--slate-100)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1.2rem', flexShrink: 0,
-                        }}>
-                            {TYPE_ICON[f.type] || '📋'}
-                        </div>
-
-                        {/* Info */}
-                        <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                                <span style={{ fontWeight: 700, fontSize: '0.9rem', textDecoration: f.status === 'Completed' ? 'line-through' : 'none' }}>
-                                    {f.lead_name || f.leadName}
-                                </span>
-                                <span className="badge badge-slate" style={{ fontSize: '0.7rem' }}>{f.type}</span>
-                                <span className={`badge ${PRIORITY_BADGE[f.priority]}`} style={{ fontSize: '0.7rem' }}>{f.priority}</span>
+                                fontSize: '1rem', flexShrink: 0,
+                            }}>
+                                {TYPE_ICON[f.type] || '📋'}
                             </div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{f.note}</div>
+
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.9rem', textDecoration: f.status === 'Completed' ? 'line-through' : 'none' }}>
+                                    {f.lead_name || f.leadName}
+                                </div>
+                                <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
+                                    <span className="badge badge-slate" style={{ fontSize: '0.65rem' }}>{f.type}</span>
+                                    <span className={`badge ${PRIORITY_BADGE[f.priority]}`} style={{ fontSize: '0.65rem' }}>{f.priority}</span>
+                                </div>
+                            </div>
+
+                            {isMobile && (
+                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteFu(f.id)} style={{ marginLeft: 'auto' }}>
+                                    <X size={13} />
+                                </button>
+                            )}
                         </div>
 
-                        {/* Date/Agent */}
-                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', fontWeight: 600, marginBottom: 3 }}>
+                        {/* Mid Row for mobile */}
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '100%', paddingLeft: isMobile ? 0 : 0 }}>
+                            {f.note}
+                        </div>
+
+                        {/* Bottom Row / Date Agent */}
+                        <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            width: '100%', 
+                            borderTop: isMobile ? '1px solid var(--border-light)' : 'none',
+                            paddingTop: isMobile ? 8 : 0
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', fontWeight: 600 }}>
                                 <Calendar size={12} style={{ color: 'var(--text-muted)' }} />
                                 {f.scheduled_at
                                     ? new Date(f.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
                                     : f.date || '—'}
                                 <span style={{ color: 'var(--text-muted)' }}>@{f.scheduled_at ? new Date(f.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : f.time}</span>
                             </div>
-                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{f.agent_name || f.agentName}</div>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                {!isMobile && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{f.agent_name || f.agentName}</div>}
+                                
+                                {f.status !== 'Completed' && (() => {
+                                    const lead = { id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: '', email: '', project: '', budget: '' };
+                                    return (
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            <button
+                                                className="btn btn-sm"
+                                                style={{ background: 'rgba(37,211,102,0.1)', color: '#22c55e', border: '1px solid rgba(37,211,102,0.25)', gap: 5, flexShrink: 0, padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem' }}
+                                                onClick={() => setNotifyTarget(lead)}
+                                            >
+                                                <Send size={12} /> Notify
+                                            </button>
+                                            <button
+                                                className="btn btn-sm"
+                                                style={{ background: 'rgba(0,163,141,0.1)', color: '#00a38d', border: '1px solid rgba(0,163,141,0.25)', gap: 5, flexShrink: 0, padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem' }}
+                                                onClick={() => dialerEvents.call(f.lead_id || f.leadId, f.lead_phone || f.leadPhone, f.lead_name || f.leadName)}
+                                            >
+                                                <Phone size={12} /> Call
+                                            </button>
+                                        </div>
+                                    );
+                                })()}
+                                
+                                {!isMobile && (
+                                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteFu(f.id)}>
+                                        <X size={13} />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-
-                        {/* Notify */}
-                        {f.status !== 'Completed' && (() => {
-                            const lead = { id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: '', email: '', project: '', budget: '' };
-                            return (
-                                <button
-                                    className="btn btn-sm"
-                                    style={{ background: 'rgba(37,211,102,0.1)', color: '#22c55e', border: '1px solid rgba(37,211,102,0.25)', gap: 5, flexShrink: 0 }}
-                                    onClick={() => setNotifyTarget(lead)}
-                                    title="Send notification to lead"
-                                >
-                                    <Send size={12} /> Notify
-                                </button>
-                            );
-                        })()}
-
-                        {/* Delete */}
-                        <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteFu(f.id)}>
-                            <X size={13} />
-                        </button>
                     </div>
                 ))}
                 {filtered.length === 0 && (

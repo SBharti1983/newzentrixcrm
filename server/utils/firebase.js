@@ -48,10 +48,47 @@ const app = initFirebase();
 const bucket = app ? admin.storage().bucket() : null;
 const db = app ? admin.database() : null;
 
+// --- TENANT-SPECIFIC INITIALIZATION ---
+// Cache for tenant-specific firebase apps to prevent duplicate init errors
+const tenantApps = new Map();
+
+const getTenantDb = (config) => {
+    const { projectId, clientEmail, privateKey, databaseURL } = config;
+    
+    if (!projectId || !clientEmail || !privateKey) return null;
+    
+    const cacheKey = projectId;
+    if (tenantApps.has(cacheKey)) return tenantApps.get(cacheKey).database();
+
+    try {
+        let sanitizedKey = privateKey.trim();
+        if (sanitizedKey.startsWith('"') && sanitizedKey.endsWith('"')) {
+            sanitizedKey = sanitizedKey.substring(1, sanitizedKey.length - 1);
+        }
+        sanitizedKey = sanitizedKey.replace(/\\n/g, '\n');
+
+        const tenantApp = admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId,
+                clientEmail,
+                privateKey: sanitizedKey,
+            }),
+            databaseURL: databaseURL || `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`
+        }, `app-${cacheKey}-${Date.now()}`); // Unique name to avoid conflicts
+
+        tenantApps.set(cacheKey, tenantApp);
+        return tenantApp.database();
+    } catch (err) {
+        console.error(`[FIREBASE] Failed to init tenant app ${projectId}:`, err.message);
+        return null;
+    }
+};
+
 module.exports = {
     admin,
     bucket,
     db,
     isStorageEnabled: !!bucket,
-    isDbEnabled: !!db
+    isDbEnabled: !!db,
+    getTenantDb
 };

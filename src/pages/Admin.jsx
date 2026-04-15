@@ -6,6 +6,7 @@ import { usersApi, projectsApi, settingsApi, telephonyApi } from '../api/client'
 import { useToast } from '../hooks/useToast';
 import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio, Search, Palette } from 'lucide-react';
 import { useBranding } from '../context/BrandingContext';
+import { useMobile } from '../hooks/useMobile';
 
 const ROLE_LABELS = {
     superadmin: 'Super Administrator',
@@ -42,7 +43,12 @@ const SETTINGS_MAP = {
     // Communication
     'WhatsApp Phone ID': 'whatsapp_phone_id', 'WhatsApp API Key': 'whatsapp_api_key', 'SMTP Host': 'smtp_host', 'SMTP User': 'smtp_user', 'SMTP Password': 'smtp_pass',
     // System
-    'Firebase Project': 'firebase_project_id', 'Firebase Database URL': 'firebase_database_url', 'Storage Server URL': 'android_storage_url', 'Webhook Secret': 'telephony_secret',
+    'Firebase Project': 'firebase_project_id', 
+    'Firebase Database URL': 'firebase_database_url', 
+    'Firebase Client Email': 'firebase_client_email',
+    'Firebase Private Key': 'firebase_private_key',
+    'Storage Server URL': 'android_storage_url', 
+    'Webhook Secret': 'telephony_secret',
     'Gemini AI Key': 'gemini_api_key'
 };
 
@@ -57,6 +63,7 @@ export default function Admin() {
     const PROJECTS_DATA = projectsRaw || [];
     // derive current user from session storage
     const { user: currentUser, refreshUser } = useAuth();
+    const isMobile = useMobile();
 
     // White Label branding
     const { branding, updateBranding } = useBranding();
@@ -555,7 +562,7 @@ export default function Admin() {
     const displaySetting = (key, fallback) => {
         const dbKey = SETTINGS_MAP[key] || key;
         const val = systemSettings?.[dbKey];
-        if (key.includes('Password') || key.includes('API Key') || key === 'Webhook Secret' || key === 'Gemini AI Key') {
+        if (key.includes('Password') || key.includes('Key') || key === 'Webhook Secret' || key === 'Firebase Private Key') {
             return val ? '••••••••' : 'None';
         }
         return val !== undefined && val !== null ? val : fallback;
@@ -672,21 +679,62 @@ export default function Admin() {
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="tabs mb-6" style={{ width: 'fit-content', flexWrap: 'wrap' }}>
-                {[['users', <Users size={14} />, 'Users & Roles'], ['projects', <Building2 size={14} />, 'Projects Config'], ['permissions', <Shield size={14} />, 'Permissions'], ['settings', <Settings size={14} />, 'Settings'], ['whitelabel', <Palette size={14} />, 'White Label'], ['recording', <Phone size={14} />, 'Recording & Bridge'], ['agent_activity', <Smartphone size={14} />, 'Agent Activity']].map(([key, icon, label]) => (
-                    <button key={key} className={`tab-btn${tab === key ? ' active' : ''}`} onClick={() => setTab(key)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {icon}{label}
-                    </button>
-                ))}
+            {/* 🛫 Navigation Radar */}
+            <div className="tabs-container" style={{ 
+                width: '100%', 
+                overflowX: 'auto', 
+                paddingBottom: 12, 
+                marginBottom: 28,
+                display: 'flex',
+                gap: '4px',
+                alignItems: 'center',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none'
+            }}>
+                {[
+                    ['users', <Users size={15} />, 'Users & Roles'], 
+                    ['projects', <Building2 size={15} />, 'Projects Config'], 
+                    ['permissions', <Shield size={15} />, 'Permissions'], 
+                    ['settings', <Settings size={15} />, 'Settings'], 
+                    ['whitelabel', <Palette size={15} />, 'White Label'], 
+                    ['recording', <Phone size={15} />, 'Recording & Bridge'], 
+                    ['agent_activity', <Smartphone size={15} />, 'Agent Activity']
+                ].map(([key, icon, label]) => {
+                    const isActive = tab === key;
+                    return (
+                        <button 
+                            key={key} 
+                            onClick={() => setTab(key)}
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '8px', 
+                                whiteSpace: 'nowrap', 
+                                padding: '10px 16px', 
+                                fontSize: '0.78rem',
+                                fontWeight: isActive ? 850 : 700,
+                                borderRadius: '12px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                background: isActive ? 'white' : 'transparent',
+                                color: isActive ? '#0f172a' : '#94a3b8',
+                                boxShadow: isActive ? '0 4px 12px rgba(15, 23, 42, 0.06)' : 'none',
+                                border: isActive ? '1px solid rgba(15, 23, 42, 0.05)' : '1px solid transparent'
+                            }}
+                        >
+                            <span style={{ opacity: isActive ? 1 : 0.6 }}>{icon}</span>
+                            {label}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Users Tab */}
             {tab === 'users' && (
                 <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 16 }}>
-                        <div style={{ position: 'relative', flex: 1, maxWidth: '400px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: 20, gap: 16, flexDirection: isMobile ? 'column' : 'row' }}>
+                        <div style={{ position: 'relative', flex: 1, width: isMobile ? '100%' : 'auto', maxWidth: isMobile ? 'none' : '400px' }}>
                             <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)' }} />
                             <input 
                                 type="text"
@@ -697,17 +745,17 @@ export default function Admin() {
                                 style={{ paddingLeft: 40, background: 'white', borderRadius: 12, border: '1px solid var(--border-medium)' }}
                             />
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
                             <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--slate-100)', padding: '6px 12px', borderRadius: '8px' }}>
                                 {users.length} Users
                             </span>
-                            <button className="btn btn-primary" onClick={openAdd} style={{ padding: '8px 20px', fontWeight: 800 }}>
-                                <Plus size={16} /> Add Team Member
+                            <button className="btn btn-primary" onClick={openAdd} style={{ padding: isMobile ? '8px 12px' : '8px 20px', fontWeight: 800, fontSize: isMobile ? '0.75rem' : '0.85rem' }}>
+                                <Plus size={16} /> Add Member
                             </button>
                         </div>
                     </div>
 
-                    <div className="grid grid-2">
+                    <div className="grid grid-2" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
                         {users.map(u => (
                             <div key={u.id} className="card" style={{ padding: '18px 20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
@@ -947,7 +995,15 @@ export default function Admin() {
                         { title: 'Company Information', fields: [['Company Name', 'Zentrix Realty Pvt. Ltd.'], ['Website', 'www.zentrixrealty.com'], ['Support Email', 'support@zentrixrealty.com'], ['Phone', '+91 22 4567 8900']] },
                         { title: 'CRM Configuration', fields: [['Lead Expiry (days)', '30'], ['Auto-assign Leads', 'Enabled'], ['Default Currency', 'INR (₹)'], ['Fiscal Year Start', 'April']] },
                         { title: 'Communication Gateways', fields: [['WhatsApp Phone ID', 'Not configured'], ['WhatsApp API Key', '••••••••'], ['SMTP Host', 'smtp.gmail.com'], ['SMTP User', 'Not configured'], ['SMTP Password', '••••••••']] },
-                        { title: 'System Integrations (WTI App)', fields: [['Firebase Project', systemSettings?.firebase_project_id || 'Not configured'], ['Firebase Database URL', systemSettings?.firebase_database_url || 'N/A'], ['Storage Server URL', systemSettings?.android_storage_url || 'N/A'], ['Webhook Secret', systemSettings?.telephony_secret ? '••••••••' : 'None'], ['Gemini AI Key', systemSettings?.gemini_api_key ? '••••••••' : 'None']] },
+                        { title: 'System Integrations (WTI App)', fields: [
+                            ['Firebase Project', systemSettings?.firebase_project_id || 'Not configured'], 
+                            ['Firebase Database URL', systemSettings?.firebase_database_url || 'N/A'], 
+                            ['Firebase Client Email', systemSettings?.firebase_client_email || 'Not configured'],
+                            ['Firebase Private Key', systemSettings?.firebase_private_key ? '••••••••' : 'None'],
+                            ['Storage Server URL', systemSettings?.android_storage_url || 'N/A'], 
+                            ['Webhook Secret', systemSettings?.telephony_secret ? '••••••••' : 'None'], 
+                            ['Gemini AI Key', systemSettings?.gemini_api_key ? '••••••••' : 'None']
+                        ] },
                         { title: 'Notification Defaults', fields: [['Follow-up Reminders', 'Email + WhatsApp'], ['Visit Reminders', '24 hrs before'], ['Booking Alerts', 'Immediate'], ['Weekly Reports', 'Every Monday']] },
                         { title: 'Data & Privacy', fields: [['Data Retention', '3 Years'], ['Backup Frequency', 'Daily'], ['Export Format', 'CSV / Excel'], ['Audit Logs', 'Enabled (90 days)']] },
                     ].map(section => (

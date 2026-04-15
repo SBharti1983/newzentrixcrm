@@ -8,6 +8,7 @@ import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
 import { dialerEvents } from '../constants/events';
+import { useMobile } from '../hooks/useMobile';
 
 const STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const STAGE_COLORS = {
@@ -164,6 +165,7 @@ export default function Leads() {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const { user } = useAuth();
+    const isMobile = useMobile();
     const [search, setSearch] = useState('');
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
@@ -230,7 +232,14 @@ export default function Leads() {
     const leads = leadsRes?.data || [];
     const agents = Array.isArray(users) ? users.filter(u => ['agent', 'sales_manager', 'team_leader', 'admin'].includes(u.role)) : [];
 
-    const openAdd = () => { setForm(DEFAULT_FORM); setEditingId(null); setShowModal(true); };
+    const openAdd = () => { 
+        setForm({
+            ...DEFAULT_FORM,
+            assigned_to: ['agent', 'sales_manager', 'team_leader'].includes(user?.role) ? user.id : ''
+        }); 
+        setEditingId(null); 
+        setShowModal(true); 
+    };
     const openEdit = (lead) => {
         setForm({
             name: lead.name, email: lead.email || '', phone: lead.phone || '',
@@ -268,6 +277,7 @@ export default function Leads() {
             } else {
                 await leadsApi.create(sanitized);
                 showToast('Lead added successfully', 'success');
+                setPage(1); // Reset to page 1 to see the new lead at the top
             }
             setShowModal(false);
             // Await refetch so errors are caught here instead of crashing silently
@@ -384,32 +394,32 @@ export default function Leads() {
     };
 
     return (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0' }}>
             {/* Header */}
-            <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+            <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left">
                     <h1 className="page-title">Lead Management</h1>
                     <p className="page-subtitle">{leadsRes?.total || 0} total leads</p>
                 </div>
                 
 
-                <div className="page-actions" style={{ marginRight: 20 }}>
+                <div className="page-actions" style={{ marginRight: isMobile ? 0 : 20, width: isMobile ? '100%' : 'auto', display: 'flex', gap: 6 }}>
                     <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImport} />
-                    <button className="btn btn-secondary btn-sm" onClick={() => fetchLeads()} title="Refresh Data">
+                    <button className="btn btn-secondary btn-sm" onClick={() => fetchLeads()} title="Refresh Data" style={{ flex: isMobile ? 1 : 'none' }}>
                         <RotateCw size={14} className={leadsLoading ? 'animate-spin' : ''} /> Refresh
                     </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading} style={{ flex: isMobile ? 1 : 'none' }}>
                         <Filter size={14} /> Import
                     </button>
-                    <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                    <button className="btn btn-primary btn-sm" onClick={openAdd} style={{ flex: isMobile ? 1 : 'none' }}>
                         <Plus size={15} /> Add Lead
                     </button>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="card mb-2" style={{ padding: '8px 16px', borderRadius: 12 }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'nowrap', overflowX: 'auto' }}>
+            <div className="card mb-2" style={{ padding: '8px 12px', borderRadius: 12, overflowX: 'auto' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'nowrap', minWidth: isMobile ? 'max-content' : 'auto' }}>
                     <div className="search-bar" style={{ width: 220, minWidth: 180, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
                         <Search size={14} style={{ color: 'var(--text-muted)' }} />
                         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads..." style={{ background: 'transparent' }} />
@@ -575,7 +585,7 @@ export default function Leads() {
                                         onPreview={setPreviewLeadId}
                                         onDelete={deleteLead}
                                         onEdit={openEdit}
-                                        onCall={dialerEvents.call}
+                                        onCall={(id, num, name) => dialerEvents.call(id, num, name)}
                                         onNavigate={(id) => navigate(`/leads/${id}`)}
                                     />
                                 ))}

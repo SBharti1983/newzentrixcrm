@@ -7,9 +7,11 @@ import {
     Plus, X, MapPin, Clock, Car, CheckCircle, Map as MapIcon, 
     LayoutGrid, Calendar, Trash2, ChevronRight, Search, 
     Navigation2, MoreHorizontal, User, Building2, Timer,
-    Sparkles, Target, Zap
+    Sparkles, Target, Zap, Phone
 } from 'lucide-react';
+import { dialerEvents } from '../constants/events';
 import { GoogleMap, useLoadScript, MarkerF, InfoWindowF } from '@react-google-maps/api';
+import { useMobile } from '../hooks/useMobile';
 
 const centerMumbai = { lat: 19.0760, lng: 72.8777 };
 
@@ -117,11 +119,15 @@ const STYLES = `
     100% { transform: translateY(0); }
 }
 
-.float-anim { animation: float 6s ease-in-out infinite; }
+.hover-lift:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+}
 `;
 
 export default function SiteVisits() {
     const { showToast } = useToast();
+    const isMobile = useMobile();
     const { data: visitsRaw, loading, error, refetch } = useApi(() => siteVisitsApi.list({ limit: 200 }));
     const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 200 }));
     const { data: projectsRaw } = useApi(() => projectsApi.list());
@@ -140,6 +146,18 @@ export default function SiteVisits() {
     const [selectedMarker, setSelectedMarker] = useState(null);
 
     const filtered = visits.filter(v => filterStatus === 'All' || v.status === filterStatus);
+    
+    const safeDate = (dateStr) => {
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return 'TBD';
+            return d.toLocaleString('en-IN', { 
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true 
+            });
+        } catch (e) {
+            return 'TBD';
+        }
+    };
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: 'DUMMY_KEY_FOR_DEMO_REPLACE_IN_PRODUCTION',
@@ -194,10 +212,10 @@ export default function SiteVisits() {
     }).length;
 
     return (
-        <div className="site-visit-command" style={{ padding: '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
+        <div className="site-visit-command" style={{ padding: isMobile ? '20px' : '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
             
             {/* 🏎️ Logistics Control Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '32px' : '48px', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 24 : 0 }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
                         <Navigation2 size={20} color={COLORS.indigo} strokeWidth={2.5} />
@@ -205,25 +223,29 @@ export default function SiteVisits() {
                             Showcase Logistics Command
                         </span>
                     </div>
-                    <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1px' }}>
+                    <h1 style={{ margin: 0, fontSize: isMobile ? '1.6rem' : '2rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1px' }}>
                         Site Visit <span style={{ color: COLORS.indigo }}>Radar</span>
                     </h1>
-                    <p style={{ margin: '6px 0 0', color: COLORS.slate500, fontSize: '0.95rem', fontWeight: 600 }}>
+                    <p style={{ margin: '6px 0 0', color: COLORS.slate500, fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 600 }}>
                         Orchestrating premium property tours and real-time attendance tracking.
                     </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
-                    <div className="premium-card" style={{ display: 'flex', padding: '6px', borderRadius: '18px', background: 'white' }}>
+                <div style={{ display: 'flex', gap: '16px', marginTop: '10px', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
+                    <div className="premium-card" style={{ display: 'flex', padding: '6px', borderRadius: '18px', background: 'white', flex: isMobile ? 1 : 'none', justifyContent: 'center' }}>
                         <button className="view-toggle-btn" onClick={() => setViewMode('grid')} style={{ 
                             background: viewMode === 'grid' ? COLORS.slate950 : 'transparent', 
-                            color: viewMode === 'grid' ? 'white' : COLORS.slate500 
+                            color: viewMode === 'grid' ? 'white' : COLORS.slate500,
+                            flex: isMobile ? 1 : 'none',
+                            padding: isMobile ? '8px 16px' : '10px 24px'
                         }}>
                             <LayoutGrid size={18} /> Board
                         </button>
                         <button className="view-toggle-btn" onClick={() => setViewMode('map')} style={{ 
                             background: viewMode === 'map' ? COLORS.slate950 : 'transparent', 
-                            color: viewMode === 'map' ? 'white' : COLORS.slate500 
+                            color: viewMode === 'map' ? 'white' : COLORS.slate500,
+                            flex: isMobile ? 1 : 'none',
+                            padding: isMobile ? '8px 16px' : '10px 24px'
                         }}>
                             <MapIcon size={18} /> Map
                         </button>
@@ -232,7 +254,8 @@ export default function SiteVisits() {
                         background: `linear-gradient(135deg, ${COLORS.indigo}, ${COLORS.violet})`, 
                         color: 'white', border: 'none', padding: '14px 28px', borderRadius: '18px',
                         fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px',
-                        boxShadow: '0 12px 24px rgba(99, 102, 241, 0.3)', cursor: 'pointer', transition: 'all 0.3s ease'
+                        boxShadow: '0 12px 24px rgba(99, 102, 241, 0.3)', cursor: 'pointer', transition: 'all 0.3s ease',
+                        width: isMobile ? '100%' : 'auto', justifyContent: 'center'
                     }}>
                         <Plus size={20} strokeWidth={3} /> Plan Visit
                     </button>
@@ -240,27 +263,28 @@ export default function SiteVisits() {
             </div>
 
             {/* 📈 Real-time Analytics Banner */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '32px', marginBottom: '48px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? '16px' : '32px', marginBottom: '48px' }}>
                 <div className="premium-card" style={{ 
                     background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate800} 100%)`, 
-                    padding: '20px 32px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    padding: isMobile ? '16px 20px' : '20px 32px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 20 : 0
                 }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: COLORS.indigo, marginBottom: '4px' }}>
                             <Zap size={16} fill={COLORS.indigo} />
                             <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Peak</span>
                         </div>
-                        <h2 style={{ fontSize: '1.4rem', fontWeight: 950, margin: 0 }}>Site Showcase Momentum</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '2px', fontSize: '0.85rem', fontWeight: 600 }}>Avg conversion velocity: <span style={{ color: COLORS.emerald }}>24.5%</span> this month.</p>
+                        <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 950, margin: 0 }}>Site Showcase Momentum</h2>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '2px', fontSize: '0.85rem', fontWeight: 600 }}>Avg conversion velocity: <span style={{ color: COLORS.emerald }}>24.5%</span></p>
                     </div>
-                    <div style={{ display: 'flex', gap: '24px' }}>
+                    <div style={{ display: 'flex', gap: '24px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'center' : 'flex-end' }}>
                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: COLORS.white }}>{completedThisMonth}</div>
+                            <div style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 950, color: COLORS.white }}>{completedThisMonth}</div>
                             <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Completed</div>
                         </div>
                         <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
                          <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: COLORS.indigo }}>{visits.filter(v => v.status === 'Scheduled').length}</div>
+                            <div style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 950, color: COLORS.indigo }}>{visits.filter(v => v.status === 'Scheduled').length}</div>
                             <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Scheduled</div>
                         </div>
                     </div>
@@ -276,20 +300,19 @@ export default function SiteVisits() {
                     <div>
                         <div style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase', marginBottom: '4px' }}>Logistics Health</div>
                         <div style={{ fontSize: '1.4rem', fontWeight: 950, color: COLORS.slate950 }}>98.2% On-Time</div>
-                        <div style={{ fontSize: '0.8rem', color: COLORS.emerald, fontWeight: 700, marginTop: '2px' }}>Transport Optimized</div>
                     </div>
                 </div>
             </div>
 
             {/* 🔍 Global Operations Filter */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '32px', flexDirection: isMobile ? 'column' : 'row', gap: 16 }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     {['All', 'Scheduled', 'Completed', 'Cancelled'].map(s => (
                         <button
                             key={s}
                             onClick={() => setFilterStatus(s)}
                             style={{ 
-                                padding: '10px 24px', borderRadius: '14px', fontSize: '0.85rem', fontWeight: 850,
+                                padding: isMobile ? '8px 16px' : '10px 24px', borderRadius: '14px', fontSize: '0.8rem', fontWeight: 850,
                                 background: filterStatus === s ? COLORS.indigo : `${COLORS.indigo}05`,
                                 color: filterStatus === s ? 'white' : COLORS.indigo,
                                 border: 'none', cursor: 'pointer', transition: 'all 0.3s ease'
@@ -299,14 +322,14 @@ export default function SiteVisits() {
                         </button>
                     ))}
                 </div>
-                <div style={{ fontSize: '0.9rem', color: COLORS.slate400, fontWeight: 700 }}>
-                    Tracking <span style={{ color: COLORS.slate950 }}>{filtered.length}</span> out of {visits.length} missions
+                <div style={{ fontSize: '0.85rem', color: COLORS.slate400, fontWeight: 700 }}>
+                    Tracking missions: <span style={{ color: COLORS.slate950 }}>{filtered.length}</span>
                 </div>
             </div>
 
             {/* 🗺️ Radar Interface (Grid vs Map) */}
             {viewMode === 'map' ? (
-                <div className="premium-card" style={{ height: '600px', padding: 0, overflow: 'hidden' }}>
+                <div className="premium-card" style={{ height: isMobile ? '400px' : '600px', padding: 0, overflow: 'hidden' }}>
                     {!isLoaded ? (
                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>Initializing Radar...</div>
                     ) : (
@@ -340,7 +363,15 @@ export default function SiteVisits() {
                                         <div style={{ fontSize: '0.85rem', color: COLORS.slate500, fontWeight: 700 }}>{selectedMarker.project_name}</div>
                                         <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <span className={`visit-badge status-${selectedMarker.status}`}>{selectedMarker.status}</span>
-                                            <button style={{ background: COLORS.indigo, color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '0.7rem', fontWeight: 900 }}>View Timeline</button>
+                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                <button 
+                                                    onClick={() => dialerEvents.call(selectedMarker.lead_id, selectedMarker.lead_phone, selectedMarker.lead_name)}
+                                                    style={{ background: COLORS.emerald, color: 'white', border: 'none', borderRadius: '8px', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                                >
+                                                    <Phone size={14} />
+                                                </button>
+                                                <button style={{ background: COLORS.indigo, color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '0.7rem', fontWeight: 900 }}>View Timeline</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </InfoWindowF>
@@ -349,58 +380,121 @@ export default function SiteVisits() {
                     )}
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
                     {filtered.map(visit => (
-                        <div key={visit.id} className="premium-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        <div key={visit.id} className="premium-card" style={{ 
+                            padding: '20px', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '16px',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background: 'white',
+                            border: `1px solid ${COLORS.slate200}`,
+                        }}>
+                            {/* Accent Top Bar */}
+                            <div style={{ 
+                                position: 'absolute', top: 0, left: 0, right: 0, height: '3px', 
+                                background: `linear-gradient(90deg, ${COLORS.indigo}, ${COLORS.violet})`,
+                                opacity: visit.status === 'Scheduled' ? 1 : 0.3
+                            }} />
+
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div className={`visit-badge status-${visit.status}`}>
-                                    {visit.status === 'Completed' ? <CheckCircle size={14} /> : <Clock size={14} />}
+                                <div className={`visit-badge status-${visit.status}`} style={{
+                                    padding: '4px 10px', fontSize: '0.65rem',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                    border: `1px solid ${visit.status === 'Scheduled' ? COLORS.indigo : COLORS.emerald}20`
+                                }}>
+                                    {visit.status === 'Completed' ? <CheckCircle size={11} strokeWidth={3} /> : <Clock size={11} strokeWidth={3} />}
                                     {visit.status}
                                 </div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
-                                    <button onClick={() => deleteVisit(visit.id)} style={{ background: 'transparent', border: 'none', color: COLORS.slate300, cursor: 'pointer' }}><Trash2 size={18} /></button>
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); dialerEvents.call(visit.lead_id, visit.lead_phone, visit.lead_name); }}
+                                        style={{ 
+                                            background: `linear-gradient(135deg, ${COLORS.emerald}, #059669)`, 
+                                            color: 'white', border: 'none', width: 32, height: 32, borderRadius: '10px', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)', transition: 'transform 0.2s'
+                                        }}
+                                        className="hover-lift"
+                                    >
+                                        <Phone size={14} fill="white" />
+                                    </button>
+                                    <button 
+                                        onClick={() => deleteVisit(visit.id)} 
+                                        style={{ background: `${COLORS.rose}10`, border: 'none', color: COLORS.rose, width: 32, height: 32, borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             </div>
                             
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                                 <div style={{ 
-                                    width: 64, height: 64, borderRadius: '22px', background: `${COLORS.indigo}10`, color: COLORS.indigo,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 950,
-                                    boxShadow: `inset 0 0 0 1px ${COLORS.indigo}20`
+                                    width: 54, height: 54, borderRadius: '18px', 
+                                    background: `linear-gradient(135deg, ${COLORS.indigo}15, ${COLORS.indigo}05)`, 
+                                    color: COLORS.indigo,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 950,
+                                    boxShadow: `inset 0 0 0 1px ${COLORS.indigo}10`,
+                                    border: `1px solid ${COLORS.indigo}10`
                                 }}>
                                     {visit.lead_name?.charAt(0) || 'L'}
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '1.25rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-0.5px' }}>{visit.lead_name}</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: COLORS.slate500, fontWeight: 700, fontSize: '0.85rem' }}>
-                                        <Car size={14} /> Agent Car • VIP Access
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                                    <div style={{ fontSize: '1.15rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-0.5px', lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {visit.lead_name}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: COLORS.slate500, fontWeight: 750, fontSize: '0.75rem' }}>
+                                        <Car size={12} color={COLORS.indigo} /> <span style={{ opacity: 0.8 }}>Agent Car • VIP Access</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', background: `${COLORS.slate50}`, borderRadius: '20px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: COLORS.slate700, fontSize: '0.9rem', fontWeight: 800 }}>
-                                    <MapPin size={18} color={COLORS.indigo} /> {visit.project_name || 'Premium Portfolio'}
+                            <div style={{ 
+                                display: 'grid', gridTemplateColumns: '1fr', gap: '1px', 
+                                background: COLORS.slate200, borderRadius: '16px', overflow: 'hidden',
+                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: COLORS.slate800, fontSize: '0.85rem', fontWeight: 800, background: 'white', padding: '12px 16px' }}>
+                                    <MapPin size={14} color={COLORS.indigo} />
+                                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Destination</span>
+                                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{visit.project_name || 'Premium Portfolio'}</span>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: COLORS.slate700, fontSize: '0.9rem', fontWeight: 800 }}>
-                                    <Timer size={18} color={COLORS.indigo} /> {new Date(visit.scheduled_at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: COLORS.slate800, fontSize: '0.85rem', fontWeight: 800, background: 'white', padding: '12px 16px' }}>
+                                    <Timer size={14} color={COLORS.violet} />
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Showcase Time</span>
+                                        {safeDate(visit.scheduled_at)}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: `1px dashed ${COLORS.slate200}` }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: COLORS.slate950, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>
-                                        {visit.agent_name?.charAt(0) || 'A'}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <img 
+                                        src={`https://ui-avatars.com/api/?name=${visit.agent_name || 'A'}&background=040D1A&color=fff&bold=true`} 
+                                        style={{ width: 30, height: 30, borderRadius: '10px', border: `2px solid white`, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} 
+                                    />
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <span style={{ fontSize: '0.55rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Lead Agent</span>
+                                        <span style={{ fontSize: '0.78rem', fontWeight: 850, color: COLORS.slate700 }}>{visit.agent_name || 'Unassigned'}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.slate600 }}>{visit.agent_name || 'Unassigned'}</div>
                                 </div>
                                 {visit.status === 'Scheduled' && (
-                                    <button onClick={() => markComplete(visit.id)} style={{ 
-                                        background: COLORS.emerald, color: 'white', border: 'none', padding: '10px 20px', 
-                                        borderRadius: '14px', fontWeight: 900, fontSize: '0.8rem', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: '8px', boxShadow: `0 8px 16px ${COLORS.emerald}25`
-                                    }}>
-                                        <CheckCircle size={16} /> Mark Done
+                                    <button 
+                                        onClick={() => markComplete(visit.id)} 
+                                        style={{ 
+                                            background: COLORS.slate950, color: 'white', border: 'none', 
+                                            padding: '8px 16px', borderRadius: '12px', fontWeight: 900, fontSize: '0.75rem', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', 
+                                            boxShadow: '0 4px 12px rgba(4, 13, 26, 0.15)'
+                                        }}
+                                        className="hover-lift"
+                                    >
+                                        <CheckCircle size={14} /> Done
                                     </button>
                                 )}
                             </div>
@@ -429,7 +523,7 @@ export default function SiteVisits() {
                             <button onClick={() => setShowModal(false)} style={{ background: COLORS.slate100, border: 'none', width: 44, height: 44, borderRadius: '14px', cursor: 'pointer' }}><X size={24} /></button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '16px' : '24px' }}>
                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Client</label>
                                 <select className="input-field" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}>
@@ -461,7 +555,7 @@ export default function SiteVisits() {
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '40px', display: 'flex', gap: '16px' }}>
+                        <div style={{ marginTop: '40px', display: 'flex', gap: '16px', flexDirection: isMobile ? 'column' : 'row' }}>
                             <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '16px', borderRadius: '18px', border: `2px solid ${COLORS.slate200}`, fontWeight: 900, background: 'transparent', cursor: 'pointer' }}>Cancel Mission</button>
                             <button onClick={save} disabled={saving} style={{ 
                                 flex: 2, padding: '16px', borderRadius: '18px', border: 'none', background: COLORS.slate950, 

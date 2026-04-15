@@ -8,8 +8,10 @@ import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { analyticsApi } from '../api/client';
 import { TrendingUp, Users, Home, Phone, Sparkles, MessageSquare, MapPin, Zap, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 import { leadsApi } from '../api/client';
 import { useCallback, useMemo } from 'react';
+import { dialerEvents } from '../constants/events';
 
 const PIE_COLORS = ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-emerald)', 'var(--accent-violet)', 'var(--accent-rose)'];
 
@@ -35,6 +37,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Analytics() {
     const [range, setRange] = useState('6months');
+    const isMobile = useMobile();
     const { data: data, loading, error, refetch } = useApi(() => analyticsApi.get({ range }), [range]);
     
     // Fetch top leads for priority queue
@@ -127,19 +130,21 @@ export default function Analytics() {
         <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
             {/* Header Section */}
             <div className="glass-panel" style={{ 
-                padding: '32px 48px', 
-                borderRadius: 32, 
+                padding: isMobile ? '20px' : '32px 48px', 
+                borderRadius: isMobile ? 24 : 32, 
                 marginBottom: 32,
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
                 border: '1px solid rgba(255,255,255,0.8)',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: isMobile ? 20 : 0,
                 boxShadow: '0 20px 60px rgba(0,0,0,0.04)'
             }}>
                 <div>
-                    <h1 className="text-gradient-premium" style={{ fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-0.05em', margin: 0 }}>Executive Intelligence</h1>
-                    <p style={{ fontSize: '1.1rem', color: 'var(--slate-500)', fontWeight: 600, marginTop: 6 }}>Enterprise-wide synthesis of performance metrics and predictive growth</p>
+                    <h1 className="text-gradient-premium" style={{ fontSize: isMobile ? '1.8rem' : '2.6rem', fontWeight: 900, letterSpacing: '-0.05em', margin: 0 }}>Executive Intelligence</h1>
+                    <p style={{ fontSize: isMobile ? '0.9rem' : '1.1rem', color: 'var(--slate-500)', fontWeight: 600, marginTop: 6 }}>Enterprise-wide synthesis of performance metrics and predictive growth</p>
                 </div>
                 <div style={{ 
                     background: 'rgba(255,255,255,0.5)', 
@@ -148,22 +153,24 @@ export default function Analytics() {
                     display: 'flex', 
                     gap: 6,
                     border: '1px solid var(--slate-200)',
-                    backdropFilter: 'blur(10px)'
+                    backdropFilter: 'blur(10px)',
+                    width: isMobile ? '100%' : 'auto'
                 }}>
                     {[
-                        { id: '3months', label: 'Quarterly' },
-                        { id: '6months', label: 'Half-Year' },
-                        { id: 'thisyear', label: 'Fiscal Year' }
+                        { id: '3months', label: isMobile ? 'Qtr' : 'Quarterly' },
+                        { id: '6months', label: isMobile ? 'Half' : 'Half-Year' },
+                        { id: 'thisyear', label: isMobile ? 'Year' : 'Fiscal Year' }
                     ].map(r => (
                         <button
                             key={r.id}
                             onClick={() => setRange(r.id)}
                             style={{
-                                padding: '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                                padding: isMobile ? '8px 12px' : '10px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
                                 fontSize: '0.85rem', fontWeight: 800, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 background: range === r.id ? 'var(--navy-600)' : 'transparent',
                                 color: range === r.id ? 'white' : 'var(--text-muted)',
-                                boxShadow: range === r.id ? '0 10px 20px rgba(30,58,115,0.2)' : 'none'
+                                boxShadow: range === r.id ? '0 10px 20px rgba(30,58,115,0.2)' : 'none',
+                                flex: isMobile ? 1 : 'none'
                             }}
                         >
                             {r.label}
@@ -173,7 +180,7 @@ export default function Analytics() {
             </div>
 
             {/* KPI Intelligence Matrix */}
-            <div className="grid grid-3 mb-10" style={{ gap: 24 }}>
+            <div className="grid grid-3 mb-10" style={{ gap: 24, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
                 {kpis.map((k, i) => (
                     <div key={i} className="glass-panel hover-lift" style={{ 
                         padding: 0, 
@@ -228,7 +235,7 @@ export default function Analytics() {
             </div>
 
             {/* Performance Visualization Hub */}
-            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1.2fr)', gap: 32 }}>
+            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1.8fr) minmax(0, 1.2fr)', gap: 32 }}>
                 <div className="glass-card" style={{ borderRadius: 32, padding: '32px', border: '1px solid rgba(255,255,255,0.8)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 40 }}>
                         <div>
@@ -304,7 +311,7 @@ export default function Analytics() {
             </div>
 
             {/* Predictive Intelligence & Priority Queue */}
-            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: '1fr 1.5fr', gap: 32 }}>
+            <div className="grid grid-2 mb-10" style={{ gridTemplateColumns: isMobile ? '1fr' : '1fr 1.5fr', gap: 32 }}>
                 {/* Lead Health Distribution */}
                 <div className="glass-panel" style={{ borderRadius: 32, padding: 32, background: 'linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 100%)', color: 'white', border: 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
@@ -387,6 +394,7 @@ export default function Analytics() {
                                     <button 
                                         className="btn btn-ghost btn-sm btn-icon" 
                                         style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--accent-emerald)10', color: 'var(--accent-emerald)' }}
+                                        onClick={() => dialerEvents.call(lead.id, lead.phone, lead.name)}
                                     >
                                         <Phone size={14} />
                                     </button>
@@ -410,7 +418,7 @@ export default function Analytics() {
             </div>
 
             {/* Conversion Intelligence */}
-            <div className="grid grid-2 mb-10" style={{ gap: 32 }}>
+            <div className="grid grid-2 mb-10" style={{ gap: 32, gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)' }}>
                 <div className="glass-card" style={{ borderRadius: 32, padding: '32px' }}>
                     <div style={{ marginBottom: 30 }}>
                         <h3 style={{ fontSize: '1.3rem', fontWeight: 800 }}>Score vs Conversion Rate</h3>
@@ -481,7 +489,7 @@ export default function Analytics() {
                     </div>
                 </div>
 
-                <div className="grid grid-3" style={{ marginTop: 32, gap: 24 }}>
+                <div className="grid grid-3" style={{ marginTop: 32, gap: 24, gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)' }}>
                     <div className="glass-card hover-lift" style={{ padding: 24, background: 'white', border: 'none' }}>
                         <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 8 }}>Projected GTV</div>
                         <div style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--navy-900)' }}>{data.forecast?.projectedRevenue}</div>
@@ -536,7 +544,8 @@ export default function Analytics() {
                 {/* Top 3 Podium (Tier 1) */}
                 <div className="grid grid-3" style={{ 
                     gap: 32,
-                    marginBottom: 48
+                    marginBottom: 48,
+                    gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)'
                 }}>
                     {data.agentPerformance.slice(0, 3).map((a, i) => {
                         const isLeader = i === 0;

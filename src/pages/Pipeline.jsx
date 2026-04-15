@@ -13,6 +13,7 @@ import {
     DollarSign, Award, List as ViewListIcon, Sparkles, Bot, Wand2,
     Home, Handshake, Layout, Users, Table, RotateCw
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 const STAGE_CONFIG = {
     'New Lead': { color: '#3b82f6', bg: '#eff6ff', accent: '#3b82f6', icon: '🆕', lucide: Home },
@@ -89,6 +90,7 @@ const DEFAULT_LEAD = {
 export default function Pipeline() {
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const isMobile = useMobile();
     const { data: leadsRes, loading, error, refetch } = useApi(() => leadsApi.list({ limit: 200, status: 'Active' }));
     const { data: projects } = useApi(() => projectsApi.list({ status: 'Active' }));
     const { data: users } = useApi(() => usersApi.list());
@@ -238,34 +240,77 @@ export default function Pipeline() {
                 </div>
             </div>
 
-            <div className="card pipeline-top-metrics" style={{ padding: '3px 4px', borderRadius: 12, boxShadow: 'var(--shadow-sm)', border: '1px solid var(--border-light)', background: 'white', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box', overflowX: 'auto' }}>
-                <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
-                    {PIPELINE_STAGES.map((stage, i) => {
-                        const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                        const count = byStage(stage).length;
-                        const val = stageValueL(stage);
-                        const Icon = sc.lucide || Target;
+            {/* Pipeline Stage Summary - Enterprise 2-Row Grid */}
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', 
+                gap: '12px', 
+                marginBottom: '24px',
+                width: '100%',
+                boxSizing: 'border-box'
+            }}>
+                {PIPELINE_STAGES.map((stage) => {
+                    const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
+                    const count = byStage(stage).length;
+                    const val = stageValueL(stage);
+                    const Icon = sc.lucide || Target;
 
-                        return (
-                            <div key={stage} style={{
-                                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 6px',
-                                borderRadius: 8, background: sc.bg, border: `1px solid ${sc.color}15`,
-                                minWidth: 0, overflow: 'hidden', flex: '1 1 0'
-                            }}>
-                                <div style={{ width: 22, height: 22, borderRadius: '6px', background: 'white', color: sc.color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                                    <Icon size={11} />
+                    return (
+                        <div key={stage} className="hover-lift" style={{
+                            background: 'white',
+                            borderRadius: '12px',
+                            padding: '14px 18px',
+                            border: '1px solid var(--border-light)',
+                            borderLeft: `4px solid ${sc.color}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            {/* Subtle background decoration */}
+                            <div style={{ position: 'absolute', right: '-10px', bottom: '-10px', opacity: 0.03, color: sc.color }}>
+                                <Icon size={64} />
+                            </div>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ 
+                                    width: 34, height: 34, borderRadius: '10px', 
+                                    background: `${sc.color}12`, color: sc.color, 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    <Icon size={18} />
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-                                        <span style={{ fontWeight: 800, fontSize: '0.65rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
-                                        <span style={{ fontWeight: 800, color: sc.color, fontSize: '0.65rem', flexShrink: 0 }}>{count}</span>
-                                    </div>
-                                    <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--text-muted)', marginTop: 1 }}>{fmtL(val)}</div>
+                                <div style={{ 
+                                    fontSize: '1.4rem', fontWeight: 900, 
+                                    color: 'var(--navy-950)', letterSpacing: '-0.5px' 
+                                }}>
+                                    {count}
                                 </div>
                             </div>
-                        );
-                    })}
-                </div>
+                            
+                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                <div style={{ 
+                                    fontSize: '0.72rem', fontWeight: 800, 
+                                    color: 'var(--text-muted)', textTransform: 'uppercase', 
+                                    letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                                }}>
+                                    {stage}
+                                </div>
+                                <div style={{ 
+                                    fontSize: '0.9rem', fontWeight: 900, 
+                                    color: sc.color, marginTop: 4,
+                                    display: 'flex', alignItems: 'center', gap: 4
+                                }}>
+                                    <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>Value:</span> {fmtL(val)}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Search & Filters (Compact Style) */}
@@ -430,7 +475,7 @@ export default function Pipeline() {
                     </div>
 
                     {/* Bottom Row: Detailed Performance and Opportunities */}
-                    <div className="grid grid-2" style={{ gap: 16, alignItems: 'start' }}>
+                    <div className={isMobile ? 'flex-column' : 'grid grid-2'} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: 'start' }}>
                         {/* Stage Performance Table */}
                         <div className="card" style={{ padding: 0 }}>
                             <div className="card-header" style={{ padding: '12px 16px' }}>

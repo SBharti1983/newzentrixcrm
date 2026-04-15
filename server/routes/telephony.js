@@ -421,8 +421,20 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
         // Makes transcript available in real-time for Android app + web dashboard
         if (transcriptLines && savedInteractionId) {
             try {
-                const { db: firebaseDB } = require('../utils/firebase');
-                if (firebaseDB) {
+                const { db: firebaseDB, isDbEnabled, getTenantDb } = require('../utils/firebase');
+                let activeFirebaseDB = firebaseDB;
+
+                if (!isDbEnabled || !activeFirebaseDB) {
+                    // Reuse tenantSettings from line 125
+                    activeFirebaseDB = getTenantDb({
+                        projectId: tenantSettings.firebase_project_id,
+                        clientEmail: tenantSettings.firebase_client_email,
+                        privateKey: tenantSettings.firebase_private_key,
+                        databaseURL: tenantSettings.firebase_database_url
+                    });
+                }
+
+                if (activeFirebaseDB) {
                     const transcriptPayload = {
                         interaction_id: savedInteractionId,
                         phone_number: phoneNumber || 'Unknown',
@@ -434,7 +446,7 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
                         agent_name: req.user?.name || 'System',
                         created_at: Date.now()
                     };
-                    await firebaseDB.ref(`transcripts/${req.tenantId}/${savedInteractionId}`).set(transcriptPayload);
+                    await activeFirebaseDB.ref(`transcripts/${req.tenantId}/${savedInteractionId}`).set(transcriptPayload);
                     console.log(`[Telephony] ✅ Transcript saved to Firebase RTDB: transcripts/${req.tenantId}/${savedInteractionId}`);
                 }
             } catch (fbErr) {
@@ -649,9 +661,22 @@ router.put('/bridge-config', hybridAuth, async (req, res) => {
         ]);
 
         // Push to all connected Android handsets via Firebase RTDB
-        const { db: firebaseDB } = require('../utils/firebase');
-        if (firebaseDB) {
-            const configRef = firebaseDB.ref(`telephony_mdm_config/${req.tenantId}/recording_policy`);
+        const { db: firebaseDB, isDbEnabled, getTenantDb } = require('../utils/firebase');
+        let activeFirebaseDB = firebaseDB;
+        
+        if (!isDbEnabled || !activeFirebaseDB) {
+            const tenantRes = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+            const s = tenantRes.rows[0]?.settings || {};
+            activeFirebaseDB = getTenantDb({
+                projectId: s.firebase_project_id,
+                clientEmail: s.firebase_client_email,
+                privateKey: s.firebase_private_key,
+                databaseURL: s.firebase_database_url
+            });
+        }
+
+        if (activeFirebaseDB) {
+            const configRef = activeFirebaseDB.ref(`telephony_mdm_config/${req.tenantId}/recording_policy`);
             await configRef.set({
                 bridge_number: (bridge_number || '').trim(),
                 recording_enabled: recording_enabled !== false,
@@ -679,8 +704,26 @@ router.post('/push-config', auth, async (req, res) => {
         return res.status(403).json({ error: 'Requires admin privileges' });
     }
 
-    const { db, isDbEnabled } = require('../utils/firebase');
-    if (!isDbEnabled || !db) return res.status(400).json({ error: 'Firebase RTDB not connected' });
+    const { db, isDbEnabled, getTenantDb } = require('../utils/firebase');
+    
+    let activeDb = db;
+    if (!isDbEnabled || !db) {
+        console.log(`[Telephony] Global Firebase not connected. Attempting tenant-specific init for ${req.tenantId}`);
+        try {
+            const tenantRes = await pool.query('SELECT settings FROM tenants WHERE id = $1', [req.tenantId]);
+            const s = tenantRes.rows[0]?.settings || {};
+            activeDb = getTenantDb({
+                projectId: s.firebase_project_id,
+                clientEmail: s.firebase_client_email,
+                privateKey: s.firebase_private_key,
+                databaseURL: s.firebase_database_url
+            });
+        } catch (e) {
+            console.error('[Telephony] Tenant config fetch failed during fallback init:', e.message);
+        }
+    }
+
+    if (!activeDb) return res.status(400).json({ error: 'Firebase RTDB not connected. Please configure Service Account in Admin Settings.' });
 
     const { storageUrl, firebaseDatabaseUrl, firebaseProjectId } = req.body;
     if (!storageUrl) return res.status(400).json({ error: 'storageUrl is required' });
@@ -706,7 +749,7 @@ router.post('/push-config', auth, async (req, res) => {
 
         const pushPromises = agents.map(async (agent) => {
             const agentKey = agent.telephony_agent_id || agent.name.replace(/[^a-zA-Z0-9]/g, '');
-            const agentConfigRef = db.ref(`agents/${agentKey}/config`);
+            const agentConfigRef = activeDb.ref(`agents/${agentKey}/config`);
             
             // The Android app appends '/api/telephony/upload-recording' automatically, 
             // so we only push the base URL. We use a robust split to avoid 
@@ -727,7 +770,7 @@ router.post('/push-config', auth, async (req, res) => {
         });
 
         // Also update the global tenant-level config for redundancy/new joins
-        const globalPushRef = db.ref(`telephony_mdm_config/${req.tenantId}`);
+        const globalPushRef = activeDb.ref(`telephony_mdm_config/${req.tenantId}`);
         pushPromises.push(globalPushRef.set({
             storageUrl: storageUrl,
             firebaseDatabaseUrl: firebaseDatabaseUrl || process.env.FIREBASE_DATABASE_URL,

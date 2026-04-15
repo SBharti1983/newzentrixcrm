@@ -457,9 +457,15 @@ router.post('/', validateLead, async (req, res) => {
 
         // Sanitize all nullable/FK fields — double insurance against empty string UUIDs
         const safeProjectId = emptyToNull(project_id);
-        const safeAssignedTo = emptyToNull(assigned_to);
+        let safeAssignedTo = emptyToNull(assigned_to);
         const safeChannelPartnerId = emptyToNull(channel_partner_id);
         const safeScore = (typeof score === 'number' && !isNaN(score)) ? score : 50;
+
+        // AUTO-ASSIGNMENT LOGIC: If an agent creates a lead and doesn't explicitly assign it,
+        // assign it to them automatically so they don't "lose" it in their filtered view.
+        if (!safeAssignedTo && req.user.role === 'agent') {
+            safeAssignedTo = req.user.id;
+        }
 
         await pool.query('BEGIN');
         const { rows } = await pool.query(

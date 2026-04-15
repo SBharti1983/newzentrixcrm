@@ -6,9 +6,11 @@ import { useToast } from '../hooks/useToast';
 import {
     Plus, X, CheckCircle, FileText, CreditCard, Clock,
     Coins, Search, MoreHorizontal, ChevronRight, Building2,
-    User, Calendar, TrendingUp, Banknote, Clipboard, Link
+    User, Calendar, TrendingUp, Banknote, Clipboard, Link, Phone
 } from 'lucide-react';
+import { dialerEvents } from '../constants/events';
 import { useNavigate } from 'react-router-dom';
+import { useMobile } from '../hooks/useMobile';
 import { Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -81,6 +83,7 @@ const DEFAULT_FORM = {
 
 export default function Bookings() {
     const navigate = useNavigate();
+    const isMobile = useMobile();
     const { showToast } = useToast();
     const { data: bookingsRaw, loading, error, refetch } = useApi(() => bookingsApi.list({ limit: 200 }));
     const { data: projectsRaw } = useApi(() => projectsApi.list());
@@ -228,26 +231,26 @@ export default function Bookings() {
 
     return (
         <div className="animate-fadeIn">
-            <div className="page-header">
+            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 0 }}>
                 <div>
                     <h1 className="page-title">Booking Management</h1>
                     <p className="page-subtitle">{bookings.length} bookings · {bookings.filter(b => b.status === 'Confirmed').length} confirmed · {bookings.filter(b => b.status === 'In Process').length} in process</p>
                 </div>
-                <div className="page-actions">
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/payment-tracker')}>
-                        <CreditCard size={14} /> Payment Tracker
+                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/payment-tracker')} style={{ flex: isMobile ? 1 : 'none' }}>
+                        <CreditCard size={14} /> Payments
                     </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/agreements')}>
-                        <FileText size={14} /> Agreements
+                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/agreements')} style={{ flex: isMobile ? 1 : 'none' }}>
+                        <FileText size={14} /> Docs
                     </button>
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: isMobile ? '100%' : 'auto' }}>
                         <Plus size={15} /> New Booking
                     </button>
                 </div>
             </div>
 
             {/* Summary */}
-            <div className="grid grid-4 mb-6">
+            <div className="grid grid-4 mb-6" style={{ gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
                 {[
                     { label: 'Total Bookings', value: bookings.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
                     { label: 'Confirmed', value: bookings.filter(b => b.status === 'Confirmed').length, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)' },
@@ -334,18 +337,27 @@ export default function Bookings() {
             {/* Booking Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {filtered.map(b => (
-                    <div key={b.id} className="card" style={{ padding: '20px 24px', transition: 'all 0.2s' }}
+                    <div key={b.id} className="card" style={{ padding: isMobile ? '16px' : '20px 24px', transition: 'all 0.2s' }}
                         onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
                         onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-card)'; }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
-                            {/* Status icon */}
-                            <div style={{
-                                width: 48, height: 48, borderRadius: 'var(--border-radius-md)', flexShrink: 0,
-                                background: b.status === 'Confirmed' ? 'rgba(16,185,129,0.1)' : b.status === 'Registered' ? 'rgba(139,92,246,0.1)' : 'rgba(30,58,115,0.08)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
-                            }}>
-                                {b.status === 'Confirmed' ? '🏠' : b.status === 'Pending Docs' ? '📄' : b.status === 'Registered' ? '🏛️' : '⏳'}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 12 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
+                            <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'center' }}>
+                                {/* Status icon */}
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 'var(--border-radius-md)', flexShrink: 0,
+                                    background: b.status === 'Confirmed' ? 'rgba(16,185,129,0.1)' : b.status === 'Registered' ? 'rgba(139,92,246,0.1)' : 'rgba(30,58,115,0.08)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
+                                }}>
+                                    {b.status === 'Confirmed' ? '🏠' : b.status === 'Pending Docs' ? '📄' : b.status === 'Registered' ? '🏛️' : '⏳'}
+                                </div>
+                                
+                                {isMobile && (
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.payment_plan || b.paymentPlan}</div>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Main info */}
@@ -379,34 +391,43 @@ export default function Bookings() {
                             </div>
 
                             {/* Financial */}
-                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
-                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                    {b.paymentPlan}
+                            {!isMobile && (
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                        {b.paymentPlan}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Actions */}
-                            <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexDirection: 'column' }}>
-                                {b.status !== 'Confirmed' && (
-                                    <button className="btn btn-success btn-sm" style={{ fontSize: '0.75rem' }}
+                             {/* Actions */}
+                             <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexDirection: isMobile ? 'row' : 'column', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
+                                 <button 
+                                     className="btn btn-sm" 
+                                     style={{ background: 'rgba(0,163,141,0.1)', color: '#00a38d', border: '1px solid rgba(0,163,141,0.25)', fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
+                                     onClick={() => dialerEvents.call(b.customer_id, b.customer_phone, b.customer_name)}
+                                 >
+                                     <Phone size={12} /> Call Client
+                                 </button>
+                                 {b.status !== 'Confirmed' && (
+                                    <button className="btn btn-success btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
                                         onClick={() => confirmBooking(b.id)}>
                                         <CheckCircle size={12} /> Confirm
                                     </button>
                                 )}
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
                                     onClick={() => setShowProForma(b)}>
                                     <FileText size={12} /> Pro-Forma
                                 </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
                                     onClick={() => navigate('/payment-tracker')}>
                                     <CreditCard size={12} /> Payments
                                 </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
                                     onClick={() => downloadReceipt(b)}>
                                     <Download size={12} /> Receipt
                                 </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem' }}
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
                                     onClick={() => navigate('/agreements')}>
                                     <FileText size={12} /> Docs
                                 </button>

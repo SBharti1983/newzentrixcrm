@@ -5,6 +5,7 @@ import {
 import { 
     TrendingUp, Users, Target, ChevronDown, DollarSign, Activity, Sparkles, Zap, ShieldCheck, Clock
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 const COLORS = {
     slate950: '#0f172a',
@@ -48,6 +49,7 @@ export default function AdminDashboardView({ user, data }) {
     const stats = data || {};
     const bookings = stats.bookings || {};
     const members = stats.members || [];
+    const isMobile = useMobile();
     
     // DEMO DATA FALLBACKS
     const sentiment = (stats.sentiment && stats.sentiment.length > 0) ? stats.sentiment : [
@@ -76,7 +78,7 @@ export default function AdminDashboardView({ user, data }) {
     };
 
     return (
-        <div style={{ padding: '32px', minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', fontFamily: '"Inter", sans-serif' }}>
+        <div style={{ padding: isMobile ? '16px' : '32px', minHeight: '100vh', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', fontFamily: '"Inter", sans-serif' }}>
             <style>{`
                 @keyframes pulse-ai {
                     0% { transform: scale(1); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
@@ -91,23 +93,25 @@ export default function AdminDashboardView({ user, data }) {
             `}</style>
             
             {/* Premium Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '40px', gap: isMobile ? 16 : 0 }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1.5px' }}>
+                    <h1 style={{ margin: 0, fontSize: isMobile ? '2rem' : '2.5rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1.5px' }}>
                         Executive <span style={{ color: '#6366f1' }}>Intelligence</span>
                     </h1>
-                    <p style={{ margin: '8px 0 0', color: COLORS.slate500, fontSize: '1.1rem', fontWeight: 500 }}>Corporate performance & AI behavioral auditing</p>
+                    <p style={{ margin: '8px 0 0', color: COLORS.slate500, fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: 500 }}>Corporate performance & AI behavioral auditing</p>
                 </div>
-                <div style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ padding: '10px 20px', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                        <Clock size={18} color="#6366f1" />
-                        <span style={{ fontWeight: 800, color: '#1e293b' }}>FY 2025-26</span>
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ padding: '10px 20px', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                            <Clock size={18} color="#6366f1" />
+                            <span style={{ fontWeight: 800, color: '#1e293b' }}>FY 2025-26</span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Glass KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 {[
                     { label: isSolo ? 'My Revenue' : 'Group Revenue', val: formatRev(bookings.total_value), icon: DollarSign, color: COLORS.emerald, bg: '#dcfce7' },
                     { label: 'Booking Volume', val: bookings.total || 0, icon: Target, color: COLORS.blue, bg: '#dbeafe' },
@@ -129,7 +133,7 @@ export default function AdminDashboardView({ user, data }) {
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '24px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1.8fr', gap: '24px', marginBottom: '32px' }}>
                 
                 {/* AI Sentiment Dynamics */}
                 <div className="wow-card" style={CARD_STYLE}>
@@ -197,7 +201,7 @@ export default function AdminDashboardView({ user, data }) {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1.7fr', gap: '24px', marginBottom: '32px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.3fr 1.7fr', gap: '24px', marginBottom: '32px' }}>
                 
                 {/* Risk Intervention Radar */}
                 <div className="wow-card" style={{ ...CARD_STYLE, position: 'relative', overflow: 'hidden' }}>

@@ -10,6 +10,7 @@ import {
     ChevronRight, Users, LayoutDashboard, Briefcase, Sparkles,
     CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 // --- DEMO DATA ---
 const YEARLY_TREND = [
@@ -309,6 +310,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
     const [trendPeriod, setTrendPeriod] = useState('Month');
     const [performancePeriod, setPerformancePeriod] = useState('This Month');
     const [showPerfDropdown, setShowPerfDropdown] = useState(false);
+    const isMobile = useMobile();
     
     // --- DATA MAPPING ---
     const stats = data || {};
@@ -364,14 +366,14 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             background: '#f8fafc', overflowY: 'auto'
         }}>
             {/* Upper Header Segment */}
-            <div className="agent-dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-                    <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
+            <div className="agent-dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '8px', gap: isMobile ? 12 : 0 }}>
+                <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '32px', flexDirection: isMobile ? 'column' : 'row' }}>
+                    <h1 style={{ fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
                         {getGreeting()}, {user?.name || 'Agent'} 👋
                     </h1>
 
                     {/* Quick Stats Integrated */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: '24px', borderLeft: `1px solid ${COLORS.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: isMobile ? '0' : '24px', borderLeft: isMobile ? 'none' : `1px solid ${COLORS.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS.green, boxShadow: `0 0 10px ${COLORS.green}80` }} />
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -468,7 +470,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                 </div>
             </div>
             {/* KPI Cards Row */}
-            <div className="agent-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
+            <div className="agent-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '12px' }}>
                 <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
                 <KPI onClick={() => navigate('/pipeline')} title="Pipeline Value" value={formatCurrency(kpiData.pipelineValue)} perc={`${kpiData.totalLeads} Active`} isUp icon={Briefcase} color={COLORS.orange} sparkData={sparkLines[1]} sparkColor={COLORS.orange} />
                 <KPI onClick={() => navigate('/followups')} title="Follow-ups Due" value={kpiData.followups} perc="Pending" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" />
@@ -478,7 +480,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             </div>
 
             {/* Main Content Grid */}
-            <div className="agent-dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+            <div className="agent-dash-main-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr 1fr', gap: '16px' }}>
                 
                 {/* Activity Trend */}
                 <div style={{ 
@@ -625,7 +627,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
 
 
             {/* Bottom Section */}
-            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1.2fr', gap: '16px' }}>
+            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 2fr 1.2fr', gap: '16px' }}>
                 
                 {/* Activities */}
                 <div style={{ 
