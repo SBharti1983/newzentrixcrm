@@ -167,6 +167,7 @@ export default function Leads() {
     const { user } = useAuth();
     const isMobile = useMobile();
     const [search, setSearch] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [filterStage, setFilterStage] = useState('All');
     const [filterSource, setFilterSource] = useState('All');
     const [filterStatus, setFilterStatus] = useState('All');
@@ -197,10 +198,22 @@ export default function Leads() {
     const [projects, setProjects] = useState([]);
     const [channelPartners, setChannelPartners] = useState([]);
 
-    const fetchLeads = useCallback(async () => {
+    // Debounce search input
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setPage(1); // Reset to page 1 when search text changes
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const fetchLeads = useCallback(async (overridePage, overrideSearch) => {
         setLeadsLoading(true);
         try {
-            const p = { limit, page };
+            const activePage = overridePage !== undefined ? overridePage : page;
+            const activeSearch = overrideSearch !== undefined ? overrideSearch : debouncedSearch;
+            
+            const p = { limit, page: activePage };
             if (filterStage !== 'All') p.stage = filterStage;
             if (filterSource !== 'All') p.source = filterSource;
             if (filterStatus !== 'All') p.status = filterStatus;
@@ -208,7 +221,7 @@ export default function Leads() {
             if (filterNurtureDue) p.nurture_due = 'true';
             if (startDate) p.startDate = startDate;
             if (endDate) p.endDate = endDate;
-            if (search.trim()) p.q = search.trim();
+            if (activeSearch && activeSearch.trim()) p.q = activeSearch.trim();
 
             const res = await leadsApi.list(p);
             setLeadsRes(res);
@@ -217,7 +230,7 @@ export default function Leads() {
         } finally {
             setLeadsLoading(false);
         }
-    }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, search, filterNurtureDue, startDate, endDate]);
+    }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, debouncedSearch, filterNurtureDue, startDate, endDate]);
 
     useEffect(() => {
         fetchLeads();
@@ -274,18 +287,18 @@ export default function Leads() {
             if (editingId) {
                 await leadsApi.update(editingId, sanitized);
                 showToast('Lead updated successfully', 'success');
+                await fetchLeads();
             } else {
                 await leadsApi.create(sanitized);
                 showToast('Lead added successfully', 'success');
-                setPage(1); // Reset to page 1 to see the new lead at the top
+                setSearch('');
+                setDebouncedSearch('');
+                setPage(1);
+                // Explicitly call with Page 1 and Empty Search to prevent race conditions 
+                // between state updates and the network request closure.
+                await fetchLeads(1, ''); 
             }
             setShowModal(false);
-            // Await refetch so errors are caught here instead of crashing silently
-            try {
-                await fetchLeads();
-            } catch (_refetchErr) {
-                console.warn('[Leads] Refetch after save failed, data will refresh on next interaction.');
-            }
         } catch (err) {
             console.error('[Leads] Save error:', err);
             const rawMsg = typeof err === 'object' ? (err.error || err.message || JSON.stringify(err)) : String(err);
@@ -541,7 +554,7 @@ export default function Leads() {
                     </div>
                 )}
 
-                <div className="table-wrapper" style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
+                <div className="table-wrapper" style={{ overflowX: 'auto', overflowY: 'scroll', maxHeight: 'calc(100vh - 260px)', background: 'white' }}>
                     {leads.length === 0 && !leadsLoading ? (
                         <div className="empty-state" style={{ padding: '80px 0' }}>
                             <div className="empty-state-icon">🔍</div>
@@ -561,11 +574,11 @@ export default function Leads() {
                                         />
                                     </th>
                                     {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
-                                        const widths = { 'Lead': '150px', 'Contact': '150px', 'Status': '75px', 'Stage': '95px', 'Source': '85px', 'Score': '55px', 'Re-connect': '100px', 'Reason': '120px', 'Created By': '85px', 'Create Date': '95px', 'Assigned To': '100px', 'Last Contact': '110px', 'Actions': '115px' };
+                                        const widths = { 'Lead': '130px', 'Contact': '140px', 'Status': '70px', 'Stage': '90px', 'Source': '80px', 'Score': '45px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Create Date': '80px', 'Assigned To': '90px', 'Last Contact': '100px', 'Actions': '100px' };
                                         const isSticky = h === 'Actions';
                                         return (
                                             <th key={h} style={{ 
-                                                width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center', padding: '12px 6px', fontSize: '0.7rem',
+                                                width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center', padding: '10px 4px', fontSize: '0.68rem',
                                                 textTransform: 'uppercase', fontWeight: 800, color: 'var(--slate-500)', borderBottom: '1px solid var(--border-light)',
                                                 background: 'var(--slate-50)', position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
                                                 zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none', whiteSpace: 'nowrap'
@@ -886,13 +899,19 @@ export default function Leads() {
             {/* Floating Bulk Action Bar */}
             {selectedIds.size > 0 && (
                 <div style={{
-                    position: 'fixed', bottom: 30, left: '50%', transform: 'translateX(-50%)',
+                    position: 'fixed', bottom: 30, left: isMobile ? 20 : 280,
                     background: 'var(--navy-900)', color: 'white',
                     padding: '12px 20px', borderRadius: 100,
                     display: 'flex', alignItems: 'center', gap: 20, zIndex: 100,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
-                    animation: 'slideUp 0.3s ease'
+                    animation: 'barSlideUp 0.3s ease-out'
                 }}>
+                    <style>{`
+                        @keyframes barSlideUp {
+                            from { transform: translateY(20px); opacity: 0; }
+                            to { transform: translateY(0); opacity: 1; }
+                        }
+                    `}</style>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: '0.9rem' }}>
                         <div style={{ background: 'var(--accent-cyan)', color: 'var(--navy-900)', padding: '2px 8px', borderRadius: 20 }}>
                             {selectedIds.size}

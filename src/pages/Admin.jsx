@@ -671,11 +671,32 @@ export default function Admin() {
     if (error) return <PageError message={error} onRetry={refetchUsers} />;
 
     return (
-        <div className="animate-fadeIn">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Admin Controls</h1>
-                    <p className="page-subtitle">Manage users, roles, permissions and system settings</p>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px' }}>
+            <div className="premium-card shimmer-ai" style={{ 
+                background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
+                padding: isMobile ? '24px' : '32px 40px', color: 'white', marginBottom: '32px', border: 'none',
+                borderRadius: isMobile ? '0' : '24px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                             <Shield size={16} color="#38bdf8" strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                                System Administration
+                             </span>
+                        </div>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1, color: 'white' }}>
+                            Control <span style={{ color: '#38bdf8' }}>Panel</span>
+                        </h1>
+                        <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
+                            Managing users, roles, permissions and high-level system configurations.
+                        </p>
+                    </div>
+                    {!isMobile && (
+                        <div style={{ width: 60, height: 60, borderRadius: '20px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Settings size={32} color="rgba(255,255,255,0.2)" />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -85,13 +85,15 @@ export default function Dialer() {
         const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
         const unsubOut = onValue(outCallRef, (snapshot) => {
             console.log(`[DIALER] Handset node update: ${snapshot.exists() ? 'Exists' : 'Cleared'}`);
+            
+            // CRITICAL FIX: Do NOT auto-idle if the node is cleared while we are in DIALING state.
+            // This happens because the handset clears the node as soon as it accepts the command.
             if (!snapshot.exists()) {
                 setCallState(prev => {
-                    // Force idle if handset clears the dial node (Hangup)
-                    if (prev !== 'idle') {
-                        console.log('[DIALER] Handset signalled END OF CALL. Resetting to IDLE.');
-                        setDuration(0);
-                        return 'idle';
+                    // If the call was active, move to 'completed' state so the agent can see summary
+                    if (prev === 'active') {
+                        console.log('[DIALER] Handset signalled END OF CALL. Moving to COMPLETED state.');
+                        return 'completed';
                     }
                     return prev;
                 });
@@ -231,11 +233,73 @@ export default function Dialer() {
                                 </div>
                                 <div className="pulse-ring" style={{ borderColor: callState === 'ringing' ? '#f59e0b' : '#00b4d8' }} />
                             </div>
-                            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: 8 }}>{activeLead?.name || phoneNumber}</h2>
-                            <div style={{ color: callState === 'active' ? '#00b4d8' : '#f59e0b', fontWeight: 900, fontSize: '1.4rem' }}>{callState === 'active' ? formatDuration(duration) : 'RINGING...'}</div>
-                            <div style={{ marginTop: 40, display: 'flex', gap: 24 }}>
-                                <button type="button" onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><PhoneOff size={32} /></button>
-                                {callState === 'ringing' && <button type="button" onClick={() => setCallState('active')} style={{ width: 72, height: 72, borderRadius: '24px', background: '#10b981', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><Phone size={32} /></button>}
+                            <h2 style={{ fontSize: '1.8rem', fontWeight: 950, marginBottom: 4, color: '#ffffff', textShadow: '0 2px 10px rgba(0,0,0,0.3)', wordBreak: 'break-word' }}>
+                                {activeLead?.name || phoneNumber}
+                            </h2>
+                            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontWeight: 700, marginBottom: 12 }}>{phoneNumber}</div>
+                            
+                            <div style={{ color: callState === 'active' ? '#00b4d8' : callState === 'completed' ? '#fbbf24' : '#f59e0b', fontWeight: 900, fontSize: '1.4rem', letterSpacing: '0.05em' }}>
+                                {callState === 'active' ? formatDuration(duration) : callState === 'completed' ? `COMPLETED: ${formatDuration(duration)}` : 'RINGING...'}
+                            </div>
+                            
+                            {callState === 'completed' && (
+                                <div style={{ width: '100%', marginTop: 24, textAlign: 'left', background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.05em' }}>Call Disposition</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        {[
+                                            { id: 'Interested', label: 'Interested', color: '#10b981' },
+                                            { id: 'Not Interested', label: 'Not Interested', color: '#f43f5e' },
+                                            { id: 'Follow-up Required', label: 'Follow-up Required', color: '#fbbf24' },
+                                            { id: 'Invalid / Wrong Number', label: 'Invalid / Wrong Number', color: '#94a3b8' }
+                                        ].map(opt => (
+                                            <button 
+                                                key={opt.id} 
+                                                onClick={() => handleHangup(opt.id)}
+                                                style={{ 
+                                                    padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', 
+                                                    border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontWeight: 700, 
+                                                    fontSize: '0.85rem', textAlign: 'left', cursor: 'pointer', transition: '0.2s',
+                                                    display: 'flex', alignItems: 'center', gap: 10
+                                                }}
+                                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                            >
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color }} />
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ marginTop: 'auto', paddingBottom: 20, display: 'flex', gap: 24, width: '100%', justifyContent: 'center', paddingLeft: 20 }}>
+                                {callState === 'completed' ? (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleHangup('No Disposition')} 
+                                        style={{ width: '100%', height: 48, borderRadius: '14px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                                    >
+                                        <History size={20} /> Skip Disposition
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button type="button" onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(244,63,94,0.3)' }}>
+                                            <PhoneOff size={32} />
+                                        </button>
+                                        {callState !== 'active' && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => {
+                                                    setCallState('active');
+                                                    showToast('Call state synced to CONNECTED', 'info');
+                                                }} 
+                                                style={{ width: 72, height: 72, borderRadius: '24px', background: '#10b981', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(16,185,129,0.3)' }}
+                                            >
+                                                <Phone size={32} />
+                                            </button>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}

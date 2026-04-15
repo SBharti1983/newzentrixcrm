@@ -229,10 +229,15 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /api/leads — list with filters + search + pagination
-router.get('/', cacheResponse(60), async (req, res) => {
+router.get('/', (req, res, next) => {
+    // Only use cache for non-search list requests
+    if (req.query.q) return next();
+    return cacheResponse(60)(req, res, next);
+}, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
-    const { stage, source, priority, agent, q, channel_partner_id, status, startDate, endDate } = req.query;
+    let { stage, source, priority, agent, q, channel_partner_id, status, startDate, endDate } = req.query;
+    if (q) q = q.trim();
     const offset = (page - 1) * limit;
     const conditions = [`l.tenant_id = $1`];
     const params = [req.tenantId];
@@ -311,7 +316,7 @@ router.get('/', cacheResponse(60), async (req, res) => {
                  LEFT JOIN users u ON l.assigned_to = u.id
                  LEFT JOIN projects p ON l.project_id = p.id
                  WHERE ${where}
-                 ORDER BY l.created_at DESC
+                 ORDER BY l.created_at DESC, l.id DESC
                  LIMIT $${i} OFFSET $${i + 1}`,
                 [...params, limit, offset]
             ),
@@ -354,14 +359,16 @@ router.post('/bulk-update', async (req, res) => {
     const setClauses = Object.keys(validUpdates).map((k, i) => `${k} = $${i + 3}`).join(', ');
     const values = Object.values(validUpdates);
 
+    const client = await pool.connect();
     try {
-        const { rows } = await pool.query(
+        await client.query('BEGIN');
+        const { rows } = await client.query(
             `UPDATE leads SET ${setClauses} WHERE id = ANY($1) AND tenant_id = $2 RETURNING id`,
             [leadIds, req.tenantId, ...values]
         );
 
         // Simple activity log for bulk action
-        await pool.query(
+        await client.query(
             `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
              VALUES ($1,$2,'lead',NULL,'bulk_updated',$3)`,
             [req.tenantId, req.user.id, JSON.stringify({ count: rows.length, updates: validUpdates })]
@@ -374,17 +381,19 @@ router.post('/bulk-update', async (req, res) => {
                 type: 'lead_assigned',
             });
         }
-        await pool.query('COMMIT');
+        await client.query('COMMIT');
 
         // Flush cache on lead update
-        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-        redis.del(`dash:${req.tenantId}:*`);
+        await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+        await redis.del(`dash:${req.tenantId}:*`);
 
         res.json({ message: 'Leads updated successfully', count: rows.length });
     } catch (err) {
-        await pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('Bulk update error:', err);
         res.status(500).json({ error: 'Failed to bulk update leads' });
+    } finally {
+        client.release();
     }
 });
 
@@ -397,23 +406,26 @@ router.post('/bulk-delete', async (req, res) => {
     if (!Array.isArray(leadIds) || leadIds.length === 0) {
         return res.status(400).json({ error: 'leadIds array is required' });
     }
+    const client = await pool.connect();
     try {
-        await pool.query('BEGIN');
-        const { rowCount } = await pool.query(
+        await client.query('BEGIN');
+        const { rowCount } = await client.query(
             `DELETE FROM leads WHERE id = ANY($1) AND tenant_id = $2`,
             [leadIds, req.tenantId]
         );
-        await pool.query('COMMIT');
+        await client.query('COMMIT');
 
         // Flush cache on lead deletion
-        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-        redis.del(`dash:${req.tenantId}:*`);
+        await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+        await redis.del(`dash:${req.tenantId}:*`);
 
         res.json({ message: 'Leads deleted successfully', count: rowCount });
     } catch (err) {
-        await pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('Bulk delete error:', err);
         res.status(500).json({ error: 'Failed to bulk delete leads' });
+    } finally {
+        client.release();
     }
 });
 
@@ -467,63 +479,70 @@ router.post('/', validateLead, async (req, res) => {
             safeAssignedTo = req.user.id;
         }
 
-        await pool.query('BEGIN');
-        const { rows } = await pool.query(
-            `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at, nurture_reason, reconnect_date)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18) RETURNING *`,
-            [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
-            priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
-                safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active', nurture_reason || null, emptyToNull(reconnect_date)]
-        );
-
-        const newLead = rows[0];
-
-        // Trigger Automated Workflows (Round Robin, Notifications, etc.)
-        automationService.handleLeadCreate(newLead, req.io).catch(err => {
-            console.error('[Automation Trigger] Error executing workflows:', err);
-        });
-
-        // Auto-create Nurture Followup if applicable
-        if (newLead.status === 'Nurture' && newLead.reconnect_date) {
-            try {
-                await pool.query(
-                    `INSERT INTO followups (tenant_id, lead_id, assigned_to, type, scheduled_at, note)
-                     VALUES ($1, $2, $3, 'Nurture Reconnection', $4, $5)`,
-                    [req.tenantId, newLead.id, newLead.assigned_to, newLead.reconnect_date, `Nurture follow-up: ${newLead.nurture_reason}`]
-                );
-            } catch (fErr) {
-                console.error('[Nurture Auto-Followup] Failed:', fErr.message);
-            }
-        }
-
-        // Activity log
+        const client = await pool.connect();
         try {
-            await pool.query(
-                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-                 VALUES ($1,$2,'lead',$3,'created',$4)`,
-                [req.tenantId, req.user.id, rows[0].id, JSON.stringify(rows[0])]
+            await client.query('BEGIN');
+            const { rows } = await client.query(
+                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, property_type, project_id, budget, assigned_to, notes, channel_partner_id, status, last_contact_at, nurture_reason, reconnect_date)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW(),$17,$18) RETURNING *`,
+                [req.tenantId, name, phone, emptyToNull(email), emptyToNull(city), source || 'Website', stage || 'New',
+                priority || 'Medium', safeScore, emptyToNull(property_type), safeProjectId, emptyToNull(budget),
+                    safeAssignedTo, emptyToNull(notes), safeChannelPartnerId, status || 'Active', nurture_reason || null, emptyToNull(reconnect_date)]
             );
-        } catch (logErr) {
-            console.error('[Activity Log] Non-critical error:', logErr.message);
-        }
 
-        if (assigned_to && String(assigned_to) !== String(req.user.id) && req.io) {
-            req.io.to(`user_${assigned_to}`).emit('notification', {
-                title: 'New Lead Assigned',
-                message: `You have been assigned a new lead: ${name}`,
-                type: 'lead_assigned',
-                data: rows[0]
+            const newLead = rows[0];
+
+            // Trigger Automated Workflows (Round Robin, Notifications, etc.)
+            automationService.handleLeadCreate(newLead, req.io).catch(err => {
+                console.error('[Automation Trigger] Error executing workflows:', err);
             });
+
+            // Auto-create Nurture Followup if applicable
+            if (newLead.status === 'Nurture' && newLead.reconnect_date) {
+                try {
+                    await client.query(
+                        `INSERT INTO followups (tenant_id, lead_id, assigned_to, type, scheduled_at, note)
+                         VALUES ($1, $2, $3, 'Nurture Reconnection', $4, $5)`,
+                        [req.tenantId, newLead.id, newLead.assigned_to, newLead.reconnect_date, `Nurture follow-up: ${newLead.nurture_reason}`]
+                    );
+                } catch (fErr) {
+                    console.error('[Nurture Auto-Followup] Failed:', fErr.message);
+                }
+            }
+
+            // Activity log
+            try {
+                await client.query(
+                    `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
+                     VALUES ($1,$2,'lead',$3,'created',$4)`,
+                    [req.tenantId, req.user.id, rows[0].id, JSON.stringify(rows[0])]
+                );
+            } catch (logErr) {
+                console.error('[Activity Log] Non-critical error:', logErr.message);
+            }
+
+            if (assigned_to && String(assigned_to) !== String(req.user.id) && req.io) {
+                req.io.to(`user_${assigned_to}`).emit('notification', {
+                    title: 'New Lead Assigned',
+                    message: `You have been assigned a new lead: ${name}`,
+                    type: 'lead_assigned',
+                    data: rows[0]
+                });
+            }
+            await client.query('COMMIT');
+
+            // Flush cache on lead creation
+            await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+            await redis.del(`dash:${req.tenantId}:*`);
+
+            res.status(201).json(rows[0]);
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err; // Re-throw to be caught by outer catch
+        } finally {
+            client.release();
         }
-        await pool.query('COMMIT');
-
-        // Flush cache on lead creation
-        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-        redis.del(`dash:${req.tenantId}:*`);
-
-        res.status(201).json(rows[0]);
     } catch (err) {
-        await pool.query('ROLLBACK');
         console.error('[POST /leads] Error:', err.message, err.detail || '');
         // Always return a clean string error to prevent frontend rendering crashes
         const errMsg = typeof err.message === 'string' ? err.message : 'Failed to create lead';

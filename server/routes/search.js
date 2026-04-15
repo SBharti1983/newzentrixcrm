@@ -7,8 +7,10 @@ router.use(auth);
 
 // GET /api/search?q=...
 router.get('/', async (req, res) => {
-    const { q } = req.query;
-    if (!q || q.length < 2) return res.json({ leads: [], projects: [] });
+    let { q } = req.query;
+    if (!q || q.trim().length < 2) return res.json({ leads: [], projects: [] });
+
+    q = q.trim();
 
     try {
         const [leads, projects] = await Promise.all([

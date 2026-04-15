@@ -66,11 +66,12 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     // Global Search Logic
     useEffect(() => {
         const timer = setTimeout(async () => {
-            if (searchVal.trim().length >= 2) {
+            const query = searchVal.trim();
+            if (query.length >= 2) {
                 setSearching(true);
                 setShowDropdown(true);
                 try {
-                    const data = await searchApi.global(searchVal);
+                    const data = await searchApi.global(query);
                     setResults(data);
                 } catch (err) {
                     console.error('Search failed', err);

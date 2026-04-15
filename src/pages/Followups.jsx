@@ -66,159 +66,165 @@ export default function Followups() {
     const highPriority = followups.filter(f => f.priority === 'High' && f.status === 'Pending').length;
 
     return (
-        <div className="animate-fadeIn">
-            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
-                <div>
-                    <h1 className="page-title">Follow-Up Scheduler</h1>
-                    <p className="page-subtitle">{pending} pending · {highPriority} high priority</p>
-                </div>
-                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto' }}>
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: isMobile ? '100%' : 'auto' }}>
-                        <Plus size={15} /> {isMobile ? 'Schedule' : 'Schedule Follow-Up'}
-                    </button>
-                </div>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-3 mb-4" style={{ gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: 12 }}>
-                {[
-                    { label: 'Pending', count: pending, icon: <Clock size={20} />, color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.08)' },
-                    { label: 'Completed', count: completed, icon: <CheckCircle size={20} />, color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.08)' },
-                    { label: 'High Priority', count: highPriority, icon: <AlertCircle size={20} />, color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.08)' },
-                ].map(s => (
-                    <div key={s.label} style={{
-                        background: s.bg, borderRadius: 'var(--border-radius-lg)',
-                        border: `1px solid ${s.color}30`,
-                        padding: '16px 20px',
-                        display: 'flex', alignItems: 'center', gap: 14,
-                    }}>
-                        <div style={{ color: s.color }}>{s.icon}</div>
-                        <div>
-                            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.count}</div>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px' }}>
+            {/* 💎 Intelligence Ribbon */}
+            <div className="premium-card shimmer-ai" style={{ 
+                background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
+                padding: isMobile ? '24px' : '32px 40px', color: 'white', marginBottom: '32px', border: 'none',
+                borderRadius: isMobile ? '0' : '24px'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                             <Clock size={16} color="#fbbf24" strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                                Outreach Intelligence
+                             </span>
                         </div>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1, color: 'white' }}>
+                            Follow-Up <span style={{ color: '#fbbf24' }}>Queue</span>
+                        </h1>
+                        <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
+                            Managing {pending} active threads and {highPriority} critical synchronizations.
+                        </p>
                     </div>
-                ))}
+
+                    {!isMobile && (
+                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                            {[
+                                { label: 'Pending', val: pending, color: '#fbbf24' },
+                                { label: 'Critical', val: highPriority, color: '#f43f5e' },
+                                { label: 'Success', val: completed, color: '#10b981' }
+                            ].map((stat, i) => (
+                                <div key={i} style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: '1.6rem', fontWeight: 950, color: stat.color, letterSpacing: '-0.5px' }}>{stat.val}</div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
+                                </div>
+                            ))}
+                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '40px' }} />
+                            <button className="hover-lift" onClick={() => setShowModal(true)} style={{ 
+                                background: 'white', color: '#0f172a', border: 'none', padding: '12px 24px', 
+                                borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', display: 'flex', 
+                                alignItems: 'center', gap: '8px', cursor: 'pointer' 
+                            }}>
+                                <Plus size={18} strokeWidth={3} /> SCHEDULE TASK
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Filters */}
-            <div className="card mb-4" style={{ padding: '14px 20px' }}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    <select className="form-control" style={{ width: 150 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                        <option value="All">All Status</option>
-                        <option>Pending</option>
-                        <option>Completed</option>
-                    </select>
-                    <select className="form-control" style={{ width: 180 }} value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
-                        <option value="All">All Agents</option>
-                        {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
-                </div>
+            {isMobile && (
+                <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '100%', marginBottom: 20, borderRadius: 16, height: 50, fontWeight: 900 }}>
+                    <Plus size={18} /> SCHEDULE NEW TASK
+                </button>
+            )}
+
+            {/* Filters Bar */}
+            <div className="premium-card" style={{ 
+                padding: '12px 24px', background: 'white', marginBottom: '24px', 
+                display: 'flex', gap: '12px', alignItems: 'center', borderRadius: '18px'
+            }}>
+                <select className="form-control" style={{ width: 160, border: 'none', background: '#f8fafc', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <option value="All">All Statuses</option>
+                    <option>Pending</option>
+                    <option>Completed</option>
+                </select>
+                <div style={{ width: 1, height: 24, background: '#e2e8f0' }} />
+                <select className="form-control" style={{ width: 180, border: 'none', background: '#f8fafc', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' }} value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
+                    <option value="All">All Agents</option>
+                    {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                </select>
             </div>
 
             {/* List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {filtered.map(f => (
-                    <div key={f.id} className="card" style={{
-                        padding: isMobile ? '12px 14px' : '16px 20px',
-                        display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 16,
-                        opacity: f.status === 'Completed' ? 0.65 : 1,
-                        transition: 'all var(--transition-fast)',
-                        flexDirection: isMobile ? 'column' : 'row'
+                    <div key={f.id} className="premium-card hover-lift" style={{
+                        padding: '20px 24px',
+                        display: 'flex', alignItems: 'center', gap: '20px',
+                        background: 'white',
+                        opacity: f.status === 'Completed' ? 0.6 : 1,
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                            {/* Toggle */}
+                        {/* Toggle & Type */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                             <button
                                 onClick={() => toggle(f.id, f.status)}
                                 style={{
-                                    width: 24, height: 24, borderRadius: '50%', border: '2px solid',
-                                    borderColor: f.status === 'Completed' ? 'var(--accent-emerald)' : 'var(--border-medium)',
-                                    background: f.status === 'Completed' ? 'var(--accent-emerald)' : 'white',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition-fast)',
-                                    color: 'white',
+                                    width: 28, height: 28, borderRadius: '10px',
+                                    border: '2px solid',
+                                    borderColor: f.status === 'Completed' ? '#10b981' : '#e2e8f0',
+                                    background: f.status === 'Completed' ? '#10b981' : 'white',
+                                    color: 'white', cursor: 'pointer', transition: 'all 0.2s',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}
                             >
-                                {f.status === 'Completed' && <CheckCircle size={12} />}
+                                {f.status === 'Completed' && <CheckCircle size={14} strokeWidth={3} />}
                             </button>
-
-                            {/* Icon */}
                             <div style={{
-                                width: 36, height: 36, borderRadius: 'var(--border-radius-md)',
-                                background: f.priority === 'High' ? 'rgba(244,63,94,0.1)' : f.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'var(--slate-100)',
+                                width: 44, height: 44, borderRadius: '14px',
+                                background: f.priority === 'High' ? '#fff1f2' : f.priority === 'Medium' ? '#fffbeb' : '#f8fafc',
+                                border: `1px solid ${f.priority === 'High' ? '#fecdd3' : f.priority === 'Medium' ? '#fde68a' : '#e2e8f0'}`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '1rem', flexShrink: 0,
+                                fontSize: '1.2rem'
                             }}>
                                 {TYPE_ICON[f.type] || '📋'}
                             </div>
+                        </div>
 
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.9rem', textDecoration: f.status === 'Completed' ? 'line-through' : 'none' }}>
+                        {/* Content */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <span style={{ fontWeight: 900, fontSize: '1.05rem', color: '#0f172a', textDecoration: f.status === 'Completed' ? 'line-through' : 'none' }}>
                                     {f.lead_name || f.leadName}
+                                </span>
+                                <span style={{ 
+                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 900, 
+                                    textTransform: 'uppercase', background: '#f1f5f9', color: '#64748b' 
+                                }}>{f.type}</span>
+                                {f.priority === 'High' && <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', background: '#f43f5e', color: 'white' }}>CRITICAL</span>}
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {f.notes || f.note || 'No additional notes provided.'}
+                            </div>
+                        </div>
+
+                        {/* Meta & Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#0f172a', fontWeight: 900, fontSize: '0.9rem', justifyContent: 'flex-end' }}>
+                                    <Calendar size={14} color="#64748b" />
+                                    {f.scheduled_at ? new Date(f.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today'}
                                 </div>
-                                <div style={{ display: 'flex', gap: 6, marginTop: 2 }}>
-                                    <span className="badge badge-slate" style={{ fontSize: '0.65rem' }}>{f.type}</span>
-                                    <span className={`badge ${PRIORITY_BADGE[f.priority]}`} style={{ fontSize: '0.65rem' }}>{f.priority}</span>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', marginTop: '2px' }}>
+                                    @{f.scheduled_at ? new Date(f.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Anytime'}
                                 </div>
                             </div>
 
-                            {isMobile && (
-                                <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteFu(f.id)} style={{ marginLeft: 'auto' }}>
-                                    <X size={13} />
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Mid Row for mobile */}
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', width: '100%', paddingLeft: isMobile ? 0 : 0 }}>
-                            {f.note}
-                        </div>
-
-                        {/* Bottom Row / Date Agent */}
-                        <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'space-between', 
-                            alignItems: 'center', 
-                            width: '100%', 
-                            borderTop: isMobile ? '1px solid var(--border-light)' : 'none',
-                            paddingTop: isMobile ? 8 : 0
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.8rem', fontWeight: 600 }}>
-                                <Calendar size={12} style={{ color: 'var(--text-muted)' }} />
-                                {f.scheduled_at
-                                    ? new Date(f.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
-                                    : f.date || '—'}
-                                <span style={{ color: 'var(--text-muted)' }}>@{f.scheduled_at ? new Date(f.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : f.time}</span>
-                            </div>
-                            
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                {!isMobile && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{f.agent_name || f.agentName}</div>}
-                                
-                                {f.status !== 'Completed' && (() => {
-                                    const lead = { id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: '', email: '', project: '', budget: '' };
-                                    return (
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            <button
-                                                className="btn btn-sm"
-                                                style={{ background: 'rgba(37,211,102,0.1)', color: '#22c55e', border: '1px solid rgba(37,211,102,0.25)', gap: 5, flexShrink: 0, padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem' }}
-                                                onClick={() => setNotifyTarget(lead)}
-                                            >
-                                                <Send size={12} /> Notify
-                                            </button>
-                                            <button
-                                                className="btn btn-sm"
-                                                style={{ background: 'rgba(0,163,141,0.1)', color: '#00a38d', border: '1px solid rgba(0,163,141,0.25)', gap: 5, flexShrink: 0, padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem' }}
-                                                onClick={() => dialerEvents.call(f.lead_id || f.leadId, f.lead_phone || f.leadPhone, f.lead_name || f.leadName)}
-                                            >
-                                                <Phone size={12} /> Call
-                                            </button>
-                                        </div>
-                                    );
-                                })()}
-                                
-                                {!isMobile && (
-                                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => deleteFu(f.id)}>
-                                        <X size={13} />
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                {f.status !== 'Completed' ? (
+                                    <>
+                                        <button 
+                                            className="hover-lift"
+                                            onClick={() => dialerEvents.call(f.lead_id || f.leadId, f.lead_phone || f.leadPhone, f.lead_name || f.leadName)}
+                                            style={{ background: '#0f172a', color: 'white', border: 'none', width: 40, height: 40, borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            <Phone size={18} />
+                                        </button>
+                                        <button 
+                                            className="hover-lift"
+                                            onClick={() => setNotifyTarget({ id: f.lead_id || f.leadId, name: f.lead_name || f.leadName })}
+                                            style={{ background: '#10b981', color: 'white', border: 'none', width: 40, height: 40, borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button 
+                                        onClick={() => deleteFu(f.id)}
+                                        style={{ background: '#fee2e2', color: '#f43f5e', border: 'none', width: 40, height: 40, borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <X size={18} />
                                     </button>
                                 )}
                             </div>

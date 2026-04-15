@@ -260,18 +260,20 @@ export default function App() {
           <BrandingProvider>
           <ErrorBoundary>
             <BrowserRouter>
-              <Routes>
-                <Route path="/login" element={<LoginRedirect />} />
-                <Route path="/register" element={<RegisterRedirect />} />
-                <Route path="/signup" element={<PublicSignup />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/enquiry" element={<Enquiry />} />
-                <Route path="/referral/:partnerId" element={<PartnerReferral />} />
-                <Route path="/kiosk" element={<Kiosk />} />
-                {/* All other routes — protected */}
-                <Route path="/*" element={<Suspense fallback={<PageLoader />}><ProtectedApp /></Suspense>} />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/login" element={<LoginRedirect />} />
+                  <Route path="/register" element={<RegisterRedirect />} />
+                  <Route path="/signup" element={<PublicSignup />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/enquiry" element={<Enquiry />} />
+                  <Route path="/referral/:partnerId" element={<PartnerReferral />} />
+                  <Route path="/kiosk" element={<Kiosk />} />
+                  {/* All other routes — protected */}
+                  <Route path="/*" element={<ProtectedApp />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </ErrorBoundary>
           </BrandingProvider>
