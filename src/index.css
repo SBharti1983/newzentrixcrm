@@ -1,6 +1,6 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-/* â”€â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── CSS Custom Properties ─────────────────────────────────────── */
 :root {
   /* Navy/Slate Color Palette */
   --navy-950: #040d1a;
@@ -95,7 +95,7 @@
   --ent-glass-border: rgba(255, 255, 255, 0.4);
 }
 
-/* â”€â”€â”€ Enterprise Utilities â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Enterprise Utilities ────────────────────────────────────────── */
 .ent-page-container {
   padding: 32px 40px;
   max-width: 1600px;
@@ -139,7 +139,7 @@
   text-transform: uppercase;
 }
 
-/* â”€â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Reset & Base ───────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -167,7 +167,7 @@ body {
   min-height: 100vh;
 }
 
-/* â”€â”€â”€ Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Keyframes ──────────────────────────────────────────────────── */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -247,8 +247,6 @@ body {
 
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
 }
@@ -272,16 +270,14 @@ body {
 
 .glass-panel {
   background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
 }
 
 .glass-interactive {
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  
   border: 1px solid rgba(255, 255, 255, 0.5);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -332,7 +328,7 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* â”€â”€â”€ Typography â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Typography ─────────────────────────────────────────────────── */
 h1,
 h2,
 h3,
@@ -380,7 +376,7 @@ a:hover {
   color: var(--navy-700);
 }
 
-/* â”€â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -399,7 +395,7 @@ a:hover {
   background: var(--slate-400);
 }
 
-/* â”€â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Layout ─────────────────────────────────────────────────────── */
 .app-layout {
   display: flex;
   width: 100%;
@@ -429,7 +425,7 @@ a:hover {
   min-height: calc(100vh - var(--header-height));
 }
 
-/* â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Sidebar ────────────────────────────────────────────────────── */
 .sidebar {
   position: fixed;
   top: 0;
@@ -642,7 +638,7 @@ a:hover {
   width: 0;
 }
 
-/* â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Header ─────────────────────────────────────────────────────── */
 .header {
   position: fixed;
   top: 0;
@@ -650,7 +646,7 @@ a:hover {
   right: 0;
   height: var(--header-height);
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
+  
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
@@ -771,7 +767,7 @@ a:hover {
   border: 2px solid white;
 }
 
-/* â”€â”€â”€ Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Cards ──────────────────────────────────────────────────────── */
 .card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -810,7 +806,7 @@ a:hover {
   padding: 20px 24px 24px;
 }
 
-/* â”€â”€â”€ Stat Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Stat Cards ─────────────────────────────────────────────────── */
 .stat-card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -893,7 +889,7 @@ a:hover {
   color: var(--accent-rose-dark);
 }
 
-/* â”€â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Buttons ────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1017,7 +1013,7 @@ a:hover {
   padding: 9px;
 }
 
-/* â”€â”€â”€ Badges / Pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Badges / Pills ─────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1073,7 +1069,7 @@ a:hover {
   color: #0f766e;
 }
 
-/* â”€â”€â”€ Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Forms ──────────────────────────────────────────────────────── */
 .form-group {
   margin-bottom: 20px;
 }
@@ -1150,7 +1146,7 @@ select.form-control {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
-/* â”€â”€â”€ Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Tables ─────────────────────────────────────────────────────── */
 .table-wrapper {
   overflow-x: auto;
   border-radius: var(--border-radius-lg);
@@ -1200,7 +1196,7 @@ tbody tr:hover {
   background: var(--slate-50);
 }
 
-/* â”€â”€â”€ Page Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Page Header ────────────────────────────────────────────────── */
 .page-header {
   display: flex;
   align-items: flex-start;
@@ -1227,7 +1223,7 @@ tbody tr:hover {
   align-items: center;
 }
 
-/* â”€â”€â”€ Grid Layouts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Grid Layouts ───────────────────────────────────────────────── */
 .grid {
   display: grid;
   gap: 20px;
@@ -1249,7 +1245,7 @@ tbody tr:hover {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
-/* â”€â”€â”€ Pipeline / Kanban (base) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Pipeline / Kanban (base) ──────────────────────────────────── */
 /* NOTE: main layout overrides are in the Kanban Board section below */
 .pipeline-board {
   display: flex;
@@ -1372,7 +1368,7 @@ tbody tr:hover {
   border-top: 1px solid var(--slate-100);
 }
 
-/* â”€â”€â”€ Slide-over panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Slide-over panel ───────────────────────────────────────────── */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -1385,13 +1381,13 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€â”€ Drag ghost styling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Drag ghost styling ─────────────────────────────────────────── */
 .pipeline-card[draggable="true"]:active {
   box-shadow: var(--shadow-xl);
   transform: rotate(2deg) scale(1.02);
 }
 
-/* â”€â”€â”€ Avatar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Avatar ─────────────────────────────────────────────────────── */
 .avatar {
   width: 36px;
   height: 36px;
@@ -1418,12 +1414,12 @@ tbody tr:hover {
   font-size: 1rem;
 }
 
-/* â”€â”€â”€ Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Modal ──────────────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
   background: var(--surface-overlay);
-  backdrop-filter: blur(4px);
+  
   z-index: 200;
   display: flex;
   align-items: center;
@@ -1471,7 +1467,7 @@ tbody tr:hover {
   padding: 0 28px 24px;
 }
 
-/* â”€â”€â”€ Progress Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Progress Bar ───────────────────────────────────────────────── */
 .progress-bar {
   height: 6px;
   background: var(--slate-200);
@@ -1486,7 +1482,7 @@ tbody tr:hover {
   transition: width var(--transition-slow);
 }
 
-/* â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Tabs ───────────────────────────────────────────────────────── */
 .tabs {
   display: flex;
   gap: 2px;
@@ -1517,7 +1513,7 @@ tbody tr:hover {
   color: var(--text-primary);
 }
 
-/* â”€â”€â”€ Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Animations ─────────────────────────────────────────────────── */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1604,7 +1600,7 @@ tbody tr:hover {
   animation: slideInRight 0.3s ease;
 }
 
-/* â”€â”€â”€ Spinner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Spinner ─────────────────────────────────────────────────────── */
 .spinner {
   display: inline-block;
   width: 16px;
@@ -1616,7 +1612,7 @@ tbody tr:hover {
   flex-shrink: 0;
 }
 
-/* â”€â”€â”€ Notification / WhatsApp Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Notification / WhatsApp Button ─────────────────────────────── */
 .btn-whatsapp {
   background: linear-gradient(135deg, #25d366, #128c7e);
   color: white;
@@ -1643,7 +1639,7 @@ tbody tr:hover {
   color: var(--navy-700);
 }
 
-/* â”€â”€â”€ Command Center â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Command Center ────────────────────────────────────────── */
 .command-center-root {
   padding: 12px 24px 24px;
   height: calc(100vh - 100px);
@@ -1740,7 +1736,7 @@ tbody tr:hover {
   font-size: 0.875rem;
 }
 
-/* â”€â”€â”€ Tooltip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Tooltip ────────────────────────────────────────────────────── */
 [data-tooltip] {
   position: relative;
 }
@@ -1767,14 +1763,14 @@ tbody tr:hover {
   opacity: 1;
 }
 
-/* â”€â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Divider ────────────────────────────────────────────────────── */
 .divider {
   height: 1px;
   background: var(--border-light);
   margin: 16px 0;
 }
 
-/* â”€â”€â”€ Utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Utility ────────────────────────────────────────────────────── */
 .flex {
   display: flex;
 }
@@ -1823,7 +1819,7 @@ tbody tr:hover {
   margin-bottom: 24px;
 }
 
-/* â”€â”€â”€ Kanban Board â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Kanban Board ───────────────────────────────────────────────── */
 .pipeline-board {
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
@@ -1884,7 +1880,7 @@ tbody tr:hover {
   display: none;
 }
 
-/* â”€â”€â”€ Kanban Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Kanban Card ────────────────────────────────────────────────── */
 .kanban-card {
   background: white;
   border-radius: 10px;
@@ -2022,7 +2018,7 @@ tbody tr:hover {
   gap: 3px;
 }
 
-/* â”€â”€â”€ Premium System Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Premium System Animations ───────────────────────────────────── */
 @keyframes pulse-glow {
   0% {
     transform: scale(0.95);
@@ -2097,16 +2093,16 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-/* â”€â”€â”€ Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Responsive ─────────────────────────────────────────────────── */
 
-/* â”€â”€ Tablet: â‰¤1200px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tablet: ≤1200px ─────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* â”€â”€ Tablet-small / landscape phone: â‰¤900px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tablet-small / landscape phone: ≤900px ──────────────────────── */
 @media (max-width: 900px) {
   .grid-3 {
     grid-template-columns: repeat(2, 1fr);
@@ -2121,10 +2117,10 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€ Mobile breakpoint: â‰¤768px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mobile breakpoint: ≤768px ───────────────────────────────────── */
 @media (max-width: 768px) {
 
-  /* â”€ Sidebar: off-screen overlay â”€ */
+  /* ─ Sidebar: off-screen overlay ─ */
   .sidebar.mobile-sidebar {
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2165,12 +2161,12 @@ tbody tr:hover {
     color: white;
   }
 
-  /* â”€ Main content: full width on mobile â”€ */
+  /* ─ Main content: full width on mobile ─ */
   .main-content.mobile {
     margin-left: 0 !important;
   }
 
-  /* â”€ Header: full width on mobile â”€ */
+  /* ─ Header: full width on mobile ─ */
   .header.mobile-header {
     left: 0 !important;
   }
@@ -2183,12 +2179,12 @@ tbody tr:hover {
     font-size: 0.72rem;
   }
 
-  /* â”€ Page content â”€ */
+  /* ─ Page content ─ */
   .page-content {
     padding: 16px 14px;
   }
 
-  /* â”€ Stat cards â”€ */
+  /* ─ Stat cards ─ */
   .stat-value {
     font-size: 1.5rem;
   }
@@ -2198,7 +2194,7 @@ tbody tr:hover {
     height: 38px;
   }
 
-  /* â”€ Cards â”€ */
+  /* ─ Cards ─ */
   .card-header {
     padding: 16px 16px 0;
     flex-wrap: wrap;
@@ -2209,7 +2205,7 @@ tbody tr:hover {
     padding: 16px;
   }
 
-  /* â”€ Tables â”€ */
+  /* ─ Tables ─ */
   .table-wrapper {
     border-radius: var(--border-radius-md);
     -webkit-overflow-scrolling: touch;
@@ -2239,7 +2235,7 @@ tbody tr:hover {
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
   }
 
-  /* â”€ Modals: full-screen on mobile â”€ */
+  /* ─ Modals: full-screen on mobile ─ */
   .modal-overlay {
     padding: 0;
     align-items: flex-end;
@@ -2275,14 +2271,14 @@ tbody tr:hover {
     justify-content: center;
   }
 
-  /* â”€ Filter rows / action bars â”€ */
+  /* ─ Filter rows / action bars ─ */
   .filter-bar,
   .page-actions {
     flex-wrap: wrap;
     gap: 8px;
   }
 
-  /* â”€ Buttons â”€ */
+  /* ─ Buttons ─ */
   .btn {
     padding: 10px 16px;
     font-size: 0.82rem;
@@ -2293,12 +2289,12 @@ tbody tr:hover {
     font-size: 0.78rem;
   }
 
-  /* â”€ Utility hide classes â”€ */
+  /* ─ Utility hide classes ─ */
   .hide-mobile {
     display: none !important;
   }
 
-  /* â”€ Grid overrides â”€ */
+  /* ─ Grid overrides ─ */
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
@@ -2310,7 +2306,7 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€ Small phone: â‰¤640px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Small phone: ≤640px ─────────────────────────────────────────── */
 @media (max-width: 640px) {
 
   .grid-3,
@@ -2381,7 +2377,7 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€ Very small phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Very small phone: ≤480px ────────────────────────────────────── */
 @media (max-width: 480px) {
   .grid-2 {
     grid-template-columns: 1fr;
@@ -2405,14 +2401,14 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€ Login page mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Login page mobile ───────────────────────────────────────────── */
 @media (max-width: 900px) {
   .login-left-panel {
     display: none !important;
   }
 }
 
-/* â”€â”€ Float animation for Register/Login backgrounds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Float animation for Register/Login backgrounds ──────────────── */
 @keyframes float {
   0% {
     transform: translateY(0) scale(1);
@@ -2423,7 +2419,7 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€ Slide-up animation for mobile modals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Slide-up animation for mobile modals ────────────────────────── */
 @keyframes slideUp {
   from {
     transform: translateY(100%);
@@ -2436,7 +2432,7 @@ tbody tr:hover {
   }
 }
 
-/* â”€â”€â”€ Payment Tracker â€” Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Payment Tracker — Timeline ─────────────────────────────────── */
 .payment-timeline {
   position: relative;
   padding-left: 32px;
@@ -2453,7 +2449,7 @@ tbody tr:hover {
   border-radius: 2px;
 }
 
-/* â”€â”€â”€ Drag-Drop Upload Zone â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Drag-Drop Upload Zone ──────────────────────────────────────── */
 .dropzone {
   border: 2px dashed var(--border-medium);
   border-radius: var(--border-radius-md);
@@ -2477,7 +2473,7 @@ tbody tr:hover {
   transform: scale(1.01);
 }
 
-/* â”€â”€â”€ Document Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Document Cards ─────────────────────────────────────────────── */
 .doc-card {
   background: var(--surface-card);
   border-radius: var(--border-radius-lg);
@@ -2494,7 +2490,7 @@ tbody tr:hover {
   border-color: var(--navy-200);
 }
 
-/* â”€â”€â”€ Checklist Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Checklist Items ────────────────────────────────────────────── */
 .checklist-item {
   display: flex;
   align-items: center;
@@ -2511,7 +2507,7 @@ tbody tr:hover {
   border-color: rgba(16, 185, 129, 0.25);
 }
 
-/* â”€â”€â”€ Empty State Extended â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Empty State Extended ───────────────────────────────────────── */
 .empty-state-desc {
   font-size: 0.875rem;
   color: var(--text-muted);
@@ -2519,12 +2515,12 @@ tbody tr:hover {
   text-align: center;
 }
 
-/* â”€â”€â”€ mb-6 utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── mb-6 utility ───────────────────────────────────────────────── */
 .mb-6 {
   margin-bottom: 24px;
 }
 
-/* â”€â”€â”€ Site Visit Planner Replication Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Site Visit Planner Replication Styles ─────────────────────── */
 .site-visit-planner-layout {
   padding-bottom: 40px;
 }
@@ -2877,7 +2873,7 @@ tbody tr:hover {
   color: #dc2626;
 }
 
-/* â”€â”€â”€ Site Visits Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Site Visits Responsive ────────────────────────────────────── */
 @media (max-width: 900px) {
   .site-visit-header-premium {
     flex-direction: column;
@@ -2903,7 +2899,7 @@ tbody tr:hover {
 }
 
 
-/* â”€â”€â”€ Dashboard â€” Refined Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Dashboard — Refined Layout ─────────────────────────────────── */
 .dash-root {
   max-width: 1440px;
   margin: 0 auto;
@@ -3076,7 +3072,7 @@ tbody tr:hover {
   font-size: 8px;
   font-weight: 900;
   letter-spacing: 0.08em;
-  backdrop-filter: blur(8px);
+  
 }
 
 .dash-live-dot {
@@ -3107,7 +3103,7 @@ tbody tr:hover {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
   padding: 7px 12px;
-  backdrop-filter: blur(8px);
+  
   transition: all 0.3s;
   cursor: default;
 }
@@ -3635,7 +3631,7 @@ tbody tr:hover {
   font-weight: 800;
 }
 
-/* â”€â”€â”€ Inventory Responsive â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Inventory Responsive ───────────────────────────────────────── */
 .inventory-ribbon {
   background: linear-gradient(135deg, var(--navy-900), #0f172a);
   padding: 12px 20px;
@@ -3730,7 +3726,7 @@ tbody tr:hover {
   border-color: var(--navy-900);
 }
 
-/* â”€â”€â”€ Contact Preview Sidebar (CPS) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Contact Preview Sidebar (CPS) ──────────────────────────────── */
 .cps-overlay {
   position: fixed;
   inset: 0;
@@ -4406,7 +4402,7 @@ tbody tr:hover {
   /* Chrome/Safari */
 }
 
-/* â”€â”€â”€ Mobile Responsiveness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─── Mobile Responsiveness ──────────────────────────────────────── */
 @media (max-width: 768px) {
 
   /* Contact Details Stacking */
@@ -4544,7 +4540,7 @@ tbody tr:hover {
     z-index: 95;
   }
 
-  /* â”€â”€â”€ Dashboard Mobile Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ─── Dashboard Mobile Overrides ────────────────────────────────── */
   .dash-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
@@ -4585,7 +4581,7 @@ tbody tr:hover {
     padding: 12px 16px !important;
   }
 
-  /* â”€â”€â”€ Contact Details: Bottom Dock â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ─── Contact Details: Bottom Dock ─────────────────────────────── */
   .contact-details-layout>div[style*="position: fixed"][style*="bottom"] {
     bottom: 12px !important;
     padding: 8px 10px !important;
@@ -4601,14 +4597,14 @@ tbody tr:hover {
     padding: 8px 14px !important;
   }
 
-  /* â”€â”€â”€ CPS Sidebar: full width on mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ─── CPS Sidebar: full width on mobile ────────────────────────── */
   .cps-panel {
     width: 100% !important;
     max-width: 100% !important;
   }
 }
 
-/* â”€â”€ Small phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Small phone: ≤480px ─────────────────────────────────────────── */
 @media (max-width: 480px) {
   .dash-stats-grid {
     grid-template-columns: 1fr !important;
@@ -4675,11 +4671,11 @@ tbody tr:hover {
   }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   COMPREHENSIVE MOBILE RESPONSIVENESS â€” Dashboard / Leads / Pipeline
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ══════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE MOBILE RESPONSIVENESS — Dashboard / Leads / Pipeline
+   ══════════════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Tablet: â‰¤1024px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Tablet: ≤1024px ─────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .page-content {
     padding: 14px 16px !important;
@@ -4689,7 +4685,7 @@ tbody tr:hover {
     padding: 20px 16px !important;
   }
 
-  /* Agent Dashboard KPI: 6â†’3 */
+  /* Agent Dashboard KPI: 6→3 */
   .agent-dash-kpi-grid {
     grid-template-columns: repeat(3, 1fr) !important;
   }
@@ -4705,7 +4701,7 @@ tbody tr:hover {
     gap: 12px !important;
   }
 
-  /* Pipeline grid-4â†’2 */
+  /* Pipeline grid-4→2 */
   .grid-4 {
     grid-template-columns: repeat(2, 1fr) !important;
   }
@@ -4722,10 +4718,10 @@ tbody tr:hover {
 }
 
 
-/* â”€â”€ Phone: â‰¤768px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Phone: ≤768px ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
 
-  /* â•â•â• DASHBOARD â€” Agent View â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  /* ═══ DASHBOARD — Agent View ═══════════════════════════════════════ */
 
   .agent-dash-header {
     flex-direction: column !important;
@@ -4762,7 +4758,7 @@ tbody tr:hover {
     grid-template-columns: 1fr !important;
   }
 
-  /* â•â•â• DASHBOARD â€” Manager/Admin View â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  /* ═══ DASHBOARD — Manager/Admin View ═══════════════════════════════ */
 
   .dash-stats-grid {
     grid-template-columns: repeat(2, 1fr) !important;
@@ -4785,7 +4781,7 @@ tbody tr:hover {
     border-radius: 16px !important;
   }
 
-  /* â•â•â• LEADS PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  /* ═══ LEADS PAGE ═══════════════════════════════════════════════════ */
 
   .page-actions {
     flex-wrap: wrap !important;
@@ -4803,7 +4799,7 @@ tbody tr:hover {
     min-width: 800px !important;
   }
 
-  /* â•â•â• PIPELINE PAGE â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+  /* ═══ PIPELINE PAGE ═══════════════════════════════════════════════ */
 
   .page-header {
     flex-direction: column !important;
@@ -4859,7 +4855,7 @@ tbody tr:hover {
 }
 
 
-/* â”€â”€ Small Phone: â‰¤480px â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Small Phone: ≤480px ─────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .page-content {
     padding: 10px 8px !important;
@@ -4895,5 +4891,74 @@ tbody tr:hover {
   .dash-stat-card {
     padding: 12px 14px !important;
   }
+}
+
+
+/* --- Outreach Command Center Enterprise Styles --- */
+.shimmer-urgent {
+    background: linear-gradient(135deg, #ffffff 0%, #fff1f2 50%, #ffffff 100%) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer-pulse 3s infinite linear !important;
+}
+
+@keyframes shimmer-pulse {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.pulse {
+    animation: badge-pulse 1.5s infinite cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+@keyframes badge-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+}
+
+.drawer-right {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    background: white;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.1);
+    animation: drawer-slide 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    z-index: 1000;
+}
+
+@keyframes drawer-slide {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.icon-btn-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.icon-btn-sm:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+}
+
+.intelligence-card {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.intelligence-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,255,0.05);
 }
 

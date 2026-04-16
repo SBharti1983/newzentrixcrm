@@ -22,8 +22,8 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
         }
 
-        // Use confirmed models for this specific API Key
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro", "gemini-2.0-flash-exp"];
+        // Use stable and performant models. gemini-1.5-flash is ideal for low-latency tasks like scoring.
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
@@ -93,7 +93,7 @@ async function generateAudioTranscription(prompt, base64Audio, mimeType, isJson 
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
         }
 
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash-exp"];
+        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
