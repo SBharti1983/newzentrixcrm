@@ -110,12 +110,18 @@ export default function Pipeline() {
     const [filterProject, setFilterProject] = useState('All');
     const [showFilters, setShowFilters] = useState(false);
     const [viewMode, setViewMode] = useState('metrics');
+    const [explorerPage, setExplorerPage] = useState(1);
+    const EXPLORER_PAGE_SIZE = 10;
     const { user: currentUser } = useAuth();
     const { viewers, trackPage } = usePresence();
 
     useEffect(() => {
         trackPage('/pipeline');
     }, []);
+
+    useEffect(() => {
+        setExplorerPage(1);
+    }, [searchQ, filterAgent, filterSource, filterPriority, filterProject]);
 
     const activeViewers = (viewers['/pipeline'] || []).filter(u => u.id !== currentUser?.id);
     const dragCard = useRef(null);
@@ -221,8 +227,7 @@ export default function Pipeline() {
                     <div style={{ display: 'flex', background: '#f8fafc', padding: 2, borderRadius: 8, border: '1px solid #e2e8f0' }}>
                         {[
                             { id: 'metrics', label: 'Metrics', icon: TrendingUp },
-                            { id: 'kanban', label: 'Kanban', icon: Target },
-                            { id: 'matrix', label: 'Matrix', icon: ViewListIcon }
+                            { id: 'kanban', label: 'Kanban', icon: Target }
                         ].map(m => (
                             <button
                                 key={m.id}
@@ -421,6 +426,180 @@ export default function Pipeline() {
                                 </div>
                             </div>
                         </div>
+                        
+                        {/* --- BOTTOM ROW: LIVE PIPELINE TABLE --- */}
+                        <div className="card" style={{ padding: 0, background: 'white', border: '1px solid var(--border-light)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+                                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <ViewListIcon size={16} color="var(--blue-500)" /> Pipeline Data Explorer
+                                </h3>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--slate-500)' }}>Displaying active deals sorted by engagement</div>
+                            </div>
+                            
+                            {/* Grid Header */}
+                            <div style={{ padding: '0 24px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1.8fr) 1fr 1fr 1.2fr 1fr 1.4fr 1fr 40px', padding: '16px 0', borderBottom: '1px solid var(--slate-100)' }}>
+                                    {['Lead Details', 'Location', 'Budget', 'Stage', 'Priority', 'Agent', 'Score', ''].map((h, i) => (
+                                        <div key={i} style={{
+                                            fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                            textAlign: i === 6 || i === 7 ? 'right' : 'left'
+                                        }}>{h}</div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Flexible Data List */}
+                            <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {filteredLeads.slice((explorerPage - 1) * EXPLORER_PAGE_SIZE, explorerPage * EXPLORER_PAGE_SIZE).map((l, i) => {
+                                    const cfg = STAGE_CONFIG[l.stage] || DEFAULT_STAGE_CONFIG;
+                                    const pc = PRIORITY_CONFIG[l.priority] || PRIORITY_CONFIG.Low;
+                                    const avatarHue = (l.name.charCodeAt(0) * 47) % 360;
+
+                                    return (
+                                        <div key={l.id}
+                                            className="hover-lift"
+                                            onClick={() => setSelectedLead(l)}
+                                            style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: 'minmax(250px, 1.8fr) 1fr 1fr 1.2fr 1fr 1.4fr 1fr 40px',
+                                                background: 'white',
+                                                borderRadius: '12px',
+                                                padding: '16px 20px',
+                                                alignItems: 'center',
+                                                border: '1px solid var(--slate-100)',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                margin: '0 -20px' // Visually float the rows just a hair inside the bounds 
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor = 'var(--blue-200)';
+                                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.08)';
+                                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor = 'var(--slate-100)';
+                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                            }}>
+                                            
+                                            {/* Lead Details Col */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                                <div style={{
+                                                    width: 42, height: 42, borderRadius: '10px',
+                                                    background: `linear-gradient(135deg, hsl(${avatarHue}, 80%, 65%), hsl(${avatarHue - 30}, 80%, 45%))`,
+                                                    color: 'white',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                    fontWeight: 900, fontSize: '1rem',
+                                                    boxShadow: `0 4px 10px hsla(${avatarHue}, 80%, 55%, 0.3)`
+                                                }}>
+                                                    {(l.name || 'A')[0]}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)' }}>{l.name}</div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)' }}>{l.email || 'No email provided'}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Location Col */}
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>{l.city || '—'}</div>
+
+                                            {/* Budget Col */}
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)' }}>
+                                                {l.budget ? (parseBudgetL(l.budget) > 0 ? fmtL(parseBudgetL(l.budget)) : l.budget) : '—'}
+                                            </div>
+
+                                            {/* Stage Col */}
+                                            <div>
+                                                <span style={{
+                                                    padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem',
+                                                    fontWeight: 800, background: cfg.bg, color: cfg.color, display: 'inline-flex', alignItems: 'center', gap: '6px'
+                                                }}>
+                                                    {cfg.icon && <span style={{ fontSize: '0.8rem' }}>{cfg.icon}</span>}
+                                                    {l.stage}
+                                                </span>
+                                            </div>
+
+                                            {/* Priority Col */}
+                                            <div>
+                                                <span style={{
+                                                    padding: '4px 12px', borderRadius: '20px', fontSize: '0.7rem',
+                                                    fontWeight: 800, background: pc.bg, color: pc.color,
+                                                    border: `1px solid ${pc.color}20`
+                                                }}>
+                                                    {l.priority}
+                                                </span>
+                                            </div>
+
+                                            {/* Agent Col */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, color: 'var(--slate-600)' }}>
+                                                    {(l.agent_name || 'U')[0]}
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-700)' }}>{l.agent_name || 'Unassigned'}</span>
+                                            </div>
+
+                                            {/* Score Col */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                                                    <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: '1' }}>{l.score}</span>
+                                                    <div style={{ height: 4, width: 36, background: 'var(--slate-100)', borderRadius: 10, overflow: 'hidden', display: 'flex' }}>
+                                                        <div style={{ height: '100%', width: `${l.score}%`, background: l.score > 80 ? 'var(--accent-emerald)' : l.score > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Action Col */}
+                                            <div style={{ textAlign: 'right' }}>
+                                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'var(--slate-50)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--slate-400)' }}>
+                                                    <ChevronRight size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Pagination Footer */}
+                                {filteredLeads.length > EXPLORER_PAGE_SIZE && (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px', paddingTop: '16px', borderTop: '1px solid var(--slate-100)' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)' }}>
+                                            Showing <span style={{ color: 'var(--navy-900)', fontWeight: 800 }}>{Math.min(filteredLeads.length, (explorerPage - 1) * EXPLORER_PAGE_SIZE + 1)}</span> to <span style={{ color: 'var(--navy-900)', fontWeight: 800 }}>{Math.min(filteredLeads.length, explorerPage * EXPLORER_PAGE_SIZE)}</span> of <span style={{ color: 'var(--navy-900)', fontWeight: 800 }}>{filteredLeads.length}</span> leads
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <button 
+                                                onClick={() => setExplorerPage(p => Math.max(1, p - 1))}
+                                                disabled={explorerPage === 1}
+                                                className="hover-lift"
+                                                style={{ 
+                                                    padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, 
+                                                    border: '1px solid var(--slate-200)', background: explorerPage === 1 ? 'var(--slate-50)' : 'white', 
+                                                    color: explorerPage === 1 ? 'var(--slate-400)' : 'var(--navy-900)', 
+                                                    cursor: explorerPage === 1 ? 'not-allowed' : 'pointer',
+                                                    boxShadow: explorerPage === 1 ? 'none' : '0 1px 2px rgba(0,0,0,0.05)'
+                                                }}
+                                            >
+                                                Previous
+                                            </button>
+                                            <button 
+                                                onClick={() => setExplorerPage(p => p + 1)}
+                                                disabled={explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length}
+                                                className="hover-lift"
+                                                style={{ 
+                                                    padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, 
+                                                    border: '1px solid var(--slate-200)', background: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'var(--slate-50)' : 'white', 
+                                                    color: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'var(--slate-400)' : 'var(--navy-900)', 
+                                                    cursor: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'not-allowed' : 'pointer',
+                                                    boxShadow: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'none' : '0 1px 2px rgba(0,0,0,0.05)'
+                                                }}
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
             )}
 
@@ -582,91 +761,7 @@ export default function Pipeline() {
                 </div>
             )}
 
-            {/* ══════════════════════════════════════════════════════
-                MATRIX VIEW (TABLE)
-            ══════════════════════════════════════════════════════ */}
-            {viewMode === 'matrix' && (
-                <div style={{ padding: '0 24px 24px 24px', flex: 1, display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
-                    <div className="card" style={{ padding: 0, background: 'white', border: '1px solid var(--border-light)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-                                <thead>
-                                    <tr style={{ background: 'var(--slate-50)' }}>
-                                        {['Lead Details', 'Location', 'Budget', 'Stage', 'Priority', 'Agent', 'Score', ''].map((h, i) => (
-                                            <th key={i} style={{
-                                                padding: '16px 24px', textAlign: 'left', fontSize: '0.68rem',
-                                                fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase',
-                                                letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)'
-                                            }}>{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredLeads.map((l, i) => {
-                                        const cfg = STAGE_CONFIG[l.stage] || DEFAULT_STAGE_CONFIG;
-                                        const pc = PRIORITY_CONFIG[l.priority] || PRIORITY_CONFIG.Low;
-                                        return (
-                                            <tr key={l.id}
-                                                className="hover-lift"
-                                                onClick={() => setSelectedLead(l)}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                    borderBottom: i === filteredLeads.length - 1 ? 'none' : '1px solid var(--border-light)',
-                                                }}>
-                                                <td style={{ padding: '16px 24px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        <div style={{
-                                                            width: 40, height: 40, borderRadius: '8px',
-                                                            background: 'var(--slate-50)',
-                                                            color: 'var(--navy-600)',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.95rem',
-                                                            boxShadow: 'inset 0 0 0 1px var(--border-light)'
-                                                        }}>
-                                                            {l.name[0]}
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-950)' }}>{l.name}</div>
-                                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{l.email}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{l.city || '—'}</td>
-                                                <td style={{ padding: '16px 24px', fontSize: '1rem', fontWeight: 900, color: 'var(--navy-800)' }}>{l.budget}</td>
-                                                <td style={{ padding: '16px 24px' }}>
-                                                    <span style={{
-                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem',
-                                                        fontWeight: 700, background: cfg.bg, color: cfg.color,
-                                                        border: `1px solid ${cfg.color}20`
-                                                    }}>{l.stage}</span>
-                                                </td>
-                                                <td style={{ padding: '16px 24px' }}>
-                                                    <span style={{
-                                                        padding: '4px 14px', borderRadius: 20, fontSize: '0.72rem',
-                                                        fontWeight: 700, background: pc.bg, color: pc.color,
-                                                        border: `1px solid ${pc.color}20`
-                                                    }}>{l.priority}</span>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>{l.agent_name || 'Unassigned'}</td>
-                                                <td style={{ padding: '16px 24px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        <div style={{ height: 6, width: 44, background: 'var(--slate-100)', borderRadius: 10, overflow: 'hidden', display: 'flex' }}>
-                                                            <div style={{ height: '100%', width: `${l.score}%`, background: l.score > 80 ? 'var(--accent-emerald)' : l.score > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} />
-                                                        </div>
-                                                        <span style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--navy-950)' }}>{l.score}</span>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                                                    <ChevronRight size={18} style={{ color: 'var(--slate-300)' }} />
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* ══════════════════════════════════════════════════════
                 LEAD DETAIL PANEL (slide-over)

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import {
     Plus, Search, Mail, MessageSquare, Send, Users,
     BarChart3, Calendar, Clock, ArrowRight, CheckCircle,
-    AlertCircle, Filter, Trash2, Edit2, Copy, Play, X, Zap, ChevronDown, ChevronUp
+    AlertCircle, Filter, Trash2, Edit2, Copy, Play, X, Zap, ChevronDown, ChevronUp, Target
 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useApi } from '../hooks/useApi';
@@ -85,32 +85,6 @@ export default function Marketing() {
 
     if (loading && !drips) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
-
-    return (
-        <div className="animate-fadeIn">
-            <div className="page-header">
-                <div>
-                    <h1 className="page-title">Marketing Hub</h1>
-                    <p className="page-subtitle">Manage omnichannel campaigns and mass communication.</p>
-                </div>
-                <div className="page-actions">
-                    <button className="btn btn-primary" onClick={() => setShowCreate(true)}>
-                        <Plus size={16} /> Create Drip Sequence
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid grid-4 mb-8">
-                {stats.map(s => (
-                    <div key={s.label} className="card" style={{ padding: 24, border: '1px solid var(--border-light)' }}>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>{s.label}</div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.value}</div>
-                        <div style={{ fontSize: '0.75rem', color: s.change.includes('+') ? 'var(--accent-emerald-dark)' : 'var(--text-muted)', marginTop: 8, fontWeight: 700 }}>
-                            {s.change} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>current month</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
 
     return (
         <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
@@ -551,7 +525,6 @@ export default function Marketing() {
                     </div>
                 </div>
             )}
-        </div>
         </div>
     );
 }

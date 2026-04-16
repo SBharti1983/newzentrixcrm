@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CHANNELS } from '../data/notificationTemplates';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
@@ -13,10 +13,25 @@ const STATUS_STYLE = {
 };
 
 const CHANNEL_ICONS = {
-    sms: <Smartphone size={15} />,
-    email: <Mail size={15} />,
-    whatsapp: <MessageSquare size={15} />,
+    sms: <Smartphone size={16} />,
+    email: <Mail size={16} />,
+    whatsapp: <MessageSquare size={16} />,
 };
+
+const CHANNEL_THEMES = {
+    whatsapp: { label: 'WhatsApp', color: '#25d366', bg: 'rgba(37,211,102,0.1)', icon: <MessageSquare size={14} /> },
+    email: { label: 'Email', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', icon: <Mail size={14} /> },
+    sms: { label: 'SMS', color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: <Smartphone size={14} /> },
+};
+
+// World-class Animation Definition
+const PULSE_ANIMATION = `
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+`;
 
 export default function Notifications() {
     const { data: apiData, loading, error, refetch } = useApi(() => notificationsApi.list({ limit: 200 }));
@@ -38,6 +53,19 @@ export default function Notifications() {
     const [search, setSearch] = useState('');
     const [filterChannel, setFilterChannel] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 15;
+
+    // hooks must be called before early returns
+    useEffect(() => {
+        const originalWidth = document.body.style.overflowX;
+        document.body.style.overflowX = 'hidden';
+        return () => { document.body.style.overflowX = originalWidth; };
+    }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, filterChannel, filterStatus]);
 
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
@@ -48,195 +76,227 @@ export default function Notifications() {
         const mq = !search || n.recipient.toLowerCase().includes(search.toLowerCase()) || n.template.toLowerCase().includes(search.toLowerCase());
         return ms && mc && mq;
     });
+    const localSum = (parseInt(stats.whatsapp_count) || 0) + (parseInt(stats.email_count) || 0) + (parseInt(stats.sms_count) || 0) || 1;
+    const statsTotal = parseInt(stats.total_count) || 0;
+    const safeTotal = Math.max(statsTotal, localSum, log.length, 1);
 
-    const totalSent = parseInt(stats.total_count) || log.length || 1;
-    const delivered = parseInt(stats.delivered_count) || log.filter(n => n.status === 'delivered').length;
-    const whatsappCount = parseInt(stats.whatsapp_count) || log.filter(n => n.channel === 'whatsapp').length;
-    const emailCount = parseInt(stats.email_count) || log.filter(n => n.channel === 'email').length;
-    const smsCount = parseInt(stats.sms_count) || log.filter(n => n.channel === 'sms').length;
+    const delivered = parseInt(stats.delivered_count) || log.filter(n => n.status === 'delivered').length || 0;
+    const whatsappCount = parseInt(stats.whatsapp_count) || log.filter(n => n.channel === 'whatsapp').length || 0;
+    const emailCount = parseInt(stats.email_count) || log.filter(n => n.channel === 'email').length || 0;
+    const smsCount = parseInt(stats.sms_count) || log.filter(n => n.channel === 'sms').length || 0;
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const paginated = filtered.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+    );
 
     function handleSent() {
         refetch();
     }
 
     return (
-        <div className="animate-fadeIn">
-            {/* Header */}
-            <div className="page-header">
+        <div className="animate-fadeIn pb-12" style={{ paddingRight: 20 }}>
+            <style>{PULSE_ANIMATION}</style>
+            {/* Compressed Enterprise Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
                 <div>
-                    <h1 className="page-title">Notification Center</h1>
-                    <p className="page-subtitle">SMS · Email · WhatsApp — all customer communications in one place</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 8px var(--accent-emerald)', animation: 'pulse 2s infinite' }} />
+                        <span style={{ fontSize: '0.65rem', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate-500)' }}>Messaging Engine: Active</span>
+                    </div>
+                    <h1 style={{ fontSize: '1.6rem', fontWeight: 950, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.02em' }}>Notification Center</h1>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--slate-500)', fontWeight: 600, marginTop: 2 }}>Unified telemetry & omnichannel dispatch hub</p>
                 </div>
-                <div className="page-actions">
-                    <button className="btn btn-primary" onClick={() => setShowComposer(true)}>
-                        <Send size={14} /> Compose Message
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <button className="btn hover-lift" onClick={() => setShowComposer(true)} style={{ 
+                        background: 'linear-gradient(135deg, var(--navy-900), var(--navy-700))', 
+                        color: 'white', border: 'none', padding: '10px 20px', borderRadius: 12, 
+                        fontWeight: 900, fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: 8,
+                        boxShadow: '0 8px 16px -4px rgba(10,22,40,0.2)'
+                    }}>
+                        <Send size={16} /> New Dispatch
                     </button>
                 </div>
             </div>
 
-            {/* KPI Cards */}
-            <div className="grid grid-4 mb-6">
+            {/* Ultra-Compact Enterprise KPI Hub */}
+            <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
                 {[
-                    { label: 'Total Sent', value: totalSent, icon: <Send size={18} />, color: 'var(--navy-600)', bg: 'var(--navy-50)' },
-                    { label: 'Delivered', value: delivered, sub: `${Math.round((delivered / totalSent) * 100)}% rate`, icon: <CheckCircle size={18} />, color: '#10b981', bg: 'rgba(16,185,129,0.08)' },
-                    { label: 'WhatsApp', value: whatsappCount, icon: <MessageSquare size={18} />, color: '#25d366', bg: 'rgba(37,211,102,0.08)' },
-                    { label: 'Email / SMS', value: `${emailCount} / ${smsCount}`, icon: <Mail size={18} />, color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.08)' },
-                ].map(k => (
-                    <div key={k.label} style={{
-                        background: k.bg, borderRadius: 'var(--border-radius-lg)',
-                        border: `1px solid ${k.color}25`, padding: '18px 20px',
-                        display: 'flex', alignItems: 'center', gap: 14,
+                    { label: 'Total Outbound', value: statsTotal || log.length, trend: 'Unified', icon: <Send size={18} />, color: 'var(--navy-600)' },
+                    { label: 'Network Arrival', value: delivered, trend: `${Math.round((delivered / safeTotal) * 100)}% OK`, icon: <CheckCircle size={18} />, color: '#10b981' },
+                    { label: 'WhatsApp Stream', value: whatsappCount, trend: 'Live', icon: <MessageSquare size={18} />, color: '#25d366' },
+                    { label: 'Direct Comms', value: emailCount + smsCount, trend: 'Mail/SMS', icon: <Smartphone size={18} />, color: 'var(--accent-cyan-dark)' },
+                ].map((k, i) => (
+                    <div key={k.label} className="ent-card hover-lift" style={{ 
+                        padding: '10px 18px', position: 'relative', overflow: 'hidden', 
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', height: 72,
+                        minWidth: 160, maxWidth: 220, flex: '0 1 auto'
                     }}>
-                        <div style={{
-                            width: 44, height: 44, borderRadius: 12,
-                            background: `${k.color}18`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: k.color, flexShrink: 0,
-                        }}>{k.icon}</div>
-                        <div>
-                            <div style={{ fontSize: '1.6rem', fontWeight: 800, color: k.color, lineHeight: 1 }}>{k.value}</div>
-                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 3 }}>{k.label}</div>
-                            {k.sub && <div style={{ fontSize: '0.72rem', color: 'var(--accent-emerald-dark)', marginTop: 1 }}>{k.sub}</div>}
+                        <div style={{ position: 'absolute', right: -4, top: -4, opacity: 0.03 }}>
+                            {k.icon}
+                        </div>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>{k.label}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ fontSize: '1.5rem', fontWeight: 950, color: 'var(--navy-900)', lineHeight: 1 }}>{k.value}</div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: k.color, whiteSpace: 'nowrap', opacity: 0.8 }}>{k.trend}</div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Channel usage bar */}
-            <div className="card mb-4" style={{ padding: '16px 20px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: 10, color: 'var(--text-secondary)' }}>Channel Distribution</div>
-                <div style={{ display: 'flex', gap: 0, borderRadius: 99, overflow: 'hidden', height: 14 }}>
+            {/* Compressed Telemetry Matrix */}
+            <div className="ent-card mb-6" style={{ padding: '16px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <BarChart2 size={14} className="text-slate-400" />
+                        <span style={{ fontSize: '0.75rem', fontWeight: 950, color: 'var(--navy-800)', letterSpacing: '0.03em', textTransform: 'uppercase' }}>Propagation Matrix</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 20 }}>
+                        {[
+                            { label: 'WA', count: whatsappCount, color: '#25d366' },
+                            { label: 'Mail', count: emailCount, color: '#3b63b8' },
+                            { label: 'SMS', count: smsCount, color: '#10b981' },
+                        ].map(c => (
+                            <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: c.color, boxShadow: `0 0 5px ${c.color}` }} />
+                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--navy-800)' }}>{c.label}</span>
+                                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--slate-400)' }}>{Math.round((c.count / safeTotal) * 100)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                {/* Bar Structure - No Gap to prevent overflow */}
+                <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', height: 8, background: 'var(--slate-50)', width: '100%' }}>
                     {[
-                        { key: 'whatsapp', count: whatsappCount, color: '#25d366' },
-                        { key: 'email', count: emailCount, color: '#3b63b8' },
-                        { key: 'sms', count: smsCount, color: '#10b981' },
+                        { key: 'wa', count: whatsappCount, color: '#25d366' },
+                        { key: 'em', count: emailCount, color: '#3b63b8' },
+                        { key: 'sm', count: smsCount, color: '#10b981' },
                     ].map(c => (
                         <div key={c.key} style={{
                             height: '100%',
-                            width: `${(c.count / totalSent) * 100}%`,
+                            width: `${(c.count / safeTotal) * 100}%`,
                             background: c.color,
-                            transition: 'width 0.6s ease',
-                        }} title={`${CHANNELS[c.key].label}: ${c.count}`} />
-                    ))}
-                </div>
-                <div style={{ display: 'flex', gap: 20, marginTop: 8 }}>
-                    {[
-                        { label: 'WhatsApp', count: whatsappCount, color: '#25d366' },
-                        { label: 'Email', count: emailCount, color: '#3b63b8' },
-                        { label: 'SMS', count: smsCount, color: '#10b981' },
-                    ].map(c => (
-                        <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem' }}>
-                            <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color }} />
-                            <span style={{ color: 'var(--text-muted)' }}>{c.label}</span>
-                            <span style={{ fontWeight: 700 }}>{c.count}</span>
-                            <span style={{ color: 'var(--text-muted)' }}>({Math.round((c.count / totalSent) * 100)}%)</span>
-                        </div>
+                            transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+                        }} />
                     ))}
                 </div>
             </div>
 
-            {/* Filters */}
-            <div className="card mb-4" style={{ padding: '12px 16px' }}>
+            {/* Compact Filter Matrix */}
+            <div className="ent-card mb-6" style={{ padding: '12px 20px', background: 'var(--slate-50/50)', width: '100%', boxSizing: 'border-box' }}>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-                        <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 150 }}>
+                        <Search size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
                         <input
                             className="form-control"
-                            placeholder="Search recipient or template…"
+                            placeholder="Recipient or campaign..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            style={{ paddingLeft: 32 }}
+                            style={{ paddingLeft: 40, height: 42, borderRadius: 12, border: '1px solid var(--border-medium)', fontSize: '0.82rem', fontWeight: 600 }}
                         />
                     </div>
-                    <select className="form-control" style={{ width: 140 }} value={filterChannel} onChange={e => setFilterChannel(e.target.value)}>
-                        <option value="all">All Channels</option>
+                    <select className="form-control" style={{ width: 140, height: 42, borderRadius: 12, fontWeight: 700, background: 'white', fontSize: '0.8rem' }} value={filterChannel} onChange={e => setFilterChannel(e.target.value)}>
+                        <option value="all">Channels: All</option>
                         <option value="whatsapp">WhatsApp</option>
-                        <option value="email">Email</option>
+                        <option value="email">Mail</option>
                         <option value="sms">SMS</option>
                     </select>
-                    <select className="form-control" style={{ width: 130 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                        <option value="all">All Status</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="pending">Pending</option>
+                    <select className="form-control" style={{ width: 140, height: 42, borderRadius: 12, fontWeight: 700, background: 'white', fontSize: '0.8rem' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                        <option value="all">Status: Global</option>
+                        <option value="delivered">Sent</option>
+                        <option value="pending">Queued</option>
                         <option value="failed">Failed</option>
                     </select>
-                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-                        {filtered.length} records
-                    </span>
+                    <div style={{ fontSize: '0.68rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em', padding: '0 8px' }}>
+                        {filtered.length} LOGS FOUND
+                    </div>
                 </div>
             </div>
 
-            {/* Log Table */}
-            <div className="card" style={{ overflow: 'hidden' }}>
-                <div className="table-wrapper" style={{ margin: 0 }}>
-                    <table>
+            {/* Real-time Log Stream */}
+            <div className="ent-card" style={{ overflow: 'hidden', padding: 0 }}>
+                <div className="table-wrapper" style={{ margin: 0, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                    <table style={{ borderCollapse: 'separate', borderSpacing: 0, minWidth: '100%' }}>
                         <thead>
-                            <tr>
-                                <th>Channel</th>
-                                <th>Recipient</th>
-                                <th>Template</th>
-                                <th>Preview</th>
-                                <th>Sent At</th>
-                                <th>Sent By</th>
-                                <th>Status</th>
-                                <th></th>
+                            <tr style={{ background: 'var(--slate-50)' }}>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Communication Vector</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Entity Recipient</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Template Mode</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Content Digest</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dispatch Time</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Operator</th>
+                                <th style={{ padding: '20px 24px', fontSize: '0.7rem', fontWeight: 950, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Live Status</th>
+                                <th style={{ padding: '20px 24px' }}></th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {filtered.map(n => {
-                                const ch = CHANNELS[n.channel];
+                        <tbody className="divide-y divide-slate-100">
+                            {paginated.map(n => {
+                                const chTheme = CHANNEL_THEMES[n.channel] || CHANNEL_THEMES.email;
                                 const st = STATUS_STYLE[n.status] || STATUS_STYLE.delivered;
                                 return (
-                                    <tr key={n.id}>
-                                        <td>
-                                            <span style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                background: ch.bg, color: ch.color,
-                                                padding: '4px 10px', borderRadius: 99,
-                                                fontWeight: 700, fontSize: '0.78rem',
+                                    <tr key={n.id} className="hover:bg-slate-50/50 transition-colors">
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: 10,
+                                                background: chTheme.bg, color: chTheme.color,
+                                                padding: '8px 16px', borderRadius: 12,
+                                                fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.02em', boxSizing: 'border-box'
                                             }}>
-                                                {CHANNEL_ICONS[n.channel]} {ch.label}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{n.recipient}</div>
-                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                                {n.channel === 'email' ? n.email : n.phone}
+                                                {chTheme.icon} <span style={{ opacity: 0.9 }}>{chTheme.label.toUpperCase()}</span>
                                             </div>
                                         </td>
-                                        <td>
-                                            <span className="badge badge-slate">{n.template}</span>
-                                            {n.subject && (
-                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: 3 }}>
-                                                    {n.subject.substring(0, 40)}{n.subject.length > 40 ? '…' : ''}
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <div className="avatar avatar-xs" style={{ background: 'var(--navy-600)', color: 'white', fontWeight: 900 }}>{n.recipient[0]}</div>
+                                                <div>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>{n.recipient}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)', fontWeight: 600 }}>
+                                                        {n.channel === 'email' ? n.email : n.phone}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </td>
-                                        <td style={{ maxWidth: 220 }}>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                                                {n.preview.substring(0, 80)}{n.preview.length > 80 ? '…' : ''}
                                             </div>
                                         </td>
-                                        <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>{n.sentAt}</td>
-                                        <td style={{ fontSize: '0.82rem' }}>{n.sentBy}</td>
-                                        <td>
-                                            <span style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: 5,
-                                                background: st.bg, color: st.color,
-                                                padding: '4px 10px', borderRadius: 99,
-                                                fontWeight: 700, fontSize: '0.75rem',
-                                            }}>
-                                                {st.icon} {st.label}
-                                            </span>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-indigo)' }}>Code: {n.template}</span>
+                                                {n.subject && (
+                                                    <span style={{ fontSize: '0.72rem', color: 'var(--navy-700)', fontWeight: 700 }}>
+                                                        {n.subject.substring(0, 30)}{n.subject.length > 30 ? '…' : ''}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
-                                        <td>
+                                        <td style={{ padding: '16px 24px', maxWidth: 220 }}>
+                                            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--slate-50)', padding: '8px 12px', borderRadius: 10, border: '1px solid var(--border-light)', fontStyle: 'italic' }}>
+                                                &quot;{n.preview.substring(0, 75)}{n.preview.length > 75 ? '…' : ''}&quot;
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', fontSize: '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', color: 'var(--navy-800)' }}>{n.sentAt}</td>
+                                        <td style={{ padding: '16px 24px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-500)' }}>{n.sentBy}</td>
+                                        <td style={{ padding: '16px 24px' }}>
+                                            <div style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: 8,
+                                                background: st.bg, color: st.color,
+                                                padding: '6px 14px', borderRadius: 20,
+                                                fontWeight: 900, fontSize: '0.7rem',
+                                            }}>
+                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', boxShadow: `0 0 6px ${st.color}` }} />
+                                                {st.label.toUpperCase()}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '16px 24px', textAlign: 'right' }}>
                                             <button
-                                                className="btn btn-ghost btn-sm"
-                                                title="Resend"
-                                                style={{ fontSize: '0.72rem', padding: '4px 8px' }}
+                                                className="btn btn-ghost btn-sm hover-lift"
+                                                title="Resend Message"
+                                                style={{ 
+                                                    fontSize: '0.7rem', padding: '8px 16px', borderRadius: 10,
+                                                    border: '1px solid var(--border-light)', fontWeight: 900,
+                                                    display: 'flex', alignItems: 'center', gap: 6, background: 'white'
+                                                }}
                                                 onClick={() => setShowComposer(true)}
                                             >
-                                                <Send size={11} /> Resend
+                                                <Send size={12} /> RESEND
                                             </button>
                                         </td>
                                     </tr>
@@ -244,11 +304,11 @@ export default function Notifications() {
                             })}
                             {filtered.length === 0 && (
                                 <tr>
-                                    <td colSpan={8}>
-                                        <div className="empty-state" style={{ padding: '40px 0' }}>
-                                            <div className="empty-state-icon">📭</div>
-                                            <div className="empty-state-title">No notifications found</div>
-                                            <div className="empty-state-text">Try adjusting filters or send your first message.</div>
+                                    <td colSpan={8} style={{ padding: '80px 0' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: 20, opacity: 0.3 }}>📬</div>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 950, color: 'var(--navy-900)', margin: 0 }}>System Log Empty</h3>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--slate-400)', marginTop: 8 }}>No communications records match the current telemetry filters.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -256,6 +316,66 @@ export default function Notifications() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Premium Pagination bar */}
+                {filtered.length > 0 && (
+                    <div style={{ 
+                        padding: '20px 32px', 
+                        borderTop: '1px solid var(--border-light)', 
+                        background: '#fafafa',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--slate-500)', fontWeight: 700 }}>
+                            Telemetry Stream: Displaying {(currentPage - 1) * PAGE_SIZE + 1} - {Math.min(currentPage * PAGE_SIZE, filtered.length)} of <span style={{ color: 'var(--navy-900)', fontWeight: 900 }}>{filtered.length}</span> Dispatch Logs
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="btn hover-lift"
+                                style={{ 
+                                    padding: '8px 20px', borderRadius: 12, background: 'white', 
+                                    border: '1px solid var(--border-medium)', color: 'var(--navy-900)',
+                                    fontSize: '0.75rem', fontWeight: 900, cursor: 'pointer',
+                                    opacity: currentPage === 1 ? 0.5 : 1
+                                }}
+                            >
+                                Previous
+                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        style={{
+                                            width: 32, height: 32, borderRadius: 10, border: 'none',
+                                            background: currentPage === i + 1 ? 'var(--navy-900)' : 'transparent',
+                                            color: currentPage === i + 1 ? 'white' : 'var(--text-secondary)',
+                                            fontSize: '0.75rem', fontWeight: 900, cursor: 'pointer'
+                                        }}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                            </div>
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="btn hover-lift"
+                                style={{ 
+                                    padding: '8px 20px', borderRadius: 12, background: 'white', 
+                                    border: '1px solid var(--border-medium)', color: 'var(--navy-900)',
+                                    fontSize: '0.75rem', fontWeight: 900, cursor: 'pointer',
+                                    opacity: currentPage === totalPages ? 0.5 : 1
+                                }}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {showComposer && (

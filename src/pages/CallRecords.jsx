@@ -19,6 +19,8 @@ export default function CallRecords() {
     const [endDate, setEndDate] = useState('');
     const [qaCall, setQaCall] = useState(null); 
     const [isPlaying, setIsPlaying] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const PAGE_SIZE = 12;
 
     const { data: users } = useApi(usersApi.list);
     const agentOptions = (users || []).filter(u => ['agent', 'team_leader', 'sales_manager', 'admin'].includes(u.role));
@@ -42,6 +44,17 @@ export default function CallRecords() {
 
     const agents = Array.from(new Set((calls || []).map(c => c.agent_name))).filter(Boolean);
     const outcomes = Array.from(new Set((calls || []).map(c => c.outcome))).filter(Boolean);
+
+    // Reset pagination on filter change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search, outcomeFilter, agentFilter, startDate, endDate]);
+
+    const totalPages = Math.ceil(filteredCalls.length / PAGE_SIZE);
+    const slicedCalls = filteredCalls.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE
+    );
 
     // Prepare chart data (Group calls by date)
     const chartData = (calls || [])
@@ -495,7 +508,7 @@ export default function CallRecords() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredCalls.length === 0 ? (
+                                {slicedCalls.length === 0 ? (
                                     <tr>
                                         <td colSpan="7" className="px-6 py-20 text-center">
                                             <div style={{ opacity: 0.5, marginBottom: 12 }}><Phone size={48} style={{ margin: '0 auto' }} /></div>
@@ -503,7 +516,7 @@ export default function CallRecords() {
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>Refine your filters to find specific logs</div>
                                         </td>
                                     </tr>
-                                ) : filteredCalls.map((call) => (
+                                ) : slicedCalls.map((call) => (
                                     <tr key={call.id} className="hover:bg-slate-50/50 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -588,6 +601,66 @@ export default function CallRecords() {
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* Enterprise Pagination Bar */}
+                {!loading && !error && filteredCalls.length > 0 && (
+                    <div style={{ 
+                        padding: '16px 24px', 
+                        borderTop: '1px solid var(--border-light)', 
+                        background: '#fafafa',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                            Displaying {(currentPage - 1) * PAGE_SIZE + 1} - {Math.min(currentPage * PAGE_SIZE, filteredCalls.length)} of <span style={{ color: 'var(--navy-900)', fontWeight: 900 }}>{filteredCalls.length}</span> entries
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="btn hover-lift"
+                                style={{ 
+                                    padding: '8px 16px', borderRadius: 10, background: 'white', 
+                                    border: '1px solid var(--border-medium)', color: 'var(--navy-900)',
+                                    fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                                    opacity: currentPage === 1 ? 0.5 : 1
+                                }}
+                            >
+                                Previous
+                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        style={{
+                                            width: 32, height: 32, borderRadius: 8, border: 'none',
+                                            background: currentPage === i + 1 ? 'var(--navy-900)' : 'transparent',
+                                            color: currentPage === i + 1 ? 'white' : 'var(--text-secondary)',
+                                            fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer'
+                                        }}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                )).slice(Math.max(0, currentPage - 3), Math.min(totalPages, currentPage + 2))}
+                            </div>
+                            <button 
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="btn hover-lift"
+                                style={{ 
+                                    padding: '8px 16px', borderRadius: 10, background: 'white', 
+                                    border: '1px solid var(--border-medium)', color: 'var(--navy-900)',
+                                    fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer',
+                                    opacity: currentPage === totalPages ? 0.5 : 1
+                                }}
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

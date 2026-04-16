@@ -1,12 +1,11 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
-import { leadsApi, usersApi } from '../api/client';
-import { Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Calendar, RotateCw, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { leadsApi } from '../api/client';
+import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
-import { dialerEvents } from '../constants/events';
 
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
@@ -14,23 +13,22 @@ export default function NurtureLeads() {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [search, setSearch] = useState('');
-    const [filterType, setFilterType] = useState('All'); // 'All', 'Due Today', 'Overdue'
+    const [filterType, setFilterType] = useState('All');
     const [page, setPage] = useState(1);
-    const [limit, setLimit] = useState(50);
+    const [limit] = useState(50);
     const [previewLeadId, setPreviewLeadId] = useState(null);
-    const [editingLead, setEditingLead] = useState(null);
 
-    // API params
+    useEffect(() => {
+        const prev = document.body.style.overflowX;
+        document.body.style.overflowX = 'hidden';
+        return () => { document.body.style.overflowX = prev; };
+    }, []);
+
     const params = useMemo(() => {
         const p = { limit, page, status: 'Nurture' };
         if (search.trim()) p.q = search.trim();
-        
-        if (filterType === 'Due Today') {
-            p.nurture_due = 'true';
-        } else if (filterType === 'Overdue') {
-            p.nurture_overdue = 'true'; // I'll need to support this in the backend
-        }
-        
+        if (filterType === 'Due Today') p.nurture_due = 'true';
+        else if (filterType === 'Overdue') p.nurture_overdue = 'true';
         return p;
     }, [limit, page, search, filterType]);
 
@@ -51,180 +49,333 @@ export default function NurtureLeads() {
         }
     };
 
-    const deleteLead = async (id) => {
-        if (!window.confirm('Delete this lead?')) return;
-        try {
-            await leadsApi.delete(id);
-            showToast('Lead deleted', 'success');
-            refetch();
-        } catch (err) {
-            showToast(err.error || 'Failed to delete lead', 'error');
-        }
-    };
+    const totalCount = leadsRes?.total || 0;
+    const dueCount = leadsRes?.nurture?.due_today || 0;
+    const overdueCount = leadsRes?.nurture?.overdue || 0;
+
+    // Compute nurture age stats
+    const nurtureStats = useMemo(() => {
+        if (!leads.length) return { avgDays: 0, reengageReady: 0 };
+        let totalDays = 0;
+        let ready = 0;
+        leads.forEach(l => {
+            const days = l.created_at ? Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000) : 0;
+            totalDays += days;
+            if (days >= 14) ready++;
+        });
+        return { avgDays: Math.round(totalDays / leads.length), reengageReady: ready };
+    }, [leads]);
 
     return (
-        <div className="animate-fadeIn">
-            {/* Header */}
-            <div className="page-header" style={{ marginBottom: 20 }}>
-                <div className="page-header-left">
-                    <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <RotateCw size={24} color="#7c3aed" /> Nurture Leads
-                    </h1>
-                    <p className="page-subtitle">Managing long-term follow-ups and re-engagement</p>
+        <div className="animate-fadeIn" style={{ paddingRight: 20, paddingBottom: 60 }}>
+            {/* ─── Page Header ─── */}
+            <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                alignItems: 'center', marginBottom: 28, paddingBottom: 24,
+                borderBottom: '1px solid var(--border-light)'
+            }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 12, background: '#7c3aed10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <RotateCw size={18} color="#7c3aed" />
+                        </div>
+                        <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.03em' }}>
+                            Nurture Leads
+                        </h1>
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 500, marginTop: 2, marginLeft: 46 }}>
+                        Long-term follow-ups and re-engagement pipeline
+                    </p>
                 </div>
-                
-                <div className="page-actions">
-                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()}>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
                     </button>
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')}>
-                        <Users size={15} /> Back to Pipeline
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Users size={14} /> Active Pipeline
                     </button>
                 </div>
             </div>
 
-            {/* Strategy Bar / Tabs */}
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24, marginTop: 8 }}>
+            {/* ─── KPI Strategy Cards ─── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 28 }}>
                 {[
-                    { id: 'All', label: 'Total Nurture Pool', icon: Users, color: 'var(--navy-600)', bg: 'linear-gradient(135deg, #f8fafc, #f1f5f9)', count: leadsRes?.total || 0, sub: 'Active in Nurture' },
-                    { id: 'Due Today', label: 'Action Required', icon: Clock, color: 'var(--accent-blue)', bg: 'linear-gradient(135deg, #eff6ff, #dbeafe)', count: leadsRes?.nurture?.due_today || 0, sub: 'Due Today' },
-                    { id: 'Overdue', label: 'Escalated Leads', icon: AlertCircle, color: 'var(--accent-rose)', bg: 'linear-gradient(135deg, #fef2f2, #fee2e2)', count: leadsRes?.nurture?.overdue || 0, sub: 'Overdue Follow-ups' }
-                ].map(tab => {
-                    const isActive = filterType === tab.id;
+                    { id: 'All', label: 'Nurture Pool', value: totalCount, sub: 'Total Leads', icon: Users, color: '#7c3aed', bg: '#7c3aed08' },
+                    { id: 'Due Today', label: 'Due Today', value: dueCount, sub: 'Action Required', icon: Clock, color: '#3b82f6', bg: '#3b82f608' },
+                    { id: 'Overdue', label: 'Overdue', value: overdueCount, sub: 'Escalated', icon: AlertCircle, color: '#ef4444', bg: '#ef444408' },
+                    { id: null, label: 'Avg. Nurture Age', value: `${nurtureStats.avgDays}d`, sub: 'Days in Pipeline', icon: TrendingUp, color: '#f59e0b', bg: '#f59e0b08' },
+                    { id: null, label: 'Re-engage Ready', value: nurtureStats.reengageReady, sub: '14+ Days', icon: Sparkles, color: '#10b981', bg: '#10b98108' },
+                ].map((card, i) => {
+                    const isClickable = card.id !== null;
+                    const isActive = isClickable && filterType === card.id;
                     return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setFilterType(tab.id)}
+                        <div
+                            key={i}
+                            onClick={isClickable ? () => setFilterType(card.id) : undefined}
                             style={{
-                                flex: 1, padding: '16px 20px', borderRadius: '16px', background: 'white',
-                                border: `1px solid ${isActive ? tab.color : 'var(--border-light)'}`,
-                                boxShadow: isActive ? `0 8px 24px ${tab.color}15` : 'var(--shadow-sm)',
-                                cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                display: 'flex', alignItems: 'center', gap: 16, textAlign: 'left',
-                                transform: isActive ? 'translateY(-2px)' : 'none'
+                                padding: '20px', borderRadius: 16, background: 'white',
+                                border: `1px solid ${isActive ? card.color : 'var(--border-light)'}`,
+                                boxShadow: isActive ? `0 4px 16px ${card.color}15` : '0 1px 4px rgba(0,0,0,0.03)',
+                                cursor: isClickable ? 'pointer' : 'default',
+                                transition: 'all 0.25s ease',
+                                transform: isActive ? 'translateY(-1px)' : 'none'
                             }}
                         >
-                            <div style={{ width: 48, height: 48, borderRadius: '12px', background: tab.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5)' }}>
-                                <tab.icon size={22} color={tab.color} strokeWidth={2.5}/>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>{tab.label}</div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                                    <span style={{ fontSize: '1.5rem', fontWeight: 900, color: isActive ? tab.color : 'var(--navy-900)', lineHeight: 1 }}>{tab.count}</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{tab.sub}</span>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <div style={{ width: 38, height: 38, borderRadius: 10, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <card.icon size={18} color={card.color} />
                                 </div>
+                                {isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: card.color }} />}
                             </div>
-                        </button>
+                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: isActive ? card.color : 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{card.value}</div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>{card.label}</div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--slate-400)', marginTop: 2 }}>{card.sub}</div>
+                        </div>
                     );
                 })}
             </div>
 
-            {/* Filters */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div className="search-bar" style={{ width: 320, background: 'white', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-sm)' }}>
-                    <Search size={16} style={{ color: 'var(--slate-400)' }} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads, phones, or agents..." style={{ fontSize: '0.85rem', fontWeight: 500 }} />
+            {/* ─── Search & Filter Bar ─── */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
+                    background: 'white', borderRadius: 12, border: '1px solid var(--border-light)',
+                    width: 340, boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                }}>
+                    <Search size={16} color="var(--slate-400)" />
+                    <input
+                        value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Search leads, phones, agents..."
+                        style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', fontWeight: 500, color: 'var(--navy-900)', width: '100%' }}
+                    />
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="btn btn-secondary btn-sm" style={{ background: 'white', border: '1px solid var(--border-light)', color: 'var(--navy-700)' }}><Filter size={14}/> Advanced Filters</button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-400)' }}>
+                        {leads.length} of {totalCount} leads
+                    </span>
+                    <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Filter size={14} /> Filters
+                    </button>
                 </div>
             </div>
 
-            {/* Main Table */}
+            {/* ─── Data Table ─── */}
             {loading ? <PageLoader /> : error ? <PageError message={typeof error === 'string' ? error : 'Failed to load nurture data'} onRetry={refetch} /> : (
-                <div className="table-wrapper" style={{ overflowX: 'auto', background: 'white', borderRadius: 16, border: '1px solid var(--border-light)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-                    <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
-                        <thead>
-                            <tr style={{ background: 'var(--slate-50)' }}>
-                                {['Lead Client', 'Original Stage', 'Nurture Reason', 'Reconnect Date', 'Assigned Rep', 'Manage'].map(h => (
-                                    <th key={h} style={{ padding: '14px 24px', fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'left', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {leads.map((lead, i) => {
-                                const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date) < new Date().setHours(0,0,0,0);
-                                const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
-                                
-                                // Dynamic pill logic for reason
-                                const lcReason = (lead.nurture_reason || '').toLowerCase();
-                                let pillCol = '#6366f1'; let pillBg = '#eef2ff';
-                                if (lcReason.includes('budget')) { pillCol = '#eab308'; pillBg = '#fefce8'; }
-                                else if (lcReason.includes('response')) { pillCol = '#f43f5e'; pillBg = '#fff1f2'; }
-                                else if (lcReason.includes('timeline') || lcReason.includes('later')) { pillCol = '#3b82f6'; pillBg = '#eff6ff'; }
+                <div style={{
+                    background: 'white', borderRadius: 20, overflow: 'hidden',
+                    border: '1px solid var(--border-light)',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+                }}>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+                            <thead>
+                                <tr style={{ background: 'var(--slate-50)' }}>
+                                    {['Lead Client', 'Stage', 'Nurture Reason', 'Reconnect Date', 'Assigned To', 'Actions'].map(h => (
+                                        <th key={h} style={{
+                                            padding: '12px 24px', fontSize: '0.68rem', fontWeight: 800,
+                                            color: 'var(--slate-400)', textTransform: 'uppercase',
+                                            letterSpacing: '0.06em', textAlign: 'left',
+                                            borderBottom: '1px solid var(--border-light)',
+                                            position: 'sticky', top: 0, background: 'var(--slate-50)', zIndex: 5
+                                        }}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {leads.map((lead, i) => {
+                                    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date) < new Date().setHours(0,0,0,0);
+                                    const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
 
-                                return (
-                                    <tr key={lead.id} onClick={() => setPreviewLeadId(lead.id)} style={{ cursor: 'pointer', transition: 'background 0.2s', background: 'white' }} 
-                                        onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                    >
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                                                <div className="avatar" style={{ width: 36, height: 36, borderRadius: '10px', background: `hsl(${(lead.id || '0').split('').reduce((a,c)=>a+c.charCodeAt(0),0) % 360}, 60%, 55%)`, color: 'white', fontWeight: 900, fontSize: '0.9rem', flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{lead.name?.[0]}</div>
-                                                <div>
-                                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-950)' }}>{lead.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, whiteSpace: 'nowrap' }}>
-                                                        <Phone size={10} style={{ color: 'var(--slate-400)' }}/> {lead.phone}
+                                    const lcReason = (lead.nurture_reason || '').toLowerCase();
+                                    let pillCol = '#6366f1'; let pillBg = '#eef2ff';
+                                    if (lcReason.includes('budget')) { pillCol = '#eab308'; pillBg = '#fefce8'; }
+                                    else if (lcReason.includes('response')) { pillCol = '#f43f5e'; pillBg = '#fff1f2'; }
+                                    else if (lcReason.includes('timeline') || lcReason.includes('later')) { pillCol = '#3b82f6'; pillBg = '#eff6ff'; }
+
+                                    return (
+                                        <tr
+                                            key={lead.id}
+                                            onClick={() => setPreviewLeadId(lead.id)}
+                                            style={{
+                                                cursor: 'pointer', transition: 'background 0.15s',
+                                                borderBottom: i < leads.length - 1 ? '1px solid var(--border-light)' : 'none'
+                                            }}
+                                            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                        >
+                                            {/* Lead Client */}
+                                            <td style={{ padding: '14px 24px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                    <div style={{
+                                                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                                                        background: `hsl(${(lead.id || '0').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
+                                                        color: 'white', fontWeight: 800, fontSize: '0.85rem',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>{lead.name?.[0]}</div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--navy-900)' }}>{lead.name}</div>
+                                                        <div style={{ fontSize: '0.73rem', color: 'var(--slate-400)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                                            <Phone size={10} /> {lead.phone}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--navy-600)', fontWeight: 800 }}>{lead.stage}</div>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-muted)' }}>MIGRATED FROM</div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: pillCol, background: pillBg, border: `1px solid ${pillCol}30`, padding: '4px 10px', borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap' }}>
-                                                {lead.nurture_reason || 'General Follow Up'}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: isOverdue ? '#fee2e2' : isDueToday ? '#dbeafe' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                    <Calendar size={14} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#64748b'} strokeWidth={2.5}/>
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: '0.8rem', fontWeight: 800, color: isOverdue ? '#dc2626' : 'var(--navy-900)', whiteSpace: 'nowrap' }}>
-                                                        {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime()) 
-                                                            ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                                                            : 'Not Scheduled'}
+                                            </td>
+
+                                            {/* Stage */}
+                                            <td style={{ padding: '14px 24px' }}>
+                                                <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--navy-700)' }}>{lead.stage}</div>
+                                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', marginTop: 2 }}>Prior Stage</div>
+                                            </td>
+
+                                            {/* Nurture Reason */}
+                                            <td style={{ padding: '14px 24px' }}>
+                                                <span style={{
+                                                    fontSize: '0.68rem', fontWeight: 800, color: pillCol,
+                                                    background: pillBg, border: `1px solid ${pillCol}25`,
+                                                    padding: '4px 10px', borderRadius: 8,
+                                                    textTransform: 'uppercase', letterSpacing: '0.02em', whiteSpace: 'nowrap'
+                                                }}>
+                                                    {lead.nurture_reason || 'General Follow Up'}
+                                                </span>
+                                            </td>
+
+                                            {/* Reconnect Date */}
+                                            <td style={{ padding: '14px 24px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <div style={{
+                                                        width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                                                        background: isOverdue ? '#fef2f2' : isDueToday ? '#eff6ff' : 'var(--slate-50)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        <Calendar size={13} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#94a3b8'} />
                                                     </div>
-                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                                                        {isOverdue ? 'Overdue' : isDueToday ? 'Due Today' : 'Follow Up'}
+                                                    <div>
+                                                        <div style={{
+                                                            fontSize: '0.8rem', fontWeight: 800, whiteSpace: 'nowrap',
+                                                            color: isOverdue ? '#dc2626' : 'var(--navy-900)'
+                                                        }}>
+                                                            {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime())
+                                                                ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                                : 'Not Scheduled'}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase',
+                                                            color: isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : 'var(--slate-400)'
+                                                        }}>
+                                                            {isOverdue ? '⚠ Overdue' : isDueToday ? 'Due Today' : 'Scheduled'}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'var(--slate-100)', color: 'var(--navy-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 800, border: '1px solid var(--slate-200)', flexShrink: 0 }}>{lead.agent_name?.[0]}</div>
-                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-800)' }}>{lead.agent_name || 'Unassigned'}</span>
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '16px 24px', borderBottom: i === leads.length - 1 ? 'none' : '1px solid var(--border-light)' }} onClick={e => e.stopPropagation()}>
-                                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                                                <button className="btn btn-sm hover-lift" onClick={() => reactivateLead(lead.id)} style={{ background: 'linear-gradient(135deg, var(--accent-emerald), #059669)', color: 'white', fontWeight: 800, fontSize: '0.75rem', padding: '6px 14px', border: 'none', borderRadius: '8px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <RotateCw size={12} /> Reactivate
-                                                </button>
-                                                <button className="btn btn-ghost btn-sm btn-icon hover-lift" onClick={() => navigate(`/leads/${lead.id}`)} style={{ background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}><Edit2 size={14} color="var(--navy-600)"/></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                                            </td>
+
+                                            {/* Assigned To */}
+                                            <td style={{ padding: '14px 24px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <div style={{
+                                                        width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                                                        background: 'var(--slate-100)', color: 'var(--navy-700)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '10px', fontWeight: 800, border: '1px solid var(--slate-200)'
+                                                    }}>{lead.agent_name?.[0]}</div>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-800)' }}>{lead.agent_name || 'Unassigned'}</span>
+                                                </div>
+                                            </td>
+
+                                            {/* Actions */}
+                                            <td style={{ padding: '14px 24px' }} onClick={e => e.stopPropagation()}>
+                                                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                                                    <button
+                                                        onClick={() => reactivateLead(lead.id)}
+                                                        style={{
+                                                            background: 'var(--accent-emerald)', color: 'white',
+                                                            fontWeight: 800, fontSize: '0.72rem', padding: '6px 14px',
+                                                            border: 'none', borderRadius: 8, cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', gap: 5,
+                                                            boxShadow: '0 2px 8px rgba(16,185,129,0.2)',
+                                                            transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <ArrowRight size={12} /> Reactivate
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate(`/leads/${lead.id}`)}
+                                                        style={{
+                                                            width: 32, height: 32, borderRadius: 8,
+                                                            background: 'var(--slate-50)', border: '1px solid var(--border-light)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            cursor: 'pointer', transition: 'all 0.2s ease'
+                                                        }}
+                                                    >
+                                                        <Edit2 size={13} color="var(--slate-500)" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Empty State */}
                     {leads.length === 0 && (
-                        <div style={{ padding: '80px', textAlign: 'center', background: 'white' }}>
-                            <div style={{ fontSize: '3.5rem', marginBottom: '20px', opacity: 0.5 }}>🎐</div>
-                            <h3 style={{ fontWeight: 900, fontSize: '1.2rem', color: 'var(--navy-900)', marginBottom: 8 }}>No Nurture Leads Found</h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: 400, margin: '0 auto' }}>Use the main pipeline pipeline to move stagnant deals into the Nurture phase.</p>
+                        <div style={{ padding: '80px 40px', textAlign: 'center' }}>
+                            <div style={{
+                                width: 64, height: 64, borderRadius: 20, background: '#7c3aed08',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto 20px'
+                            }}>
+                                <RotateCw size={28} color="#7c3aed" style={{ opacity: 0.5 }} />
+                            </div>
+                            <h3 style={{ fontWeight: 900, fontSize: '1.15rem', color: 'var(--navy-900)', marginBottom: 8 }}>No Nurture Leads Found</h3>
+                            <p style={{ color: 'var(--slate-400)', fontSize: '0.88rem', maxWidth: 380, margin: '0 auto', lineHeight: 1.6 }}>
+                                Move stagnant leads from the active pipeline into the Nurture phase for long-term re-engagement tracking.
+                            </p>
+                            <button
+                                onClick={() => navigate('/leads')}
+                                className="btn btn-primary btn-sm"
+                                style={{ marginTop: 20, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                            >
+                                <ArrowRight size={14} /> Go to Pipeline
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalCount > limit && (
+                        <div style={{
+                            padding: '16px 24px', borderTop: '1px solid var(--border-light)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}>
+                            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-400)' }}>
+                                Page {page} of {Math.ceil(totalCount / limit)}
+                            </span>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <button
+                                    disabled={page <= 1}
+                                    onClick={() => setPage(p => p - 1)}
+                                    style={{
+                                        padding: '6px 16px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'white', fontSize: '0.78rem', fontWeight: 700,
+                                        cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.4 : 1
+                                    }}
+                                >Previous</button>
+                                <button
+                                    disabled={page >= Math.ceil(totalCount / limit)}
+                                    onClick={() => setPage(p => p + 1)}
+                                    style={{
+                                        padding: '6px 16px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        background: 'var(--navy-900)', color: 'white', fontSize: '0.78rem', fontWeight: 700,
+                                        cursor: page >= Math.ceil(totalCount / limit) ? 'not-allowed' : 'pointer'
+                                    }}
+                                >Next</button>
+                            </div>
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Sidebar for Preview */}
+            {/* Contact Preview Sidebar */}
             {previewLeadId && (
                 <ContactPreviewSidebar
                     contactId={previewLeadId}

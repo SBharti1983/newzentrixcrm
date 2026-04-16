@@ -735,7 +735,6 @@ export default function Admin() {
                                 fontSize: '0.78rem',
                                 fontWeight: isActive ? 850 : 700,
                                 borderRadius: '12px',
-                                border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 background: isActive ? 'white' : 'transparent',

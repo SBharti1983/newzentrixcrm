@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Search, Mail, MessageSquare, Phone, MoreVertical, Paperclip, Send, Check, CheckCheck, RefreshCw, Wand2, User, ChevronLeft } from 'lucide-react';
+import { Search, Mail, MessageSquare, Phone, MoreVertical, Paperclip, Send, Check, CheckCheck, RefreshCw, Wand2, User, ChevronLeft, List } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 import { notificationsApi } from '../api/client';
 import { PageLoader } from '../components/Feedback';
 import { useToast } from '../hooks/useToast';
 
 export default function Inbox() {
+    const isMobile = useMobile();
     const { showToast } = useToast();
     const [conversations, setConversations] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -100,51 +102,66 @@ export default function Inbox() {
     if (loading) return <PageLoader />;
 
     return (
-        <div className="animate-fadeIn" style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: 20 }}>
-                <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--navy-800)', margin: '0 0 4px' }}>Omnichannel Inbox</h1>
-                <p style={{ color: 'var(--text-muted)' }}>Manage WhatsApp, Email, and SMS conversations in real-time.</p>
+        <div className="animate-fadeIn" style={{ height: 'calc(100vh - var(--header-height) - 40px)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Omnichannel Inbox</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Manage real-time streams from WhatsApp, Email, and SMS.</p>
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-light)', fontSize: '0.8rem', fontWeight: 700 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 8px var(--accent-emerald)' }} />
+                        Live Status: Connected
+                    </div>
+                </div>
             </div>
 
             <div className="card" style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: 0 }}>
                 {/* Sidebar */}
-                <div className={`inbox-sidebar ${activeId ? 'hidden-mobile' : ''}`} style={{ width: 320, borderRight: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', background: 'var(--slate-50)' }}>
-                    <div style={{ padding: 16, borderBottom: '1px solid var(--border-light)' }}>
-                        <div className="search-bar" style={{ width: '100%', background: 'white' }}>
+                <div className={`inbox-sidebar ${activeId ? 'hidden-mobile' : ''}`} style={{ width: 340, borderRight: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', background: 'var(--slate-50)' }}>
+                    <div style={{ padding: 20, borderBottom: '1px solid var(--border-light)', background: 'white' }}>
+                        <div className="search-bar" style={{ width: '100%', background: 'var(--slate-50)', border: '1px solid var(--border-light)' }}>
                             <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                            <input placeholder="Search messages..." />
+                            <input placeholder="Filter by name or message..." style={{ fontSize: '0.85rem' }} />
                         </div>
                     </div>
 
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
                         {conversations.length === 0 ? (
-                            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>No conversations yet.</div>
+                            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>No conversations yet.</div>
                         ) : conversations.map(c => (
                             <div
                                 key={c.lead_id}
                                 onClick={() => setActiveId(c.lead_id)}
                                 style={{
-                                    padding: '16px', display: 'flex', gap: 12, cursor: 'pointer',
+                                    padding: '12px 16px', display: 'flex', gap: 12, cursor: 'pointer',
+                                    margin: '4px 12px', borderRadius: 12,
                                     background: activeId === c.lead_id ? 'white' : 'transparent',
-                                    borderLeft: activeId === c.lead_id ? '3px solid var(--accent-cyan)' : '3px solid transparent',
-                                    borderBottom: '1px solid var(--border-light)',
-                                    transition: 'all 0.2s'
+                                    border: '1px solid',
+                                    borderColor: activeId === c.lead_id ? 'var(--border-light)' : 'transparent',
+                                    boxShadow: activeId === c.lead_id ? 'var(--shadow-sm)' : 'none',
+                                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
                                 }}
                             >
                                 <div style={{ position: 'relative' }}>
-                                    <div style={{ width: 44, height: 44, borderRadius: '14px', background: 'var(--navy-900)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                                    <div style={{ 
+                                        width: 44, height: 44, borderRadius: '14px', 
+                                        background: activeId === c.lead_id ? 'var(--navy-600)' : 'var(--navy-900)', 
+                                        color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800,
+                                        transition: 'background 0.3s'
+                                    }}>
                                         {c.name ? c.name[0] : <User size={20} />}
                                     </div>
-                                    <div style={{ position: 'absolute', bottom: -4, right: -4, background: 'white', borderRadius: '50%', padding: 4, display: 'flex', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                                    <div style={{ position: 'absolute', bottom: -2, right: -2, background: 'white', borderRadius: '50%', padding: '3px', border: '1.5px solid white', display: 'flex', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                                         {getChannelIcon(c.channel)}
                                     </div>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                        <span style={{ fontWeight: activeId === c.lead_id ? 800 : 700, color: 'var(--navy-800)', fontSize: '0.9rem' }}>{c.name}</span>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+                                        <span style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.85rem' }}>{c.name}</span>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                     </div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {c.last_msg}
                                     </div>
                                 </div>
@@ -207,42 +224,96 @@ export default function Inbox() {
                                 ))}
                             </div>
 
-                            {/* Composer */}
-                            <div style={{ padding: '24px', borderTop: '1px solid var(--border-light)', background: 'white' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--slate-50)', border: '1.5px solid var(--border-medium)', borderRadius: 24, padding: '4px 8px 4px 16px', transition: 'all 0.2s', focusWithin: { borderColor: 'var(--accent-teal)' } }}>
+                             {/* Composer */}
+                            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-light)', background: 'white' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--slate-50)', border: '1.5px solid var(--border-medium)', borderRadius: 16, padding: '4px 8px 4px 16px', transition: 'all 0.2s' }}>
                                     <button className="btn btn-ghost" style={{ padding: 4 }} title="Attach File"><Paperclip size={18} /></button>
                                     <input
                                         value={replyText}
                                         onChange={e => setReplyText(e.target.value)}
                                         placeholder={`Type your ${activeConv.channel} reply...`}
-                                        style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.95rem', color: 'var(--navy-900)' }}
+                                        style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy-900)' }}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                                     />
-                                    <button
-                                        className="btn btn-ghost"
-                                        style={{ padding: 8, color: 'var(--accent-violet)' }}
-                                        onClick={handleDraft}
-                                        disabled={drafting}
-                                        title="AI Magic Draft"
-                                    >
-                                        {drafting ? <RefreshCw className="animate-spin" size={18} /> : <Wand2 size={18} />}
-                                    </button>
-                                    <button className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: 20, boxShadow: '0 4px 12px rgba(30, 58, 115, 0.2)' }} onClick={handleSend} disabled={!replyText.trim()}>
-                                        <Send size={16} /> <span style={{ marginLeft: 6 }}>Send</span>
-                                    </button>
+                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ padding: 8, color: 'var(--accent-violet)', borderRadius: 12 }}
+                                            onClick={handleDraft}
+                                            disabled={drafting}
+                                            title="AI Magic Draft"
+                                        >
+                                            {drafting ? <RefreshCw className="animate-spin" size={18} /> : <Wand2 size={18} />}
+                                        </button>
+                                        <button className="btn btn-primary" style={{ padding: '8px 24px', borderRadius: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }} onClick={handleSend} disabled={!replyText.trim()}>
+                                            <Send size={16} /> Send
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </>
                     ) : (
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)' }}>
-                            <div style={{ width: 64, height: 64, background: 'var(--slate-100)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-                                <MessageSquare size={32} />
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: 'var(--text-muted)', background: 'var(--slate-50)' }}>
+                            <div style={{ width: 80, height: 80, background: 'white', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, boxShadow: 'var(--shadow-md)' }}>
+                                <MessageSquare size={32} style={{ color: 'var(--navy-300)' }} />
                             </div>
-                            <h3 style={{ margin: 0, color: 'var(--navy-800)' }}>Select a conversation</h3>
-                            <p>Pick a thread from the sidebar to start chatting.</p>
+                            <h3 style={{ margin: '0 0 8px', color: 'var(--navy-900)', fontWeight: 900 }}>Operational Readiness</h3>
+                            <p style={{ fontSize: '0.9rem', maxWidth: 300, textAlign: 'center' }}>Waiting for interaction. Select a conversation to start providing elite service.</p>
                         </div>
                     )}
                 </div>
+
+                {/* Right Panel: Lead Intelligence (Desktop Only) */}
+                {activeId && !isMobile && (
+                    <div className="hidden-mobile" style={{ width: 280, borderLeft: '1px solid var(--border-light)', background: 'white', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '24px 20px', borderBottom: '1px solid var(--border-light)' }}>
+                            <h4 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lead Intelligence</h4>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                                <div style={{ width: 80, height: 80, borderRadius: '24px', background: 'var(--slate-50)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '2rem', fontWeight: 900, color: 'var(--navy-700)' }}>
+                                    {activeConv.name ? activeConv.name[0] : '?'}
+                                </div>
+                                <h3 style={{ margin: '0 0 4px', fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-900)' }}>{activeConv.name}</h3>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-emerald)', background: 'rgba(16, 185, 129, 0.1)', display: 'inline-block', padding: '2px 10px', borderRadius: 20 }}>Active Negotiation</div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 8 }}>Project Interest</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-800)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-cyan)' }} />
+                                        Zentrix Elite Towers
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 8 }}>Budget Range</div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)' }}>₹1.2 Cr - 1.5 Cr</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 8 }}>Lead Engagement Score</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{ flex: 1, height: 6, background: 'var(--slate-100)', borderRadius: 10, overflow: 'hidden' }}>
+                                            <div style={{ width: '85%', height: '100%', background: 'linear-gradient(90deg, var(--accent-amber), var(--accent-emerald))' }} />
+                                        </div>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--navy-900)' }}>85</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 8 }}>Preferred Channel</div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-800)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        {getChannelIcon(activeConv.channel)}
+                                        <span style={{ textTransform: 'capitalize' }}>{activeConv.channel}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 32, borderRadius: 12, border: '1px solid var(--border-light)', fontSize: '0.75rem', fontWeight: 800 }}>
+                                View Full Profile
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

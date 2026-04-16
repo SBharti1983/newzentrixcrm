@@ -312,6 +312,9 @@ export default function Followups() {
                     <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8' }}>
                         <LayoutGrid size={14} /> KANBAN
                     </button>
+                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8' }}>
+                        <Calendar size={14} /> CALENDAR
+                    </button>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
                     {['All', 'Today', 'Upcoming', 'Overdue', 'Completed'].map(s => (
@@ -447,30 +450,148 @@ export default function Followups() {
                     })}
                     {isMobile && <div style={{ minWidth: '20px', flexShrink: 0 }} />}
                 </div>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {filtered.map(f => {
-                         const lead = leadMap[f.lead_id];
-                         const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
-                         const isCr = String(lead?.budget).toUpperCase().includes('CR');
-                         const isL = String(lead?.budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
-                         const absoluteValue = isCr ? budgetVal * 10000000 : (isL ? budgetVal * 100000 : budgetVal);
-                         const isHighValue = (f.lead_score > 85 || absoluteValue >= 5000000);
+            ) : viewMode === 'calendar' ? (
+                <div className="calendar-view animate-fadeIn" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '1px', background: 'var(--border-light)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                        <div key={day} style={{ background: '#f8fafc', padding: '12px 4px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase' }}>{isMobile ? day.charAt(0) : day}</div>
+                    ))}
+                    {(() => {
+                        const days = [];
+                        const now = new Date();
+                        const currentMonth = now.getMonth();
+                        const currentYear = now.getFullYear();
+                        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+                        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                        
+                        for(let i = 0; i < firstDay; i++) {
+                            days.push(<div key={`empty-${i}`} style={{ background: 'white', minHeight: isMobile ? '80px' : '120px' }}></div>);
+                        }
 
-                         return (
-                            <FollowupCard 
-                                key={f.id} f={f} isHighValue={isHighValue} leadDetails={lead}
-                                onToggle={toggle} onDial={(id, phone, name) => dialerEvents.call(id, phone, name)} 
-                                onNotify={setNotifyTarget} onDownload={downloadSummary} 
-                                onDelete={deleteFu} onPreview={setPreviewLead} 
-                                urgent={isUrgent(f.scheduled_at)} 
-                                onHover={handleHover}
-                                isTeamView={isTeamView}
-                                agents={agents}
-                                onReassign={reassign}
-                            />
-                         );
-                    })}
+                        for(let d = 1; d <= daysInMonth; d++) {
+                            const dateStr = new Date(currentYear, currentMonth, d).toDateString();
+                            const dayTasks = (filtered || []).filter(f => new Date(f.scheduled_at).toDateString() === dateStr);
+                            const isToday = now.toDateString() === dateStr;
+
+                            days.push(
+                                <div key={`day-${d}`} style={{ 
+                                    background: isToday ? '#eff6ff' : 'white', 
+                                    minHeight: isMobile ? '80px' : '120px', 
+                                    padding: isMobile ? '4px' : '8px', 
+                                    display: 'flex', flexDirection: 'column', 
+                                    transition: 'background 0.2s', borderTop: '1px solid var(--border-light)', borderLeft: '1px solid var(--border-light)'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isToday ? '#3b82f6' : 'var(--navy-900)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'white' : 'transparent', boxShadow: isToday ? '0 2px 4px rgba(59,130,246,0.15)' : 'none' }}>{d}</span>
+                                        {dayTasks.length > 0 && !isMobile && <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'white', background: '#fbbf24', padding: '2px 6px', borderRadius: '8px' }}>{dayTasks.length}</span>}
+                                        {dayTasks.length > 0 && isMobile && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24' }}></div>}
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1, scrollbarWidth: 'none' }}>
+                                        {dayTasks.slice(0, isMobile ? 1 : 3).map(f => {
+                                            const lead = leadMap[f.lead_id];
+                                            const isDone = f.status === 'Completed';
+                                            return (
+                                                <div key={f.id} style={{ 
+                                                    fontSize: '0.65rem', padding: '4px 6px', borderRadius: '6px', 
+                                                    background: isDone ? '#ecfdf5' : 'var(--slate-50)', 
+                                                    border: `1px solid ${isDone ? '#a7f3d0' : '#e2e8f0'}`, 
+                                                    color: isDone ? '#059669' : 'var(--navy-600)', 
+                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 800 
+                                                }}>
+                                                    {isMobile ? TYPE_ICON[f.type] : `${lead?.name?.split(' ')[0] || 'Unk.'} - ${TYPE_ICON[f.type] || f.type}`}
+                                                </div>
+                                            )
+                                        })}
+                                        {dayTasks.length > (isMobile ? 1 : 3) && (
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 900, color: '#94a3b8', textAlign: 'center', marginTop: '2px' }}>+{dayTasks.length - (isMobile ? 1 : 3)} more</div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        return days;
+                    })()}
+                </div>
+            ) : (
+                <div className="timeline-view" style={{ position: 'relative', paddingLeft: isMobile ? '12px' : '32px' }}>
+                    {/* Vertical Timeline Thread */}
+                    <div style={{ position: 'absolute', left: isMobile ? '12px' : '32px', top: '20px', bottom: '20px', width: '2px', background: 'var(--border-light)', zIndex: 0 }}></div>
+                    
+                    {(() => {
+                        // Smart Activity Queues auto-grouping logic
+                        const groups = {
+                            'Overdue / Urgent': [],
+                            'Today': [],
+                            'Tomorrow': [],
+                            'Later This Week': [],
+                            'Future Scheduled': [],
+                            'Completed': []
+                        };
+                        const now = new Date();
+                        const todayStr = now.toDateString();
+                        const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+                        const tomorrowStr = tomorrow.toDateString();
+                        const in5Days = new Date(now); in5Days.setDate(now.getDate() + 5);
+                        
+                        filtered.forEach(f => {
+                            if (f.status === 'Completed') return groups['Completed'].push(f);
+                            const d = new Date(f.scheduled_at);
+                            if (d < now && d.toDateString() !== todayStr) groups['Overdue / Urgent'].push(f);
+                            else if (d.toDateString() === todayStr) groups['Today'].push(f);
+                            else if (d.toDateString() === tomorrowStr) groups['Tomorrow'].push(f);
+                            else if (d < in5Days) groups['Later This Week'].push(f);
+                            else groups['Future Scheduled'].push(f);
+                        });
+
+                        return Object.entries(groups).filter(([_, items]) => items.length > 0).map(([groupName, items], gIdx) => (
+                            <div key={groupName} className="animate-fadeIn" style={{ position: 'relative', marginBottom: '32px', zIndex: 1 }}>
+                                {/* Timeline Node Header */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', transform: isMobile ? 'translateX(-12px)' : 'translateX(-24px)', zIndex: 2 }}>
+                                    <div style={{ 
+                                        width: '48px', height: '28px', borderRadius: '16px', 
+                                        background: groupName.includes('Overdue') ? 'var(--rose-50)' : groupName === 'Today' ? 'var(--blue-50)' : groupName === 'Completed' ? 'var(--emerald-50)' : 'white',
+                                        border: `2px solid ${groupName.includes('Overdue') ? 'var(--rose-500)' : groupName === 'Today' ? 'var(--blue-500)' : groupName === 'Completed' ? 'var(--emerald-500)' : 'var(--slate-300)'}`,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.75rem', fontWeight: 900,
+                                        color: groupName.includes('Overdue') ? 'var(--rose-700)' : groupName === 'Today' ? 'var(--blue-700)' : groupName === 'Completed' ? 'var(--emerald-700)' : 'var(--slate-500)',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)', flexShrink: 0
+                                    }}>
+                                        {items.length}
+                                    </div>
+                                    <h2 style={{ 
+                                        margin: 0, fontSize: '1rem', fontWeight: 900,
+                                        color: groupName.includes('Overdue') ? 'var(--rose-600)' : groupName === 'Today' ? 'var(--blue-700)' : 'var(--navy-900)'
+                                    }}>{groupName.toUpperCase()}</h2>
+                                    <div style={{ flex: 1, height: '1px', background: 'var(--border-light)', display: isMobile ? 'none' : 'block' }}></div>
+                                </div>
+                                
+                                {/* Group Items */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: isMobile ? '24px' : '40px' }}>
+                                    {items.map(f => {
+                                        const lead = leadMap[f.lead_id];
+                                        const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
+                                        const isCr = String(lead?.budget).toUpperCase().includes('CR');
+                                        const isL = String(lead?.budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
+                                        const absoluteValue = isCr ? budgetVal * 10000000 : (isL ? budgetVal * 100000 : budgetVal);
+                                        const isHighValue = (f.lead_score > 85 || absoluteValue >= 5000000);
+
+                                        return (
+                                            <FollowupCard 
+                                                key={f.id} f={f} isHighValue={isHighValue} leadDetails={lead}
+                                                onToggle={toggle} onDial={(id, phone, name) => dialerEvents.call(id, phone, name)} 
+                                                onNotify={setNotifyTarget} onDownload={downloadSummary} 
+                                                onDelete={deleteFu} onPreview={setPreviewLead} 
+                                                urgent={isUrgent(f.scheduled_at)} 
+                                                onHover={handleHover}
+                                                isTeamView={isTeamView}
+                                                agents={agents}
+                                                onReassign={reassign}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ));
+                    })()}
                 </div>
             )}
 
