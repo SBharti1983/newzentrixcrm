@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
-import { followupsApi, leadsApi, usersApi } from '../api/client';
+import { followupsApi, leadsApi, usersApi, marketingApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { 
     Plus, X, CheckCircle, Clock, AlertCircle, Calendar, Send, Phone, FileText, 
@@ -24,11 +24,12 @@ export default function Followups() {
     const { data: followups = [], loading, error, refetch } = useApi(followupsApi.list);
     const { data: agents = [] } = useApi(usersApi.list);
     const { data: allLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
+    const { data: drips = [] } = useApi(marketingApi.getDrips);
     const { showToast } = useToast();
     const isMobile = useMobile();
 
     const [showModal, setShowModal] = useState(false);
-    const [form, setForm] = useState({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending' });
+    const [form, setForm] = useState({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending', mode: 'single', drip_id: '' });
     const [filterStatus, setFilterStatus] = useState('All');
     const [filterAgent, setFilterAgent] = useState('All');
     const [sortMode, setSortMode] = useState('time'); 
@@ -112,12 +113,32 @@ export default function Followups() {
     };
 
     const save = async () => {
-        if (!form.lead_id || !form.scheduled_at) return showToast('Lead and date are required', 'warning');
+        if (!form.lead_id) return showToast('Select a lead', 'error');
+
+        if (form.mode === 'sequence') {
+            if (!form.drip_id) return showToast('Select a sequence', 'error');
+            setSaving(true);
+            try {
+                // Enrollment API expects an array of lead IDs
+                await marketingApi.enrollLeads(form.drip_id, [form.lead_id]);
+                showToast('Smart Sequence deployed! Monitoring for engagement...', 'success');
+                setShowModal(false);
+                setForm({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending', mode: 'single', drip_id: '' });
+                refetch();
+            } catch (err) {
+                console.error('Sequence Enrollment Error:', err);
+                showToast('Failed to start sequence automation', 'error');
+                setSaving(false);
+            }
+            return;
+        }
+
+        if (!form.scheduled_at) return showToast('Select date/time', 'error');
         setSaving(true);
         try {
             await followupsApi.create(form);
             setShowModal(false);
-            setForm({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending' });
+            setForm({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending', mode: 'single', drip_id: '' });
             refetch();
             showToast('Follow-up scheduled', 'success');
         } catch {
@@ -328,11 +349,70 @@ export default function Followups() {
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header"><h3>Schedule Follow-Up</h3></div>
                         <div className="modal-body">
-                            <select className="form-control" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}><option value="">Select Lead...</option>{(allLeads?.data || allLeads)?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
-                            <input type="datetime-local" className="form-control mt-2" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} />
-                            <textarea className="form-control mt-2" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes..."></textarea>
+                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Orchestration Mode</label>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+                                <button 
+                                    onClick={() => setForm({...form, mode: 'single'})}
+                                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: form.mode === 'single' ? 'white' : 'transparent', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', color: form.mode === 'single' ? '#0f172a' : '#64748b', transition: 'all 0.2s', boxShadow: form.mode === 'single' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Clock size={14}/> Single Task</div>
+                                </button>
+                                <button 
+                                    onClick={() => setForm({...form, mode: 'sequence'})}
+                                    style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', background: form.mode === 'sequence' ? 'white' : 'transparent', fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', color: form.mode === 'sequence' ? 'var(--navy-600)' : '#64748b', transition: 'all 0.2s', boxShadow: form.mode === 'sequence' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}><Sparkles size={14}/> Smart Sequence</div>
+                                </button>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Target Lead</label>
+                                    <select className="form-control" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}><option value="">Select Lead...</option>{(allLeads?.data || allLeads)?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
+                                </div>
+
+                                {form.mode === 'sequence' ? (
+                                    <div className="animate-fadeIn">
+                                        <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Automation Sequence (Omnichannel)</label>
+                                        <select className="form-control" value={form.drip_id} onChange={e => setForm({ ...form, drip_id: e.target.value })}>
+                                            <option value="">Select Active Sequence...</option>
+                                            {drips?.map(d => <option key={d.id} value={d.id}>{d.name} ({d.steps_count} Automated Steps)</option>)}
+                                        </select>
+                                        <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', border: '1px dashed rgba(99, 102, 241, 0.2)' }}>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                                                <Zap size={14} color="var(--navy-600)" style={{ marginTop: '2px' }}/>
+                                                <p style={{ fontSize: '0.75rem', color: '#444', lineHeight: 1.4, margin: 0 }}>This will enroll the lead into a <strong>pre-configured multi-day journey</strong>. The automation engine will handle all outreaches perfectly timed.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Follow-up Channel</label>
+                                                <select className="form-control" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}>{Object.keys(TYPE_ICON).map(t => <option key={t}>{t}</option>)}</select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Priority</label>
+                                                <select className="form-control" value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })}><option>High</option><option>Medium</option><option>Low</option></select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Schedule Time</label>
+                                            <input type="datetime-local" className="form-control" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} />
+                                        </div>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Task Strategy & Notes</label>
+                                            <textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="What is the objective of this follow-up?"></textarea>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="modal-footer"><button className="btn btn-primary" onClick={save} disabled={saving}>Schedule</button></div>
+                        <div className="modal-footer">
+                            <button className="btn btn-ghost" onClick={() => setShowModal(false)} style={{ fontWeight: 700 }}>Discard</button>
+                            <button className="btn btn-primary" onClick={save} disabled={saving} style={{ padding: '10px 24px', borderRadius: '10px', background: form.mode === 'sequence' ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : undefined, border: 'none' }}>
+                                {saving ? 'Deploying...' : form.mode === 'sequence' ? 'Deploy Smart Sequence 🚀' : 'Schedule Single Task'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -393,16 +473,38 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
             </button>
 
             {/* Middle: Lead Context */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1px' }}>
-                    <span onClick={() => onPreview(f.lead_id || f.leadId)} style={{ fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', color: '#0f172a' }} className="hover-underline">
-                        {f.lead_name || f.leadName}
-                    </span>
-                    {f.lead_score && <span style={{ padding: '1px 4px', borderRadius: '4px', background: '#ecfdf5', color: '#059669', fontSize: '0.55rem', fontWeight: 900 }}>{f.lead_score}%</span>}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isCompact ? '0' : '24px' }}>
+                <div style={{ minWidth: isCompact ? '0' : '180px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1px' }}>
+                        <span onClick={() => onPreview(f.lead_id || f.leadId)} style={{ fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', color: '#0f172a' }} className="hover-underline">
+                            {f.lead_name || f.leadName}
+                        </span>
+                        {f.lead_score && <span style={{ padding: '1px 4px', borderRadius: '4px', background: '#ecfdf5', color: '#059669', fontSize: '0.55rem', fontWeight: 900 }}>{f.lead_score}%</span>}
+                    </div>
+                    {isCompact && (
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {f.notes || 'No notes...'}
+                        </div>
+                    )}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {f.notes || 'No notes...'}
-                </div>
+
+                {!isCompact && !isMobile && (
+                    <>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Latest Note</div>
+                            <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {f.notes || 'No task specific notes...'}
+                            </div>
+                        </div>
+                        <div style={{ width: '120px', flexShrink: 0 }}>
+                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Assigned To</div>
+                            <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
+                                {f.assigned_name || 'Agent'}
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Right: Date, Time & Quick Actions */}
