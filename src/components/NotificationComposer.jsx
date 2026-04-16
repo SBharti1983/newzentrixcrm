@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TEMPLATES, CHANNELS, TEMPLATE_VARS } from '../data/notificationTemplates';
-import { leadsApi, customersApi, notificationsApi } from '../api/client';
+import { leadsApi, customersApi, notificationsApi, copilotApi } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { X, Send, ChevronDown, Smartphone, Mail, MessageSquare, Zap, Copy, Eye } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
@@ -95,14 +95,16 @@ export default function NotificationComposer({
     onClose,
     onSent,
     prefillLead = null,   // { name, phone, email, project, budget, assignedTo }
+    target = null,        // Alternative prop name used in some pages
     prefillChannel = null,
     triggerType = null,   // 'followup' | 'site_visit' | 'booking' | null
 }) {
+    const activeLead = prefillLead || target;
     const { addToast } = useToast();
 
     // Determine initial recipient
-    const initialRecipient = prefillLead
-        ? { type: 'lead', id: prefillLead.id, name: prefillLead.name, phone: prefillLead.phone, email: prefillLead.email }
+    const initialRecipient = activeLead
+        ? { type: 'lead', id: activeLead.id, name: activeLead.name, phone: activeLead.phone, email: activeLead.email, stage: activeLead.stage, project: activeLead.project_name || activeLead.project, budget: activeLead.budget, notes: activeLead.notes }
         : null;
 
     const [activeChannel, setActiveChannel] = useState(prefillChannel || 'whatsapp');
@@ -111,6 +113,7 @@ export default function NotificationComposer({
     const [body, setBody] = useState('');
     const [showPreview, setShowPreview] = useState(false);
     const [sending, setSending] = useState(false);
+    const [generating, setGenerating] = useState(false);
     const [recipient, setRecipient] = useState(initialRecipient);
     const [recipientSearch, setRecipientSearch] = useState(prefillLead?.name || '');
     const [showRecipientDrop, setShowRecipientDrop] = useState(false);
@@ -159,6 +162,36 @@ export default function NotificationComposer({
 
     function insertVar(varKey) {
         setBody(b => b + varKey);
+    }
+
+    async function handleAiGenerate() {
+        if (!recipient) {
+            addToast({ type: 'warning', title: 'Context Required', message: 'Please select a recipient to generate personalized content.' });
+            return;
+        }
+        setGenerating(true);
+        try {
+            const prompt = `Act as a senior Real Estate consultant at Zentrix Realty. Write a high-conversion, professional ${activeChannel} outreach message.
+            Lead Context:
+            - Name: ${recipient.name}
+            - Project: ${recipient.project || 'Premium Properties'}
+            - Budget: ${recipient.budget || 'Unspecified'}
+            - Current Stage: ${recipient.stage || 'New Enquiry'}
+            - Latest Note: ${recipient.notes || 'Interested in property'}
+            - Goal: ${triggerType === 'followup' ? 'Follow up on previous interest' : triggerType === 'site_visit' ? 'Confirm site visit' : 'General nurture'}
+
+            Keep the tone elite, helpful and non-pushy. Return only the message body. Do not include subject lines or placeholders.`;
+
+            const res = await copilotApi.ask({ question: prompt });
+            if (res?.answer) {
+                setBody(res.answer);
+                addToast({ type: 'success', title: 'AI Template Generated', message: 'Content tailored to lead context.' });
+            }
+        } catch (err) {
+            addToast({ type: 'error', title: 'AI Engine Offline', message: 'Could not generate dynamic template.' });
+        } finally {
+            setGenerating(false);
+        }
     }
 
     async function handleSend() {
@@ -368,9 +401,19 @@ export default function NotificationComposer({
                                     <label className="form-label" style={{ margin: 0 }}>
                                         Message {multiChannels.sms ? <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(used for SMS & WhatsApp)</span> : ''}
                                     </label>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(v => !v)} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
-                                        <Eye size={12} /> {showPreview ? 'Hide' : 'Preview'}
-                                    </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button 
+                                            className="btn btn-primary" 
+                                            onClick={handleAiGenerate} 
+                                            disabled={generating || !recipient}
+                                            style={{ fontSize: '0.72rem', padding: '4px 10px', height: 'auto', borderRadius: '8px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none' }}
+                                        >
+                                            {generating ? '✨ Writing...' : '✨ One-Click AI Template'}
+                                        </button>
+                                        <button className="btn btn-ghost btn-sm" onClick={() => setShowPreview(v => !v)} style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
+                                            <Eye size={12} /> {showPreview ? 'Hide' : 'Preview'}
+                                        </button>
+                                    </div>
                                 </div>
                                 <textarea
                                     className="form-control"
