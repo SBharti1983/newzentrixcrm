@@ -192,32 +192,33 @@ export default function Pipeline() {
     if (error && !leadsRes) return <PageError message={error} onRetry={refetch} />;
 
     return (
-        <div className="animate-fadeIn" style={{ maxWidth: '100%', overflowX: 'hidden', minHeight: 0 }}>
-            {/* Header */}
-            <div className="page-header" style={{ marginBottom: 20 }}>
-                <div className="page-header-left">
-                    <h1 className="page-title">Sales Pipeline</h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                        <p className="page-subtitle">Visualize and manage your lead funnel stages</p>
+        <div className="animate-fadeIn" style={{ maxWidth: '100%', overflowX: 'hidden', minHeight: 0, paddingBottom: 60 }}>
+            {/* Ultra-Compact Enterprise Command Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.4)', animation: 'pulse-dialer 2s infinite' }} />
+                        <h1 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.02em' }}>Revenue Pipeline</h1>
+                    </div>
 
-                        {/* Real-time Presence */}
-                        {activeViewers.length > 0 && (
-                            <div className="presence-indicator" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--slate-50)', padding: '4px 10px', borderRadius: 20, border: '1px solid var(--border-light)' }}>
-                                <div className="avatar-group">
-                                    {activeViewers.map(u => (
-                                        <div key={u.id} className="avatar avatar-xs" title={`${u.name} is on this board`}>
-                                            {u.avatar || u.name[0]}
-                                        </div>
-                                    ))}
-                                </div>
-                                <span className="text-xs text-muted font-bold">TEAM SYNCED</span>
+                    <div style={{ display: 'flex', gap: 8, borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? 0 : 16, flexWrap: 'wrap' }}>
+                        {[
+                            { label: 'Pipeline Val', val: totalPipelineVal, icon: <DollarSign size={13}/>, color: '#3b82f6' },
+                            { label: 'Active', val: active, icon: <Zap size={13}/>, color: '#f59e0b' },
+                            { label: 'Win', val: `${convRate}%`, icon: <Award size={13}/>, color: '#10b981' },
+                            { label: 'Lost', val: lost, icon: <TrendingUp size={13} style={{ transform: 'rotate(90deg)' }}/>, color: '#ef4444' },
+                        ].map(s => (
+                            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                                <div style={{ color: s.color, display: 'flex' }}>{s.icon}</div>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase' }}>{s.label}:</span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--navy-900)' }}>{s.val}</span>
                             </div>
-                        )}
+                        ))}
                     </div>
                 </div>
-                <div className="page-actions" style={{ gap: 12 }}>
-                    {/* View Switcher Ribbon */}
-                    <div style={{ display: 'flex', background: 'var(--slate-100)', padding: 4, borderRadius: 12, border: '1px solid var(--border-light)' }}>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', background: '#f8fafc', padding: 2, borderRadius: 8, border: '1px solid #e2e8f0' }}>
                         {[
                             { id: 'metrics', label: 'Metrics', icon: TrendingUp },
                             { id: 'kanban', label: 'Kanban', icon: Target },
@@ -227,329 +228,200 @@ export default function Pipeline() {
                                 key={m.id}
                                 className={`btn btn-sm ${viewMode === m.id ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                 onClick={() => setViewMode(m.id)}
-                                style={{ borderRadius: 8, padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700, gap: 6, opacity: viewMode === m.id ? 1 : 0.6 }}
+                                style={{ borderRadius: 6, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 800, gap: 4, color: viewMode === m.id ? 'var(--navy-900)' : 'var(--slate-500)' }}
                             >
-                                <m.icon size={13} /> {m.label}
+                                <m.icon size={12} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>{m.label}</span>
                             </button>
                         ))}
                     </div>
-
-                    <button className="btn btn-primary" onClick={() => { setAddForm(DEFAULT_LEAD); setShowAddModal('New'); }}>
-                        <Plus size={15} /> Add Lead
+                    <button className="hover-lift" style={{ background: 'var(--navy-900)', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => { setAddForm(DEFAULT_LEAD); setShowAddModal('New'); }}>
+                        <Plus size={14} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Add Lead</span>
                     </button>
                 </div>
             </div>
 
-            {/* Pipeline Stage Summary - Enterprise 2-Row Grid */}
-            <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', 
-                gap: '12px', 
-                marginBottom: '24px',
-                width: '100%',
-                boxSizing: 'border-box'
-            }}>
-                {PIPELINE_STAGES.map((stage) => {
+            {/* Compressed Intelligent Funnel */}
+            <div style={{ display: 'flex', width: '100%', gap: 6, marginBottom: 12, paddingBottom: 4 }}>
+                {PIPELINE_STAGES.map((stage, idx) => {
                     const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                     const count = byStage(stage).length;
                     const val = stageValueL(stage);
-                    const Icon = sc.lucide || Target;
+                    const isEmpty = count === 0;
 
                     return (
-                        <div key={stage} className="hover-lift" style={{
-                            background: 'white',
-                            borderRadius: '12px',
-                            padding: '14px 18px',
-                            border: '1px solid var(--border-light)',
-                            borderLeft: `4px solid ${sc.color}`,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 10,
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            position: 'relative',
-                            overflow: 'hidden'
+                        <div key={stage} style={{
+                            flex: '1 1 0%',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            background: isEmpty ? '#f8fafc' : 'white',
+                            borderRadius: '8px',
+                            padding: '8px 10px',
+                            border: '1px solid',
+                            borderColor: isEmpty ? '#f1f5f9' : '#e2e8f0',
+                            borderTop: `3px solid ${isEmpty ? '#e2e8f0' : sc.accent}`,
+                            opacity: isEmpty ? 0.6 : 1,
                         }}>
-                            {/* Subtle background decoration */}
-                            <div style={{ position: 'absolute', right: '-10px', bottom: '-10px', opacity: 0.03, color: sc.color }}>
-                                <Icon size={64} />
-                            </div>
-
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ 
-                                    width: 34, height: 34, borderRadius: '10px', 
-                                    background: `${sc.color}12`, color: sc.color, 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Icon size={18} />
-                                </div>
-                                <div style={{ 
-                                    fontSize: '1.4rem', fontWeight: 900, 
-                                    color: 'var(--navy-950)', letterSpacing: '-0.5px' 
-                                }}>
-                                    {count}
-                                </div>
-                            </div>
-                            
-                            <div style={{ position: 'relative', zIndex: 1 }}>
-                                <div style={{ 
-                                    fontSize: '0.72rem', fontWeight: 800, 
-                                    color: 'var(--text-muted)', textTransform: 'uppercase', 
-                                    letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-                                }}>
-                                    {stage}
-                                </div>
-                                <div style={{ 
-                                    fontSize: '0.9rem', fontWeight: 900, 
-                                    color: sc.color, marginTop: 4,
-                                    display: 'flex', alignItems: 'center', gap: 4
-                                }}>
-                                    <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>Value:</span> {fmtL(val)}
-                                </div>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: isEmpty ? '#94a3b8' : 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>{stage}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1, color: isEmpty ? '#cbd5e1' : sc.color }}>{count}</div>
+                                {val > 0 && <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-500)' }}>{fmtL(val)}</div>}
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            {/* Search & Filters (Compact Style) */}
-            <div className="card shadow-sm" style={{ padding: '6px 12px', borderRadius: 12, background: 'white', border: '1px solid var(--border-light)', marginBottom: 8, minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="search-box" style={{ flex: 1, position: 'relative' }}>
-                        <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--slate-400)' }} />
-                        <input
-                            type="text"
-                            placeholder="Search leads by name, city, budget, project..."
-                            className="form-control"
-                            style={{
-                                paddingLeft: 40, borderRadius: 8, border: '1px solid var(--border-light)',
-                                background: 'var(--slate-50)', height: 36, fontSize: '0.82rem', fontWeight: 500
-                            }}
-                            value={searchQ}
-                            onChange={(e) => setSearchQ(e.target.value)}
-                        />
-                        {searchQ && (
-                            <button onClick={() => setSearchQ('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--slate-400)' }}>
-                                <X size={14} />
-                            </button>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <div style={{ width: 1, height: 24, background: 'var(--border-light)', margin: '0 4px' }} />
-                        <button onClick={() => setShowFilters(f => !f)} className={`btn btn-sm ${showFilters ? 'btn-primary' : 'btn-outline'}`} style={{ borderRadius: 8, gap: 6, height: 36, fontSize: '0.78rem', fontWeight: 700, padding: '0 12px' }}>
-                            <Filter size={15} /> Filters
-                            {(filterAgent !== 'All' || filterSource !== 'All' || filterPriority !== 'All' || filterProject !== 'All') &&
-                                <span style={{ background: 'var(--accent-rose)', color: 'white', borderRadius: '50%', width: 16, height: 16, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem' }}>!</span>
-                            }
-                        </button>
-                    </div>
+            {/* Compressed Search & Filters Hub */}
+            <div style={{ background: 'white', padding: '6px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                    <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                    <input
+                        type="text"
+                        placeholder="Search timeline & index..."
+                        style={{
+                            width: '100%', padding: '6px 12px 6px 36px', borderRadius: '6px', border: 'none',
+                            background: '#f8fafc', fontSize: '0.75rem', fontWeight: 600, outline: 'none', color: 'var(--navy-900)'
+                        }}
+                        value={searchQ}
+                        onChange={(e) => setSearchQ(e.target.value)}
+                    />
                 </div>
-                {showFilters && (
-                    <div style={{ display: 'flex', gap: 12, marginTop: 16, paddingTop: 16, borderTop: '1px dotted var(--border-light)' }}>
-                        <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
-                            style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
-                            <option value="All">All Agents</option>
-                            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                        </select>
-                        <select className="form-control" value={filterProject} onChange={e => setFilterProject(e.target.value)}
-                            style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
-                            <option value="All">All Projects</option>
-                            {(projects || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                        <select className="form-control" value={filterSource} onChange={e => setFilterSource(e.target.value)}
-                            style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
-                            <option value="All">All Sources</option>
-                            {SOURCES.map(s => <option key={s}>{s}</option>)}
-                        </select>
-                        <select className="form-control" value={filterPriority} onChange={e => setFilterPriority(e.target.value)}
-                            style={{ width: 'auto', minWidth: 160, fontSize: '0.85rem', borderRadius: 10 }}>
-                            <option value="All">All Priorities</option>
-                            {['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}
-                        </select>
-                        {(filterAgent !== 'All' || filterSource !== 'All' || filterPriority !== 'All') && (
-                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--accent-rose)', fontWeight: 700 }}
-                                onClick={() => { setFilterAgent('All'); setFilterSource('All'); setFilterPriority('All'); }}>
-                                <RotateCw size={14} style={{ marginRight: 6 }} /> Reset
-                            </button>
-                        )}
-                    </div>
-                )}
+                <button onClick={() => setShowFilters(f => !f)} className="hover-lift" style={{ padding: '6px 12px', borderRadius: '6px', fontSize: '0.7rem', background: showFilters ? 'var(--navy-900)' : '#f8fafc', border: showFilters ? 'none' : '1px solid #e2e8f0', color: showFilters ? 'white' : 'var(--navy-900)', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <Filter size={12} /> Filters {(filterAgent !== 'All' || filterSource !== 'All' || filterPriority !== 'All' || filterProject !== 'All') && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }}/>}
+                </button>
             </div>
+
+            {showFilters && (
+                <div style={{ background: 'white', padding: 12, borderRadius: 8, border: '1px solid #e2e8f0', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    <select className="select" value={filterAgent} onChange={e => setFilterAgent(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.7rem', fontWeight: 600, color: 'var(--navy-900)' }}>
+                        <option value="All">All Agents</option>
+                        {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                    <select className="select" value={filterProject} onChange={e => setFilterProject(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.7rem', fontWeight: 600, color: 'var(--navy-900)' }}>
+                        <option value="All">All Projects</option>
+                        {(projects || []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    </select>
+                    <select className="select" value={filterSource} onChange={e => setFilterSource(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.7rem', fontWeight: 600, color: 'var(--navy-900)' }}>
+                        <option value="All">All Sources</option>
+                        {SOURCES.map(s => <option key={s}>{s}</option>)}
+                    </select>
+                    <select className="select" value={filterPriority} onChange={e => setFilterPriority(e.target.value)} style={{ padding: '6px 10px', borderRadius: '6px', background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.7rem', fontWeight: 600, color: 'var(--navy-900)' }}>
+                        <option value="All">All Priorities</option>
+                        {['High', 'Medium', 'Low'].map(p => <option key={p}>{p}</option>)}
+                    </select>
+                </div>
+            )}
 
             {/* ══════════════════════════════════════════════════════
                 METRICS VIEW
             ══════════════════════════════════════════════════════ */}
-            {/* ── Metrics View: Professional Command Layout ── */}
             {viewMode === 'metrics' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {/* KPI Grid Full Width Top Row */}
-                    <div className="grid grid-4" style={{ gap: 12 }}>
-                        {[
-                            { label: 'Pipeline Value', value: totalPipelineVal, icon: <DollarSign size={18} />, color: 'var(--navy-600)', bg: 'rgba(30,58,115,0.05)', border: 'rgba(30,58,115,0.1)' },
-                            { label: 'Active Leads', value: active, icon: <Zap size={18} />, color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.05)', border: 'rgba(6,182,212,0.1)' },
-                            { label: 'Win Rate', value: `${convRate}%`, icon: <Award size={18} />, color: 'var(--accent-emerald-dark)', bg: 'rgba(16,185,129,0.05)', border: 'rgba(16,185,129,0.1)' },
-                            { label: 'Lost Leads', value: lost, icon: <TrendingUp size={18} style={{ transform: 'rotate(90deg)' }} />, color: 'var(--accent-rose-dark)', bg: 'rgba(244,63,94,0.05)', border: 'rgba(244,63,94,0.1)' },
-                        ].map(s => (
-                            <div key={s.label} className="hover-lift" style={{ background: s.bg, borderRadius: '12px', border: `1px solid ${s.border}`, padding: '16px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: s.color, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{s.icon}</div>
-                                    <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
-                                </div>
-                                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--navy-800)', lineHeight: 1 }}>{s.value}</div>
-                            </div>
-                        ))}
-                    </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-                    {/* Funnel Chart Row */}
-                    <div>
-
-                        {/* Funnel Card */}
-                        <div className="card" style={{ padding: '16px 20px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <Target size={18} className="text-primary" /> Visual Sales Funnel
-                                </h3>
-                                <div style={{ display: 'flex', gap: 12, paddingRight: 8 }}>
-                                    <div style={{ textAlign: 'right', width: 100 }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
-                                    <div style={{ textAlign: 'right', width: 80 }}><div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
-                                </div>
-                            </div>
-                            <div className="pipeline-funnel-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, alignItems: 'stretch', flex: 1 }}>
-                                <div className="pipeline-funnel-graph" style={{ position: 'relative', height: '100%', minHeight: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg width="100%" height="250" viewBox="0 0 500 250" preserveAspectRatio="xMidYMid meet">
-                                        <defs>
-                                            <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dx="0" dy="2" /><feComponentTransfer><feFuncA type="linear" slope="0.1" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
-                                            {PIPELINE_STAGES.map((stage, i) => (
-                                                <linearGradient key={`grad-${i}`} id={`grad-side-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                                    <stop offset="0%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="0.85" /><stop offset="100%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="1" />
-                                                </linearGradient>
-                                            ))}
-                                        </defs>
-                                        {PIPELINE_STAGES.map((stage, i) => {
-                                            const count = byStage(stage).length;
-                                            const h = 21; const gap = 3; const y = i * (h + gap);
-                                            const topW = 440 - (i * 32); const botW = 440 - ((i + 1) * 32);
-                                            const x1 = (500 - topW) / 2; const x2 = x1 + topW; const x3 = (500 - botW) / 2 + botW; const x4 = (500 - botW) / 2;
-                                            const points = `${x1},${y} ${x2},${y} ${x3},${y + h} ${x4},${y + h}`;
-                                            return (
-                                                <g key={stage} className="funnel-segment" style={{ cursor: 'pointer' }}>
-                                                    <polygon points={points} fill={`url(#grad-side-${i})`} filter="url(#fShadow)" />
-                                                    <text x="250" y={y + (h / 2) + 3} textAnchor="middle" fill="white" style={{ fontSize: '9px', fontWeight: 900, textTransform: 'uppercase', pointerEvents: 'none' }}>{stage} ({count})</text>
-                                                </g>
-                                            );
-                                        })}
-                                    </svg>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 270, overflowY: 'hidden' }}>
-                                    {/* Headers for columns */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 100px 80px', gap: '12px', padding: '4px 8px', marginBottom: 2 }}>
-                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Stage</div>
-                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Progression</div>
-                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Value</div>
-                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Count</div>
+                        {/* --- TOP ROW CONTROLS --- */}
+                        <div className={isMobile ? 'flex-column' : 'grid'} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: 'stretch' }}>
+                            {/* Visual Sales Funnel */}
+                            <div className="card" style={{ flex: '1.6 1 0%', minWidth: 0, padding: '16px 20px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Target size={18} className="text-primary" /> Visual Sales Funnel
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: 12, paddingRight: 8 }}>
+                                        <div style={{ textAlign: 'right', width: 80 }}><div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
+                                        <div style={{ textAlign: 'right', width: 70 }}><div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
                                     </div>
-                                    {(() => {
-                                        const maxCount = Math.max(1, ...PIPELINE_STAGES.map(s => byStage(s).length));
-                                        return PIPELINE_STAGES.map((stage) => {
-                                            const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                                            const pct = `${(count / maxCount) * 100}%`;
-                                            return (
-                                                <div key={stage} style={{ padding: '3px 8px', background: 'var(--slate-50)', borderRadius: '6px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: '1.4fr 1fr 100px 80px', alignItems: 'center', gap: '12px' }}>
-                                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
-
-                                                    {/* Volume Sparkline */}
-                                                    <div style={{ height: '4px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
-                                                        <div style={{ width: pct, height: '100%', background: cfg.accent, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
+                                </div>
+                                <div className="pipeline-funnel-grid" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: 24, alignItems: 'center', flex: 1, minWidth: 0 }}>
+                                    <div className="pipeline-funnel-graph" style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 340px', height: '100%', minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: '100%', minWidth: 0 }}>
+                                        <svg width="100%" height="280" viewBox="0 0 400 280" preserveAspectRatio="xMidYMid meet">
+                                            <defs>
+                                                <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dx="0" dy="2" /><feComponentTransfer><feFuncA type="linear" slope="0.1" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                                                {PIPELINE_STAGES.map((stage, i) => (
+                                                    <linearGradient key={`grad-${i}`} id={`grad-side-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="0.85" /><stop offset="100%" stopColor={STAGE_CONFIG[stage]?.accent} stopOpacity="1" />
+                                                    </linearGradient>
+                                                ))}
+                                            </defs>
+                                            {PIPELINE_STAGES.map((stage, i) => {
+                                                const count = byStage(stage).length;
+                                                const h = 24; const gap = 4; const y = i * (h + gap);
+                                                const topW = 380 - (i * 22); const botW = 380 - ((i + 1) * 22);
+                                                const x1 = (400 - topW) / 2; const x2 = x1 + topW; const x3 = (400 - botW) / 2 + botW; const x4 = (400 - botW) / 2;
+                                                const points = `${x1},${y} ${x2},${y} ${x3},${y + h} ${x4},${y + h}`;
+                                                return (
+                                                    <g key={stage} className="funnel-segment" style={{ cursor: 'pointer' }}>
+                                                        <polygon points={points} fill={`url(#grad-side-${i})`} filter="url(#fShadow)" />
+                                                        <text x="200" y={y + (h / 2) + 4} textAnchor="middle" fill="white" style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', pointerEvents: 'none', letterSpacing: '0.05em' }}>{stage} ({count})</text>
+                                                    </g>
+                                                );
+                                            })}
+                                        </svg>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', gap: 2, maxHeight: 280, overflowY: 'auto', minWidth: 0, width: '100%', paddingRight: 4 }}>
+                                        {/* Headers for columns */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', gap: '8px', padding: '2px 8px', marginBottom: 2 }}>
+                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Stage</div>
+                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Progression</div>
+                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Value</div>
+                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Count</div>
+                                        </div>
+                                        {(() => {
+                                            const maxCount = Math.max(1, ...PIPELINE_STAGES.map(s => byStage(s).length));
+                                            return PIPELINE_STAGES.map((stage) => {
+                                                const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
+                                                const pct = `${(count / maxCount) * 100}%`;
+                                                return (
+                                                    <div key={stage} style={{ padding: '2px 6px', background: 'var(--slate-50)', borderRadius: '4px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
+                                                        {/* Volume Sparkline */}
+                                                        <div style={{ height: '3px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
+                                                            <div style={{ width: pct, height: '100%', background: cfg.accent, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
+                                                        </div>
+                                                        <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--navy-800)', textAlign: 'right' }}>{fmtL(stageValueL(stage))}</div>
+                                                        <div style={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.accent, textAlign: 'right' }}>{count}</div>
                                                     </div>
-
-                                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-800)', textAlign: 'right' }}>{fmtL(stageValueL(stage))}</div>
-                                                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: cfg.accent, textAlign: 'right' }}>{count}</div>
-                                                </div>
-                                            );
-                                        });
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom Row: Detailed Performance and Opportunities */}
-                    <div className={isMobile ? 'flex-column' : 'grid grid-2'} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: 'start' }}>
-                        {/* Stage Performance Table */}
-                        <div className="card" style={{ padding: 0 }}>
-                            <div className="card-header" style={{ padding: '12px 16px' }}>
-                                <div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <ViewListIcon size={16} style={{ color: 'var(--navy-600)' }} /> Stage Performance
-                                </div>
-                            </div>
-                            <div className="card-body" style={{ padding: 0 }}>
-                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.75rem' }}>
-                                    <thead>
-                                        <tr style={{ background: 'var(--slate-50)' }}>
-                                            {['Stage', 'Leads', 'Pipeline Value', 'Avg. Score'].map(h => (
-                                                <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {PIPELINE_STAGES.map((stage, i) => {
-                                            const sl = byStage(stage);
-                                            const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                                            const avgScore = sl.length ? Math.round(sl.reduce((a, l) => a + (parseInt(l.score) || 0), 0) / sl.length) : 0;
-                                            return (
-                                                <tr key={stage} style={{ borderBottom: i === PIPELINE_STAGES.length - 1 ? 'none' : '1px solid var(--border-light)' }}>
-                                                    <td style={{ padding: '8px 12px' }}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 6, height: 6, borderRadius: '50%', background: cfg.accent }} /><span style={{ fontWeight: 800, color: 'var(--navy-800)' }}>{stage}</span></div></td>
-                                                    <td style={{ padding: '8px 12px' }}><span style={{ fontWeight: 800, color: cfg.accent }}>{sl.length}</span></td>
-                                                    <td style={{ padding: '8px 12px', fontWeight: 800 }}>{fmtL(stageValueL(stage))}</td>
-                                                    <td style={{ padding: '8px 12px' }}>{sl.length ? <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ height: 4, width: 30, background: 'var(--slate-100)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: `${avgScore}%`, background: avgScore > 80 ? 'var(--accent-emerald)' : avgScore > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div><span style={{ fontWeight: 800, fontSize: '0.7rem' }}>{avgScore}</span></div> : '—'}</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        
-
-
-                        {/* High Value Opportunities */}
-                        <div className="card" style={{ padding: 0 }}>
-                            <div className="card-header" style={{ padding: '12px 16px' }}><div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={16} style={{ color: 'var(--accent-amber-dark)' }} /> High Value Opportunities</div></div>
-                            <div className="card-body" style={{ padding: '0 16px 12px' }}>
-                                {[...leads].sort((a, b) => parseBudgetL(b.budget) - parseBudgetL(a.budget)).slice(0, 5).map((l, i) => (
-                                    <div key={l.id} onClick={() => setSelectedLead(l)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: '8px', marginBottom: '6px', cursor: 'pointer', background: i === 0 ? 'rgba(245,158,11,0.03)' : 'white' }}>
-                                        <div style={{ width: 28, height: 28, borderRadius: '6px', background: `hsl(${l.id * 47 % 360},60%,55%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>{l.name[0]}</div>
-
-                                        {/* Left Column: Client Core Info */}
-                                        <div style={{ minWidth: 100, maxWidth: 140, flexShrink: 0 }}>
-                                            <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
-                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{l.city || 'Undisclosed City'}</div>
-                                        </div>
-
-                                        {/* Middle Column: Filled AI Score & Context */}
-                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderLeft: '1px dashed var(--border-light)', borderRight: '1px dashed var(--border-light)', padding: '0 10px', minWidth: 0 }}>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--slate-600)', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                                                <Layout size={10} style={{ color: 'var(--slate-400)', flexShrink: 0 }} />
-                                                {l.project || 'General Inquiry'}
-                                            </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                                                <div style={{ height: 4, width: 40, background: 'var(--slate-200)', borderRadius: 2, overflow: 'hidden' }}><div style={{ height: '100%', width: `${l.score || 0}%`, background: (l.score || 0) > 80 ? 'var(--accent-emerald)' : (l.score || 0) > 50 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div>
-                                                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--slate-500)' }}>{l.score || 0}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Right Column: Value & Funnel Position */}
-                                        <div style={{ textAlign: 'right', minWidth: 80, flexShrink: 0 }}>
-                                            <div style={{ fontWeight: 900, color: 'var(--navy-600)', fontSize: '0.8rem' }}>{l.budget}</div>
-                                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: STAGE_CONFIG[l.stage]?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px', marginLeft: 'auto' }}>{l.stage}</div>
-                                        </div>
+                                                );
+                                            });
+                                        })()}
                                     </div>
-                                ))}
+                                </div>
+                            </div>
+
+                            {/* High Value Opportunities */}
+                            <div className="card" style={{ flex: '1 1 0%', minWidth: 0, padding: 0, display: 'flex', flexDirection: 'column' }}>
+                                <div className="card-header" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)' }}>
+                                    <div className="card-title" style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Zap size={16} style={{ color: 'var(--accent-amber-dark)' }} /> High Value Opportunities
+                                    </div>
+                                </div>
+                                <div className="card-body" style={{ padding: '8px 16px', flex: 1, overflowY: 'auto' }}>
+                                    {[...leads].sort((a, b) => parseBudgetL(b.budget) - parseBudgetL(a.budget)).slice(0, 5).map((l, i) => (
+                                        <div key={l.id} onClick={() => setSelectedLead(l)} className="hover-lift" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', border: '1px solid var(--border-light)', borderRadius: '8px', marginBottom: '8px', cursor: 'pointer', background: i === 0 ? 'rgba(245,158,11,0.03)' : 'white' }}>
+                                            <div style={{ width: 28, height: 28, borderRadius: '6px', background: `hsl(${l.id * 47 % 360},60%,55%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'white', flexShrink: 0 }}>
+                                                {l.name[0]}
+                                            </div>
+
+                                            {/* Left Column: Client Core Info */}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.name}</div>
+                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{l.city || 'Undisclosed City'}</div>
+                                            </div>
+
+                                            {/* Right Column: Value & Funnel Position */}
+                                            <div style={{ textAlign: 'right', minWidth: 80, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                                                <div style={{ fontWeight: 900, color: 'var(--navy-600)', fontSize: '0.8rem' }}>
+                                                    {l.budget ? (parseBudgetL(l.budget) > 0 ? fmtL(parseBudgetL(l.budget)) : l.budget) : '—'}
+                                                </div>
+                                                <div style={{ fontSize: '0.55rem', fontWeight: 800, color: STAGE_CONFIG[l.stage]?.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100px', textAlign: 'right' }}>
+                                                    {l.stage}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
             )}
 
             {/* ══════════════════════════════════════════════════════

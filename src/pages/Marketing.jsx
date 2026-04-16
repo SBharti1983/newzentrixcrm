@@ -112,107 +112,208 @@ export default function Marketing() {
                 ))}
             </div>
 
-            <div className="grid" style={{ gridTemplateColumns: '1fr 340px', gap: 24 }}>
-                <div style={{ minWidth: 0 }}>
-                    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Campaign Orchestration</h3>
-                            <div className="search-bar" style={{ width: 240 }}>
-                                <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                                <input placeholder="Search campaigns..." value={search} onChange={e => setSearch(e.target.value)} />
-                            </div>
+    return (
+        <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
+            {/* Enterprise Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 12px rgba(16,185,129,0.5)', animation: 'pulse-dialer 2s infinite' }} />
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--slate-500)' }}>Omnichannel Engine Online</span>
+                    </div>
+                    <h1 style={{ fontSize: '2.4rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.03em', margin: 0 }}>Marketing Hub</h1>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--slate-500)', fontWeight: 500, margin: '8px 0 0 0' }}>Orchestrate high-conversion drip sequences and intelligent follow-up loops.</p>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                    <button className="hover-lift" style={{ background: 'white', border: '1px solid #e2e8f0', padding: '12px 24px', borderRadius: '16px', fontWeight: 800, color: 'var(--navy-900)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+                        <Filter size={18} /> Templates
+                    </button>
+                    <button className="hover-lift" onClick={() => setShowCreate(true)} style={{ background: 'linear-gradient(135deg, var(--accent-violet), #6366f1)', border: 'none', padding: '12px 28px', borderRadius: '16px', fontWeight: 800, color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 25px -5px rgba(139,92,246,0.3)' }}>
+                        <Zap size={18} /> New Orchestration
+                    </button>
+                </div>
+            </div>
+
+            {/* Premium Stat Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 32 }}>
+                {stats.map((s, i) => (
+                    <div key={s.label} className="hover-lift" style={{ background: 'linear-gradient(145deg, #ffffff, #f8fafc)', padding: '28px 32px', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px -10px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.03 }}>
+                            {i === 0 ? <Users size={120} /> : i === 1 ? <Play size={120} /> : i === 2 ? <ArrowRight size={120} /> : <Target size={120} />}
                         </div>
-                        <div className="table-wrapper">
-                            <table style={{ margin: 0 }}>
-                                <thead style={{ background: 'var(--slate-50)' }}>
-                                    <tr>
-                                        <th style={{ padding: '16px 24px' }}>Campaign Name</th>
-                                        <th>Config</th>
-                                        <th>Status</th>
-                                        <th>Enrollment</th>
-                                        <th>Steps</th>
-                                        <th>Actions</th>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>{s.label}</div>
+                        <div style={{ fontSize: '2.8rem', fontWeight: 950, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.04em' }}>{s.value}</div>
+                        <div style={{ fontSize: '0.8rem', marginTop: 16, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ padding: '4px 10px', borderRadius: '12px', background: s.change.includes('+') ? '#dcfce7' : '#f1f5f9', color: s.change.includes('+') ? '#059669' : '#475569', fontWeight: 800 }}>{s.change}</span>
+                            <span style={{ color: 'var(--slate-400)' }}>engagement metric</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Split Interface: Sequences Table & Engine Status */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: 32 }}>
+                {/* Orchestrations Table */}
+                <div style={{ background: 'white', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 20px 40px -20px rgba(0,0,0,0.05)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '24px 32px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa' }}>
+                        <div>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)' }}>Active Orchestrations</h3>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--slate-500)', fontWeight: 600, marginTop: 4 }}>Real-time cross-channel marketing flows</div>
+                        </div>
+                        <div style={{ position: 'relative' }}>
+                            <Search size={16} style={{ position: 'absolute', left: 16, top: 14, color: '#94a3b8' }} />
+                            <input 
+                                placeholder="Search campaigns..." 
+                                value={search} 
+                                onChange={e => setSearch(e.target.value)}
+                                style={{ width: 280, height: 44, background: 'white', border: '1px solid #e2e8f0', borderRadius: '14px', paddingLeft: 44, fontSize: '0.85rem', fontWeight: 600, outline: 'none', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}
+                            />
+                        </div>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead style={{ background: 'white' }}>
+                                <tr>
+                                    <th style={{ padding: '20px 32px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sequence Identifier</th>
+                                    <th style={{ padding: '20px 32px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+                                    <th style={{ padding: '20px 32px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Throughput</th>
+                                    <th style={{ padding: '20px 32px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Topology</th>
+                                    <th style={{ padding: '20px 32px', textAlign: 'right', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(drips || []).filter(d => d.name.toLowerCase().includes(search.toLowerCase())).map(c => (
+                                    <tr key={c.id} style={{ borderTop: '1px solid #f1f5f9', transition: 'all 0.2s', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'} onMouseLeave={e => e.currentTarget.style.background = 'white'}>
+                                        <td style={{ padding: '20px 32px' }}>
+                                            <div style={{ fontWeight: 900, fontSize: '1rem', color: 'var(--navy-900)' }}>{c.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--slate-500)', fontWeight: 500, marginTop: 4 }}>{c.description || 'Intelligent continuous drip'}</div>
+                                        </td>
+                                        <td style={{ padding: '20px 32px' }}>
+                                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: c.is_active ? '#dcfce7' : '#f1f5f9', borderRadius: '12px', color: c.is_active ? '#059669' : '#475569', fontSize: '0.75rem', fontWeight: 800 }}>
+                                                {c.is_active && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: 'pulse-dialer 2s infinite' }} />}
+                                                {c.is_active ? 'OPERATIONAL' : 'PAUSED'}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '20px 32px' }}>
+                                            <div style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.9rem' }}>{c.enrolled_count} <span style={{ color: 'var(--slate-400)', fontWeight: 600 }}>Entities</span></div>
+                                        </td>
+                                        <td style={{ padding: '20px 32px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                <div style={{ width: 32, height: 32, borderRadius: '10px', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.8rem' }}>{c.steps_count}</div>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--slate-500)' }}>Nodes</span>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '20px 32px', textAlign: 'right' }}>
+                                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                                <button className="hover-lift" onClick={() => viewAnalytics(c.id)} style={{ width: 40, height: 40, borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                    <BarChart3 size={16} />
+                                                </button>
+                                                <button className="hover-lift" onClick={() => showToast('Campaign cloned to drafts', 'success')} style={{ width: 40, height: 40, borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', color: 'var(--slate-500)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                                                    <Copy size={16} />
+                                                </button>
+                                                <button className="hover-lift" style={{ width: 40, height: 40, borderRadius: '12px', background: '#fef2f2', border: 'none', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {(drips || []).filter(d => d.name.toLowerCase().includes(search.toLowerCase())).map(c => (
-                                        <tr key={c.id}>
-                                            <td style={{ padding: '16px 24px' }}>
-                                                <div style={{ fontWeight: 700, color: 'var(--navy-900)' }}>{c.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{c.description || 'No description'}</div>
-                                            </td>
-                                            <td>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', fontWeight: 600 }}>
-                                                    <Zap size={14} color="var(--accent-amber-dark)" />
-                                                    Multi-Channel
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span className={`badge ${c.is_active ? 'badge-green' : 'badge-slate'}`}>
-                                                    {c.is_active ? 'Active' : 'Paused'}
-                                                </span>
-                                            </td>
-                                            <td style={{ fontWeight: 700 }}>{c.enrolled_count} Leads</td>
-                                            <td style={{ fontWeight: 700, color: 'var(--accent-emerald-dark)' }}>{c.steps_count} Steps</td>
-                                            <td>
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button
-                                                        className="btn btn-ghost btn-sm btn-icon"
-                                                        onClick={() => viewAnalytics(c.id)}
-                                                        disabled={loadingAnlytics}
-                                                    >
-                                                        <BarChart3 size={14} />
-                                                    </button>
-                                                    <button className="btn btn-ghost btn-sm btn-icon" onClick={() => showToast('Campaign cloned', 'success')}><Copy size={14} /></button>
-                                                    <button className="btn btn-ghost btn-sm btn-icon"><Trash2 size={14} /></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {drips?.length === 0 && (
-                                        <tr>
-                                            <td colSpan="6" style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                No campaigns active. Create your first sequence to start automating.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                ))}
+                                {drips?.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" style={{ padding: '60px 40px', textAlign: 'center' }}>
+                                            <div style={{ width: 64, height: 64, borderRadius: '20px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#94a3b8' }}>
+                                                <Zap size={28} />
+                                            </div>
+                                            <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 8px 0' }}>No Orchestrations Running</h3>
+                                            <p style={{ color: 'var(--slate-500)', fontSize: '0.9rem', maxWidth: 400, margin: '0 auto 24px' }}>Build your first intelligent follow-up sequence to start automatically nurturing your pipelines.</p>
+                                            <button className="btn btn-primary" onClick={() => setShowCreate(true)} style={{ padding: '12px 28px', borderRadius: '14px', fontWeight: 800 }}>Create First Sequence</button>
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    <div className="card" style={{ padding: 24 }}>
-                        <h3 style={{ margin: '0 0 20px 0', fontSize: '0.95rem', fontWeight: 800 }}>Marketing Quick Actions</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {[
-                                { label: 'Import Target List', icon: Users, color: 'var(--navy-600)' },
-                                { label: 'Automated Site Visit Follow-up', icon: Calendar, color: 'var(--accent-teal)' },
-                                { label: 'A/B Test Setup', icon: Filter, color: 'var(--accent-cyan-dark)' },
-                            ].map(a => (
-                                <button key={a.label} className="btn btn-ghost" style={{ justifyContent: 'flex-start', padding: '12px 16px', background: 'var(--slate-50)', border: '1px solid var(--border-light)' }}>
-                                    <a.icon size={16} color={a.color} style={{ marginRight: 12 }} />
-                                    <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{a.label}</span>
-                                </button>
-                            ))}
+                {/* Cyberpunk Right Rail */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                    
+                    {/* Action Hub */}
+                    <div style={{ background: 'white', padding: 28, borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 20px 40px -20px rgba(0,0,0,0.05)' }}>
+                        <h3 style={{ margin: '0 0 24px 0', fontSize: '1.1rem', fontWeight: 900, color: 'var(--navy-900)' }}>Quick Launch Hub</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <button className="hover-lift" onClick={() => showToast('Audience lists are populated directly from the Leads Data pipeline. Go to Leads -> Bulk Import to construct your target list.', 'info')} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #f8fafc, #ffffff)', border: '1px solid #e2e8f0', padding: '16px 20px', borderRadius: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '12px', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <Users size={16} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>Inject Target Data</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)', marginTop: 2 }}>Import new lead CSV</div>
+                                </div>
+                            </button>
+                            
+                            <button className="hover-lift" onClick={() => {
+                                setNewDrip({ 
+                                    name: 'Post-Site Visit Automations', 
+                                    description: 'Engage leads immediately after they leave the property', 
+                                    steps: [
+                                        { delay_days: 0, delay_hours: 2, channel: 'WhatsApp', subject: '', body: 'Hi {{name}}, thank you for taking the time to visit the property today! Let me know if you need any additional brochures or pricing sheets.', is_ab_test: false, subject_b: '', body_b: '' },
+                                        { delay_days: 2, delay_hours: 0, channel: 'Email', subject: 'Detailed Floor Plans & Offers', body: 'Hi {{name}},\n\nFollowing up on your visit, I have attached the detailed pricing structure and floor plans we discussed.', is_ab_test: false, subject_b: '', body_b: '' }
+                                    ] 
+                                });
+                                setShowCreate(true);
+                            }} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #f8fafc, #ffffff)', border: '1px solid #e2e8f0', padding: '16px 20px', borderRadius: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '12px', background: '#f0fdf4', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <Calendar size={16} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>Site-Visit Protocol</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)', marginTop: 2 }}>Trigger standard engagement</div>
+                                </div>
+                            </button>
+
+                            <button className="hover-lift" onClick={() => {
+                                setNewDrip({ name: '', description: '', steps: [{ delay_days: 0, delay_hours: 0, channel: 'Email', subject: 'Subject A', body: 'Body A', is_ab_test: true, subject_b: 'Subject B', body_b: 'Body B' }] });
+                                setShowCreate(true);
+                            }} style={{ width: '100%', textAlign: 'left', background: 'linear-gradient(135deg, #f8fafc, #ffffff)', border: '1px solid #e2e8f0', padding: '16px 20px', borderRadius: '16px', display: 'flex', alignItems: 'center', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '12px', background: '#fdf4ff', color: '#d946ef', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
+                                    <Filter size={16} />
+                                </div>
+                                <div>
+                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>A/B Split Test Setup</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)', marginTop: 2 }}>Optimize message variants</div>
+                                </div>
+                            </button>
                         </div>
                     </div>
 
-                    <div className="card" style={{ padding: 24, background: 'var(--navy-900)', color: 'white', border: 'none' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Play size={20} color="var(--accent-teal)" />
+                    {/* Dark Mode Server Node */}
+                    <div style={{ background: 'linear-gradient(180deg, #0f172a, #020617)', padding: 32, borderRadius: '24px', color: 'white', position: 'relative', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ position: 'absolute', right: -40, top: -40, width: 200, height: 200, background: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%)', borderRadius: '50%' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, position: 'relative' }}>
+                            <div style={{ width: 48, height: 48, borderRadius: '16px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(16,185,129,0.3)' }}>
+                                <Play size={20} color="#34d399" />
                             </div>
-                            <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800 }}>Active Automation Pulse</h3>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>Execution Engine</h3>
+                                <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 600, marginTop: 4 }}>NODE: MAIN_DISPATCHER</div>
+                            </div>
                         </div>
-                        <p style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginBottom: 16 }}>
-                            The Drip sequence engine is polling every 60 seconds to process pending outreaches.
+                        <p style={{ fontSize: '0.85rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: 24, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                            The master telemetry node is actively polling databases to execute pending outbound protocols.
                         </p>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 8, fontSize: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span>Engine Status</span>
-                                <span style={{ fontWeight: 800, color: 'var(--accent-teal)' }}>Operational</span>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ping Rate</span>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 900, fontFamily: 'monospace', color: '#34d399' }}>60.0s</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Status</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px rgba(52,211,153,0.8)' }} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'white' }}>NOMINAL</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -450,6 +551,7 @@ export default function Marketing() {
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }

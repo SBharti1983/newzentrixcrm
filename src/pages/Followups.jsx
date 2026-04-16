@@ -255,6 +255,7 @@ export default function Followups() {
 
     const pending = (followups || []).filter(f => f.status === 'Pending').length;
     const completed = (followups || []).filter(f => f.status === 'Completed').length;
+    const overdue = (followups || []).filter(f => f.status === 'Pending' && new Date(f.scheduled_at) < new Date()).length;
     const highPriority = (followups || []).filter(f => f.priority === 'High' && f.status === 'Pending').length;
 
     return (
@@ -276,18 +277,26 @@ export default function Followups() {
                             Follow-Up <span style={{ color: '#fbbf24' }}>Queue</span>
                         </h1>
                         <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
-                            Managing {pending} active threads and {highPriority} critical synchronizations.
+                            Managing {pending} active threads and {overdue} overdue actions.
                         </p>
                     </div>
 
                     {!isMobile && (
-                        <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
                             <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
                                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>PENDING</div>
                             </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>OVERDUE</div>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>DONE</div>
+                            </div>
                             <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '40px' }} />
-                            <button onClick={() => setShowModal(true)} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button onClick={() => setShowModal(true)} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Plus size={18} strokeWidth={3} /> NEW TASK
                             </button>
                         </div>
@@ -305,7 +314,7 @@ export default function Followups() {
                     </button>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-                    {['All', 'Pending', 'Completed', 'Critical', 'Overdue', 'Today', 'Upcoming'].map(s => (
+                    {['All', 'Today', 'Upcoming', 'Overdue', 'Completed'].map(s => (
                         <button key={s} onClick={() => setFilterStatus(s)} style={{
                             padding: '6px 14px', borderRadius: '12px', border: '1px solid',
                             background: filterStatus === s ? 'var(--navy-600)' : 'white',
@@ -421,7 +430,7 @@ export default function Followups() {
                                             <FollowupCard 
                                                 key={f.id} f={f} isCompact isHighValue={isHighValue} leadDetails={lead}
                                                 onToggle={toggle} 
-                                                onDial={dialerEvents.call} onNotify={setNotifyTarget} 
+                                                onDial={(id, phone, name) => dialerEvents.call(id, phone, name)} onNotify={setNotifyTarget} 
                                                 onDownload={downloadSummary} onDelete={deleteFu} 
                                                 onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} 
                                                 onDragStart={e => handleDragStart(e, f.id)}
@@ -451,7 +460,7 @@ export default function Followups() {
                          return (
                             <FollowupCard 
                                 key={f.id} f={f} isHighValue={isHighValue} leadDetails={lead}
-                                onToggle={toggle} onDial={dialerEvents.call} 
+                                onToggle={toggle} onDial={(id, phone, name) => dialerEvents.call(id, phone, name)} 
                                 onNotify={setNotifyTarget} onDownload={downloadSummary} 
                                 onDelete={deleteFu} onPreview={setPreviewLead} 
                                 urgent={isUrgent(f.scheduled_at)} 
@@ -495,7 +504,13 @@ export default function Followups() {
                                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Automation Sequence (Omnichannel)</label>
                                         <select className="form-control" value={form.drip_id} onChange={e => setForm({ ...form, drip_id: e.target.value })}>
                                             <option value="">Select Active Sequence...</option>
-                                            {drips?.map(d => <option key={d.id} value={d.id}>{d.name} ({d.steps_count} Automated Steps)</option>)}
+                                            {(!drips || (Array.isArray(drips) ? drips : drips?.data || []).length === 0) ? (
+                                                <option value="" disabled>No active sequences configured (Go to Marketing)</option>
+                                            ) : (
+                                                (Array.isArray(drips) ? drips : drips?.data || []).map(d => (
+                                                    <option key={d.id} value={d.id}>{d.name} {d.steps_count ? `(${d.steps_count} Automated Steps)` : ''}</option>
+                                                ))
+                                            )}
                                         </select>
                                         <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '12px', border: '1px dashed rgba(99, 102, 241, 0.2)' }}>
                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
@@ -600,6 +615,8 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     const time = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
     const isMobile = useMobile();
+    const score = f.lead_score || leadDetails?.score || 0;
+    const budget = f.lead_budget || leadDetails?.budget;
 
     return (
         <div 
@@ -607,14 +624,18 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
             onDragStart={onDragStart}
             className={`premium-card hover-lift ${isHighValue ? 'shimmer-highvalue' : (urgent && f.status === 'Pending' ? 'shimmer-urgent' : '')}`} 
             style={{
-                padding: isMobile ? '10px 14px' : '12px 18px',
-                display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px',
+                padding: isCompact ? '16px 20px' : (isMobile ? '10px 14px' : '14px 20px'),
+                display: 'flex', 
+                flexDirection: isCompact ? 'column' : 'row',
+                alignItems: isCompact ? 'flex-start' : 'center', 
+                gap: isCompact ? '12px' : 0,
                 background: 'white',
+                minHeight: isCompact ? '110px' : 'auto',
                 opacity: f.status === 'Completed' ? 0.6 : 1,
                 position: 'relative',
                 boxShadow: isHighValue ? '0 0 25px rgba(251, 191, 36, 0.15)' : (urgent && f.status === 'Pending' ? '0 0 15px rgba(244, 63, 94, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'),
                 border: isHighValue ? '2px solid #fbbf24' : (urgent && f.status === 'Pending' ? '1px solid #fecdd3' : (isTeamView ? '1.5px solid #3b82f644' : '1px solid #f1f5f9')),
-                borderRadius: '16px',
+                borderRadius: '24px',
                 cursor: onDragStart ? 'grab' : 'default',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
@@ -634,100 +655,132 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
                 </div>
             )}
 
-            {/* Left: Status Toggle */}
-            <button
-                onClick={() => onToggle(f.id, f.status)}
-                style={{
-                    width: 22, height: 22, borderRadius: '8px', border: '2px solid',
-                    borderColor: f.status === 'Completed' ? '#10b981' : (isHighValue ? '#fbbf24' : (isTeamView ? '#3b82f6' : '#e2e8f0')),
-                    background: f.status === 'Completed' ? '#10b981' : 'white', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                }}
-            >
-                {f.status === 'Completed' && <CheckCircle size={12} color="white" strokeWidth={4} />}
-            </button>
+            {/* Left Column: Status (Only in List View or Absolute in Compact) */}
+            <div style={{ 
+                width: isCompact ? 'auto' : '40px', 
+                flexShrink: 0,
+                position: isCompact ? 'absolute' : 'static', 
+                top: isCompact ? '20px' : 'auto', 
+                right: isCompact ? '20px' : 'auto', 
+                zIndex: 2,
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
+                <button
+                    onClick={() => onToggle(f.id, f.status)}
+                    style={{
+                        width: 22, height: 22, borderRadius: '8px', border: '2px solid',
+                        borderColor: f.status === 'Completed' ? '#10b981' : (isHighValue ? '#fbbf24' : (isTeamView ? '#3b82f6' : '#e2e8f0')),
+                        background: f.status === 'Completed' ? '#10b981' : 'white', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                >
+                    {f.status === 'Completed' && <CheckCircle size={12} color="white" strokeWidth={4} />}
+                </button>
+            </div>
 
-            {/* Middle: Lead Context */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isCompact ? '0' : '24px' }}>
-                <div style={{ minWidth: isCompact ? '0' : '180px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1px' }}>
+            {/* Middle & Right Content */}
+            <div style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: isCompact ? 'column' : 'row', 
+                alignItems: isCompact ? 'flex-start' : 'center',
+                gap: isCompact ? '8px' : '24px',
+                minWidth: 0
+            }}>
+                {/* Lead Info Column */}
+                <div style={{ width: isCompact ? '100%' : '220px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                         <span 
                             onClick={() => onPreview(f.lead_id || f.leadId)} 
                             onMouseEnter={(e) => onHover(e, leadDetails)}
                             onMouseLeave={() => onHover(null)}
-                            style={{ fontWeight: 950, fontSize: '0.95rem', cursor: 'pointer', color: '#0f172a' }} 
+                            style={{ fontWeight: 950, fontSize: isCompact ? '1rem' : '0.95rem', cursor: 'pointer', color: '#0f172a' }} 
                             className="hover-underline"
                         >
                             {f.lead_name || f.leadName}
                         </span>
                         <div style={{ display: 'flex', gap: '4px' }}>
-                            {f.lead_score && <span style={{ padding: '2px 6px', borderRadius: '6px', background: f.lead_score > 80 ? '#ecfdf5' : '#f8fafc', color: f.lead_score > 80 ? '#059669' : '#64748b', fontSize: '0.6rem', fontWeight: 900, border: f.lead_score > 80 ? '1px solid #10b98122' : '1px solid #e2e8f0' }}>{f.lead_score}%</span>}
-                            {leadDetails?.budget && <span style={{ padding: '2px 6px', borderRadius: '6px', background: isHighValue ? '#fff7ed' : '#f8fafc', color: isHighValue ? '#d97706' : '#64748b', fontSize: '0.6rem', fontWeight: 900, border: isHighValue ? '1px solid #fbbf2444' : '1px solid #e2e8f0' }}>₹{leadDetails.budget}</span>}
+                            {score > 0 && <span style={{ padding: '2px 6px', borderRadius: '6px', background: score > 80 ? '#ecfdf5' : '#f8fafc', color: score > 80 ? '#059669' : '#64748b', fontSize: '10px', fontWeight: 900, border: score > 80 ? '1px solid #10b98122' : '1px solid #e2e8f0' }}>{score}%</span>}
+                            {budget && <span style={{ padding: '2px 6px', borderRadius: '6px', background: isHighValue ? '#fff7ed' : '#f1f5f9', color: isHighValue ? '#d97706' : '#64748b', fontSize: '10px', fontWeight: 900, border: isHighValue ? '1px solid #fbbf2444' : '1px solid #e2e8f0' }}>₹{budget}</span>}
                         </div>
                     </div>
                     {isCompact && (
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {f.notes || 'No notes shared yet...'}
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                            <Calendar size={12} color={isHighValue ? "#fbbf24" : "#94a3b8"} /> {day} · {time}
                         </div>
                     )}
                 </div>
 
-                {!isCompact && !isMobile && (
-                    <>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>ORCHESTRATION NOTES</div>
-                            <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {f.notes || 'Awaiting task briefing...'}
-                            </div>
-                        </div>
-                        <div style={{ width: '130px', flexShrink: 0 }}>
-                            {isTeamView ? (
-                                <>
-                                    <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RE-ASSIGN TO</div>
-                                    <select 
-                                        className="form-control" 
-                                        style={{ height: '24px', padding: '0 4px', fontSize: '0.7rem', fontWeight: 700, borderRadius: '6px', border: '1px solid #bfdbfe' }}
-                                        value={f.assigned_to}
-                                        onChange={(e) => onReassign(f.id, e.target.value)}
-                                    >
-                                        {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                                    </select>
-                                </>
-                            ) : (
-                                <>
-                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>OWNER</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: isHighValue ? '#fbbf24' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 950, color: isHighValue ? 'white' : '#64748b' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
-                                        {f.assigned_name || 'System Auto'}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </>
-                )}
-            </div>
-
-            {/* Right: Date, Time & Quick Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 950, color: '#0f172a' }}>
-                        <Calendar size={13} color={isHighValue ? "#fbbf24" : "#94a3b8"} /> {day}
+                {/* Notes Column */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>ORCHESTRATION NOTES</div>
+                    <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {f.notes || (isCompact ? 'No briefing shared yet...' : 'Awaiting task briefing...')}
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '6px' }}>
+                {/* Owner Column (Only in List View) */}
+                {!isCompact && !isMobile && (
+                    <div style={{ width: '150px', flexShrink: 0, marginRight: '100px' }}>
+                        {isTeamView ? (
+                            <>
+                                <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RE-ASSIGN TO</div>
+                                <select 
+                                    className="form-control" 
+                                    style={{ height: '24px', padding: '0 4px', fontSize: '0.7rem', fontWeight: 700, borderRadius: '6px', border: '1px solid #bfdbfe' }}
+                                    value={f.assigned_to}
+                                    onChange={(e) => onReassign(f.id, e.target.value)}
+                                >
+                                    {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                </select>
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>OWNER</div>
+                                <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: isHighValue ? '#fbbf24' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 950, color: isHighValue ? 'white' : '#64748b' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.assigned_name || 'System Auto'}</span>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Right Column: Actions */}
+            <div style={{ 
+                width: isCompact ? '100%' : '120px', 
+                flexShrink: 0,
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'flex-end',
+                gap: '12px', 
+                marginTop: isCompact ? '12px' : '0',
+                paddingTop: isCompact ? '12px' : '0',
+                borderTop: isCompact ? '1px solid #f1f5f9' : 'none'
+            }}>
+                {!isCompact && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 950, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                            <Calendar size={13} color={isHighValue ? "#fbbf24" : "#94a3b8"} /> {day}
+                        </div>
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '8px' }}>
                     {f.status !== 'Completed' ? (
                         <>
-                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id, f.lead_phone, f.lead_name)} style={{ background: '#0f172a', color: 'white', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>
-                                <Phone size={15} />
+                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id || f.leadId, f.lead_phone || leadDetails?.phone, f.lead_name || f.leadName)} style={{ background: '#0f172a', color: 'white', width: '40px', height: '40px', borderRadius: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Phone size={18} />
                             </button>
-                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id, name: f.lead_name })} style={{ background: '#10b981', color: 'white', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>
-                                <Send size={15} />
+                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: f.lead_phone || leadDetails?.phone })} style={{ background: '#10b981', color: 'white', width: '40px', height: '40px', borderRadius: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Send size={18} />
                             </button>
                         </>
                     ) : (
-                        <button className="icon-btn-sm" onClick={() => onDelete(f.id)} style={{ background: '#fee2e2', color: '#f43f5e', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>
-                            <X size={15} />
+                        <button className="icon-btn-sm" onClick={() => onDelete(f.id)} style={{ background: '#fee2e2', color: '#f43f5e', width: '40px', height: '40px', borderRadius: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <X size={18} />
                         </button>
                     )}
                 </div>
