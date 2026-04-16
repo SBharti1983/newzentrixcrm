@@ -95,19 +95,20 @@ export default function Followups() {
     }).sort((a, b) => {
         if (!a || !b) return 0;
         if (sortMode === 'score') {
-            return (b.lead_score || 0) - (a.lead_score || 0);
+            const getScore = (f) => f.lead_score || leadMap[f.lead_id]?.score || 0;
+            return getScore(b) - getScore(a);
         }
         if (sortMode === 'value') {
-            const getVal = (id) => {
-                const lead = leadMap[id];
-                if (!lead || !lead.budget) return 0;
-                // Parse budget string (e.g., "50 L" or "5000000")
-                const numeric = parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0;
-                if (String(lead.budget).toUpperCase().includes('L')) return numeric * 100000;
-                if (String(lead.budget).toUpperCase().includes('CR')) return numeric * 10000000;
+            const getVal = (f) => {
+                const lead = leadMap[f.lead_id];
+                const budget = f.lead_budget || lead?.budget;
+                if (!budget) return 0;
+                const numeric = parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0;
+                if (String(budget).toUpperCase().includes('L')) return numeric * 100000;
+                if (String(budget).toUpperCase().includes('CR')) return numeric * 10000000;
                 return numeric;
             };
-            return getVal(b.lead_id) - getVal(a.lead_id);
+            return getVal(b) - getVal(a);
         }
         return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
     });
@@ -303,30 +304,34 @@ export default function Followups() {
                         <LayoutGrid size={14} /> KANBAN
                     </button>
                 </div>
-                <select className="form-control" style={{ width: 160, border: 'none', background: 'transparent', fontWeight: 800, fontSize: '0.75rem' }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                    <option value="All">All Statuses</option>
-                    <option value="Critical">🚨 Critical</option>
-                    <option value="Overdue">🕒 Overdue</option>
-                    <option value="Today">📅 Today</option>
-                    <option value="Upcoming">🚀 Upcoming</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Completed">Completed</option>
-                </select>
-                <select className="form-control" style={{ width: 180, border: 'none', background: 'transparent', fontWeight: 800, fontSize: '0.75rem' }} value={filterAgent} onChange={e => setFilterAgent(e.target.value)}>
-                    <option value="All">All Agents</option>
-                    {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                </select>
-
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                    {['All', 'Pending', 'Completed', 'Critical', 'Overdue', 'Today', 'Upcoming'].map(s => (
+                        <button key={s} onClick={() => setFilterStatus(s)} style={{
+                            padding: '6px 14px', borderRadius: '12px', border: '1px solid',
+                            background: filterStatus === s ? 'var(--navy-600)' : 'white',
+                            color: filterStatus === s ? 'white' : 'var(--slate-600)',
+                            borderColor: filterStatus === s ? 'var(--navy-600)' : 'var(--border-medium)',
+                            fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s'
+                        }}>{s}</button>
+                    ))}
+                </div>
                 {canManageTeam && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
-                        <div 
-                            onClick={() => setIsTeamView(!isTeamView)}
-                            style={{ width: '32px', height: '18px', background: isTeamView ? '#3b82f6' : '#cbd5e1', borderRadius: '20px', cursor: 'pointer', position: 'relative', transition: 'all 0.3s' }}
-                        >
-                            <div style={{ position: 'absolute', top: '2px', left: isTeamView ? '16px' : '2px', width: '14px', height: '14px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
+                    <>
+                        <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
+                            style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '7px 12px', borderRadius: '12px' }}>
+                            <option value="All">All Agents</option>
+                            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9' }}>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
+                            <div 
+                                onClick={() => setIsTeamView(!isTeamView)}
+                                style={{ width: '32px', height: '18px', background: isTeamView ? '#3b82f6' : '#cbd5e1', borderRadius: '20px', cursor: 'pointer', position: 'relative', transition: 'all 0.3s' }}
+                            >
+                                <div style={{ position: 'absolute', top: '2px', left: isTeamView ? '16px' : '2px', width: '14px', height: '14px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
+                            </div>
                         </div>
-                    </div>
+                    </>
                 )}
 
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
@@ -404,11 +409,13 @@ export default function Followups() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     {items.map(f => {
                                         const lead = leadMap[f.lead_id];
-                                        const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
-                                        const isCr = String(lead?.budget).toUpperCase().includes('CR');
-                                        const isL = String(lead?.budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
+                                        const budget = f.lead_budget || lead?.budget;
+                                        const score = f.lead_score || lead?.score || 0;
+                                        const budgetVal = budget ? (parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0) : 0;
+                                        const isCr = String(budget).toUpperCase().includes('CR');
+                                        const isL = String(budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
                                         const absoluteValue = isCr ? budgetVal * 10000000 : (isL ? budgetVal * 100000 : budgetVal);
-                                        const isHighValue = (f.lead_score > 85 || absoluteValue >= 5000000);
+                                        const isHighValue = (score > 85 || absoluteValue >= 5000000);
 
                                         return (
                                             <FollowupCard 
