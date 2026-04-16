@@ -5,8 +5,9 @@ import { followupsApi, leadsApi, usersApi, marketingApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { 
     Plus, X, CheckCircle, Clock, AlertCircle, Calendar, Send, Phone, FileText, 
-    LayoutGrid, List, Sparkles, Zap, TrendingUp, ShieldCheck, Filter, ChevronRight, BarChart2, History
+    LayoutGrid, List, Sparkles, Zap, TrendingUp, ShieldCheck, Filter, ChevronRight, BarChart2, History, Users
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import { dialerEvents } from '../constants/events';
 import NotificationComposer from '../components/NotificationComposer';
 import { useMobile } from '../hooks/useMobile';
@@ -46,6 +47,9 @@ export default function Followups() {
     const [saving, setSaving] = useState(false);
     const [previewLead, setPreviewLead] = useState(null);
     const [hoverContext, setHoverContext] = useState(null); // { x, y, lead }
+    const [isTeamView, setIsTeamView] = useState(false);
+    const { user } = useAuth();
+    const canManageTeam = user?.role === 'admin' || user?.role === 'sales_manager';
 
     const handleHover = (e, lead) => {
         if (!lead) {
@@ -81,6 +85,12 @@ export default function Followups() {
         else if (filterStatus === 'Upcoming') ms = isUpcomingDate;
         
         const ma = filterAgent === 'All' || String(f.assigned_to) === filterAgent;
+        
+        if (isTeamView) {
+            // Team mode focuses on Overdue/Urgent tasks across all agents
+            return (isOverdueVal || isUrgentVal) && ma;
+        }
+
         return ms && ma;
     }).sort((a, b) => {
         if (!a || !b) return 0;
@@ -229,6 +239,16 @@ export default function Followups() {
         }
     };
 
+    const reassign = async (taskId, newAgentId) => {
+        try {
+            await followupsApi.update(taskId, { assigned_to: newAgentId });
+            showToast('Task re-assigned successfully', 'success');
+            refetch();
+        } catch {
+            showToast('Re-assignment failed', 'error');
+        }
+    };
+
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
 
@@ -296,6 +316,19 @@ export default function Followups() {
                     <option value="All">All Agents</option>
                     {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
+
+                {canManageTeam && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9' }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
+                        <div 
+                            onClick={() => setIsTeamView(!isTeamView)}
+                            style={{ width: '32px', height: '18px', background: isTeamView ? '#3b82f6' : '#cbd5e1', borderRadius: '20px', cursor: 'pointer', position: 'relative', transition: 'all 0.3s' }}
+                        >
+                            <div style={{ position: 'absolute', top: '2px', left: isTeamView ? '16px' : '2px', width: '14px', height: '14px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
+                        </div>
+                    </div>
+                )}
+
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
                     <button 
                         onClick={() => {
@@ -386,6 +419,9 @@ export default function Followups() {
                                                 onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} 
                                                 onDragStart={e => handleDragStart(e, f.id)}
                                                 onHover={handleHover}
+                                                isTeamView={isTeamView}
+                                                agents={agents}
+                                                onReassign={reassign}
                                             />
                                         );
                                     })}
@@ -413,6 +449,9 @@ export default function Followups() {
                                 onDelete={deleteFu} onPreview={setPreviewLead} 
                                 urgent={isUrgent(f.scheduled_at)} 
                                 onHover={handleHover}
+                                isTeamView={isTeamView}
+                                agents={agents}
+                                onReassign={reassign}
                             />
                          );
                     })}
@@ -548,7 +587,7 @@ function QuickViewTooltip({ context }) {
     );
 }
 
-function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart, onHover }) {
+function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart, onHover, isTeamView, agents, onReassign }) {
     if (!f) return null;
     const date = new Date(f.scheduled_at || Date.now());
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
@@ -567,7 +606,7 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
                 opacity: f.status === 'Completed' ? 0.6 : 1,
                 position: 'relative',
                 boxShadow: isHighValue ? '0 0 25px rgba(251, 191, 36, 0.15)' : (urgent && f.status === 'Pending' ? '0 0 15px rgba(244, 63, 94, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'),
-                border: isHighValue ? '2px solid #fbbf24' : (urgent && f.status === 'Pending' ? '1px solid #fecdd3' : '1px solid #f1f5f9'),
+                border: isHighValue ? '2px solid #fbbf24' : (urgent && f.status === 'Pending' ? '1px solid #fecdd3' : (isTeamView ? '1.5px solid #3b82f644' : '1px solid #f1f5f9')),
                 borderRadius: '16px',
                 cursor: onDragStart ? 'grab' : 'default',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -577,13 +616,13 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
             <div style={{
                 position: 'absolute', top: '8px', right: '8px',
                 width: '6px', height: '6px', borderRadius: '50%',
-                background: isHighValue ? '#fbbf24' : '#10b981', 
-                boxShadow: isHighValue ? '0 0 10px #fbbf24' : '0 0 8px rgba(16, 185, 129, 0.6)'
+                background: isHighValue ? '#fbbf24' : (isTeamView ? '#3b82f6' : '#10b981'), 
+                boxShadow: isHighValue ? '0 0 10px #fbbf24' : (isTeamView ? '0 0 10px #3b82f6' : '0 0 8px rgba(16, 185, 129, 0.6)')
             }} />
 
             {/* High Value Label */}
             {isHighValue && (
-                <div style={{ position: 'absolute', top: '-10px', left: '20px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: 'white', fontSize: '10px', fontWeight: 950, padding: '2px 8px', borderRadius: '20px', boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)', letterSpacing: '0.05em' }}>
+                <div style={{ position: 'absolute', top: '-10px', left: '20px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: 'white', fontSize: '10px', fontWeight: 950, padding: '2px 8px', borderRadius: '20px', boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)', letterSpacing: '0.05em', zIndex: 1 }}>
                     HIGH ROI OPPORTUNITY
                 </div>
             )}
@@ -593,7 +632,7 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
                 onClick={() => onToggle(f.id, f.status)}
                 style={{
                     width: 22, height: 22, borderRadius: '8px', border: '2px solid',
-                    borderColor: f.status === 'Completed' ? '#10b981' : (isHighValue ? '#fbbf24' : '#e2e8f0'),
+                    borderColor: f.status === 'Completed' ? '#10b981' : (isHighValue ? '#fbbf24' : (isTeamView ? '#3b82f6' : '#e2e8f0')),
                     background: f.status === 'Completed' ? '#10b981' : 'white', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}
@@ -635,11 +674,27 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
                             </div>
                         </div>
                         <div style={{ width: '130px', flexShrink: 0 }}>
-                            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>OWNER</div>
-                            <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: isHighValue ? '#fbbf24' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 950, color: isHighValue ? 'white' : '#64748b' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
-                                {f.assigned_name || 'System Auto'}
-                            </div>
+                            {isTeamView ? (
+                                <>
+                                    <div style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>RE-ASSIGN TO</div>
+                                    <select 
+                                        className="form-control" 
+                                        style={{ height: '24px', padding: '0 4px', fontSize: '0.7rem', fontWeight: 700, borderRadius: '6px', border: '1px solid #bfdbfe' }}
+                                        value={f.assigned_to}
+                                        onChange={(e) => onReassign(f.id, e.target.value)}
+                                    >
+                                        {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                    </select>
+                                </>
+                            ) : (
+                                <>
+                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>OWNER</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: isHighValue ? '#fbbf24' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 950, color: isHighValue ? 'white' : '#64748b' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
+                                        {f.assigned_name || 'System Auto'}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </>
                 )}
