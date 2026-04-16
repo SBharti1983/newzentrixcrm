@@ -250,14 +250,15 @@ export default function Followups() {
             {viewMode === 'kanban' ? (
                 <div style={{ 
                     display: 'flex', 
-                    gap: '20px', 
-                    overflowX: 'auto', 
-                    paddingBottom: '32px',
-                    paddingRight: '40px',
-                    marginRight: isMobile ? '-20px' : '-40px',
+                    gap: isMobile ? '20px' : '16px', 
+                    overflowX: isMobile ? 'auto' : 'hidden', 
+                    paddingBottom: isMobile ? '32px' : '0',
+                    paddingRight: isMobile ? '40px' : '0',
+                    marginRight: isMobile ? '-20px' : '0',
                     marginLeft: isMobile ? '-20px' : '0',
                     paddingLeft: isMobile ? '20px' : '0',
-                    scrollbarWidth: 'thin'
+                    scrollbarWidth: 'none',
+                    width: '100%'
                 }}>
                     {['Overdue', 'Today', 'Upcoming', 'Completed'].map(col => {
                         const items = (filtered || []).filter(f => {
@@ -276,11 +277,12 @@ export default function Followups() {
                                 onDrop={e => handleDrop(e, col)}
                                 style={{ 
                                     background: '#f8fafc', 
-                                    padding: '12px', 
+                                    padding: isMobile ? '12px' : '8px', 
                                     borderRadius: '24px', 
                                     border: '1px solid #f1f5f9',
-                                    minWidth: isMobile ? '85vw' : '320px',
-                                    flexShrink: 0
+                                    minWidth: isMobile ? '85vw' : '0',
+                                    flex: isMobile ? '0 0 auto' : '1',
+                                    flexShrink: isMobile ? 0 : 1
                                 }}
                             >
                                 <h3 style={{ 
@@ -311,7 +313,7 @@ export default function Followups() {
                             </div>
                         );
                     })}
-                    <div style={{ minWidth: isMobile ? '20px' : '40px', flexShrink: 0 }} />
+                    {isMobile && <div style={{ minWidth: '20px', flexShrink: 0 }} />}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -348,6 +350,7 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
     const date = new Date(f.scheduled_at);
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     const time = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+    const isMobile = useMobile();
 
     return (
         <div 
@@ -355,8 +358,8 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
             onDragStart={onDragStart}
             className={`premium-card hover-lift ${urgent && f.status === 'Pending' ? 'shimmer-urgent' : ''}`} 
             style={{
-                padding: '12px 18px',
-                display: 'flex', alignItems: 'center', gap: '14px',
+                padding: isMobile ? '10px 14px' : '12px 18px',
+                display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px',
                 background: 'white',
                 opacity: f.status === 'Completed' ? 0.6 : 1,
                 position: 'relative',
@@ -430,20 +433,22 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
 
 function LeadContextDrawer({ id, onClose, onDial }) {
     const { data: lead, loading } = useApi(() => leadsApi.get(id));
+    const isMobile = useMobile();
     if (loading || !lead) return null;
 
     return (
-        <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
+        <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000 }}>
             <div className="modal" onClick={e => e.stopPropagation()} style={{ 
-                width: '480px', 
-                borderRadius: '32px', 
+                width: isMobile ? 'calc(100% - 24px)' : '480px', 
+                borderRadius: isMobile ? '28px' : '32px', 
                 position: 'fixed',
-                right: '40px',
+                right: isMobile ? '12px' : '40px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
                 maxHeight: '90vh',
-                overflowY: 'auto'
+                overflowY: 'auto',
+                margin: isMobile ? '0 auto' : '0'
             }}>
                 <button 
                     onClick={onClose} 
