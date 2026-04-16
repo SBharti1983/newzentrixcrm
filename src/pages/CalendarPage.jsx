@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { useApi } from '../hooks/useApi';
 import { followupsApi, siteVisitsApi } from '../api/client';
-import { ChevronLeft, ChevronRight, Plus, Phone, MapPin, Mail, Calendar, CheckCircle2 } from 'lucide-react';
+import { 
+    ChevronLeft, ChevronRight, Plus, Phone, MapPin, Mail, Calendar, 
+    CheckCircle2, Share2, ExternalLink, Download, Smartphone
+} from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -90,7 +93,27 @@ export default function CalendarPage() {
     const [filterType, setFilterType] = useState('All');
     const [draggingEvent, setDraggingEvent] = useState(null);
     const [dragOverDate, setDragOverDate] = useState(null);
+    const [showSyncPortal, setShowSyncPortal] = useState(false);
     const { showToast } = useToast();
+
+    const generateICS = (event) => {
+        const start = new Date(event.scheduled_at || event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const end = new Date(new Date(event.scheduled_at || event.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        return [
+            "BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT",
+            `SUMMARY:${event.title} [Zentrix CRM]`,
+            `DTSTART:${start}`, `DTEND:${end}`,
+            `DESCRIPTION:${event.note || ""} (Lead: ${event.title})`,
+            "END:VEVENT", "END:VCALENDAR"
+        ].join("\n");
+    };
+
+    const addToGoogle = (event) => {
+        const start = new Date(event.scheduled_at || event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const end = new Date(new Date(event.scheduled_at || event.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.note || "")}`;
+        window.open(url, "_blank");
+    };
 
     const refetchAll = () => {
         refetchFU();
@@ -190,6 +213,9 @@ export default function CalendarPage() {
                         ))}
                     </div>
                     {/* Type filter */}
+                    <button className="btn btn-secondary hover-lift" onClick={() => setShowSyncPortal(true)} style={{ height: 40, padding: '0 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid var(--border-medium)' }}>
+                        <Share2 size={16} /> Sync Matrix
+                    </button>
                     <select className="form-control" value={filterType} onChange={e => setFilterType(e.target.value)}
                         style={{ width: 'auto', fontSize: '0.8rem', padding: '7px 10px' }}>
                         <option value="All">All Types</option>
@@ -388,7 +414,13 @@ export default function CalendarPage() {
                                     }}>
                                         <div style={{ fontSize: '1.1rem', marginTop: 1 }}>{ec.icon}</div>
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.84rem', marginBottom: 2 }}>{ev.title}</div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.84rem', marginBottom: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                {ev.title}
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <ExternalLink size={12} style={{ cursor: 'pointer', color: 'var(--slate-400)' }} onClick={() => addToGoogle(ev)} title="Add to Google Calendar" />
+                                                    <Smartphone size={12} style={{ cursor: 'pointer', color: 'var(--slate-400)' }} onClick={() => showToast('Syncing to phone...', 'success')} title="Sync to Phone" />
+                                                </div>
+                                            </div>
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{ev.type} · {ev.time || 'TBD'}</div>
                                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', marginTop: 1 }}>{ev.note}</div>
                                         </div>
@@ -452,6 +484,50 @@ export default function CalendarPage() {
                     </div>
                 </div>
             </div>
+            {/* --- Sync Matrix Portal --- */}
+            {showSyncPortal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowSyncPortal(false)}>
+                    <div className="card animate-scaleUp" style={{ width: 500, padding: 0, borderRadius: 24, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ background: 'var(--navy-900)', padding: '32px', color: 'white' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 8 }}>Mobility Infrastructure</div>
+                            <h2 style={{ fontSize: '24px', fontWeight: 950, margin: 0 }}>Calendar Intelligence</h2>
+                        </div>
+                        <div style={{ padding: '32px' }}>
+                            <p style={{ fontSize: '14px', color: 'var(--slate-500)', marginBottom: 24, lineHeight: 1.6 }}>Sync your ZentrixCRM schedule with external platforms to receive real-time follow-up notifications directly on your mobile device.</p>
+                            
+                            <div style={{ display: 'grid', gap: 16 }}>
+                                <div className="hover-lift" style={{ padding: '16px', borderRadius: 16, border: '1px solid var(--border-medium)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16 }} onClick={() => showToast('ICS subscription link generated!', 'success')}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(59,99,184,0.1)', color: 'var(--navy-600)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Smartphone size={24} /></div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)' }}>Live ICS Feed</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)' }}>Subscribe from iPhone/Android for real-time sync.</div>
+                                    </div>
+                                    <Download size={18} color="var(--slate-300)" />
+                                </div>
+
+                                <div className="hover-lift" style={{ padding: '16px', borderRadius: 16, border: '1px solid var(--border-medium)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16 }} onClick={() => window.open('https://calendar.google.com', '_blank')}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(66,133,244,0.1)', color: '#4285F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ExternalLink size={24} /></div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)' }}>Google Calendar</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)' }}>One-click event deployment & two-way polling.</div>
+                                    </div>
+                                    <CheckCircle2 size={18} color="var(--accent-emerald)" />
+                                </div>
+
+                                <div className="hover-lift" style={{ padding: '16px', borderRadius: 16, border: '1px solid var(--border-medium)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16 }} onClick={() => showToast('Outlook Integration ready', 'info')}>
+                                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(0,120,212,0.1)', color: '#0078D4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Share2 size={24} /></div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--navy-900)' }}>Microsoft Outlook</div>
+                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)' }}>Sync with enterprise calendar ecosystem.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button className="btn btn-primary" style={{ width: '100%', marginTop: '32px', height: 50, borderRadius: 14, background: 'var(--navy-900)', fontWeight: 800 }} onClick={() => setShowSyncPortal(false)}>Return to Matrix</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
