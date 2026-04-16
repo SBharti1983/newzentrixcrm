@@ -40,6 +40,7 @@ export default function Followups() {
 
 
     const filtered = (followups || []).filter(f => {
+        if (!f || !f.scheduled_at) return false;
         const now = new Date();
         const scheduledDate = new Date(f.scheduled_at);
         const isToday = scheduledDate.toDateString() === now.toDateString();
@@ -59,10 +60,11 @@ export default function Followups() {
         const ma = filterAgent === 'All' || String(f.assigned_to) === filterAgent;
         return ms && ma;
     }).sort((a, b) => {
+        if (!a || !b) return 0;
         if (sortMode === 'score') {
             return (b.lead_score || 0) - (a.lead_score || 0);
         }
-        return new Date(a.scheduled_at) - new Date(b.scheduled_at);
+        return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
     });
 
     const toggle = async (id, currentStatus) => {
@@ -326,7 +328,7 @@ export default function Followups() {
                     <div className="modal" onClick={e => e.stopPropagation()}>
                         <div className="modal-header"><h3>Schedule Follow-Up</h3></div>
                         <div className="modal-body">
-                            <select className="form-control" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}><option value="">Select Lead...</option>{allLeads?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
+                            <select className="form-control" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}><option value="">Select Lead...</option>{(allLeads?.data || allLeads)?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
                             <input type="datetime-local" className="form-control mt-2" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} />
                             <textarea className="form-control mt-2" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes..."></textarea>
                         </div>
@@ -347,7 +349,8 @@ export default function Followups() {
 }
 
 function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart }) {
-    const date = new Date(f.scheduled_at);
+    if (!f) return null;
+    const date = new Date(f.scheduled_at || Date.now());
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     const time = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
     const isMobile = useMobile();
@@ -432,9 +435,10 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
 }
 
 function LeadContextDrawer({ id, onClose, onDial }) {
-    const { data: lead, loading } = useApi(() => leadsApi.get(id));
+    const { data: lead, loading } = useApi(() => id ? leadsApi.get(id) : null);
     const isMobile = useMobile();
-    if (loading || !lead) return null;
+    if (loading) return <div style={{ position: 'fixed', right: '40px', top: '50%', transform: 'translateY(-50%)', background: 'white', padding: '40px', borderRadius: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>Loading Context...</div>;
+    if (!lead || !id) return null;
 
     return (
         <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000 }}>
@@ -464,10 +468,10 @@ function LeadContextDrawer({ id, onClose, onDial }) {
 
                 <div className="modal-header" style={{ padding: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{ width: 64, height: 64, borderRadius: '24px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 900 }}>{lead.name?.charAt(0)}</div>
+                        <div style={{ width: 64, height: 64, borderRadius: '24px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 900 }}>{lead?.name?.charAt(0) || '?'}</div>
                         <div>
-                            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950 }}>{lead.name}</h2>
-                            <span className="badge badge-blue" style={{ fontSize: '0.65rem' }}>{lead.stage} STAGE</span>
+                            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 950 }}>{lead?.name || 'Unknown Lead'}</h2>
+                            <span className="badge badge-blue" style={{ fontSize: '0.65rem' }}>{lead?.stage || 'PROSPECT'} STAGE</span>
                         </div>
                     </div>
                 </div>
@@ -476,29 +480,29 @@ function LeadContextDrawer({ id, onClose, onDial }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                             <div>
                                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>LEAD SCORE</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: lead.score > 70 ? '#10b981' : '#f43f5e' }}>{lead.score || 0}%</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: (lead?.score || 0) > 70 ? '#10b981' : '#f43f5e' }}>{lead?.score || 0}%</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8' }}>BUDGET</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 950 }}>₹{lead.budget || 'N/A'}</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 950 }}>₹{lead?.budget || 'N/A'}</div>
                             </div>
                         </div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Project: {lead.project_name || 'General Inquiry'}</div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>Project: {lead?.project_name || 'General Inquiry'}</div>
                     </div>
 
                     <div style={{ marginBottom: '24px' }}>
                         <h4 style={{ fontSize: '0.75rem', fontWeight: 900, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}><History size={14} /> RECENT HISTORY</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {(lead.interactions || []).slice(0, 3).map((it, i) => (
+                            {(lead?.interactions || []).slice(0, 3).map((it, i) => (
                                 <div key={i} style={{ padding: '12px', background: '#f8fafc', borderRadius: '12px', borderLeft: '3px solid #e2e8f0' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 900 }}>{it.type}</div>
-                                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{it.note}</div>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900 }}>{it?.type || 'Interaction'}</div>
+                                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{it?.note || 'No notes...'}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <button className="btn btn-primary" onClick={() => onDial(lead.id, lead.phone, lead.name)} style={{ width: '100%', height: '56px', borderRadius: '20px', fontSize: '1rem', fontWeight: 900, gap: '12px' }}>
+                    <button className="btn btn-primary" onClick={() => onDial(lead?.id, lead?.phone, lead?.name)} style={{ width: '100%', height: '56px', borderRadius: '20px', fontSize: '1rem', fontWeight: 900, gap: '12px' }}>
                         <Phone size={20} /> CALL NOW
                     </button>
                 </div>
