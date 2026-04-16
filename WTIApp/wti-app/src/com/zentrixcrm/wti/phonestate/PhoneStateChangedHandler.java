@@ -10,7 +10,6 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import com.zentrixcrm.wti.CallDispositionActivity;
 import com.zentrixcrm.wti.R;
 import com.zentrixcrm.wti.firebase.FirebaseService;
 import com.zentrixcrm.wti.log.UserLogService;
@@ -87,11 +86,12 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
 
         if (isIncoming) {
             userLogService.log("Incoming Call Answered: " + lastNumber);
+            firebaseService.sendIncomingCallStatus(lastNumber, "active");
         } else {
             userLogService.log("Outgoing Call: " + lastNumber);
         }
         callStartTime = System.currentTimeMillis();
-        firebaseService.sendIncomingCall(null);
+        // firebaseService.sendIncomingCall(null); // REMOVED - Preventing premature end signal
         
         if (isRecordingEnabled()) {
             userLogService.log("Starting recorder for: " + (lastNumber.isEmpty() ? "Unknown" : lastNumber));
@@ -124,11 +124,6 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
                     mainHandler.postDelayed(() -> {
                         firebaseService.scheduleSync();
                     }, 1500);
-
-                    Intent intent = new Intent(context, CallDispositionActivity.class);
-                    intent.putExtra(CallDispositionActivity.EXTRA_NUMBER, currentLastNumber);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    context.startActivity(intent);
                 } else {
                     userLogService.log("Call too short - discarding.");
                     if (recordingPath != null) {
@@ -153,8 +148,8 @@ public class PhoneStateChangedHandler extends PhoneStateListener {
     }
 
     private boolean isRecordingEnabled() {
-        return context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE)
-                .getBoolean("recording_enabled", true);
+        // Force recording to false as per user request to remove recording functionality
+        return false;
     }
 
     private int getActiveSimSlot() {

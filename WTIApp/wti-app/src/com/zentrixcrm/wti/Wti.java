@@ -13,12 +13,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.telecom.TelecomManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -33,15 +35,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.switchmaterial.SwitchMaterial;
-import com.zentrixcrm.wti.database.AppDatabase;
+import com.zentrixcrm.wti.database.CallRepository;
 import com.zentrixcrm.wti.firebase.FirebaseService;
 import com.zentrixcrm.wti.firebase.SyncWorker;
 import com.zentrixcrm.wti.log.UserLogService;
 import com.zentrixcrm.wti.recording.CallAccessibilityService;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -51,10 +56,11 @@ public class Wti extends AppCompatActivity {
 
     private static final String PREFS_NAME = "ZentrixPrefs";
     private static final int PERMISSION_REQUEST_CODE = 100;
-    private static final int DEFAULT_DIALER_REQUEST_CODE = 101;
     private static final int BATTERY_OPTIMIZATION_REQUEST_CODE = 102;
     private static final String DEFAULT_URL = "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app/";
+    private static final String DEFAULT_STORAGE_SERVER = "https://zentrixcrmindia-production.up.railway.app";
     private static final String KEY_PREFERRED_SIM_SLOT = "preferred_sim_slot";
+    private static final String KEY_ONBOARDING_COMPLETE = "onboarding_complete";
 
     private TelephonyManager telephonyManager;
 
@@ -62,9 +68,10 @@ public class Wti extends AppCompatActivity {
     private TextView txtOwnNumber;
     private TextView txtStatus;
     private TextView txtLatency;
+    private TextView txtSignalStrength;
+    private View viewLatencyIndicator;
     private TextView txtAvailabilityStatus;
     private TextView txtRecordingStatus;
-    private TextView txtDialerStatus;
     private TextView txtTranscriptionStatus;
     private TextView txtAutoCleanupStatus;
     private TextView txtPendingSync;
@@ -83,7 +90,6 @@ public class Wti extends AppCompatActivity {
     private Button btnTestConnection;
     private SwitchMaterial swAvailability;
     private SwitchMaterial swRecording;
-    private SwitchMaterial swDefaultDialer;
     private SwitchMaterial swTranscription;
     private SwitchMaterial swAutoCleanup;
     private SwitchMaterial swEditConfig;
@@ -92,6 +98,7 @@ public class Wti extends AppCompatActivity {
 
     private FirebaseService firebaseService;
     private UserLogService userLogService;
+    private CallRepository callRepository;
     private SharedPreferences prefs;
     private List<SubscriptionInfo> availableSims = new ArrayList<>();
 
@@ -124,6 +131,20 @@ public class Wti extends AppCompatActivity {
                 long latency = intent.getLongExtra("latency", 0);
                 if (txtLatency != null) {
                     txtLatency.setText("Ping: " + latency + " ms");
+                    int color = latency < 200 ? R.color.status_online : (latency < 500 ? R.color.status_busy : R.color.status_offline);
+                    viewLatencyIndicator.setBackgroundColor(ContextCompat.getColor(context, color));
+                }
+            }
+        }
+    };
+
+    private final BroadcastReceiver diagnosticReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (WtiService.ACTION_DIAGNOSTIC_UPDATE.equals(intent.getAction())) {
+                int signal = intent.getIntExtra("signal", -1);
+                if (txtSignalStrength != null && signal != -1) {
+                    txtSignalStrength.setText("Signal: " + signal + " dBm");
                 }
             }
         }
@@ -145,7 +166,11 @@ public class Wti extends AppCompatActivity {
         setupSyncObserver();
         setupPerformanceObserver();
 
-        checkAndRequestCriticalPermissions();
+        if (!prefs.getBoolean(KEY_ONBOARDING_COMPLETE, false)) {
+            showPermissionRationale();
+        } else {
+            checkAndRequestCriticalPermissions();
+        }
 
         setupListeners();
 
@@ -171,14 +196,59 @@ public class Wti extends AppCompatActivity {
         ContextCompat.registerReceiver(this, syncLogReceiver, new IntentFilter(SyncWorker.ACTION_SYNC_LOG), receiverFlags);
         ContextCompat.registerReceiver(this, connectionStatusReceiver, new IntentFilter(FirebaseService.ACTION_CONNECTION_STATUS), receiverFlags);
         ContextCompat.registerReceiver(this, latencyUpdateReceiver, new IntentFilter(FirebaseService.ACTION_LATENCY_UPDATE), receiverFlags);
+        ContextCompat.registerReceiver(this, diagnosticReceiver, new IntentFilter(WtiService.ACTION_DIAGNOSTIC_UPDATE), receiverFlags);
 
-        updateDialerStatus();
         initSimSelection();
         
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             checkBatteryOptimization();
-            checkAccessibilityService();
         }, 2000);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.action_share_log) {
+            shareDebugLog();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void shareDebugLog() {
+        File logFile = userLogService.getLogFile();
+        if (logFile != null && logFile.exists()) {
+            Uri logUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", logFile);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_SUBJECT, "zentrixWTI Debug Log: " + prefs.getString("agent_name", "Unknown"));
+            intent.putExtra(Intent.EXTRA_STREAM, logUri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Share Debug Log via"));
+        } else {
+            Toast.makeText(this, "Log file not found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showPermissionRationale() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View view = LayoutInflater.from(this).inflate(R.layout.layout_permission_rationale, null);
+        
+        Button btnGrant = view.findViewById(R.id.btnGrantPermissions);
+        btnGrant.setOnClickListener(v -> {
+            dialog.dismiss();
+            prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETE, true).apply();
+            checkAndRequestCriticalPermissions();
+        });
+
+        dialog.setContentView(view);
+        dialog.setCancelable(false);
+        dialog.show();
     }
 
     private void checkAccessibilityService() {
@@ -229,6 +299,7 @@ public class Wti extends AppCompatActivity {
             unregisterReceiver(syncLogReceiver);
             unregisterReceiver(connectionStatusReceiver);
             unregisterReceiver(latencyUpdateReceiver);
+            unregisterReceiver(diagnosticReceiver);
         } catch (Exception e) {}
         super.onDestroy();
     }
@@ -238,7 +309,7 @@ public class Wti extends AppCompatActivity {
         super.onResume();
         updateStatusUI(WtiService.isRunning);
         applyAdminLock();
-        initSimSelection(); // Refresh SIM list in case permission was just granted
+        initSimSelection();
     }
 
     private void checkBatteryOptimization() {
@@ -282,11 +353,9 @@ public class Wti extends AppCompatActivity {
 
         if (cardSyncHealth != null) {
             cardSyncHealth.setOnClickListener(v -> {
-                if (firebaseService != null) {
-                    userLogService.log("Manual sync triggered.");
-                    firebaseService.scheduleSync();
-                    Toast.makeText(this, "Syncing recordings...", Toast.LENGTH_SHORT).show();
-                }
+                userLogService.log("Manual sync triggered from Dashboard.");
+                SyncWorker.enqueue(this);
+                Toast.makeText(this, "Syncing recordings...", Toast.LENGTH_SHORT).show();
             });
         }
 
@@ -304,18 +373,6 @@ public class Wti extends AppCompatActivity {
 
         if (swAutoCleanup != null) {
             swAutoCleanup.setOnCheckedChangeListener((buttonView, isChecked) -> updateAutoCleanupPref(isChecked));
-        }
-
-        if (swDefaultDialer != null) {
-            swDefaultDialer.setOnClickListener(v -> {
-                boolean isChecked = swDefaultDialer.isChecked();
-                if (isChecked) {
-                    requestDefaultDialer();
-                } else {
-                    Toast.makeText(this, "Change default Phone app in System Settings to disable.", Toast.LENGTH_LONG).show();
-                    updateDialerStatus();
-                }
-            });
         }
 
         if (swEditConfig != null) {
@@ -366,39 +423,10 @@ public class Wti extends AppCompatActivity {
         });
     }
 
-    private void updateDialerStatus() {
-        TelecomManager telecomManager = (TelecomManager) getSystemService(TELECOM_SERVICE);
-        boolean isDefault = telecomManager != null && getPackageName().equals(telecomManager.getDefaultDialerPackage());
-        
-        if (swDefaultDialer != null) {
-            swDefaultDialer.setChecked(isDefault);
-        }
-        if (txtDialerStatus != null) {
-            txtDialerStatus.setText(isDefault ? "Enabled" : "Disabled");
-            txtDialerStatus.setTextColor(ContextCompat.getColor(this, isDefault ? R.color.status_online : R.color.text_secondary));
-        }
-    }
-
-    private void requestDefaultDialer() {
-        TelecomManager telecomManager = (TelecomManager) getSystemService(TELECOM_SERVICE);
-        if (telecomManager != null && !getPackageName().equals(telecomManager.getDefaultDialerPackage())) {
-            Intent intent = new Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER)
-                    .putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, getPackageName());
-            startActivityForResult(intent, DEFAULT_DIALER_REQUEST_CODE);
-        }
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == DEFAULT_DIALER_REQUEST_CODE) {
-            updateDialerStatus();
-            if (resultCode == RESULT_OK) {
-                if (userLogService != null) userLogService.log("App set as default dialer.");
-            } else {
-                if (userLogService != null) userLogService.log("Default dialer permission denied.");
-            }
-        } else if (requestCode == BATTERY_OPTIMIZATION_REQUEST_CODE) {
+        if (requestCode == BATTERY_OPTIMIZATION_REQUEST_CODE) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
                 if (pm != null && pm.isIgnoringBatteryOptimizations(getPackageName())) {
@@ -413,9 +441,10 @@ public class Wti extends AppCompatActivity {
         txtOwnNumber = findViewById(R.id.txtOwnNumber);
         txtStatus = findViewById(R.id.txtStatus);
         txtLatency = findViewById(R.id.txtLatency);
+        txtSignalStrength = findViewById(R.id.txtSignalStrength);
+        viewLatencyIndicator = findViewById(R.id.viewLatencyIndicator);
         txtAvailabilityStatus = findViewById(R.id.txtAvailabilityStatus);
         txtRecordingStatus = findViewById(R.id.txtRecordingStatus);
-        txtDialerStatus = findViewById(R.id.txtDialerStatus);
         txtTranscriptionStatus = findViewById(R.id.txtTranscriptionStatus);
         txtAutoCleanupStatus = findViewById(R.id.txtAutoCleanupStatus);
         txtPendingSync = findViewById(R.id.txtPendingSync);
@@ -434,7 +463,6 @@ public class Wti extends AppCompatActivity {
         btnTestConnection = findViewById(R.id.btnTestConnection);
         swAvailability = findViewById(R.id.swAvailability);
         swRecording = findViewById(R.id.swRecording);
-        swDefaultDialer = findViewById(R.id.swDefaultDialer);
         swTranscription = findViewById(R.id.swTranscription);
         swAutoCleanup = findViewById(R.id.swAutoCleanup);
         swEditConfig = findViewById(R.id.swEditConfig);
@@ -442,7 +470,6 @@ public class Wti extends AppCompatActivity {
         layoutConfigContainer = findViewById(R.id.layoutConfigContainer);
 
         userLogService = new UserLogService(txtUserLog);
-        
         loadPreferences();
     }
 
@@ -450,7 +477,7 @@ public class Wti extends AppCompatActivity {
         edtFirebaseUrl.setText(prefs.getString("firebase_url", DEFAULT_URL));
         edtAgentName.setText(prefs.getString("agent_name", ""));
         edtBridgeNumber.setText(prefs.getString("bridge_number", ""));
-        edtStorageServer.setText(prefs.getString("storage_server", ""));
+        edtStorageServer.setText(prefs.getString("storage_server", DEFAULT_STORAGE_SERVER));
         
         swAvailability.setChecked(prefs.getBoolean("available", true));
         swRecording.setChecked(prefs.getBoolean("recording_enabled", true));
@@ -465,23 +492,25 @@ public class Wti extends AppCompatActivity {
 
     private void initServices() {
         telephonyManager = (TelephonyManager) getSystemService(TELEPHONY_SERVICE);
-        firebaseService = new FirebaseService(this, userLogService, prefs.getString("firebase_url", DEFAULT_URL));
+        String firebaseUrl = prefs.getString("firebase_url", DEFAULT_URL);
+        callRepository = new CallRepository(this, userLogService, firebaseUrl);
+        firebaseService = callRepository.getFirebaseService();
     }
 
     private void setupSyncObserver() {
-        AppDatabase.getInstance(this).callLogDao().getUnsyncedCount().observe(this, count -> {
+        callRepository.getUnsyncedCount().observe(this, count -> {
             if (txtPendingSync != null) {
                 if (count != null && count > 0) {
                     txtPendingSync.setText(count + " Pending Syncs");
                     txtPendingSync.setTextColor(ContextCompat.getColor(this, R.color.status_busy));
                     if (imgSyncHealth != null) {
-                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_offline)); // Turn Red
+                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_offline));
                     }
                 } else {
                     txtPendingSync.setText("Cloud Synced");
                     txtPendingSync.setTextColor(ContextCompat.getColor(this, R.color.status_online));
                     if (imgSyncHealth != null) {
-                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_online)); // Turn Green
+                        imgSyncHealth.setColorFilter(ContextCompat.getColor(this, R.color.status_online));
                     }
                 }
             }
@@ -490,11 +519,11 @@ public class Wti extends AppCompatActivity {
 
     private void setupPerformanceObserver() {
         long startOfDay = getStartOfDay();
-        AppDatabase.getInstance(this).callLogDao().getTodayCallCount(startOfDay).observe(this, count -> {
+        callRepository.getTodayCallCount(startOfDay).observe(this, count -> {
             if (txtCallsToday != null) txtCallsToday.setText(String.valueOf(count != null ? count : 0));
         });
 
-        AppDatabase.getInstance(this).callLogDao().getTodayTotalTalkTime(startOfDay).observe(this, duration -> {
+        callRepository.getTodayTotalTalkTime(startOfDay).observe(this, duration -> {
             if (txtTalkTime != null) {
                 long totalSeconds = duration != null ? duration : 0;
                 long hours = totalSeconds / 3600;
@@ -540,7 +569,6 @@ public class Wti extends AppCompatActivity {
     }
 
     private void startIntegration() {
-        // Always send the intent to refresh settings, even if already running
         Intent serviceIntent = new Intent(this, WtiService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent);
@@ -573,9 +601,6 @@ public class Wti extends AppCompatActivity {
             statusIndicator.setBackgroundColor(ContextCompat.getColor(this, running ? R.color.status_online : R.color.status_offline));
         }
         
-        // Connect button remains enabled if integration is active but configuration needs refresh,
-        // or disabled if we want to prevent multiple rapid clicks. 
-        // Here we keep it enabled to allow "refresh" but show state.
         if (running) {
             if (btnConnectFirebase != null) {
                 btnConnectFirebase.setText("REFRESH INTEGRATION");

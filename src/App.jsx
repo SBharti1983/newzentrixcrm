@@ -245,9 +245,8 @@ function ProtectedApp() {
       </div>
       {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
       {/* {isMobile && (user?.role === 'agent' || user?.role === 'sales_manager') && <MobileActionHub />} */}
-      <Dialer />
-
     </div>
+    <Dialer />
     </>
   );
 }

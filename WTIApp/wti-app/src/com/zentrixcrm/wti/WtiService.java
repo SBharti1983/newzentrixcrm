@@ -5,14 +5,21 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ServiceInfo;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
 import android.telephony.TelephonyCallback;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -22,6 +29,7 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 import com.zentrixcrm.wti.firebase.FirebaseService;
+import com.zentrixcrm.wti.firebase.SyncWorker;
 import com.zentrixcrm.wti.log.UserLogService;
 import com.zentrixcrm.wti.phonestate.PhoneStateChangedHandler;
 import com.zentrixcrm.wti.phonestate.PhoneStateReceiver;
@@ -29,6 +37,9 @@ import com.zentrixcrm.wti.phonestate.PhoneStateReceiver;
 public class WtiService extends Service {
 
     public static final String ACTION_STOP_SERVICE = "com.zentrixcrm.wti.ACTION_STOP_SERVICE";
+    public static final String ACTION_SYNC_NOW = "com.zentrixcrm.wti.ACTION_SYNC_NOW";
+    public static final String ACTION_DIAGNOSTIC_UPDATE = "com.zentrixcrm.wti.DIAGNOSTIC_UPDATE";
+
     private static final String CHANNEL_ID = "WtiServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private static final String PREFS_NAME = "ZentrixPrefs";
@@ -42,8 +53,23 @@ public class WtiService extends Service {
     private UserLogService userLogService;
     private Object telephonyCallback;
     private ConnectivityManager.NetworkCallback networkCallback;
+    private Handler diagnosticHandler = new Handler(Looper.getMainLooper());
+    private int currentSignalDbm = -1;
 
     public static boolean isRunning = false;
+
+    private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            float batteryPct = level * 100 / (float) scale;
+            if (firebaseService != null) {
+                firebaseService.updateRemoteConfig("battery_level", Math.round(batteryPct));
+            }
+            broadcastDiagnostic();
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -59,16 +85,36 @@ public class WtiService extends Service {
         firebaseService = new FirebaseService(this, userLogService, savedUrl);
         phoneStateHandler = new PhoneStateChangedHandler(this, firebaseService, userLogService);
         
-        // Link the broadcast receiver to the active handler
         PhoneStateReceiver.setHandler(phoneStateHandler);
         
         telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        
         if (subId != -1 && telephonyManager != null) {
             telephonyManager = telephonyManager.createForSubscriptionId(subId);
         }
 
         setupNetworkMonitoring();
+        registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        startDiagnosticLoop();
+    }
+
+    private void startDiagnosticLoop() {
+        diagnosticHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (firebaseService != null && currentSignalDbm != -1) {
+                    firebaseService.updateRemoteConfig("signal_strength", currentSignalDbm);
+                }
+                broadcastDiagnostic();
+                diagnosticHandler.postDelayed(this, 60000); // Every 1 minute
+            }
+        }, 10000);
+    }
+
+    private void broadcastDiagnostic() {
+        Intent intent = new Intent(ACTION_DIAGNOSTIC_UPDATE);
+        intent.setPackage(getPackageName());
+        intent.putExtra("signal", currentSignalDbm);
+        sendBroadcast(intent);
     }
 
     private void setupNetworkMonitoring() {
@@ -88,14 +134,18 @@ public class WtiService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && ACTION_STOP_SERVICE.equals(intent.getAction())) {
-            stopSelf();
-            return START_NOT_STICKY;
+        if (intent != null) {
+            if (ACTION_STOP_SERVICE.equals(intent.getAction())) {
+                stopSelf();
+                return START_NOT_STICKY;
+            } else if (ACTION_SYNC_NOW.equals(intent.getAction())) {
+                SyncWorker.enqueue(this);
+                if (userLogService != null) userLogService.log("Manual sync triggered from notification.");
+            }
         }
 
         createNotificationChannel();
-        
-        Notification notification = createServiceNotification("Listening for calls on preferred SIM");
+        Notification notification = createServiceNotification("Integration Active");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
@@ -110,28 +160,30 @@ public class WtiService extends Service {
         }
         
         registerTelephonyListener();
-
         return START_STICKY;
     }
 
     private Notification createServiceNotification(String text) {
         Intent notificationIntent = new Intent(this, Wti.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         Intent stopIntent = new Intent(this, WtiService.class);
         stopIntent.setAction(ACTION_STOP_SERVICE);
-        PendingIntent stopPendingIntent = PendingIntent.getService(this,
-                0, stopIntent, PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent stopPendingIntent = PendingIntent.getService(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE);
+
+        Intent syncIntent = new Intent(this, WtiService.class);
+        syncIntent.setAction(ACTION_SYNC_NOW);
+        PendingIntent syncPendingIntent = PendingIntent.getService(this, 1, syncIntent, PendingIntent.FLAG_IMMUTABLE);
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("zentrixWTI Active")
+                .setContentTitle("zentrixWTI")
                 .setContentText(text)
                 .setSmallIcon(R.drawable.logo)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, 
-                        getString(R.string.action_stop_service), stopPendingIntent)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .addAction(android.R.drawable.stat_sys_upload, "SYNC NOW", syncPendingIntent)
+                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "STOP", stopPendingIntent)
                 .build();
     }
 
@@ -140,42 +192,63 @@ public class WtiService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             registerTelephonyCallbackV31();
         } else {
-            telephonyManager.listen(phoneStateHandler, android.telephony.PhoneStateListener.LISTEN_CALL_STATE);
+            telephonyManager.listen(new PhoneStateListener() {
+                @Override
+                public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+                    currentSignalDbm = getDbm(signalStrength);
+                    broadcastDiagnostic();
+                }
+                
+                @Override
+                public void onCallStateChanged(int state, String phoneNumber) {
+                    phoneStateHandler.onCallStateChanged(state, phoneNumber);
+                }
+            }, PhoneStateListener.LISTEN_CALL_STATE | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.S)
     private void registerTelephonyCallbackV31() {
-        telephonyCallback = new CallStateCallbackProxy(phoneStateHandler);
+        telephonyCallback = new CallStateCallbackProxy();
         if (telephonyManager != null) {
             telephonyManager.registerTelephonyCallback(getMainExecutor(), (TelephonyCallback)telephonyCallback);
         }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.S)
-    private static class CallStateCallbackProxy extends TelephonyCallback implements TelephonyCallback.CallStateListener {
-        private final PhoneStateChangedHandler handler;
-        public CallStateCallbackProxy(PhoneStateChangedHandler handler) {
-            this.handler = handler;
-        }
+    private class CallStateCallbackProxy extends TelephonyCallback implements TelephonyCallback.CallStateListener, TelephonyCallback.SignalStrengthsListener {
         @Override
         public void onCallStateChanged(int state) {
-            handler.onCallStateChanged(state, null);
+            phoneStateHandler.onCallStateChanged(state, null);
+        }
+
+        @Override
+        public void onSignalStrengthsChanged(@NonNull SignalStrength signalStrength) {
+            currentSignalDbm = getDbm(signalStrength);
+            broadcastDiagnostic();
+        }
+    }
+
+    private int getDbm(SignalStrength signalStrength) {
+        if (signalStrength.isGsm()) {
+            return (signalStrength.getGsmSignalStrength() * 2) - 113;
+        } else {
+            return signalStrength.getCdmaDbm();
         }
     }
 
     @Override
     public void onDestroy() {
         isRunning = false;
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        prefs.edit().putBoolean("service_enabled", false).apply();
+        diagnosticHandler.removeCallbacksAndMessages(null);
+        try { unregisterReceiver(batteryReceiver); } catch (Exception e) {}
+        
         if (firebaseService != null) {
             firebaseService.sendConnected(false);
             firebaseService.unregisterOutgoingCallbackHandler();
             firebaseService.unregisterConfigListener();
         }
         unregisterTelephonyListener();
-        
         PhoneStateReceiver.setHandler(null);
         
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -187,12 +260,6 @@ public class WtiService extends Service {
         super.onDestroy();
     }
 
-    @Override
-    public void onTaskRemoved(Intent rootIntent) {
-        Log.d("WtiService", "Task removed, service will continue in foreground");
-        super.onTaskRemoved(rootIntent);
-    }
-
     private void unregisterTelephonyListener() {
         if (telephonyManager == null) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -200,7 +267,7 @@ public class WtiService extends Service {
                 telephonyManager.unregisterTelephonyCallback((TelephonyCallback)telephonyCallback);
             }
         } else {
-            telephonyManager.listen(phoneStateHandler, android.telephony.PhoneStateListener.LISTEN_NONE);
+            telephonyManager.listen(null, PhoneStateListener.LISTEN_NONE);
         }
     }
 
@@ -219,15 +286,9 @@ public class WtiService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Zentrix WTI Service Channel",
-                    NotificationManager.IMPORTANCE_LOW
-            );
+            NotificationChannel serviceChannel = new NotificationChannel(CHANNEL_ID, "Zentrix WTI Service Channel", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(serviceChannel);
-            }
+            if (manager != null) manager.createNotificationChannel(serviceChannel);
         }
     }
 }

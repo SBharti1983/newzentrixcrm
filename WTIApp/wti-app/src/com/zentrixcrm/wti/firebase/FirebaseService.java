@@ -330,21 +330,33 @@ public class FirebaseService {
                     String number = null;
                     String interactionId = null;
 
-                    if (snapshot.hasChild("number")) {
-                        number = snapshot.child("number").getValue(String.class);
-                        interactionId = snapshot.child("interaction_id").getValue(String.class);
-                    } else if (snapshot.getValue() instanceof String) {
-                        number = (String) snapshot.getValue();
-                    }
+                        if (snapshot.hasChild("number")) {
+                            // If we already marked this as ringing, don't dial again
+                            if (snapshot.hasChild("status") && "ringing".equals(snapshot.child("status").getValue(String.class))) {
+                                return;
+                            }
 
-                    if (number != null && !number.isEmpty()) {
-                        if (userLogService != null) userLogService.log("Web Dial Request: " + number);
-                        if (outgoingHandler != null) {
-                            outgoingHandler.doCall(number, interactionId);
+                            number = snapshot.child("number").getValue(String.class);
+                            interactionId = snapshot.child("interaction_id").getValue(String.class);
+                            
+                            // Prevent redialing of old requests
+                            Long timestamp = snapshot.child("timestamp").getValue(Long.class);
+                            if (timestamp != null && timestamp < System.currentTimeMillis() - 60000) {
+                                if (userLogService != null) userLogService.log("Ignoring stale dial request.");
+                                return;
+                            }
+                        } else if (snapshot.getValue() instanceof String) {
+                            number = (String) snapshot.getValue();
                         }
-                        // Important: Remove the request after triggering so it doesn't redial
-                        outgoingRef.removeValue();
-                    }
+
+                        if (number != null && !number.isEmpty()) {
+                            if (userLogService != null) userLogService.log("Web Dial Request: " + number);
+                            if (outgoingHandler != null) {
+                                outgoingHandler.doCall(number, interactionId);
+                                outgoingRef.child("status").setValue("ringing");
+                            }
+                            // Handset will keep the node until call finishes (PhoneStateChangedHandler handles clearing)
+                        }
                 }
             }
 
@@ -372,8 +384,23 @@ public class FirebaseService {
             if (userLogService != null) userLogService.log("Phone reached IDLE. Clearing call nodes...");
             ref.removeValue();
         } else {
-            ref.setValue(number);
+            // Initial ringing state
+            Map<String, Object> data = new HashMap<>();
+            data.put("number", number);
+            data.put("status", "ringing");
+            ref.setValue(data);
         }
+    }
+
+    public void sendIncomingCallStatus(String number, String status) {
+        if (database == null) return;
+        String agentName = context.getSharedPreferences("ZentrixPrefs", Context.MODE_PRIVATE)
+                .getString("agent_name", "Agent_001");
+        DatabaseReference ref = database.getReference("agents").child(agentName).child("incoming_call");
+        Map<String, Object> data = new HashMap<>();
+        data.put("number", number);
+        data.put("status", status);
+        ref.setValue(data);
     }
 
     public void clearOutgoingCall() {

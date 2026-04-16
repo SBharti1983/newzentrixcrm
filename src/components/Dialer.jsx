@@ -58,10 +58,18 @@ export default function Dialer() {
 
         const callRef = ref(database, `agents/${sid}/incoming_call`);
         const unsubCall = onValue(callRef, async (snapshot) => {
-            const num = snapshot.val();
-            if (num) {
+            const data = snapshot.val();
+            if (data) {
+                const num = typeof data === 'string' ? data : data.number;
+                const status = typeof data === 'string' ? 'ringing' : data.status;
+
                 setPhoneNumber(num);
                 setCallState(prev => {
+                    // Update to active if the handset signals it's picked up
+                    if (status === 'active' && (prev === 'ringing' || prev === 'idle')) {
+                        return 'active';
+                    }
+
                     if (prev === 'idle') {
                         setIsOpen(true);
                         setIsMinimized(false);
@@ -76,23 +84,9 @@ export default function Dialer() {
                 });
             } else {
                 setCallState(prev => {
-                    if (prev === 'ringing' || (prev === 'active' && !activeInteractionId)) return 'idle';
-                    return prev;
-                });
-            }
-        });
-
-        const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
-        const unsubOut = onValue(outCallRef, (snapshot) => {
-            console.log(`[DIALER] Handset node update: ${snapshot.exists() ? 'Exists' : 'Cleared'}`);
-            
-            // CRITICAL FIX: Do NOT auto-idle if the node is cleared while we are in DIALING state.
-            // This happens because the handset clears the node as soon as it accepts the command.
-            if (!snapshot.exists()) {
-                setCallState(prev => {
-                    // If the call was active, move to 'completed' state so the agent can see summary
+                    if (prev === 'ringing') return 'idle';
                     if (prev === 'active') {
-                        console.log('[DIALER] Handset signalled END OF CALL. Moving to COMPLETED state.');
+                        console.log('[DIALER] Active incoming call ended');
                         return 'completed';
                     }
                     return prev;
@@ -100,7 +94,48 @@ export default function Dialer() {
             }
         });
 
-        return () => { unsubStatus(); unsubCall(); unsubOut(); };
+        const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
+        const unsubOut = onValue(outCallRef, (snapshot) => {
+            const data = snapshot.val();
+            console.log('[DIALER] Outgoing node update:', data);
+            
+            if (data && data.status === 'ringing') {
+                setCallState(prev => (prev === 'dialing' ? 'active' : prev));
+            }
+
+            if (!snapshot.exists()) {
+                setCallState(prev => {
+                    if (prev === 'active') {
+                        console.log('[DIALER] Active call ended via Handset');
+                        return 'completed';
+                    }
+                    if (prev === 'dialing') {
+                        console.log('[DIALER] Dial request cleared/failed before pickup');
+                        return 'idle';
+                    }
+                    return prev;
+                });
+            }
+        });
+
+        const dispRef = ref(database, `agents/${sid}/last_disposition`);
+        const unsubDisp = onValue(dispRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.timestamp > Date.now() - 30000) { // Within 30 secs
+                console.log('[DIALER] Handset Disposition Detected:', data.outcome);
+                // We use a ref for handleHangup to avoid dependency issues
+                if (handleHangupRef.current) {
+                    handleHangupRef.current(data.outcome);
+                }
+            }
+        });
+
+        return () => { 
+            unsubStatus(); 
+            unsubCall(); 
+            unsubOut(); 
+            unsubDisp();
+        };
     }, [isOpen, agentId]); // Removed callState to prevent listener thrashing
 
     const handleDial = useCallback(async (lead = null, manualPhone = null) => {
@@ -143,6 +178,9 @@ export default function Dialer() {
     }, []);
 
     const handleHangup = async (outcome = 'Connected') => {
+        // Prevent double hangup if already idling or completing via another trigger
+        if (callState === 'idle') return;
+
         const iid = activeInteractionId;
         const lid = activeLead?.id;
         const apiUrl = import.meta.env.VITE_API_URL || '/api';
@@ -157,19 +195,18 @@ export default function Dialer() {
                     },
                     body: JSON.stringify({ 
                         duration, 
-                        outcome, 
-                        note: `GSM Call completed. Disposition: ${outcome}` 
+                        outcome: outcome === 'No Disposition' ? 'Connected' : outcome, 
+                        note: `Call completed. Disposition: ${outcome}` 
                     })
                 });
 
                 if (res.ok) {
                     showToast(`Call logged as ${outcome}`, 'success');
                     
-                    // Auto-update Lead Stage/Status for critical dispositions
                     if (lid) {
                         let leadUpdates = null;
                         if (outcome === 'Interested') leadUpdates = { stage: 'Interested' };
-                        if (outcome === 'Not Interested' || outcome === 'Invalid / Wrong Number') leadUpdates = { stage: 'Lost', status: 'Lost' };
+                        if (outcome === 'Not Interested' || outcome === 'Invalid / Wrong Number') leadUpdates = { stage: 'Lost' };
                         
                         if (leadUpdates) {
                             await fetch(`${apiUrl}/leads/${lid}`, {
@@ -182,12 +219,9 @@ export default function Dialer() {
                             });
                         }
                     }
-                } else {
-                    throw new Error('Failed to save call log');
                 }
             } catch (err) {
                 console.error('[DIALER] Log error:', err);
-                showToast('Call logged locally. Sync failed.', 'warning');
             }
         }
 
@@ -198,6 +232,9 @@ export default function Dialer() {
         setPhoneNumber('');
         setActiveInteractionId(null);
     };
+
+    const handleHangupRef = useRef(handleHangup);
+    useEffect(() => { handleHangupRef.current = handleHangup; }, [handleHangup, callState, activeInteractionId, activeLead, duration]);
 
     const formatDuration = (s) => {
         const min = Math.floor(s / 60);
@@ -212,7 +249,7 @@ export default function Dialer() {
     );
 
     return (
-        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 'calc(100vw - 24px)', maxWidth: isMinimized ? 240 : 320, maxHeight: isMinimized ? 48 : 480, height: isMinimized ? 48 : 'auto', background: '#0a1a2e', borderRadius: 20, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '48px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 'calc(100vw - 24px)', maxWidth: isMinimized ? 240 : 320, maxHeight: isMinimized ? 48 : 520, height: isMinimized ? 48 : 'auto', background: '#0a1a2e', borderRadius: 20, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '48px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' }} />
@@ -244,8 +281,8 @@ export default function Dialer() {
                                     ))}
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                                    <button type="button" onClick={() => setPhoneNumber(p => (p || '') + '+')} className="numpad-btn" style={{ fontSize: '1.2rem', height: '34px', borderRadius: '8px' }}>+</button>
-                                    <button type="button" onClick={() => setPhoneNumber('')} className="numpad-btn" style={{ fontSize: '0.85rem', height: '34px', borderRadius: '8px', color: '#f43f5e' }}>Clear</button>
+                                    <button type="button" onClick={() => setPhoneNumber(p => (p || '') + '+')} className="numpad-btn" style={{ fontSize: '1.1rem', height: '30px' }}>+</button>
+                                    <button type="button" onClick={() => setPhoneNumber('')} className="numpad-btn" style={{ fontSize: '0.75rem', height: '30px', color: '#f43f5e' }}>Clear</button>
                                 </div>
                                 <div>
                                     {(leads?.data || []).map(lead => (
@@ -266,7 +303,7 @@ export default function Dialer() {
                             </div>
                         </>
                     ) : (
-                        <div style={{ flex: 1, padding: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                        <div style={{ flex: 1, padding: '24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', overflowY: 'auto', minHeight: 0 }}>
                             <div style={{ position: 'relative', marginBottom: 32 }}>
                                 <div style={{ width: 120, height: 120, borderRadius: '40%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${callState === 'ringing' ? '#f59e0b' : '#00b4d8'}` }}>
                                     <User size={60} color={callState === 'ringing' ? '#f59e0b' : '#00b4d8'} />
@@ -283,28 +320,28 @@ export default function Dialer() {
                             </div>
                             
                             {callState === 'completed' && (
-                                <div style={{ width: '100%', marginTop: 24, textAlign: 'left', background: 'rgba(255,255,255,0.05)', padding: 16, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.05em' }}>Call Disposition</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ width: '100%', marginTop: 16, textAlign: 'left', background: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 16, border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                                         {[
                                             { id: 'Interested', label: 'Interested', color: '#10b981' },
-                                            { id: 'Not Interested', label: 'Not Interested', color: '#f43f5e' },
-                                            { id: 'Follow-up Required', label: 'Follow-up Required', color: '#fbbf24' },
-                                            { id: 'Invalid / Wrong Number', label: 'Invalid / Wrong Number', color: '#94a3b8' }
+                                            { id: 'Not Interested', label: 'Not Int.', color: '#f43f5e' },
+                                            { id: 'Follow-up Required', label: 'Follow-up', color: '#fbbf24' },
+                                            { id: 'Invalid / Wrong Number', label: 'Invalid', color: '#94a3b8' }
                                         ].map(opt => (
                                             <button 
                                                 key={opt.id} 
                                                 onClick={() => handleHangup(opt.id)}
                                                 style={{ 
-                                                    padding: '12px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', 
+                                                    padding: '10px 8px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', 
                                                     border: '1px solid rgba(255,255,255,0.05)', color: 'white', fontWeight: 700, 
-                                                    fontSize: '0.85rem', textAlign: 'left', cursor: 'pointer', transition: '0.2s',
-                                                    display: 'flex', alignItems: 'center', gap: 10
+                                                    fontSize: '0.75rem', textAlign: 'center', cursor: 'pointer', transition: '0.2s',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                                                    justifyContent: 'center'
                                                 }}
                                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                                                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                                             >
-                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color }} />
+                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: opt.color }} />
                                                 {opt.label}
                                             </button>
                                         ))}
@@ -312,17 +349,17 @@ export default function Dialer() {
                                 </div>
                             )}
 
-                            <div style={{ marginTop: 'auto', paddingBottom: 20, display: 'flex', gap: 24, width: '100%', justifyContent: 'center', paddingLeft: 20 }}>
+                            <div style={{ marginTop: 'auto', width: '100%', padding: '0 16px 12px' }}>
                                 {callState === 'completed' ? (
                                     <button 
                                         type="button" 
                                         onClick={() => handleHangup('No Disposition')} 
-                                        style={{ width: '100%', height: 48, borderRadius: '14px', background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}
+                                        style={{ width: '100%', height: 38, borderRadius: '12px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(244,63,94,0.2)' }}
                                     >
-                                        <History size={20} /> Skip Disposition
+                                        <X size={16} /> Close & Cancel
                                     </button>
                                 ) : (
-                                    <>
+                                    <div style={{ display: 'flex', gap: 24, justifyContent: 'center', paddingBottom: 16 }}>
                                         <button type="button" onClick={() => handleHangup()} style={{ width: 72, height: 72, borderRadius: '24px', background: '#f43f5e', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 20px rgba(244,63,94,0.3)' }}>
                                             <PhoneOff size={32} />
                                         </button>
@@ -338,7 +375,7 @@ export default function Dialer() {
                                                 <Phone size={32} />
                                             </button>
                                         )}
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -349,7 +386,7 @@ export default function Dialer() {
             <style>{`
                 .btn-icon-tiny-d { background: none; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px; border-radius: 6px; transition: 0.2s; }
                 .btn-icon-tiny-d:hover { background: rgba(255,255,255,0.06); color: white; }
-                .numpad-btn { height: 34px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: white; font-size: 1rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+                .numpad-btn { height: 30px; border-radius: 6px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.04); color: white; font-size: 0.9rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
                 .numpad-btn:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
                 .dialer-lead-card { padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
                 .dialer-lead-card:hover { background: rgba(255,255,255,0.06); transform: translateX(4px); }
