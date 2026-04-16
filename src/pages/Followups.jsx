@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { followupsApi, leadsApi, usersApi, marketingApi } from '../api/client';
@@ -25,8 +25,16 @@ export default function Followups() {
     const { data: agents = [] } = useApi(usersApi.list);
     const { data: allLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
     const { data: drips = [] } = useApi(marketingApi.getDrips);
-    const { showToast } = useToast();
     const isMobile = useMobile();
+    const { showToast } = useToast();
+
+    // Map leads for quick attribute lookup (score/budget)
+    const leadMap = useMemo(() => {
+        const map = {};
+        const data = allLeads?.data || allLeads || [];
+        data.forEach(l => { map[l.id] = l; });
+        return map;
+    }, [allLeads]);
 
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending', mode: 'single', drip_id: '' });
@@ -64,6 +72,18 @@ export default function Followups() {
         if (!a || !b) return 0;
         if (sortMode === 'score') {
             return (b.lead_score || 0) - (a.lead_score || 0);
+        }
+        if (sortMode === 'value') {
+            const getVal = (id) => {
+                const lead = leadMap[id];
+                if (!lead || !lead.budget) return 0;
+                // Parse budget string (e.g., "50 L" or "5000000")
+                const numeric = parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0;
+                if (String(lead.budget).toUpperCase().includes('L')) return numeric * 100000;
+                if (String(lead.budget).toUpperCase().includes('CR')) return numeric * 10000000;
+                return numeric;
+            };
+            return getVal(b.lead_id) - getVal(a.lead_id);
         }
         return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
     });
@@ -262,10 +282,22 @@ export default function Followups() {
                     <option value="All">All Agents</option>
                     {agents?.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                 </select>
-                <div style={{ marginLeft: 'auto' }}>
-                    <button onClick={() => setSortMode(prev => prev === 'time' ? 'score' : 'time')} style={{ border: '1px solid #e2e8f0', background: sortMode === 'score' ? '#0f172a' : 'white', color: sortMode === 'score' ? 'white' : '#64748b', padding: '6px 14px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {sortMode === 'score' ? <Sparkles size={12} /> : <Clock size={12} />}
-                        {sortMode === 'score' ? 'WIN PROBABILITY' : 'TIME'}
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                    <button 
+                        onClick={() => {
+                            if (sortMode === 'time') setSortMode('score');
+                            else if (sortMode === 'score') setSortMode('value');
+                            else setSortMode('time');
+                        }} 
+                        style={{ 
+                            border: '1px solid #e2e8f0', 
+                            background: sortMode !== 'time' ? '#0f172a' : 'white', 
+                            color: sortMode !== 'time' ? 'white' : '#64748b', 
+                            padding: '6px 14px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center' 
+                        }}
+                    >
+                        {sortMode === 'time' ? <Clock size={12} /> : sortMode === 'score' ? <Sparkles size={12} /> : <TrendingUp size={12} />}
+                        {sortMode === 'time' ? 'SORT: TIME' : sortMode === 'score' ? 'WIN PROBABILITY' : 'DEAL VALUE'}
                     </button>
                 </div>
             </div>
@@ -323,15 +355,25 @@ export default function Followups() {
                                     <span style={{ opacity: 0.4 }}>{items.length}</span>
                                 </h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                    {items.map(f => (
-                                        <FollowupCard 
-                                            key={f.id} f={f} isCompact onToggle={toggle} 
-                                            onDial={dialerEvents.call} onNotify={setNotifyTarget} 
-                                            onDownload={downloadSummary} onDelete={deleteFu} 
-                                            onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} 
-                                            onDragStart={e => handleDragStart(e, f.id)}
-                                        />
-                                    ))}
+                                    {items.map(f => {
+                                        const lead = leadMap[f.lead_id];
+                                        const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
+                                        const isCr = String(lead?.budget).toUpperCase().includes('CR');
+                                        const isL = String(lead?.budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
+                                        const absoluteValue = isCr ? budgetVal * 10000000 : (isL ? budgetVal * 100000 : budgetVal);
+                                        const isHighValue = (f.lead_score > 85 || absoluteValue >= 5000000);
+
+                                        return (
+                                            <FollowupCard 
+                                                key={f.id} f={f} isCompact isHighValue={isHighValue} leadDetails={lead}
+                                                onToggle={toggle} 
+                                                onDial={dialerEvents.call} onNotify={setNotifyTarget} 
+                                                onDownload={downloadSummary} onDelete={deleteFu} 
+                                                onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} 
+                                                onDragStart={e => handleDragStart(e, f.id)}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             </div>
                         );
@@ -340,7 +382,24 @@ export default function Followups() {
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {filtered.map(f => <FollowupCard key={f.id} f={f} onToggle={toggle} onDial={dialerEvents.call} onNotify={setNotifyTarget} onDownload={downloadSummary} onDelete={deleteFu} onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} />)}
+                    {filtered.map(f => {
+                         const lead = leadMap[f.lead_id];
+                         const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
+                         const isCr = String(lead?.budget).toUpperCase().includes('CR');
+                         const isL = String(lead?.budget).toUpperCase().includes('L') || (!isCr && budgetVal < 10000000 && budgetVal >= 100000);
+                         const absoluteValue = isCr ? budgetVal * 10000000 : (isL ? budgetVal * 100000 : budgetVal);
+                         const isHighValue = (f.lead_score > 85 || absoluteValue >= 5000000);
+
+                         return (
+                            <FollowupCard 
+                                key={f.id} f={f} isHighValue={isHighValue} leadDetails={lead}
+                                onToggle={toggle} onDial={dialerEvents.call} 
+                                onNotify={setNotifyTarget} onDownload={downloadSummary} 
+                                onDelete={deleteFu} onPreview={setPreviewLead} 
+                                urgent={isUrgent(f.scheduled_at)} 
+                            />
+                         );
+                    })}
                 </div>
             )}
 
@@ -428,7 +487,7 @@ export default function Followups() {
     );
 }
 
-function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart }) {
+function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart }) {
     if (!f) return null;
     const date = new Date(f.scheduled_at || Date.now());
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
@@ -439,51 +498,63 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
         <div 
             draggable={onDragStart ? "true" : "false"}
             onDragStart={onDragStart}
-            className={`premium-card hover-lift ${urgent && f.status === 'Pending' ? 'shimmer-urgent' : ''}`} 
+            className={`premium-card hover-lift ${isHighValue ? 'shimmer-highvalue' : (urgent && f.status === 'Pending' ? 'shimmer-urgent' : '')}`} 
             style={{
                 padding: isMobile ? '10px 14px' : '12px 18px',
                 display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '14px',
                 background: 'white',
                 opacity: f.status === 'Completed' ? 0.6 : 1,
                 position: 'relative',
-                boxShadow: urgent && f.status === 'Pending' ? '0 0 15px rgba(244, 63, 94, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)',
-                border: urgent && f.status === 'Pending' ? '1px solid #fecdd3' : '1px solid #f1f5f9',
+                boxShadow: isHighValue ? '0 0 25px rgba(251, 191, 36, 0.15)' : (urgent && f.status === 'Pending' ? '0 0 15px rgba(244, 63, 94, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'),
+                border: isHighValue ? '2px solid #fbbf24' : (urgent && f.status === 'Pending' ? '1px solid #fecdd3' : '1px solid #f1f5f9'),
                 borderRadius: '16px',
-                cursor: onDragStart ? 'grab' : 'default'
+                cursor: onDragStart ? 'grab' : 'default',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
         >
-            {/* Live Indicator Dot */}
+            {/* Live Status Glow */}
             <div style={{
                 position: 'absolute', top: '8px', right: '8px',
-                width: '5px', height: '5px', borderRadius: '50%',
-                background: '#10b981', boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)'
+                width: '6px', height: '6px', borderRadius: '50%',
+                background: isHighValue ? '#fbbf24' : '#10b981', 
+                boxShadow: isHighValue ? '0 0 10px #fbbf24' : '0 0 8px rgba(16, 185, 129, 0.6)'
             }} />
+
+            {/* High Value Label */}
+            {isHighValue && (
+                <div style={{ position: 'absolute', top: '-10px', left: '20px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: 'white', fontSize: '10px', fontWeight: 950, padding: '2px 8px', borderRadius: '20px', boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)', letterSpacing: '0.05em' }}>
+                    HIGH ROI OPPORTUNITY
+                </div>
+            )}
 
             {/* Left: Status Toggle */}
             <button
                 onClick={() => onToggle(f.id, f.status)}
                 style={{
-                    width: 20, height: 20, borderRadius: '6px', border: '1.5px solid',
-                    borderColor: f.status === 'Completed' ? '#10b981' : '#e2e8f0',
+                    width: 22, height: 22, borderRadius: '8px', border: '2px solid',
+                    borderColor: f.status === 'Completed' ? '#10b981' : (isHighValue ? '#fbbf24' : '#e2e8f0'),
                     background: f.status === 'Completed' ? '#10b981' : 'white', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}
             >
-                {f.status === 'Completed' && <CheckCircle size={10} color="white" strokeWidth={4} />}
+                {f.status === 'Completed' && <CheckCircle size={12} color="white" strokeWidth={4} />}
             </button>
 
             {/* Middle: Lead Context */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isCompact ? '0' : '24px' }}>
                 <div style={{ minWidth: isCompact ? '0' : '180px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '1px' }}>
-                        <span onClick={() => onPreview(f.lead_id || f.leadId)} style={{ fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', color: '#0f172a' }} className="hover-underline">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1px' }}>
+                        <span onClick={() => onPreview(f.lead_id || f.leadId)} style={{ fontWeight: 950, fontSize: '0.95rem', cursor: 'pointer', color: '#0f172a' }} className="hover-underline">
                             {f.lead_name || f.leadName}
                         </span>
-                        {f.lead_score && <span style={{ padding: '1px 4px', borderRadius: '4px', background: '#ecfdf5', color: '#059669', fontSize: '0.55rem', fontWeight: 900 }}>{f.lead_score}%</span>}
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                            {f.lead_score && <span style={{ padding: '2px 6px', borderRadius: '6px', background: f.lead_score > 80 ? '#ecfdf5' : '#f8fafc', color: f.lead_score > 80 ? '#059669' : '#64748b', fontSize: '0.6rem', fontWeight: 900, border: f.lead_score > 80 ? '1px solid #10b98122' : '1px solid #e2e8f0' }}>{f.lead_score}%</span>}
+                            {leadDetails?.budget && <span style={{ padding: '2px 6px', borderRadius: '6px', background: isHighValue ? '#fff7ed' : '#f8fafc', color: isHighValue ? '#d97706' : '#64748b', fontSize: '0.6rem', fontWeight: 900, border: isHighValue ? '1px solid #fbbf2444' : '1px solid #e2e8f0' }}>₹{leadDetails.budget}</span>}
+                        </div>
                     </div>
                     {isCompact && (
-                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {f.notes || 'No notes...'}
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {f.notes || 'No notes shared yet...'}
                         </div>
                     )}
                 </div>
@@ -491,16 +562,16 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
                 {!isCompact && !isMobile && (
                     <>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Latest Note</div>
-                            <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {f.notes || 'No task specific notes...'}
+                            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>ORCHESTRATION NOTES</div>
+                            <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {f.notes || 'Awaiting task briefing...'}
                             </div>
                         </div>
-                        <div style={{ width: '120px', flexShrink: 0 }}>
-                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Assigned To</div>
-                            <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
-                                {f.assigned_name || 'Agent'}
+                        <div style={{ width: '130px', flexShrink: 0 }}>
+                            <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>OWNER</div>
+                            <div style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: '50%', background: isHighValue ? '#fbbf24' : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 950, color: isHighValue ? 'white' : '#64748b' }}>{f.assigned_name?.charAt(0) || 'A'}</div>
+                                {f.assigned_name || 'System Auto'}
                             </div>
                         </div>
                     </>
@@ -510,24 +581,24 @@ function FollowupCard({ f, isCompact, onToggle, onDial, onNotify, onDownload, on
             {/* Right: Date, Time & Quick Actions */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 900, color: '#1e293b' }}>
-                        <Calendar size={12} color="#94a3b8" /> {day}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 950, color: '#0f172a' }}>
+                        <Calendar size={13} color={isHighValue ? "#fbbf24" : "#94a3b8"} /> {day}
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '4px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
                     {f.status !== 'Completed' ? (
                         <>
-                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id, f.lead_phone, f.lead_name)} style={{ background: '#0f172a', color: 'white', width: '32px', height: '32px', borderRadius: '10px' }}>
-                                <Phone size={14} />
+                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id, f.lead_phone, f.lead_name)} style={{ background: '#0f172a', color: 'white', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                                <Phone size={15} />
                             </button>
-                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id, name: f.lead_name })} style={{ background: '#10b981', color: 'white', width: '32px', height: '32px', borderRadius: '10px' }}>
-                                <Send size={14} />
+                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id, name: f.lead_name })} style={{ background: '#10b981', color: 'white', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer', transition: 'transform 0.2s' }}>
+                                <Send size={15} />
                             </button>
                         </>
                     ) : (
-                        <button className="icon-btn-sm" onClick={() => onDelete(f.id)} style={{ background: '#fee2e2', color: '#f43f5e', width: '32px', height: '32px', borderRadius: '10px' }}>
-                            <X size={14} />
+                        <button className="icon-btn-sm" onClick={() => onDelete(f.id)} style={{ background: '#fee2e2', color: '#f43f5e', width: '34px', height: '34px', borderRadius: '12px', border: 'none', cursor: 'pointer' }}>
+                            <X size={15} />
                         </button>
                     )}
                 </div>
