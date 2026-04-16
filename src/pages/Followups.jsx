@@ -45,6 +45,20 @@ export default function Followups() {
     const [notifyTarget, setNotifyTarget] = useState(null);
     const [saving, setSaving] = useState(false);
     const [previewLead, setPreviewLead] = useState(null);
+    const [hoverContext, setHoverContext] = useState(null); // { x, y, lead }
+
+    const handleHover = (e, lead) => {
+        if (!lead) {
+            setHoverContext(null);
+            return;
+        }
+        const rect = e.currentTarget.getBoundingClientRect();
+        setHoverContext({
+            x: rect.left,
+            y: rect.top,
+            lead
+        });
+    };
 
 
 
@@ -371,6 +385,7 @@ export default function Followups() {
                                                 onDownload={downloadSummary} onDelete={deleteFu} 
                                                 onPreview={setPreviewLead} urgent={isUrgent(f.scheduled_at)} 
                                                 onDragStart={e => handleDragStart(e, f.id)}
+                                                onHover={handleHover}
                                             />
                                         );
                                     })}
@@ -397,6 +412,7 @@ export default function Followups() {
                                 onNotify={setNotifyTarget} onDownload={downloadSummary} 
                                 onDelete={deleteFu} onPreview={setPreviewLead} 
                                 urgent={isUrgent(f.scheduled_at)} 
+                                onHover={handleHover}
                             />
                          );
                     })}
@@ -483,11 +499,56 @@ export default function Followups() {
             {previewLead && (
                 <LeadContextDrawer id={previewLead} onClose={() => setPreviewLead(null)} onDial={dialerEvents.call} />
             )}
+
+            {hoverContext && !isMobile && (
+                <QuickViewTooltip context={hoverContext} />
+            )}
         </div>
     );
 }
 
-function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart }) {
+function QuickViewTooltip({ context }) {
+    const { x, y, lead } = context;
+    return (
+        <div style={{
+            position: 'fixed', left: x, top: y, transform: 'translateY(-105%)',
+            background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(10px)',
+            padding: '16px', borderRadius: '16px', color: 'white', zIndex: 10000,
+            width: '280px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3)',
+            border: '1px solid rgba(255, 255, 255, 0.1)', pointerEvents: 'none',
+            animation: 'fadeInUp 0.2s ease-out'
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '10px', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 900 }}>{lead.name?.charAt(0)}</div>
+                <div>
+                    <div style={{ fontWeight: 900, fontSize: '0.85rem' }}>{lead.name}</div>
+                    <div style={{ fontSize: '0.65rem', opacity: 0.6, textTransform: 'uppercase', fontWeight: 800 }}>{lead.stage}</div>
+                </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Budget</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 900 }}>₹{lead.budget || 'N/A'}</div>
+                </div>
+                <div>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Win Prob.</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: (lead.score || 0) > 70 ? '#10b981' : '#fbbf24' }}>{lead.score || 0}%</div>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Preferred Project</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{lead.project_name || 'General Inquiry'}</div>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Last Interaction</div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'No history yet'}</div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart, onHover }) {
     if (!f) return null;
     const date = new Date(f.scheduled_at || Date.now());
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
@@ -544,7 +605,13 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
             <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isCompact ? '0' : '24px' }}>
                 <div style={{ minWidth: isCompact ? '0' : '180px', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1px' }}>
-                        <span onClick={() => onPreview(f.lead_id || f.leadId)} style={{ fontWeight: 950, fontSize: '0.95rem', cursor: 'pointer', color: '#0f172a' }} className="hover-underline">
+                        <span 
+                            onClick={() => onPreview(f.lead_id || f.leadId)} 
+                            onMouseEnter={(e) => onHover(e, leadDetails)}
+                            onMouseLeave={() => onHover(null)}
+                            style={{ fontWeight: 950, fontSize: '0.95rem', cursor: 'pointer', color: '#0f172a' }} 
+                            className="hover-underline"
+                        >
                             {f.lead_name || f.leadName}
                         </span>
                         <div style={{ display: 'flex', gap: '4px' }}>
