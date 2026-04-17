@@ -276,12 +276,13 @@ export default function Pipeline() {
                 marginBottom: 20,
             }}>
                 {PIPELINE_STAGES.map((stage) => {
-                    if (isMobile && stage === 'Proposal Shared') return null;
                     const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                    const stageLeads = byStage(stage);
+                    const stageLeads = byStage ? byStage(stage) : [];
                     const count = stageLeads.length;
-                    const val = stageValueL(stage);
+                    const val = typeof stageValueL === 'function' ? stageValueL(stage) : 0;
                     const isEmpty = count === 0;
+
+                    if (isMobile && stage === 'Proposal Shared' && isEmpty) return null;
 
                     return (
                         <div key={stage} 
@@ -328,13 +329,13 @@ export default function Pipeline() {
                                     <div style={{ 
                                         fontSize: isMobile ? '0.5rem' : '0.72rem', 
                                         fontWeight: 850, 
-                                        color: sc.color,
-                                        background: `${sc.bg}cc`,
+                                        color: sc.color || '#64748b',
+                                        background: `${sc.bg || '#f1f5f9'}cc`,
                                         padding: '1px 4px',
                                         borderRadius: '4px',
-                                        border: `1px solid ${sc.color}15`
+                                        border: `1px solid ${sc.color || '#64748b'}15`
                                     }}>
-                                        {fmtL(val)}
+                                        {typeof fmtL === 'function' ? fmtL(val) : val}
                                     </div>
                                 )}
                             </div>
@@ -342,7 +343,7 @@ export default function Pipeline() {
                             {/* Micro Indicator Bar */}
                             {!isEmpty && (
                                 <div style={{ marginTop: 8, height: 2, width: '100%', background: '#f1f5f9', borderRadius: 10, overflow: 'hidden' }}>
-                                    <div style={{ height: '100%', width: '40%', background: sc.accent, borderRadius: 10 }} />
+                                    <div style={{ height: '100%', width: '40%', background: sc.accent || '#64748b', borderRadius: 10 }} />
                                 </div>
                             )}
                         </div>
