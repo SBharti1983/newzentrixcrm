@@ -98,7 +98,7 @@ const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onC
             </div>
 
             {/* Contact row */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontSize: '0.75rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <Phone size={11} style={{ color: 'var(--text-muted)' }} />
                     <span>{lead.phone || '—'}</span>
@@ -109,6 +109,10 @@ const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onC
                         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.email}</span>
                     </div>
                 )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+                    <Calendar size={11} style={{ color: 'var(--text-muted)' }} />
+                    <span style={{ fontWeight: 600 }}>{lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</span>
+                </div>
             </div>
 
             {/* Bottom row: Status + Score + Source + Actions */}
