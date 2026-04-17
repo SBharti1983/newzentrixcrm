@@ -11,7 +11,7 @@ import ZapierAssistant from './components/ZapierAssistant';
 import AgentCopilotWidget from './components/AgentCopilotWidget';
 import MobileActionHub from './components/MobileActionHub';
 import MobileBottomNav from './components/MobileBottomNav';
-// PWA removed
+import PWAInstallManager from './components/PWAInstallManager';
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import { BrandingProvider, useBranding } from './context/BrandingContext';
@@ -246,6 +246,7 @@ function ProtectedApp() {
       </div>
       {(user?.role === 'agent' || user?.role === 'sales_manager') && !isMobile && <AgentCopilotWidget />}
       {isMobile && <MobileBottomNav onOpenSidebar={() => setMobileOpen(true)} />}
+      <PWAInstallManager isMobile={isMobile} />
     </div>
     <Dialer />
     </>

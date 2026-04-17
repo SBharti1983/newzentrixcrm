@@ -8,11 +8,15 @@ require('dotenv').config();
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const pool = new Pool({
-    host: process.env.DB_HOST, port: parseInt(process.env.DB_PORT),
-    database: process.env.DB_NAME, user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-});
+const poolConfig = process.env.DATABASE_URL 
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+    : {
+        host: process.env.DB_HOST, port: parseInt(process.env.DB_PORT),
+        database: process.env.DB_NAME, user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+    };
+
+const pool = new Pool(poolConfig);
 
 const rand = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -378,6 +382,26 @@ async function seedRich() {
                 daysAgo(randInt(0, 7))]);
         }
         console.log(`✓ Enquiries: 10 created`);
+
+        // ── Notifications (Strategic Command Data) ───────────────────
+        let msgCount = 0;
+        for (let i = 0; i < 20; i++) {
+            const lead = leadRows[i % leadRows.length];
+            const agent = agents[i % agents.length];
+            const isSentByAgent = i % 2 === 0;
+            const diff = randInt(1, 10);
+            
+            await client.query(`
+                INSERT INTO notifications (tenant_id, lead_id, sent_by, channel, recipient, body, status, sent_at)
+                VALUES ($1, $2, $3, 'WhatsApp', $4, $5, 'Delivered', $6)
+            `, [tid, lead.id, isSentByAgent ? agent.id : null, lead.phone, 
+                isSentByAgent 
+                    ? `Hello ${lead.name.split(' ')[0]}, just checking if you've seen the ${lead.property_type} floor plans I sent earlier.`
+                    : `Hi, yes I saw them. Can we schedule a site visit for this weekend?`,
+                daysAgo(diff)]);
+            msgCount++;
+        }
+        console.log(`✓ Notifications: ${msgCount} social messages created`);
 
         // ── Subscription ─────────────────────────────────────────────
         await client.query(`

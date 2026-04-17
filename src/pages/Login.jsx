@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useBranding } from '../context/BrandingContext';
 import { authApi } from '../api/client';
 import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shield, Zap, BarChart3, CheckCircle2, Phone } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 const getSubdomain = () => {
     const host = window.location.hostname;
@@ -160,6 +161,7 @@ const styleSheet = `
 export default function Login() {
     const { login } = useAuth();
     const { branding } = useBranding();
+    const isMobile = useMobile();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -229,170 +231,184 @@ export default function Login() {
             fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
             position: 'relative', overflow: 'hidden',
             transition: 'background 0.8s ease',
+            alignItems: isMobile ? 'center' : 'stretch',
+            justifyContent: isMobile ? 'center' : 'flex-start',
         }}>
             <AnimatedOrbs />
 
-            {/* ═══ LEFT PANEL — Branding & Social Proof ═══ */}
-            <div style={{
-                flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-                padding: '48px 56px', position: 'relative', zIndex: 1,
-                maxWidth: 720,
-                background: 'linear-gradient(135deg, #050d21 0%, #172554 100%)', // Match the global Midnight Navy
-            }} className="login-left-panel">
-
-                {/* Logo */}
-                <div style={{ ...anim(0.1), display: 'flex', alignItems: 'center', gap: 14, marginBottom: 48 }}>
-                    <div style={{
-                        width: 48, height: 48, borderRadius: 14,
-                        background: tenantColor,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.4rem', fontWeight: 900, color: 'white',
-                        boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
-                        letterSpacing: '-1px',
-                        animation: 'pulseGlow 4s ease-in-out infinite',
-                    }}>{tenantLogo}</div>
-                    <div>
-                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
-                            {tenantName}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                            {subdomain ? '● Verified Workspace' : '● Real Estate Intelligence Platform'}
+            {/* ═══ LEFT PANEL — Branding & Social Proof (Hidden on Mobile) ═══ */}
+            {!isMobile && (
+                <div style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                    padding: '48px 56px', position: 'relative', zIndex: 1,
+                    maxWidth: 720,
+                    background: 'linear-gradient(135deg, #050d21 0%, #172554 100%)',
+                }} className="login-left-panel">
+                    <div style={{ ...anim(0.1), display: 'flex', alignItems: 'center', gap: 14, marginBottom: 48 }}>
+                        <div style={{
+                            width: 48, height: 48, borderRadius: 14,
+                            background: tenantColor,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1.4rem', fontWeight: 900, color: 'white',
+                            boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
+                            letterSpacing: '-1px',
+                            animation: 'pulseGlow 4s ease-in-out infinite',
+                        }}>{tenantLogo}</div>
+                        <div>
+                            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
+                                {tenantName}
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                {subdomain ? '● Verified Workspace' : '● Real Estate Intelligence Platform'}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Headline */}
-                <div style={{ ...anim(0.2), marginBottom: 36 }}>
-                    <h1 style={{
-                        fontSize: 'clamp(2rem, 3.2vw, 3rem)', fontWeight: 900,
-                        color: 'white', lineHeight: 1.08, marginBottom: 16,
-                        letterSpacing: '-1.5px',
-                    }}>
-                        Manage Every<br />
-                        <span style={{
-                            background: 'linear-gradient(90deg, #818cf8, #06b6d4, #a78bfa)',
-                            backgroundSize: '200% auto',
-                            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                            animation: 'shimmerLine 6s linear infinite',
+                    <div style={{ ...anim(0.2), marginBottom: 36 }}>
+                        <h1 style={{
+                            fontSize: 'clamp(2rem, 3.2vw, 3rem)', fontWeight: 900,
+                            color: 'white', lineHeight: 1.08, marginBottom: 16,
+                            letterSpacing: '-1.5px',
                         }}>
-                            Lead. Deal. Payment.
-                        </span>
-                    </h1>
-                    <p style={{
-                        fontSize: '1.05rem', color: 'rgba(255,255,255,0.5)',
-                        lineHeight: 1.7, maxWidth: 440, fontWeight: 400,
-                    }}>
-                        A complete CRM built for real estate professionals — from first enquiry to property registration and beyond.
-                    </p>
-                </div>
-
-                {/* Stats */}
-                <div style={{ ...anim(0.35), display: 'flex', gap: 16, marginBottom: 8 }}>
-                    {STATS.map(({ label, value, icon: Icon, color, bg }) => (
-                        <div key={label} className="login-stat-card" style={{
-                            flex: 1, padding: '6px 20px', borderRadius: 16,
-                            background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            backdropFilter: 'blur(12px)',
-                            cursor: 'default',
-                        }}>
-                            <div style={{
-                                width: 32, height: 32, borderRadius: 10,
-                                background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: 4,
+                            Manage Every<br />
+                            <span style={{
+                                background: 'linear-gradient(90deg, #818cf8, #06b6d4, #a78bfa)',
+                                backgroundSize: '200% auto',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                                animation: 'shimmerLine 6s linear infinite',
                             }}>
-                                <Icon size={16} style={{ color }} />
-                            </div>
-                            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', marginBottom: 0, letterSpacing: '-0.5px' }}>{value}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Feature tags */}
-                <div style={{ ...anim(0.45), display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
-                    {FEATURES.map(f => (
-                        <span key={f} className="login-feature-tag" style={{
-                            padding: '5px 14px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 600,
-                            background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)',
-                            border: '1px solid rgba(255,255,255,0.08)',
-                            display: 'flex', alignItems: 'center', gap: 5, cursor: 'default',
+                                Lead. Deal. Payment.
+                            </span>
+                        </h1>
+                        <p style={{
+                            fontSize: '1.05rem', color: 'rgba(255,255,255,0.5)',
+                            lineHeight: 1.7, maxWidth: 440, fontWeight: 400,
                         }}>
-                            <CheckCircle2 size={11} style={{ color: '#10b981' }} />
-                            {f}
-                        </span>
-                    ))}
-                </div>
+                            A complete CRM built for real estate professionals — from first enquiry to property registration and beyond.
+                        </p>
+                    </div>
 
-                {/* Trust bar */}
-                <div style={{ ...anim(0.55), display: 'flex', gap: 24 }}>
-                    {TRUST_ITEMS.map(({ icon: Icon, text }) => (
-                        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                            <Icon size={13} style={{ color: 'rgba(255,255,255,0.3)' }} />
-                            <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{text}</span>
-                        </div>
-                    ))}
+                    <div style={{ ...anim(0.35), display: 'flex', gap: 16, marginBottom: 8 }}>
+                        {STATS.map(({ label, value, icon: Icon, color, bg }) => (
+                            <div key={label} className="login-stat-card" style={{
+                                flex: 1, padding: '6px 20px', borderRadius: 16,
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                backdropFilter: 'blur(12px)',
+                                cursor: 'default',
+                            }}>
+                                <div style={{
+                                    width: 32, height: 32, borderRadius: 10,
+                                    background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    marginBottom: 4,
+                                }}>
+                                    <Icon size={16} style={{ color }} />
+                                </div>
+                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', marginBottom: 0, letterSpacing: '-0.5px' }}>{value}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ ...anim(0.45), display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
+                        {FEATURES.map(f => (
+                            <span key={f} className="login-feature-tag" style={{
+                                padding: '5px 14px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 600,
+                                background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                display: 'flex', alignItems: 'center', gap: 5, cursor: 'default',
+                            }}>
+                                <CheckCircle2 size={11} style={{ color: '#10b981' }} />
+                                {f}
+                            </span>
+                        ))}
+                    </div>
+
+                    <div style={{ ...anim(0.55), display: 'flex', gap: 24 }}>
+                        {TRUST_ITEMS.map(({ icon: Icon, text }) => (
+                            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                                <Icon size={13} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                                <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>{text}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* ═══ RIGHT PANEL — Login Form ═══ */}
             <div style={{
-                width: '100%', maxWidth: 520, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: 'clamp(24px, 5vw, 48px)',
-                background: 'rgba(255,255,255,0.98)',
-                borderLeft: '1px solid rgba(255,255,255,0.06)',
-                position: 'relative', zIndex: 1,
-                boxShadow: '-24px 0 80px rgba(0,0,0,0.25)',
+                width: '100%', 
+                maxWidth: isMobile ? 'calc(100% - 32px)' : 520, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                padding: isMobile ? '32px 24px' : 'clamp(24px, 5vw, 48px)',
+                background: isMobile ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.98)',
+                backdropFilter: isMobile ? 'blur(24px)' : 'none',
+                borderRadius: isMobile ? 32 : 0,
+                borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)',
+                border: isMobile ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                position: 'relative', 
+                zIndex: 2,
+                boxShadow: isMobile ? '0 32px 80px rgba(0,0,0,0.4)' : '-24px 0 80px rgba(0,0,0,0.25)',
                 ...(mounted ? { animation: 'loginScaleIn 0.5s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both' } : {}),
             }}>
                 {/* Accent stripe at top */}
                 <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+                    position: 'absolute', top: 0, left: 0, right: 0, height: 4,
                     background: 'linear-gradient(90deg, #6366f1, #06b6d4, #8b5cf6)',
+                    borderRadius: isMobile ? '32px 32px 0 0' : 0
                 }} />
 
                 <div style={{ width: '100%', maxWidth: 420 }}>
+                    {/* Centered Mobile Branding */}
+                    {isMobile && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
+                            <div style={{
+                                width: 56, height: 56, borderRadius: 16,
+                                background: tenantColor,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '1.6rem', fontWeight: 900, color: 'white',
+                                boxShadow: `0 12px 24px ${tenantColor}40`,
+                                marginBottom: 12
+                            }}>{tenantLogo}</div>
+                            <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{tenantName}</h2>
+                        </div>
+                    )}
+
                     {/* Sign in header */}
-                    <div style={{ marginBottom: 28 }}>
+                    <div style={{ marginBottom: 32, textAlign: isMobile ? 'center' : 'left' }}>
                         <h2 style={{
-                            fontSize: '1.6rem', fontWeight: 800, color: 'var(--navy-700)',
-                            marginBottom: 6, letterSpacing: '-0.5px',
+                            fontSize: isMobile ? '1.8rem' : '1.6rem', fontWeight: 950, color: '#0f172a',
+                            marginBottom: 8, letterSpacing: '-1px',
                             fontFamily: "'Plus Jakarta Sans', sans-serif",
                         }}>Welcome back</h2>
-                        <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                            Sign in to your workspace to continue.
+                        <p style={{ fontSize: '0.95rem', color: '#64748b', lineHeight: 1.5, fontWeight: 500 }}>
+                            Real Estate Intelligence Portal
                         </p>
                     </div>
 
-
                     <form onSubmit={handleSubmit}>
                         {/* Email */}
-                        <div style={{ marginBottom: 18 }}>
-                            <label style={{
-                                display: 'block', fontSize: '0.8rem', fontWeight: 700,
-                                color: 'var(--text-primary)', marginBottom: 7,
-                                letterSpacing: '0.01em',
-                            }}>
-                                Email address
-                            </label>
+                        <div style={{ marginBottom: 20 }}>
                             <div className="login-input-wrap" style={{ position: 'relative' }}>
-                                <Mail size={15} style={{
-                                    position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                                    color: 'var(--text-muted)', pointerEvents: 'none',
+                                <Mail size={16} style={{
+                                    position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#94a3b8', pointerEvents: 'none',
                                 }} />
                                 <input
                                     type="email" required id="login-email"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    placeholder="you@company.com"
+                                    placeholder="your@email.com"
                                     style={{
-                                        width: '100%', padding: '12px 14px 12px 38px',
-                                        fontSize: '0.875rem', fontWeight: 500,
-                                        border: '1.5px solid var(--border-light)',
-                                        borderRadius: 11, outline: 'none',
-                                        background: 'var(--slate-50)',
-                                        color: 'var(--text-primary)',
-                                        transition: 'all 0.2s ease',
+                                        width: '100%', padding: '16px 16px 16px 44px',
+                                        fontSize: '0.95rem', fontWeight: 600,
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: 16, outline: 'none',
+                                        background: '#f8fafc',
+                                        color: '#0f172a',
+                                        transition: 'all 0.3s ease',
                                         fontFamily: "'Inter', sans-serif",
                                     }}
                                 />
@@ -400,44 +416,37 @@ export default function Login() {
                         </div>
 
                         {/* Password */}
-                        <div style={{ marginBottom: 18 }}>
-                            <label style={{
-                                display: 'block', fontSize: '0.8rem', fontWeight: 700,
-                                color: 'var(--text-primary)', marginBottom: 7,
-                                letterSpacing: '0.01em',
-                            }}>
-                                Password
-                            </label>
+                        <div style={{ marginBottom: 24 }}>
                             <div className="login-input-wrap" style={{ position: 'relative' }}>
-                                <Lock size={15} style={{
-                                    position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
-                                    color: 'var(--text-muted)', pointerEvents: 'none',
+                                <Lock size={16} style={{
+                                    position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#94a3b8', pointerEvents: 'none',
                                 }} />
                                 <input
                                     type={showPwd ? 'text' : 'password'} required id="login-password"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    placeholder="Enter your password"
+                                    placeholder="••••••••"
                                     style={{
-                                        width: '100%', padding: '12px 44px 12px 38px',
-                                        fontSize: '0.875rem', fontWeight: 500,
-                                        border: '1.5px solid var(--border-light)',
-                                        borderRadius: 11, outline: 'none',
-                                        background: 'var(--slate-50)',
-                                        color: 'var(--text-primary)',
-                                        transition: 'all 0.2s ease',
+                                        width: '100%', padding: '16px 52px 16px 44px',
+                                        fontSize: '0.95rem', fontWeight: 600,
+                                        border: '1.5px solid #e2e8f0',
+                                        borderRadius: 16, outline: 'none',
+                                        background: '#f8fafc',
+                                        color: '#0f172a',
+                                        transition: 'all 0.3s ease',
                                         fontFamily: "'Inter', sans-serif",
                                     }}
                                 />
                                 <button type="button" onClick={() => setShowPwd(v => !v)}
                                     style={{
-                                        position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                                        position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
                                         border: 'none', background: 'none', cursor: 'pointer',
-                                        color: 'var(--text-muted)', padding: 4,
+                                        color: '#94a3b8', padding: 4,
                                         borderRadius: 6, display: 'flex', alignItems: 'center',
                                         transition: 'color 0.15s',
                                     }}>
-                                    {showPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                                    {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
                         </div>
@@ -445,13 +454,13 @@ export default function Login() {
                         {/* Error */}
                         {loginError && (
                             <div style={{
-                                padding: '11px 14px', borderRadius: 11, marginBottom: 18,
-                                background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.18)',
-                                fontSize: '0.82rem', color: '#e11d48', fontWeight: 600,
-                                display: 'flex', alignItems: 'center', gap: 8,
+                                padding: '12px 16px', borderRadius: 14, marginBottom: 20,
+                                background: '#fef2f2', border: '1px solid #fee2e2',
+                                fontSize: '0.85rem', color: '#ef4444', fontWeight: 700,
+                                display: 'flex', alignItems: 'center', gap: 10,
                                 animation: 'loginSlideUp 0.3s ease both',
                             }}>
-                                <span style={{ fontSize: '1rem' }}>⚠</span> {loginError}
+                                <span style={{ fontSize: '1.2rem' }}>⚠️</span> {loginError}
                             </div>
                         )}
 
@@ -461,13 +470,13 @@ export default function Login() {
                             className="login-submit-btn"
                             id="login-submit"
                             style={{
-                                width: '100%', padding: '13px', fontSize: '0.9rem', fontWeight: 700,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                                borderRadius: 12, border: 'none', cursor: 'pointer',
-                                color: 'white', letterSpacing: '-0.01em',
+                                width: '100%', padding: '16px', fontSize: '1rem', fontWeight: 900,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                                borderRadius: 16, border: 'none', cursor: 'pointer',
+                                color: 'white', letterSpacing: '0.01em',
                                 opacity: loading ? 0.85 : 1,
-                                background: 'linear-gradient(135deg, #162d58, #1e3a73)',
-                                boxShadow: '0 6px 20px rgba(30,58,115,0.35)',
+                                background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+                                boxShadow: '0 8px 30px rgba(15, 23, 42, 0.35)',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                             }}
@@ -475,74 +484,66 @@ export default function Login() {
                             {loading ? (
                                 <>
                                     <div style={{
-                                        width: 16, height: 16, border: '2px solid rgba(255,255,255,0.25)',
+                                        width: 18, height: 18, border: '3px solid rgba(255,255,255,0.25)',
                                         borderTopColor: 'white', borderRadius: '50%',
                                         animation: 'spin 0.7s linear infinite',
                                     }} />
-                                    Authenticating...
+                                    Starting Portal...
                                 </>
                             ) : (
-                                <>Sign in <ArrowRight size={15} /></>
+                                <>Launch Platform <ArrowRight size={18} strokeWidth={3} /></>
                             )}
                         </button>
                     </form>
 
                     {/* Links */}
                     <div style={{
-                        display: 'flex', justifyContent: 'space-between', marginTop: 22,
-                        fontSize: '0.82rem',
+                        display: 'flex', justifyContent: 'space-between', marginTop: 24,
+                        fontSize: '0.85rem',
                     }}>
-                        <a href="/forgot-password" className="login-link" style={{
-                            color: 'var(--navy-500)', fontWeight: 600, textDecoration: 'none',
-                            transition: 'color 0.15s',
-                        }}>
-                            Reset Password
+                        <a href="/forgot-password" style={{ color: '#6366f1', fontWeight: 800, textDecoration: 'none' }}>
+                            Reset Key
                         </a>
-                        <a href="/register" className="login-link" style={{
-                            color: 'var(--navy-500)', fontWeight: 600, textDecoration: 'none',
-                            transition: 'color 0.15s',
-                        }}>
-                            Create account →
+                        <a href="/register" style={{ color: '#0f172a', fontWeight: 900, textDecoration: 'none' }}>
+                            Provision Account →
                         </a>
                     </div>
 
-                    {/* Support & Helpline */}
+                    {/* Support Grid (Mobile Optimized) */}
                     <div style={{
-                        marginTop: 32, padding: '16px', borderRadius: '14px',
-                        background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)',
-                        textAlign: 'center'
+                        marginTop: 40, padding: '20px', borderRadius: '24px',
+                        background: 'rgba(99,102,241,0.03)', border: '1px solid rgba(99,102,241,0.1)',
                     }}>
-                        <p style={{ margin: '0 0 10px', fontSize: '0.75rem', fontWeight: 800, color: '#1e3a73', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Facing difficulties?
+                        <p style={{ margin: '0 0 16px', fontSize: '0.65rem', fontWeight: 950, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.15em', textAlign: 'center' }}>
+                            Mission Critical Support
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                    <Phone size={12} color="#1e3a73" />
+                        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+                                    <Phone size={14} color="#6366f1" />
                                 </div>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>+91-80766-31994</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', flexShrink: 0 }}>+91-80766-31994</span>
                             </div>
-                            <div style={{ width: '1px', height: '14px', background: 'rgba(0,0,0,0.1)' }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <div style={{ width: 24, height: 24, borderRadius: '6px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                                    <Mail size={12} color="#1e3a73" />
+                            {!isMobile && <div style={{ width: '1px', height: '16px', background: 'rgba(0,0,0,0.1)' }} />}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
+                                    <Mail size={14} color="#6366f1" />
                                 </div>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>billing@zentrixcrm.com</span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', flexShrink: 0 }}>billing@zentrixcrm.com</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer text */}
+                    {/* Footer */}
                     <div style={{
-                        marginTop: 24, paddingTop: 16,
-                        borderTop: '1px solid var(--border-light)',
+                        marginTop: 32,
                         textAlign: 'center',
                     }}>
                         <p style={{
-                            fontSize: '0.72rem', color: 'var(--text-muted)',
-                            fontWeight: 500, lineHeight: 1.6,
+                            fontSize: '0.7rem', color: '#94a3b8',
+                            fontWeight: 600, letterSpacing: '0.02em'
                         }}>
-                            Protected by enterprise-grade security.<br />
+                            Enterprise-Grade Security Shield Active<br />
                             © {new Date().getFullYear()} {tenantName}. All rights reserved.
                         </p>
                     </div>

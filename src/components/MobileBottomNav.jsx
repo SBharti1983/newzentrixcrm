@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, Calendar, BarChart3, Menu } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, Kanban, Menu } from 'lucide-react';
 
 /**
  * MobileBottomNav — Fixed bottom tab bar for mobile viewports.
@@ -14,7 +14,7 @@ export default function MobileBottomNav({ onOpenSidebar }) {
         { path: '/', label: 'Home', icon: LayoutDashboard },
         { path: '/leads', label: 'Leads', icon: Users },
         { path: '/followups', label: 'Tasks', icon: Calendar },
-        { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+        { path: '/pipeline', label: 'Deals', icon: Kanban },
         { path: '__more__', label: 'More', icon: Menu },
     ];
 

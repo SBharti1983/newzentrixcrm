@@ -230,83 +230,79 @@ export default function Bookings() {
     };
 
     return (
-        <div className="animate-fadeIn">
-            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 16 : 0 }}>
+        <div className="animate-fadeIn" style={{ paddingBottom: isMobile ? 120 : 20 }}>
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row', 
+                justifyContent: 'space-between',
+                alignItems: isMobile ? 'flex-start' : 'center', 
+                gap: 16,
+                marginBottom: 24,
+                borderBottom: '1px solid var(--border-light)',
+                paddingBottom: 20
+            }}>
                 <div>
-                    <h1 className="page-title">Booking Management</h1>
-                    <p className="page-subtitle">{bookings.length} bookings · {bookings.filter(b => b.status === 'Confirmed').length} confirmed · {bookings.filter(b => b.status === 'In Process').length} in process</p>
+                    <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.8rem', fontWeight: 800, color: 'var(--navy-950)' }}>Booking Center</h1>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{bookings.length} total nodes in registry</p>
                 </div>
-                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/payment-tracker')} style={{ flex: isMobile ? 1 : 'none' }}>
-                        <CreditCard size={14} /> Payments
-                    </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => navigate('/agreements')} style={{ flex: isMobile ? 1 : 'none' }}>
-                        <FileText size={14} /> Docs
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: isMobile ? '100%' : 'auto' }}>
-                        <Plus size={15} /> New Booking
+                <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '100%', height: 44, borderRadius: 12 }}>
+                        <Plus size={18} /> New Booking
                     </button>
                 </div>
             </div>
 
             {/* Summary */}
-            <div className="grid grid-4 mb-6" style={{ gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', 
+                gap: isMobile ? 12 : 20,
+                marginBottom: 24
+            }}>
                 {[
-                    { label: 'Total Bookings', value: bookings.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
-                    { label: 'Confirmed', value: bookings.filter(b => b.status === 'Confirmed').length, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)' },
-                    { label: 'Pending Docs', value: bookings.filter(b => b.status === 'Pending Docs').length, icon: '📄', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
-                    { label: 'Revenue', value: formatCurrency(totalRevenueValue), icon: '💰', color: 'var(--navy-600)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
+                    { label: 'Total', value: bookings.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)' },
+                    { label: 'Active', value: bookings.filter(b => b.status === 'Confirmed').length, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)' },
+                    { label: 'Pending', value: bookings.filter(b => b.status === 'Pending Docs').length, icon: '📄', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.07)' },
+                    { label: 'Revenue', value: formatCurrency(totalRevenueValue), icon: '💰', color: 'var(--navy-600)', bg: 'var(--navy-50)' },
                 ].map(s => (
-                    <div key={s.label} style={{
-                        background: s.bg, borderRadius: 'var(--border-radius-lg)',
-                        border: `1px solid ${s.border}`, padding: '18px 20px',
-                        transition: 'transform 0.2s',
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                            <span style={{ fontSize: '1.4rem' }}>{s.icon}</span>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</span>
+                    <div key={s.label} className="glass-card" style={{ padding: isMobile ? '14px' : '20px', borderRadius: 20 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <span style={{ fontSize: isMobile ? '1.1rem' : '1.4rem' }}>{s.icon}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.label}</span>
                         </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                        <div style={{ fontSize: isMobile ? '1.2rem' : '1.6rem', fontWeight: 900, color: s.color }}>{s.value}</div>
                     </div>
                 ))}
             </div>
 
             {/* Payment Plan Quick Reference */}
-            <div className="card mb-6" style={{ padding: '18px 22px' }}>
+            <div className="glass-card mb-6" style={{ padding: '20px', borderRadius: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                     <div>
-                        <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 3 }}>Payment Plans</div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Click any plan to view full schedule</div>
+                        <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>Financial Architecture</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Adaptive payment structures</div>
                     </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
+                <div style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12, overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? 8 : 0 }}>
                     {PAYMENT_PLANS.map(plan => {
                         const colors = {
-                            'Down Payment': { bg: 'var(--navy-50)', border: 'var(--navy-100)', icon: '💵' },
-                            'Construction Linked': { bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)', icon: '🏗️' },
-                            'EMI': { bg: 'rgba(139,92,246,0.07)', border: 'rgba(139,92,246,0.2)', icon: '🏦' },
-                            'Subvention': { bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)', icon: '📋' },
+                            'Down Payment': { bg: 'var(--navy-50)', color: 'var(--navy-600)', icon: '💵' },
+                            'Construction Linked': { bg: 'rgba(16,185,129,0.07)', color: 'var(--accent-emerald)', icon: '🏗️' },
+                            'EMI': { bg: 'rgba(139,92,246,0.07)', color: 'var(--accent-violet)', icon: '🏦' },
+                            'Subvention': { bg: 'rgba(245,158,11,0.07)', color: 'var(--accent-amber)', icon: '📋' },
                         };
                         const c = colors[plan.name] || colors['Down Payment'];
-                        const count = bookings.filter(b => b.paymentPlan === plan.name).length;
                         return (
                             <div key={plan.id} onClick={() => setShowPlanModal(plan)} style={{
-                                padding: '12px 14px', borderRadius: 'var(--border-radius-md)',
-                                background: c.bg, border: `1px solid ${c.border}`,
-                                cursor: 'pointer', transition: 'all 0.15s',
-                            }}
-                                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                padding: '16px', borderRadius: '16px',
+                                background: 'white', border: '1px solid var(--border-light)',
+                                cursor: 'pointer', flexShrink: 0, width: isMobile ? '240px' : 'auto'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                     <span style={{ fontSize: '1.2rem' }}>{c.icon}</span>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', background: 'white', padding: '2px 7px', borderRadius: 20 }}>{count} bookings</span>
+                                    <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>{plan.name}</div>
                                 </div>
-                                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--navy-700)', marginBottom: 3 }}>{plan.name}</div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{plan.description}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{plan.description}</div>
                             </div>
                         );
                     })}
@@ -314,139 +310,87 @@ export default function Bookings() {
             </div>
 
             {/* Filters + Search */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, marginBottom: 20 }}>
                 <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8, background: 'white',
-                    border: '1px solid var(--border-light)', borderRadius: 'var(--border-radius-md)',
-                    padding: '8px 12px', flex: 1, minWidth: 200,
+                    display: 'flex', alignItems: 'center', gap: 10, background: 'white',
+                    border: '1px solid var(--border-light)', borderRadius: '16px',
+                    padding: '12px 16px', flex: 1
                 }}>
-                    <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <Search size={18} style={{ color: 'var(--text-muted)' }} />
                     <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
-                        placeholder="Search customer, project, unit..."
-                        style={{ border: 'none', outline: 'none', fontSize: '0.85rem', width: '100%', color: 'var(--text-primary)', background: 'transparent' }} />
+                        placeholder="Search ledger..."
+                        style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%', background: 'transparent' }} />
                 </div>
-                {['All', 'Confirmed', 'Pending Docs', 'In Process', 'Registered', 'Cancelled'].map(s => (
-                    <button key={s}
-                        className={`btn ${filterStatus === s ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                        onClick={() => setFilterStatus(s)}
-                        style={{ fontSize: '0.78rem' }}
-                    >{s}</button>
-                ))}
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: isMobile ? 8 : 0 }} className="no-scrollbar">
+                    {['All', 'Confirmed', 'Pending Docs', 'In Process'].map(s => (
+                        <button key={s}
+                            className={`btn ${filterStatus === s ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                            onClick={() => setFilterStatus(s)}
+                            style={{ borderRadius: 12, whiteSpace: 'nowrap' }}
+                        >{s}</button>
+                    ))}
+                </div>
             </div>
 
             {/* Booking Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {filtered.map(b => (
-                    <div key={b.id} className="card" style={{ padding: isMobile ? '16px' : '20px 24px', transition: 'all 0.2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'var(--shadow-card)'; }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 12 : 20, flexDirection: isMobile ? 'column' : 'row' }}>
-                            <div style={{ display: 'flex', gap: 16, width: '100%', alignItems: 'center' }}>
-                                {/* Status icon */}
-                                <div style={{
-                                    width: 48, height: 48, borderRadius: 'var(--border-radius-md)', flexShrink: 0,
-                                    background: b.status === 'Confirmed' ? 'rgba(16,185,129,0.1)' : b.status === 'Registered' ? 'rgba(139,92,246,0.1)' : 'rgba(30,58,115,0.08)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem',
-                                }}>
-                                    {b.status === 'Confirmed' ? '🏠' : b.status === 'Pending Docs' ? '📄' : b.status === 'Registered' ? '🏛️' : '⏳'}
-                                </div>
-                                
+                    <div key={b.id} className="glass-card" style={{ padding: isMobile ? '20px' : '24px', borderRadius: 24 }}>
+                        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20 }}>
+                            <div style={{ 
+                                width: isMobile ? '100%' : '64px', height: isMobile ? 'auto' : '64px',
+                                background: b.status === 'Confirmed' ? 'rgba(16,185,129,0.1)' : 'rgba(30,58,115,0.05)',
+                                borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'center',
+                                padding: isMobile ? '12px 16px' : 0, gap: 12
+                            }}>
+                                <span style={{ fontSize: '1.5rem' }}>{b.status === 'Confirmed' ? '🏠' : '⏳'}</span>
                                 {isMobile && (
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.payment_plan || b.paymentPlan}</div>
+                                    <div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>DEAL VALUE</div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Main info */}
                             <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                                    <span style={{ fontSize: '1rem', fontWeight: 800 }}>{b.customer_name || b.customerName}</span>
-                                    <span className={`badge ${STATUS_BADGE[b.status] || 'badge-slate'}`}>{b.status}</span>
-                                    {b.tokenCollected && (
-                                        <span className="badge badge-cyan" style={{ fontSize: '0.65rem' }}>🪙 Token Collected</span>
-                                    )}
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
-                                    <span><Building2 size={12} style={{ marginRight: 4, opacity: 0.6 }} />{b.project_name || b.projectName}</span>
-                                    <span>🔑 {b.unit_no || b.unitNo}</span>
-                                    <span><Calendar size={12} style={{ marginRight: 4, opacity: 0.6 }} />{b.booking_date || b.bookingDate}</span>
-                                    <span><User size={12} style={{ marginRight: 4, opacity: 0.6 }} />{b.agent_name || b.agentName}</span>
-                                    <span>💳 {b.payment_plan || b.paymentPlan}</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                    <div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)' }}>{b.customer_name || b.customerName}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                                            <Building2 size={12} className="text-slate-400" />
+                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{b.project_name || b.projectName} · Unit {b.unit_no || b.unitNo}</span>
+                                        </div>
+                                    </div>
+                                    <span className={`badge ${STATUS_BADGE[b.status] || 'badge-slate'}`} style={{ borderRadius: 8 }}>{b.status}</span>
                                 </div>
 
-                                {/* Token info strip */}
-                                <div style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: 16, padding: '6px 14px',
-                                    background: 'var(--slate-50)', borderRadius: 'var(--border-radius-sm)',
-                                    border: '1px solid var(--border-light)', fontSize: '0.8rem',
-                                }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Token:</span>
-                                    <strong style={{ color: 'var(--accent-emerald)' }}>{b.token_amount || b.tokenAmount}</strong>
-                                    <span style={{ color: 'var(--text-muted)' }}>Total:</span>
-                                    <strong style={{ color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</strong>
-                                </div>
-                            </div>
-
-                            {/* Financial */}
-                            {!isMobile && (
-                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--navy-600)' }}>{b.total_amount || b.amount}</div>
-                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                                        {b.paymentPlan}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, padding: '12px', background: 'var(--slate-50)', borderRadius: 16, marginBottom: 16 }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Token Collected</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--accent-emerald)' }}>{b.token_amount || b.tokenAmount}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Plan</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 900 }}>{b.payment_plan || b.paymentPlan}</div>
                                     </div>
                                 </div>
-                            )}
 
-                             {/* Actions */}
-                             <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexDirection: isMobile ? 'row' : 'column', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
-                                 <button 
-                                     className="btn btn-sm" 
-                                     style={{ background: 'rgba(0,163,141,0.1)', color: '#00a38d', border: '1px solid rgba(0,163,141,0.25)', fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                     onClick={() => dialerEvents.call(b.customer_id, b.customer_phone, b.customer_name)}
-                                 >
-                                     <Phone size={12} /> Call Client
-                                 </button>
-                                 {b.status !== 'Confirmed' && (
-                                    <button className="btn btn-success btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                        onClick={() => confirmBooking(b.id)}>
-                                        <CheckCircle size={12} /> Confirm
-                                    </button>
-                                )}
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                    onClick={() => setShowProForma(b)}>
-                                    <FileText size={12} /> Pro-Forma
-                                </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                    onClick={() => navigate('/payment-tracker')}>
-                                    <CreditCard size={12} /> Payments
-                                </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                    onClick={() => downloadReceipt(b)}>
-                                    <Download size={12} /> Receipt
-                                </button>
-                                <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.75rem', flex: isMobile ? 1 : 'none' }}
-                                    onClick={() => navigate('/agreements')}>
-                                    <FileText size={12} /> Docs
-                                </button>
-                                <button className="btn btn-ghost btn-sm btn-icon"
-                                    style={{ color: 'var(--accent-rose)', fontSize: '0.75rem' }}
-                                    onClick={() => cancelBooking(b.id)}>
-                                    <X size={13} />
-                                </button>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    <button onClick={() => navigate('/payment-tracker')} className="btn btn-ghost btn-sm" style={{ flex: 1, borderRadius: 10 }}>Track Payments</button>
+                                    <button onClick={() => downloadReceipt(b)} className="btn btn-ghost btn-sm" style={{ flex: 1, borderRadius: 10 }}>Receipt</button>
+                                    <button onClick={() => dialerEvents.call(b.customer_id, b.customer_phone, b.customer_name)} className="btn btn-sm btn-success" style={{ flex: 1, borderRadius: 10 }}>Call Client</button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 ))}
+            </div>
                 {filtered.length === 0 && (
                     <div className="empty-state">
                         <div className="empty-state-icon">📋</div>
                         <div className="empty-state-title">No bookings found</div>
                     </div>
                 )}
-            </div>
 
             {/* Payment Plan Info Modal */}
             {showPlanModal && (
@@ -494,43 +438,34 @@ export default function Bookings() {
             {/* New Booking Multi-Step Modal */}
             {showModal && (
                 <div className="modal-overlay" onClick={() => { setShowModal(false); setStep(1); }}>
-                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 600 }}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ 
+                        maxWidth: 600, 
+                        height: isMobile ? '100%' : 'auto',
+                        maxHeight: isMobile ? '100vh' : '90vh',
+                        borderRadius: isMobile ? 0 : 28
+                    }}>
                         {/* Step indicator */}
                         <div style={{
-                            padding: '20px 24px 0',
+                            padding: isMobile ? '40px 24px 16px' : '20px 24px 16px',
                             borderBottom: '1px solid var(--border-light)',
-                            paddingBottom: 16,
                             background: 'var(--navy-50)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 0 }}>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
                                 {[
-                                    { n: 1, label: 'Booking Details' },
-                                    { n: 2, label: 'Payment Plan' },
-                                    { n: 3, label: 'Token Collection' },
+                                    { n: 1, label: 'Details' },
+                                    { n: 2, label: 'Plan' },
+                                    { n: 3, label: 'Token' },
                                 ].map((s, i, arr) => (
                                     <div key={s.n} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                                        <div style={{
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1,
-                                        }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
                                             <div style={{
-                                                width: 30, height: 30, borderRadius: '50%',
+                                                width: 28, height: 28, borderRadius: '50%',
                                                 background: step >= s.n ? 'var(--navy-600)' : 'var(--slate-200)',
-                                                color: step >= s.n ? 'white' : 'var(--text-muted)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.8rem', fontWeight: 800,
-                                                transition: 'all 0.3s',
-                                            }}>
-                                                {step > s.n ? <CheckCircle size={14} /> : s.n}
-                                            </div>
-                                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: step >= s.n ? 'var(--navy-600)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s.label}</span>
+                                                color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800
+                                            }}>{step > s.n ? '✓' : s.n}</div>
+                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: step >= s.n ? 'var(--navy-600)' : 'var(--text-muted)' }}>{s.label}</span>
                                         </div>
-                                        {i < arr.length - 1 && (
-                                            <div style={{
-                                                height: 2, flex: 1, maxWidth: 40,
-                                                background: step > s.n ? 'var(--navy-400)' : 'var(--slate-200)',
-                                                marginBottom: 20, transition: 'all 0.3s',
-                                            }} />
-                                        )}
+                                        {i < arr.length - 1 && <div style={{ height: 2, flex: 1, maxWidth: 30, background: step > s.n ? 'var(--navy-400)' : 'var(--slate-200)', marginBottom: 18 }} />}
                                     </div>
                                 ))}
                             </div>
@@ -538,183 +473,90 @@ export default function Bookings() {
 
                         <div className="modal-header" style={{ paddingTop: 16 }}>
                             <h3 className="modal-title">
-                                {step === 1 ? 'Booking Details' : step === 2 ? 'Select Payment Plan' : 'Token Collection'}
+                                {step === 1 ? 'Booking Details' : step === 2 ? 'Select Plan' : 'Token Receipt'}
                             </h3>
-                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setShowModal(false); setStep(1); }}><X size={16} /></button>
+                            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => { setShowModal(false); setStep(1); }}><X size={20} /></button>
                         </div>
 
-                        <div className="modal-body">
+                        <div className="modal-body" style={{ overflowY: 'auto', maxHeight: isMobile ? 'calc(100vh - 250px)' : '500px' }}>
                             {/* Step 1: Details */}
                             {step === 1 && (
-                                <div className="form-grid form-grid-2">
-                                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                        <label className="form-label">Customer Name *</label>
-                                        <input className="form-control" list="cust-list" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="Customer full name" />
-                                        <datalist id="cust-list">
-                                            {customers.map(c => <option key={c.id} value={c.name} />)}
-                                        </datalist>
-                                    </div>
+                                <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: 16 }}>
                                     <div className="form-group">
-                                        <label className="form-label">Project</label>
-                                        <select className="form-control" value={form.projectId} onChange={e => setForm({ ...form, projectId: e.target.value, unitNo: '' })}>
-                                            <option value="">Select project...</option>
-                                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                        </select>
+                                        <label className="form-label">Customer Name</label>
+                                        <input className="form-control" list="cust-list" value={form.customerName} onChange={e => setForm({ ...form, customerName: e.target.value })} placeholder="Full name" style={{ height: 48, borderRadius: 12 }} />
                                     </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Unit</label>
-                                        <select className="form-control" value={form.unitNo} onChange={e => setForm({ ...form, unitNo: e.target.value })}>
-                                            <option value="">Select unit</option>
-                                            {units.map(u => <option key={u.id} value={u.unit_no || u.unitNo}>{u.unit_no || u.unitNo} ({u.status})</option>)}
-                                        </select>
-                                    </div>
-                                    {selectedUnit && (
-                                        <div style={{
-                                            gridColumn: 'span 2', padding: '12px 16px',
-                                            background: 'var(--navy-50)', border: '1px solid var(--navy-100)',
-                                            borderRadius: 'var(--border-radius-md)', fontSize: '0.82rem',
-                                            display: 'flex', gap: 20, flexWrap: 'wrap',
-                                        }}>
-                                            <span>🏢 Floor {selectedUnit.floor}</span>
-                                            <span>📐 {selectedUnit.area} sq.ft.</span>
-                                            <span>🧭 {selectedUnit.facing} facing</span>
-                                            <span>🅿️ {selectedUnit.parking} parking</span>
-                                            <span style={{ fontWeight: 800, color: 'var(--navy-600)' }}>💰 {selectedUnit.price}</span>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        <div className="form-group">
+                                            <label className="form-label">Project</label>
+                                            <select className="form-control" value={form.projectId} onChange={e => setForm({ ...form, projectId: e.target.value, unitNo: '' })} style={{ height: 48, borderRadius: 12 }}>
+                                                <option value="">Select...</option>
+                                                {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                            </select>
                                         </div>
-                                    )}
-                                    <div className="form-group">
-                                        <label className="form-label">Booking Amount</label>
-                                        <input className="form-control" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="₹95L" />
+                                        <div className="form-group">
+                                            <label className="form-label">Unit</label>
+                                            <select className="form-control" value={form.unitNo} onChange={e => setForm({ ...form, unitNo: e.target.value })} style={{ height: 48, borderRadius: 12 }}>
+                                                <option value="">Select...</option>
+                                                {units.map(u => <option key={u.id} value={u.unit_no || u.unitNo}>{u.unit_no || u.unitNo}</option>)}
+                                            </select>
+                                        </div>
                                     </div>
                                     <div className="form-group">
-                                        <label className="form-label">Agent</label>
-                                        <select className="form-control" value={form.agent} onChange={e => setForm({ ...form, agent: e.target.value })}>
-                                            <option value="">Select agent...</option>
-                                            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Booking Date</label>
-                                        <input type="date" className="form-control" value={form.bookingDate} onChange={e => setForm({ ...form, bookingDate: e.target.value })} />
-                                    </div>
-                                    <div className="form-group">
-                                        <label className="form-label">Status</label>
-                                        <select className="form-control" value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
-                                            {['In Process', 'Pending Docs', 'Confirmed'].map(s => <option key={s}>{s}</option>)}
-                                        </select>
+                                        <label className="form-label">Agreed Amount</label>
+                                        <input className="form-control" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="e.g. 1.5 Cr" style={{ height: 48, borderRadius: 12 }} />
                                     </div>
                                 </div>
                             )}
 
                             {/* Step 2: Payment Plan */}
                             {step === 2 && (
-                                <div>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 16 }}>Choose the payment structure for this booking. This will generate installment milestones automatically.</p>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        {PAYMENT_PLANS.map(plan => (
-                                            <div key={plan.id} onClick={() => setSelectedPlan(plan)} style={{
-                                                padding: '14px 16px', borderRadius: 'var(--border-radius-md)', cursor: 'pointer',
-                                                border: `2px solid ${selectedPlan.id === plan.id ? 'var(--navy-500)' : 'var(--border-light)'}`,
-                                                background: selectedPlan.id === plan.id ? 'var(--navy-50)' : 'white',
-                                                transition: 'all 0.15s',
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <div style={{
-                                                        width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                                                        border: `2px solid ${selectedPlan.id === plan.id ? 'var(--navy-500)' : 'var(--border-medium)'}`,
-                                                        background: selectedPlan.id === plan.id ? 'var(--navy-500)' : 'white',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    }}>
-                                                        {selectedPlan.id === plan.id && <CheckCircle size={12} style={{ color: 'white' }} />}
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{plan.name}</div>
-                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{plan.description}</div>
-                                                    </div>
-                                                    <span style={{
-                                                        fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)',
-                                                        background: 'var(--slate-100)', padding: '3px 9px', borderRadius: 20,
-                                                    }}>{plan.schedule.length} milestones</span>
-                                                </div>
-                                                {selectedPlan.id === plan.id && (
-                                                    <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                                        {plan.schedule.map((s, i) => (
-                                                            <span key={i} style={{
-                                                                fontSize: '0.7rem', fontWeight: 600, padding: '3px 9px',
-                                                                borderRadius: 20, background: 'var(--navy-100)', color: 'var(--navy-700)',
-                                                            }}>{s.milestone} ({s.percent}%)</span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {PAYMENT_PLANS.map(plan => (
+                                        <div key={plan.id} onClick={() => setSelectedPlan(plan)} style={{
+                                            padding: '16px', borderRadius: '16px', border: `2px solid ${selectedPlan.id === plan.id ? 'var(--navy-500)' : 'var(--border-light)'}`,
+                                            background: selectedPlan.id === plan.id ? 'var(--navy-50)' : 'white'
+                                        }}>
+                                            <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{plan.name}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>{plan.description}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
-                            {/* Step 3: Token Collection */}
+                            {/* Step 3: Token */}
                             {step === 3 && (
-                                <div>
-                                    <div style={{
-                                        padding: '16px', background: 'rgba(16,185,129,0.07)',
-                                        border: '1px solid rgba(16,185,129,0.2)', borderRadius: 'var(--border-radius-md)',
-                                        marginBottom: 20,
-                                    }}>
-                                        <div style={{ fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <Coins size={14} /> Token / Booking Amount Collection
-                                        </div>
-                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                                            Record the initial token payment to mark the unit as booked. This is typically {selectedPlan.schedule[0]?.percent || 5}% of the total sale value.
-                                        </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                    <div className="form-group">
+                                        <label className="form-label">Token Amount</label>
+                                        <input className="form-control" value={form.tokenAmount} onChange={e => setForm({ ...form, tokenAmount: e.target.value })} placeholder="₹5,00,000" style={{ height: 48, borderRadius: 12 }} />
                                     </div>
-                                    <div className="form-grid form-grid-2">
-                                        <div className="form-group">
-                                            <label className="form-label">Token Amount *</label>
-                                            <input className="form-control" value={form.tokenAmount} onChange={e => setForm({ ...form, tokenAmount: e.target.value })} placeholder="₹2L" />
-                                        </div>
-                                        <div className="form-group">
-                                            <label className="form-label">Collection Mode</label>
-                                            <select className="form-control" value={form.tokenMode} onChange={e => setForm({ ...form, tokenMode: e.target.value })}>
-                                                {['Cheque', 'NEFT/RTGS', 'UPI', 'Cash', 'Demand Draft'].map(m => <option key={m}>{m}</option>)}
-                                            </select>
-                                        </div>
-                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                            <label className="form-label">Reference / Cheque No.</label>
-                                            <input className="form-control" value={form.tokenRef} onChange={e => setForm({ ...form, tokenRef: e.target.value })} placeholder="Cheque/UTR/Transaction reference" />
-                                        </div>
-                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                            <label className="form-label">Notes</label>
-                                            <textarea className="form-control" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Additional remarks..." />
-                                        </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Payment Mode</label>
+                                        <select className="form-control" value={form.tokenMode} onChange={e => setForm({ ...form, tokenMode: e.target.value })} style={{ height: 48, borderRadius: 12 }}>
+                                            <option>Cheque</option>
+                                            <option>NEFT/RTGS</option>
+                                            <option>UPI</option>
+                                            <option>Cash</option>
+                                        </select>
                                     </div>
-                                    <div style={{
-                                        padding: '14px 16px', background: 'var(--slate-50)', borderRadius: 'var(--border-radius-md)',
-                                        border: '1px solid var(--border-light)', fontSize: '0.85rem',
-                                    }}>
-                                        <div style={{ fontWeight: 700, marginBottom: 10, color: 'var(--text-primary)' }}>📋 Booking Summary</div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                                            {[
-                                                { label: 'Customer', value: form.customerName },
-                                                { label: 'Unit', value: form.unitNo || '—' },
-                                                { label: 'Total Amount', value: form.amount || '—' },
-                                                { label: 'Payment Plan', value: selectedPlan.name },
-                                            ].map(row => (
-                                                <div key={row.label}>
-                                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{row.label}: </span>
-                                                    <span style={{ fontWeight: 600 }}>{row.value}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+                                    <div className="form-group">
+                                        <label className="form-label">Notes</label>
+                                        <textarea className="form-control" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Internal remarks..." style={{ borderRadius: 12 }} />
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        <div className="modal-footer">
-                            {step > 1 && <button className="btn btn-secondary" onClick={() => setStep(s => s - 1)}>← Back</button>}
-                            <button className="btn btn-secondary" onClick={() => { setShowModal(false); setStep(1); }}>Cancel</button>
-                            {step < 3 && <button className="btn btn-primary" onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.customerName}>Next →</button>}
-                            {step === 3 && <button className="btn btn-success" onClick={save} disabled={saving}>{saving ? 'Saving...' : <><CheckCircle size={14} /> Create Booking</>}</button>}
+                        <div className="modal-footer" style={{ paddingBottom: isMobile ? 40 : 20 }}>
+                            <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+                                {step > 1 && <button className="btn btn-secondary" onClick={() => setStep(s => s - 1)} style={{ flex: 1, height: 48, borderRadius: 12 }}>Back</button>}
+                                {step < 3 ? (
+                                    <button className="btn btn-primary" onClick={() => setStep(s => s + 1)} disabled={!form.customerName} style={{ flex: 2, height: 48, borderRadius: 12 }}>Continue</button>
+                                ) : (
+                                    <button className="btn btn-success" onClick={save} disabled={saving} style={{ flex: 2, height: 48, borderRadius: 12 }}>{saving ? 'Saving...' : 'Confirm'}</button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

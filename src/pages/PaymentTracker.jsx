@@ -128,43 +128,37 @@ export default function PaymentTracker() {
     if (error) return <PageError message={error} onRetry={refetch} />;
 
     return (
-        <div className="animate-fadeIn">
-            <div className="page-header">
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0 4px' : 0 }}>
+            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
                 <div>
-                    <h1 className="page-title">Payment Tracker</h1>
+                    <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '1.8rem' }}>Payment Ledger</h1>
                     <p className="page-subtitle">
-                        {plans.length} active payment plans · {installments.filter(i => i.status === 'Paid').length} installments collected
-                        {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 700, marginLeft: 8 }}>⚠ {overdueCount} overdue</span>}
+                        {plans.length} active plans · {installments.filter(i => i.status === 'Paid').length} collected
                     </p>
                 </div>
-                <div className="page-actions">
-                    <button className="btn btn-secondary btn-sm">
+                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto' }}>
+                    <button className="btn btn-secondary btn-sm" style={{ width: isMobile ? '100%' : 'auto', justifyContent: 'center' }}>
                         <Download size={14} /> Export Report
                     </button>
                 </div>
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-4 mb-6">
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
                 {[
-                    { label: 'Total Collected', value: formatCr(totalCollected), icon: '💰', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)' },
-                    { label: 'Pending Amount', value: formatCr(totalPending), icon: '⏳', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
-                    { label: 'Overdue Amount', value: formatCr(totalOverdue), icon: '🚨', color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.07)', border: 'rgba(244,63,94,0.2)' },
-                    { label: 'Active Plans', value: plans.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
+                    { label: 'Collected', value: formatCr(totalCollected), icon: '💰', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)' },
+                    { label: 'Pending', value: formatCr(totalPending), icon: '⏳', color: 'var(--accent-amber)', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)' },
+                    { label: 'Overdue', value: formatCr(totalOverdue), icon: '🚨', color: 'var(--accent-rose)', bg: 'rgba(244,63,94,0.07)', border: 'rgba(244,63,94,0.2)' },
+                    { label: 'Active', value: plans.length, icon: '📋', color: 'var(--navy-500)', bg: 'var(--navy-50)', border: 'var(--navy-100)' },
                 ].map(s => (
                     <div key={s.label} style={{
-                        background: s.bg, borderRadius: 'var(--border-radius-lg)',
-                        border: `1px solid ${s.border}`, padding: '18px 20px',
-                        transition: 'transform 0.2s', cursor: 'default',
-                    }}
-                        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-                        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                            <span style={{ fontSize: '1.4rem' }}>{s.icon}</span>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</span>
+                        background: s.bg, borderRadius: 16, border: `1px solid ${s.border}`, padding: isMobile ? '12px' : '18px 20px',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                            <span style={{ fontSize: isMobile ? '1rem' : '1.4rem' }}>{s.icon}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.label}</span>
                         </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                        <div style={{ fontSize: isMobile ? '1.1rem' : '1.6rem', fontWeight: 900, color: s.color }}>{s.value}</div>
                     </div>
                 ))}
             </div>
@@ -225,32 +219,35 @@ export default function PaymentTracker() {
             </div>
 
             {/* Search + Filters */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexDirection: 'column' }}>
                 <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: 'white', border: '1px solid var(--border-light)',
-                    borderRadius: 'var(--border-radius-md)', padding: '8px 12px', flex: 1, minWidth: 200,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'white', border: '1.5px solid var(--border-medium)',
+                    borderRadius: 16, padding: '10px 16px', flex: 1,
                 }}>
-                    <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    <Search size={18} style={{ color: 'var(--text-muted)' }} />
                     <input
                         value={searchQ} onChange={e => setSearchQ(e.target.value)}
-                        placeholder="Search customer, project, unit..."
-                        style={{ border: 'none', outline: 'none', fontSize: '0.85rem', width: '100%', color: 'var(--text-primary)', background: 'transparent' }}
+                        placeholder="Search customer, project..."
+                        style={{ border: 'none', outline: 'none', fontSize: '0.9rem', width: '100%' }}
                     />
                 </div>
-                {activeTab === 'installments' && ['All', 'Paid', 'Pending', 'Overdue', 'Upcoming'].map(s => (
-                    <button key={s}
-                        className={`btn ${filterStatus === s ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                        onClick={() => setFilterStatus(s)}
-                    >{s}</button>
-                ))}
-                {activeTab === 'tracker' && ['All', 'Down Payment', 'Construction Linked', 'EMI', 'Subvention'].map(p => (
-                    <button key={p}
-                        className={`btn ${filterPlan === p ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                        onClick={() => setFilterPlan(p)}
-                        style={{ fontSize: '0.75rem' }}
-                    >{p}</button>
-                ))}
+                <div className="hide-scrollbar" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                    {activeTab === 'installments' && ['All', 'Paid', 'Pending', 'Overdue', 'Upcoming'].map(s => (
+                        <button key={s}
+                            className={`btn ${filterStatus === s ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                            style={{ borderRadius: 12, whiteSpace: 'nowrap' }}
+                            onClick={() => setFilterStatus(s)}
+                        >{s}</button>
+                    ))}
+                    {activeTab === 'tracker' && ['All', 'Down Payment', 'Construction Linked', 'EMI'].map(p => (
+                        <button key={p}
+                            className={`btn ${filterPlan === p ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                            style={{ borderRadius: 12, whiteSpace: 'nowrap' }}
+                            onClick={() => setFilterPlan(p)}
+                        >{p}</button>
+                    ))}
+                </div>
             </div>
 
             {/* PLANS OVERVIEW TAB */}
@@ -279,42 +276,42 @@ export default function PaymentTracker() {
                                     }}>{planColors.label}</div>
 
                                     {/* Info */}
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: 800, fontSize: '1rem' }}>{plan.customerName}</span>
-                                            <span className="badge badge-blue" style={{ fontSize: '0.68rem' }}>{plan.planType}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                            <span style={{ fontWeight: 900, fontSize: '0.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{plan.customerName}</span>
                                             {planInst.some(i => i.status === 'Overdue') && (
-                                                <span className="badge badge-red" style={{ fontSize: '0.68rem' }}>⚠ Overdue</span>
+                                                <AlertTriangle size={14} style={{ color: 'var(--accent-rose)' }} />
                                             )}
                                         </div>
-                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', gap: 18, flexWrap: 'wrap' }}>
-                                            <span>🏢 {plan.projectName}</span>
-                                            <span>🔑 {plan.unitNo}</span>
-                                            <span>📅 Booking: {plan.bookingDate}</span>
-                                            <span>👤 {plan.agentName}</span>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {plan.projectName} · {plan.unitNo}
                                         </div>
                                     </div>
 
-                                    {/* Progress + Amount */}
-                                    <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 160 }}>
-                                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-600)', marginBottom: 4 }}>
-                                            {formatCr(paidAmt)} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted)' }}>/ {formatCr(plan.totalAmount)}</span>
+                                    {/* Progress + Amount (Desktop Only) */}
+                                    {!isMobile && (
+                                        <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 160 }}>
+                                            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-600)', marginBottom: 4 }}>
+                                                {formatCr(paidAmt)} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>/ {formatCr(plan.totalAmount)}</span>
+                                            </div>
+                                            <div style={{ height: 6, background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${progress}%`, background: 'var(--navy-500)', borderRadius: 3 }} />
+                                            </div>
                                         </div>
-                                        {/* Progress bar */}
-                                        <div style={{ height: 6, background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden', marginBottom: 4 }}>
-                                            <div style={{
-                                                height: '100%', width: `${progress}%`,
-                                                background: progress === 100 ? 'var(--accent-emerald)' : 'linear-gradient(90deg, var(--navy-500), var(--accent-cyan))',
-                                                borderRadius: 3, transition: 'width 0.5s ease',
-                                            }} />
-                                        </div>
-                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{progress}% collected · {planInst.length} installments</div>
-                                    </div>
+                                    )}
 
-                                    <div style={{ flexShrink: 0, color: 'var(--text-muted)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                    <div style={{ flexShrink: 0, color: 'var(--text-muted)', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                                         <ChevronDown size={18} />
                                     </div>
                                 </div>
+
+                                {isMobile && !isExpanded && (
+                                    <div style={{ padding: '0 22px 14px' }}>
+                                        <div style={{ height: 4, background: 'var(--slate-100)', borderRadius: 2, overflow: 'hidden' }}>
+                                            <div style={{ height: '100%', width: `${progress}%`, background: progress === 100 ? 'var(--accent-emerald)' : 'var(--navy-500)' }} />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Expanded Installments */}
                                 {isExpanded && (
@@ -383,66 +380,70 @@ export default function PaymentTracker() {
 
             {/* ALL INSTALLMENTS TAB */}
             {activeTab === 'installments' && (
-                <div className="card">
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '2px solid var(--border-light)', background: 'var(--slate-50)' }}>
-                                    {['#', 'Customer', 'Project / Unit', 'Milestone', 'Due Date', 'Paid Date', 'Amount', 'Status', 'Action'].map(h => (
-                                        <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {allInstallmentsList.map((inst, idx) => {
-                                    const sc = STATUS_COLORS[inst.status] || STATUS_COLORS.Upcoming;
-                                    return (
-                                        <tr key={inst.id} style={{ borderBottom: '1px solid var(--border-light)', transition: 'background 0.1s' }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'var(--slate-50)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                        >
-                                            <td style={{ padding: '12px 14px', color: 'var(--text-muted)', fontWeight: 600 }}>{idx + 1}</td>
-                                            <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inst.customerName}</td>
-                                            <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>
-                                                <div>{inst.projectName}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{inst.unitNo}</div>
-                                            </td>
-                                            <td style={{ padding: '12px 14px', color: 'var(--text-primary)' }}>{inst.milestone_name || inst.milestone || `Inst ${idx + 1}`}</td>
-                                            <td style={{ padding: '12px 14px', color: inst.status === 'Overdue' ? 'var(--accent-rose)' : 'var(--text-secondary)', fontWeight: inst.status === 'Overdue' ? 700 : 400 }}>{inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}</td>
-                                            <td style={{ padding: '12px 14px', color: 'var(--accent-emerald)' }}>{(inst.paid_date || inst.paidDate) ? new Date(inst.paid_date || inst.paidDate).toLocaleDateString('en-IN') : '—'}</td>
-                                            <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--navy-600)' }}>{formatCr(inst.amount)}</td>
-                                            <td style={{ padding: '12px 14px' }}>
-                                                <span className={`badge ${sc.badge}`} style={{ fontSize: '0.68rem' }}>{inst.status}</span>
-                                            </td>
-                                            <td style={{ padding: '12px 14px' }}>
-                                                {inst.status !== 'Paid' && inst.status !== 'Waived' && (
-                                                    <button
-                                                        className="btn btn-success btn-sm"
-                                                        style={{ fontSize: '0.72rem', padding: '4px 10px' }}
-                                                        onClick={() => { setSelectedInstallment(inst); setShowMarkModal(true); }}
-                                                    >
-                                                        <CheckCircle size={11} /> Collect
-                                                    </button>
-                                                )}
-                                                {inst.status === 'Paid' && (
-                                                    <button className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem' }}>
-                                                        <Receipt size={11} /> Receipt
-                                                    </button>
-                                                )}
-                                            </td>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {isMobile ? (
+                        allInstallmentsList.map(inst => {
+                            const sc = STATUS_COLORS[inst.status] || STATUS_COLORS.Upcoming;
+                            return (
+                                <div key={inst.id} className="card" style={{ padding: 16 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                        <div>
+                                            <div style={{ fontWeight: 900, color: 'var(--navy-900)' }}>{inst.customerName}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{inst.projectName} · {inst.unitNo}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontWeight: 900, color: 'var(--navy-600)' }}>{formatCr(inst.amount)}</div>
+                                            <span className={`badge ${sc.badge}`} style={{ fontSize: '0.6rem' }}>{inst.status}</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--slate-50)', padding: '8px 12px', borderRadius: 12 }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                            Due: {inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}
+                                        </div>
+                                        {inst.status !== 'Paid' && (
+                                            <button className="btn btn-primary btn-sm" onClick={() => { setSelectedInstallment(inst); setShowMarkModal(true); }}>Collect</button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <div className="card">
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid var(--border-light)', background: 'var(--slate-50)' }}>
+                                            {['#', 'Customer', 'Project / Unit', 'Milestone', 'Due Date', 'Paid Date', 'Amount', 'Status', 'Action'].map(h => (
+                                                <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            ))}
                                         </tr>
-                                    );
-                                })}
-                                {allInstallmentsList.length === 0 && (
-                                    <tr>
-                                        <td colSpan={9} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>
-                                            No installments found for the selected filter.
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </thead>
+                                    <tbody>
+                                        {allInstallmentsList.map((inst, idx) => {
+                                            const sc = STATUS_COLORS[inst.status] || STATUS_COLORS.Upcoming;
+                                            return (
+                                                <tr key={inst.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                                                    <td style={{ padding: '12px 14px', color: 'var(--text-muted)' }}>{idx + 1}</td>
+                                                    <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inst.customerName}</td>
+                                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>{inst.projectName} ({inst.unitNo})</td>
+                                                    <td style={{ padding: '12px 14px' }}>{inst.milestone_name || inst.milestone}</td>
+                                                    <td style={{ padding: '12px 14px' }}>{inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}</td>
+                                                    <td style={{ padding: '12px 14px' }}>{inst.paid_date ? new Date(inst.paid_date).toLocaleDateString('en-IN') : '—'}</td>
+                                                    <td style={{ padding: '12px 14px', fontWeight: 800 }}>{formatCr(inst.amount)}</td>
+                                                    <td style={{ padding: '12px 14px' }}><span className={`badge ${sc.badge}`}>{inst.status}</span></td>
+                                                    <td style={{ padding: '12px 14px' }}>
+                                                        {inst.status !== 'Paid' && (
+                                                            <button className="btn btn-success btn-sm" onClick={() => { setSelectedInstallment(inst); setShowMarkModal(true); }}>Collect</button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 

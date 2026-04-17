@@ -484,7 +484,7 @@ export default function Leads() {
     };
 
     return (
-        <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0' }}>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0', paddingBottom: isMobile ? 100 : 0 }}>
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left">
@@ -508,31 +508,43 @@ export default function Leads() {
             </div>
 
             {/* Filters */}
-            <div className="card mb-2" style={{ padding: '8px 12px', borderRadius: 12, overflowX: 'auto' }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: isMobile ? 'nowrap' : 'nowrap', minWidth: isMobile ? 'max-content' : 'auto' }}>
-                    <div className="search-bar" style={{ width: 220, minWidth: 180, flex: 'none', background: 'var(--slate-50)', border: '1px solid var(--slate-200)' }}>
+            <div className="card mb-2" style={{ padding: isMobile ? '12px' : '8px 12px', borderRadius: 12 }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: 8, 
+                    alignItems: 'center', 
+                    flexWrap: isMobile ? 'wrap' : 'nowrap', 
+                    width: '100%' 
+                }}>
+                    <div className="search-bar" style={{ 
+                        width: isMobile ? '100%' : 220, 
+                        flex: isMobile ? '1 1 100%' : 'none', 
+                        background: 'var(--slate-50)', 
+                        border: '1px solid var(--slate-200)',
+                        marginBottom: isMobile ? 4 : 0
+                    }}>
                         <Search size={14} style={{ color: 'var(--text-muted)' }} />
                         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search leads..." style={{ background: 'transparent' }} />
                     </div>
                     
-                    <select className="form-control form-control-sm" style={{ width: 120, minWidth: 100 }} value={filterStage} onChange={e => { setPage(1); setFilterStage(e.target.value); }}>
+                    <select className="form-control form-control-sm" style={{ flex: isMobile ? '1 1 calc(50% - 4px)' : 'none', width: isMobile ? 'auto' : 120 }} value={filterStage} onChange={e => { setPage(1); setFilterStage(e.target.value); }}>
                         <option value="All">All Stages</option>
                         {STAGES.map(s => <option key={s}>{s}</option>)}
                     </select>
-                    <select className="form-control form-control-sm" style={{ width: 115, minWidth: 95 }} value={filterStatus} onChange={e => { setPage(1); setFilterStatus(e.target.value); }}>
+                    <select className="form-control form-control-sm" style={{ flex: isMobile ? '1 1 calc(50% - 4px)' : 'none', width: isMobile ? 'auto' : 115 }} value={filterStatus} onChange={e => { setPage(1); setFilterStatus(e.target.value); }}>
                         <option value="All">All Statuses</option>
                         <option value="Active">Active</option>
                         <option value="Nurture">Nurture</option>
                         <option value="Won">Won</option>
                         <option value="Lost">Lost</option>
                     </select>
-                    <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterSource} onChange={e => { setPage(1); setFilterSource(e.target.value); }}>
+                    <select className="form-control form-control-sm" style={{ flex: isMobile ? '1 1 calc(50% - 4px)' : 'none', width: isMobile ? 'auto' : 130 }} value={filterSource} onChange={e => { setPage(1); setFilterSource(e.target.value); }}>
                         <option value="All">All Sources</option>
                         {SOURCES.map(s => <option key={s}>{s}</option>)}
                     </select>
 
                     {user?.role !== 'agent' && (
-                        <select className="form-control form-control-sm" style={{ width: 130, minWidth: 110 }} value={filterAgent} onChange={e => { setPage(1); setFilterAgent(e.target.value); }}>
+                        <select className="form-control form-control-sm" style={{ flex: isMobile ? '1 1 calc(50% - 4px)' : 'none', width: isMobile ? 'auto' : 130 }} value={filterAgent} onChange={e => { setPage(1); setFilterAgent(e.target.value); }}>
                             <option value="All">All Agents</option>
                             <option value="Unassigned">Unassigned</option>
                             {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -576,6 +588,7 @@ export default function Leads() {
                         </button>
                     )}
 
+                    {!isMobile && (
                     <div style={{ 
                         display: 'flex', alignItems: 'center', gap: 0, flexShrink: 0,
                         background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
@@ -619,6 +632,7 @@ export default function Leads() {
                             />
                         </div>
                 </div>
+                    )}
             </div>
         </div>
             <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>

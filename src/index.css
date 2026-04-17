@@ -395,6 +395,10 @@ a:hover {
   background: var(--slate-400);
 }
 
+/* --- Transitions --- */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* ─── Layout ─────────────────────────────────────────────────────── */
 .app-layout {
   display: flex;
@@ -435,14 +439,23 @@ a:hover {
   background: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-950) 100%);
   display: flex;
   flex-direction: column;
-  z-index: 100;
-  transition: width var(--transition-normal);
+  z-index: 1000;
+  transition: transform var(--transition-normal), width var(--transition-normal);
   overflow: hidden;
   box-shadow: 4px 0 20px rgba(10, 22, 40, 0.15);
 }
 
 .sidebar.collapsed {
   width: var(--sidebar-collapsed);
+}
+
+.mobile-sidebar {
+  transform: translateX(-100%);
+  width: 280px !important;
+}
+
+.mobile-sidebar.mobile-open {
+  transform: translateX(0);
 }
 
 .sidebar-logo {
@@ -1138,12 +1151,11 @@ select.form-control {
   gap: 20px;
 }
 
-.form-grid-2 {
-  grid-template-columns: 1fr 1fr;
-}
-
-.form-grid-3 {
-  grid-template-columns: 1fr 1fr 1fr;
+@media (max-width: 768px) {
+  .form-grid-2, .form-grid-3 {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
 }
 
 /* ─── Tables ─────────────────────────────────────────────────────── */

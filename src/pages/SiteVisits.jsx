@@ -212,96 +212,84 @@ export default function SiteVisits() {
     }).length;
 
     return (
-        <div className="site-visit-command" style={{ padding: isMobile ? '20px' : '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
+        <div className="site-visit-command" style={{ 
+            padding: isMobile ? '16px' : '32px 40px', 
+            paddingBottom: isMobile ? 100 : 32,
+            background: '#f8fafc', 
+            minHeight: '100vh' 
+        }}>
             
             {/* 🏎️ Logistics Control Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? '32px' : '48px', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 24 : 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? 32 : 48, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 20 : 0 }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                        <Navigation2 size={20} color={COLORS.indigo} strokeWidth={2.5} />
-                        <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.indigo, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-                            Showcase Logistics Command
-                        </span>
-                    </div>
-                    <h1 style={{ margin: 0, fontSize: isMobile ? '1.6rem' : '2rem', fontWeight: 900, color: COLORS.slate950, letterSpacing: '-1px' }}>
-                        Site Visit <span style={{ color: COLORS.indigo }}>Radar</span>
+                    <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-1px' }}>
+                        Visit <span style={{ color: COLORS.indigo }}>Radar</span>
                     </h1>
-                    <p style={{ margin: '6px 0 0', color: COLORS.slate500, fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 600 }}>
-                        Orchestrating premium property tours and real-time attendance tracking.
+                    <p style={{ margin: '4px 0 0', color: COLORS.slate500, fontSize: '0.85rem', fontWeight: 700 }}>
+                        Property tour logistics command
                     </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px', marginTop: '10px', width: isMobile ? '100%' : 'auto', flexDirection: isMobile ? 'column' : 'row' }}>
-                    <div className="premium-card" style={{ display: 'flex', padding: '6px', borderRadius: '18px', background: 'white', flex: isMobile ? 1 : 'none', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: 12, width: isMobile ? '100%' : 'auto' }}>
+                    <div className="premium-card" style={{ display: 'flex', padding: 4, borderRadius: 16, background: 'white', flex: isMobile ? 1 : 'none' }}>
                         <button className="view-toggle-btn" onClick={() => setViewMode('grid')} style={{ 
                             background: viewMode === 'grid' ? COLORS.slate950 : 'transparent', 
                             color: viewMode === 'grid' ? 'white' : COLORS.slate500,
-                            flex: isMobile ? 1 : 'none',
-                            padding: isMobile ? '8px 16px' : '10px 24px'
-                        }}>
-                            <LayoutGrid size={18} /> Board
-                        </button>
+                            flex: 1, padding: 8, fontSize: '0.75rem'
+                        }}>Board</button>
                         <button className="view-toggle-btn" onClick={() => setViewMode('map')} style={{ 
                             background: viewMode === 'map' ? COLORS.slate950 : 'transparent', 
                             color: viewMode === 'map' ? 'white' : COLORS.slate500,
-                            flex: isMobile ? 1 : 'none',
-                            padding: isMobile ? '8px 16px' : '10px 24px'
-                        }}>
-                            <MapIcon size={18} /> Map
-                        </button>
+                            flex: 1, padding: 8, fontSize: '0.75rem'
+                        }}>Map</button>
                     </div>
-                    <button onClick={() => setShowModal(true)} style={{ 
-                        background: `linear-gradient(135deg, ${COLORS.indigo}, ${COLORS.violet})`, 
-                        color: 'white', border: 'none', padding: '14px 28px', borderRadius: '18px',
-                        fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '10px',
-                        boxShadow: '0 12px 24px rgba(99, 102, 241, 0.3)', cursor: 'pointer', transition: 'all 0.3s ease',
-                        width: isMobile ? '100%' : 'auto', justifyContent: 'center'
-                    }}>
-                        <Plus size={20} strokeWidth={3} /> Plan Visit
-                    </button>
+                    {isMobile && (
+                        <button onClick={() => setShowModal(true)} style={{ 
+                            background: COLORS.indigo, color: 'white', border: 'none', width: 44, height: 44, borderRadius: 16,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px rgba(99, 102, 241, 0.2)'
+                        }}><Plus size={24} /></button>
+                    )}
+                    {!isMobile && (
+                        <button onClick={() => setShowModal(true)} style={{ 
+                            background: COLORS.indigo, color: 'white', border: 'none', padding: '0 24px', borderRadius: 16,
+                            fontWeight: 900, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 10
+                        }}>
+                            <Plus size={18} strokeWidth={3} /> Plan Visit
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* 📈 Real-time Analytics Banner */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? '16px' : '32px', marginBottom: '48px' }}>
-                <div className="premium-card" style={{ 
-                    background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate800} 100%)`, 
-                    padding: isMobile ? '16px 20px' : '20px 32px', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 20 : 0
-                }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: COLORS.indigo, marginBottom: '4px' }}>
-                            <Zap size={16} fill={COLORS.indigo} />
-                            <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Conversion Peak</span>
-                        </div>
-                        <h2 style={{ fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 950, margin: 0 }}>Site Showcase Momentum</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: '2px', fontSize: '0.85rem', fontWeight: 600 }}>Avg conversion velocity: <span style={{ color: COLORS.emerald }}>24.5%</span></p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '24px', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'center' : 'flex-end' }}>
-                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 950, color: COLORS.white }}>{completedThisMonth}</div>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Completed</div>
-                        </div>
-                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }} />
-                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 950, color: COLORS.indigo }}>{visits.filter(v => v.status === 'Scheduled').length}</div>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Scheduled</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="premium-card" style={{ padding: '20px 32px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ 
-                        width: 48, height: 48, borderRadius: '16px', background: `${COLORS.emerald}10`, color: COLORS.emerald,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(4, 1fr)' : 'repeat(4, 1fr)', 
+                gap: isMobile ? 8 : 16, 
+                marginBottom: isMobile ? 24 : 32 
+            }}>
+                {[
+                    { label: 'Completed', value: completedThisMonth, icon: <CheckCircle size={isMobile ? 12 : 18} />, color: COLORS.emerald },
+                    { label: 'Scheduled', value: visits.filter(v => v.status === 'Scheduled').length, icon: <Timer size={isMobile ? 12 : 18} />, color: COLORS.indigo },
+                    { label: 'On Time', value: '98%', icon: <Zap size={isMobile ? 12 : 18} />, color: COLORS.amber },
+                    { label: 'Fleet', value: '12 Active', icon: <Car size={isMobile ? 12 : 18} />, color: COLORS.violet }
+                ].map((s, i) => (
+                    <div key={i} className="premium-card" style={{ 
+                        padding: isMobile ? '8px 4px' : '16px', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: isMobile ? 4 : 10,
+                        textAlign: 'center',
+                        justifyContent: 'center',
+                        height: isMobile ? '65px' : 'auto'
                     }}>
-                        <Car size={24} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', gap: isMobile ? 4 : 0 }}>
+                            <div style={{ color: s.color }}>{s.icon}</div>
+                            {!isMobile && <div style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', color: COLORS.slate400 }}>{s.label}</div>}
+                        </div>
+                        <div style={{ fontSize: isMobile ? '12px' : '1.25rem', fontWeight: 950, color: COLORS.slate950, lineHeight: 1 }}>{s.value}</div>
+                        {isMobile && <div style={{ fontSize: '7px', fontWeight: 900, textTransform: 'uppercase', color: COLORS.slate400, opacity: 0.8 }}>{s.label}</div>}
                     </div>
-                    <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase', marginBottom: '4px' }}>Logistics Health</div>
-                        <div style={{ fontSize: '1.4rem', fontWeight: 950, color: COLORS.slate950 }}>98.2% On-Time</div>
-                    </div>
-                </div>
+                ))}
             </div>
 
             {/* 🔍 Global Operations Filter */}
@@ -513,55 +501,51 @@ export default function SiteVisits() {
 
             {/* 🛸 Premium Mission Modal */}
             {showModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowModal(false)}>
-                    <div className="glass-modal" style={{ width: '100%', maxWidth: '640px', borderRadius: '40px', padding: '40px', position: 'relative' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                            <div>
-                                <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 950, letterSpacing: '-1px' }}>New Visit Mission</h1>
-                                <p style={{ margin: '4px 0 0', color: COLORS.slate500, fontWeight: 600 }}>Schedule agent-led property showcase.</p>
-                            </div>
-                            <button onClick={() => setShowModal(false)} style={{ background: COLORS.slate100, border: 'none', width: 44, height: 44, borderRadius: '14px', cursor: 'pointer' }}><X size={24} /></button>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(12px)', zIndex: 1000, display: 'flex', alignItems: isMobile ? 'flex-end' : 'center', justifyContent: 'center' }} onClick={() => setShowModal(false)}>
+                    <div className="glass-modal" style={{ 
+                        width: '100%', 
+                        maxWidth: isMobile ? '100%' : '640px', 
+                        height: isMobile ? '90vh' : 'auto',
+                        borderRadius: isMobile ? '32px 32px 0 0' : '40px', 
+                        padding: isMobile ? '32px 24px' : '40px', 
+                        position: 'relative',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950 }}>Plan Mission</h2>
+                            <button onClick={() => setShowModal(false)} style={{ background: COLORS.slate100, border: 'none', width: 40, height: 40, borderRadius: 12 }}><X size={20} /></button>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '16px' : '24px' }}>
-                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Client</label>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto', paddingBottom: 24 }}>
+                             <div className="form-group">
+                                <label className="form-label">Client</label>
                                 <select className="input-field" value={form.lead_id} onChange={e => setForm({ ...form, lead_id: e.target.value })}>
-                                    <option value="">Select lead...</option>
+                                    <option value="">Select...</option>
                                     {allLeads.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Destination Property</label>
+                            <div className="form-group">
+                                <label className="form-label">Property</label>
                                 <select className="input-field" value={form.project_id} onChange={e => setForm({ ...form, project_id: e.target.value })}>
-                                    <option value="">Select project...</option>
+                                    <option value="">Select...</option>
                                     {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mission Timestamp</label>
+                            <div className="form-group">
+                                <label className="form-label">Time</label>
                                 <input type="datetime-local" className="input-field" value={form.scheduled_at} onChange={e => setForm({ ...form, scheduled_at: e.target.value })} />
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assigned Agent</label>
-                                <select className="input-field" value={form.assigned_to} onChange={e => setForm({ ...form, assigned_to: e.target.value })}>
-                                    <option value="">Select agent...</option>
-                                    {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                                </select>
-                            </div>
-                            <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Logistics Notes</label>
-                                <textarea className="input-field" style={{ minHeight: '100px', resize: 'vertical' }} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Any special VIP requirements or travel details..." />
+                            <div className="form-group">
+                                <label className="form-label">Notes</label>
+                                <textarea className="input-field" rows={3} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="VIP requirements..." />
                             </div>
                         </div>
 
-                        <div style={{ marginTop: '40px', display: 'flex', gap: '16px', flexDirection: isMobile ? 'column' : 'row' }}>
-                            <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: '16px', borderRadius: '18px', border: `2px solid ${COLORS.slate200}`, fontWeight: 900, background: 'transparent', cursor: 'pointer' }}>Cancel Mission</button>
-                            <button onClick={save} disabled={saving} style={{ 
-                                flex: 2, padding: '16px', borderRadius: '18px', border: 'none', background: COLORS.slate950, 
-                                color: 'white', fontWeight: 900, boxShadow: '0 12px 24px rgba(15,23,42,0.2)', cursor: 'pointer' 
-                            }}>
-                                {saving ? 'Initializing...' : 'Launch Site Visit'}
+                        <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                            <button onClick={() => setShowModal(false)} className="btn btn-secondary" style={{ flex: 1, height: 54, borderRadius: 16 }}>Cancel</button>
+                            <button onClick={save} disabled={saving} className="btn btn-primary" style={{ flex: 2, height: 54, borderRadius: 16, background: COLORS.slate950 }}>
+                                {saving ? 'Launching...' : 'Confirm Mission'}
                             </button>
                         </div>
                     </div>

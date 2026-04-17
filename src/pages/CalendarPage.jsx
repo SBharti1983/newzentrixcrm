@@ -6,6 +6,7 @@ import {
     CheckCircle2, Share2, ExternalLink, Download, Smartphone
 } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
+import { useMobile } from '../hooks/useMobile';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -89,7 +90,8 @@ export default function CalendarPage() {
     const [year, setYear] = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth());
     const [selectedDate, setSelectedDate] = useState(null);
-    const [view, setView] = useState('month');
+    const isMobile = useMobile();
+    const [view, setView] = useState(isMobile ? 'agenda' : 'month');
     const [filterType, setFilterType] = useState('All');
     const [draggingEvent, setDraggingEvent] = useState(null);
     const [dragOverDate, setDragOverDate] = useState(null);
@@ -190,20 +192,21 @@ export default function CalendarPage() {
     const overdueCount = filteredAllEvents.filter(e => e.date < today && e.status !== 'Completed').length;
 
     return (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '16px 12px' : '24px', paddingBottom: isMobile ? 100 : 0 }}>
             {/* Header */}
-            <div className="page-header">
+            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16 }}>
                 <div>
-                    <h1 className="page-title">Calendar</h1>
+                    <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>Calendar</h1>
                     <p className="page-subtitle">
-                        {totalThisMonth} activities in {MONTHS[month]} · {filteredAllEvents.filter(e => e.date >= today).length} upcoming
-                        {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 700 }}> · ⚠️ {overdueCount} overdue</span>}
+                        {totalThisMonth} activities {isMobile ? '' : `in ${MONTHS[month]}`}
+                        {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 700 }}> · {overdueCount} overdue</span>}
                     </p>
                 </div>
-                <div className="page-actions">
-                    <div style={{ display: 'flex', background: 'var(--slate-100)', borderRadius: 'var(--border-radius-md)', padding: 3, gap: 3 }}>
+                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', background: 'var(--slate-100)', borderRadius: 'var(--border-radius-md)', padding: 3, gap: 3, flex: isMobile ? 1 : 'none' }}>
                         {['month', 'agenda'].map(v => (
                             <button key={v} onClick={() => setView(v)} style={{
+                                flex: isMobile ? 1 : 'none',
                                 padding: '5px 14px', borderRadius: 'var(--border-radius-sm)', border: 'none',
                                 cursor: 'pointer', fontWeight: 600, fontSize: '0.78rem', textTransform: 'capitalize',
                                 background: view === v ? 'white' : 'transparent',
@@ -213,11 +216,13 @@ export default function CalendarPage() {
                         ))}
                     </div>
                     {/* Type filter */}
-                    <button className="btn btn-secondary hover-lift" onClick={() => setShowSyncPortal(true)} style={{ height: 40, padding: '0 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid var(--border-medium)' }}>
-                        <Share2 size={16} /> Sync Matrix
-                    </button>
+                    {!isMobile && (
+                        <button className="btn btn-secondary hover-lift" onClick={() => setShowSyncPortal(true)} style={{ height: 40, padding: '0 16px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 8, background: 'white', border: '1px solid var(--border-medium)' }}>
+                            <Share2 size={16} /> Sync Matrix
+                        </button>
+                    )}
                     <select className="form-control" value={filterType} onChange={e => setFilterType(e.target.value)}
-                        style={{ width: 'auto', fontSize: '0.8rem', padding: '7px 10px' }}>
+                        style={{ width: isMobile ? '100%' : 'auto', fontSize: '0.8rem', padding: '7px 10px' }}>
                         <option value="All">All Types</option>
                         {Object.keys(EVENT_TYPE).map(t => <option key={t}>{t}</option>)}
                     </select>
@@ -240,9 +245,9 @@ export default function CalendarPage() {
                 })}
             </div>
 
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 16, alignItems: isMobile ? 'stretch' : 'flex-start', flexDirection: isMobile ? 'column' : 'row' }}>
                 {/* ── Month Calendar ── */}
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                     {view === 'month' && (
                         <div className="card">
                             {/* Month nav */}
@@ -255,14 +260,14 @@ export default function CalendarPage() {
                             </div>
 
                             {/* Day headers */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0, padding: '8px 12px 0' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0, padding: isMobile ? '4px 0' : '8px 12px 0' }}>
                                 {DAYS.map(d => (
                                     <div key={d} style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d}</div>
                                 ))}
                             </div>
 
                             {/* Date grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, padding: '0 10px 12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: isMobile ? 1 : 2, padding: isMobile ? '0 4px 8px' : '0 10px 12px' }}>
                                 {Array.from({ length: startDay }).map((_, i) => <div key={`e-${i}`} />)}
                                 {Array.from({ length: totalDays }).map((_, i) => {
                                     const day = i + 1;
@@ -281,7 +286,7 @@ export default function CalendarPage() {
                                             onDragLeave={() => setDragOverDate(null)}
                                             onDrop={(e) => handleDrop(e, dateStr)}
                                             style={{
-                                                minHeight: 85, padding: '4px', borderRadius: 'var(--border-radius-md)',
+                                                minHeight: isMobile ? 65 : 85, padding: isMobile ? '2px' : '4px', borderRadius: 'var(--border-radius-md)',
                                                 background: dragOverDate === dateStr ? 'rgba(59,99,184,0.15)' : isSelected ? 'var(--navy-50)' : isToday ? 'rgba(59,99,184,0.04)' : 'transparent',
                                                 border: `1.5px solid ${dragOverDate === dateStr ? 'var(--navy-600)' : isSelected ? 'var(--navy-300)' : isToday ? 'var(--navy-200)' : 'transparent'}`,
                                                 cursor: 'pointer', transition: 'all 0.15s',
@@ -302,8 +307,8 @@ export default function CalendarPage() {
                                                 fontSize: '0.78rem', fontWeight: isToday ? 800 : 600,
                                             }}>{day}</div>
                                             {/* Event dots */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                                {dayEvents.slice(0, 3).map((ev, j) => {
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minHeight: isMobile ? 32 : 40 }}>
+                                                {dayEvents.slice(0, isMobile ? 2 : 3).map((ev, j) => {
                                                     const ec = EVENT_TYPE[ev.type] || EVENT_TYPE.Meeting;
                                                     return (
                                                         <div 
@@ -316,12 +321,13 @@ export default function CalendarPage() {
                                                                 overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
                                                                 cursor: 'grab',
                                                                 opacity: draggingEvent?.id === ev.id ? 0.4 : 1,
-                                                                transform: draggingEvent?.id === ev.id ? 'scale(0.95)' : 'none',
-                                                            }}>{ec.icon} {ev.title}</div>
+                                                            }}>{ec.icon} {isMobile ? '' : ev.title}</div>
                                                     );
                                                 })}
-                                                {dayEvents.length > 3 && (
-                                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 700 }}>+{dayEvents.length - 3} more</div>
+                                                {dayEvents.length > (isMobile ? 2 : 3) && (
+                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700, textAlign: 'center' }}>
+                                                        {isMobile ? `+${dayEvents.length - 2}` : `+${dayEvents.length - 3} more`}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -390,7 +396,7 @@ export default function CalendarPage() {
                 </div>
 
                 {/* ── Side Panel: selected day or today ── */}
-                <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Today's snapshot */}
                     <div className="card" style={{ padding: '16px 18px' }}>
                         <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 12, color: 'var(--navy-700)' }}>

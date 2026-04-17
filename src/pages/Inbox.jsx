@@ -102,23 +102,36 @@ export default function Inbox() {
     if (loading) return <PageLoader />;
 
     return (
-        <div className="animate-fadeIn" style={{ height: 'calc(100vh - var(--header-height) - 40px)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Omnichannel Inbox</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Manage real-time streams from WhatsApp, Email, and SMS.</p>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border-light)', fontSize: '0.8rem', fontWeight: 700 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 8px var(--accent-emerald)' }} />
-                        Live Status: Connected
+        <div className="animate-fadeIn" style={{ 
+            height: isMobile ? 'calc(100vh - 64px)' : 'calc(100vh - var(--header-height) - 40px)', 
+            display: 'flex', 
+            flexDirection: 'column',
+            margin: isMobile ? '-24px -20px' : 0, /* Negate parent padding on mobile */
+            background: 'white'
+        }}>
+            {!isMobile && (
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 4px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Omnichannel Inbox</h1>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Manage real-time streams from WhatsApp, Email, and SMS.</p>
                     </div>
                 </div>
-            </div>
+            )}
 
-            <div className="card" style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: 0 }}>
+            <div className="card" style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: 0, borderRadius: isMobile ? 0 : 20, border: isMobile ? 'none' : '1px solid var(--border-light)' }}>
                 {/* Sidebar */}
-                <div className={`inbox-sidebar ${activeId ? 'hidden-mobile' : ''}`} style={{ width: 340, borderRight: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', background: 'var(--slate-50)' }}>
+                <div className={`inbox-sidebar ${isMobile && activeId ? 'hidden' : ''}`} style={{ 
+                    width: isMobile ? '100%' : 340, 
+                    borderRight: isMobile ? 'none' : '1px solid var(--border-light)', 
+                    display: isMobile && activeId ? 'none' : 'flex', 
+                    flexDirection: 'column', 
+                    background: 'var(--slate-50)' 
+                }}>
+                    {isMobile && (
+                        <div style={{ padding: '24px 20px 10px', background: 'white' }}>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)' }}>Messages</h1>
+                        </div>
+                    )}
                     <div style={{ padding: 20, borderBottom: '1px solid var(--border-light)', background: 'white' }}>
                         <div className="search-bar" style={{ width: '100%', background: 'var(--slate-50)', border: '1px solid var(--border-light)' }}>
                             <Search size={14} style={{ color: 'var(--text-muted)' }} />
@@ -171,16 +184,44 @@ export default function Inbox() {
                 </div>
 
                 {/* Main Chat Area */}
-                <div className={`inbox-main ${!activeId ? 'hidden-mobile' : ''}`} style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'white' }}>
+                <div className={`inbox-main ${isMobile && !activeId ? 'hidden' : ''}`} style={{ 
+                    flex: 1, 
+                    display: isMobile && !activeId ? 'none' : 'flex', 
+                    flexDirection: 'column', 
+                    background: 'white' 
+                }}>
                     {activeId ? (
                         <>
                             {/* Chat Header */}
-                            <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <button className="btn btn-ghost d-none d-block-mobile" style={{ padding: '4px', marginRight: '4px' }} onClick={() => setActiveId(null)}>
-                                        <ChevronLeft size={20} />
-                                    </button>
-                                    <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'var(--accent-teal)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.1rem' }}>
+                            <div style={{ 
+                                padding: isMobile ? '12px 16px' : '16px 24px', 
+                                borderBottom: '1px solid var(--border-light)', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                background: 'white',
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 10
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
+                                    {isMobile && (
+                                        <button className="btn btn-ghost btn-icon" onClick={() => setActiveId(null)}>
+                                            <ChevronLeft size={24} />
+                                        </button>
+                                    )}
+                                    <div style={{ 
+                                        width: isMobile ? 36 : 44, 
+                                        height: isMobile ? 36 : 44, 
+                                        borderRadius: '12px', 
+                                        background: 'var(--navy-900)', 
+                                        color: 'white', 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center', 
+                                        fontWeight: 800,
+                                        fontSize: isMobile ? '0.9rem' : '1.1rem' 
+                                    }}>
                                         {activeConv.name ? activeConv.name[0] : '?'}
                                     </div>
                                     <div>
@@ -225,28 +266,46 @@ export default function Inbox() {
                             </div>
 
                              {/* Composer */}
-                            <div style={{ padding: '20px 24px', borderTop: '1px solid var(--border-light)', background: 'white' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--slate-50)', border: '1.5px solid var(--border-medium)', borderRadius: 16, padding: '4px 8px 4px 16px', transition: 'all 0.2s' }}>
-                                    <button className="btn btn-ghost" style={{ padding: 4 }} title="Attach File"><Paperclip size={18} /></button>
+                            <div style={{ 
+                                padding: isMobile ? '12px 16px 32px' : '20px 24px', 
+                                borderTop: '1px solid var(--border-light)', 
+                                background: 'white' 
+                            }}>
+                                <div style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 8, 
+                                    background: 'var(--slate-50)', 
+                                    border: '1px solid var(--border-medium)', 
+                                    borderRadius: 24, 
+                                    padding: '4px 6px 4px 16px'
+                                }}>
                                     <input
                                         value={replyText}
                                         onChange={e => setReplyText(e.target.value)}
-                                        placeholder={`Type your ${activeConv.channel} reply...`}
-                                        style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', fontWeight: 600, color: 'var(--navy-900)' }}
+                                        placeholder="Message..."
+                                        style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.95rem', height: 40 }}
                                         onKeyDown={e => { if (e.key === 'Enter') handleSend(); }}
                                     />
-                                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                        <button
-                                            className="btn btn-ghost"
-                                            style={{ padding: 8, color: 'var(--accent-violet)', borderRadius: 12 }}
-                                            onClick={handleDraft}
-                                            disabled={drafting}
-                                            title="AI Magic Draft"
+                                    <div style={{ display: 'flex', gap: 4 }}>
+                                        {replyText.length === 0 && (
+                                            <button className="btn btn-ghost btn-icon" style={{ color: 'var(--accent-violet)' }} onClick={handleDraft} disabled={drafting}>
+                                                <Wand2 size={20} />
+                                            </button>
+                                        )}
+                                        <button 
+                                            className="btn btn-primary btn-icon" 
+                                            style={{ 
+                                                borderRadius: '50%', 
+                                                width: 40, 
+                                                height: 40, 
+                                                background: replyText.trim() ? 'var(--navy-600)' : 'var(--slate-300)',
+                                                border: 'none'
+                                            }} 
+                                            onClick={handleSend} 
+                                            disabled={!replyText.trim()}
                                         >
-                                            {drafting ? <RefreshCw className="animate-spin" size={18} /> : <Wand2 size={18} />}
-                                        </button>
-                                        <button className="btn btn-primary" style={{ padding: '8px 24px', borderRadius: 12, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }} onClick={handleSend} disabled={!replyText.trim()}>
-                                            <Send size={16} /> Send
+                                            <Send size={18} />
                                         </button>
                                     </div>
                                 </div>

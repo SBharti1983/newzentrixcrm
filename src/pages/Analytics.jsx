@@ -91,7 +91,11 @@ export default function Analytics() {
     const coldPct = Math.round((leadHealthStats.cold / totalLeads) * 100);
 
     return (
-        <div className="animate-fadeIn" style={{ paddingBottom: 60, paddingRight: 20 }}>
+        <div className="animate-fadeIn" style={{ 
+            paddingBottom: 80, 
+            paddingLeft: isMobile ? 16 : 0,
+            paddingRight: isMobile ? 16 : 20 
+        }}>
             <style>{`
                 @keyframes livePulse {
                     0%, 100% { opacity: 0.4; transform: scale(0.9); }
@@ -151,8 +155,9 @@ export default function Analytics() {
             {/* ─── KPI Cards ─── */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-                gap: 20, marginBottom: 32
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                gap: isMobile ? 10 : 20, 
+                marginBottom: 32
             }}>
                 {kpis.map((k, i) => (
                     <div key={i} className="hover-lift" style={{
@@ -161,28 +166,27 @@ export default function Analytics() {
                         boxShadow: '0 2px 12px rgba(0,0,0,0.03)',
                         transition: 'all 0.3s ease'
                     }}>
-                        <div style={{ padding: '22px 24px 8px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                        <div style={{ padding: isMobile ? '16px 16px 4px' : '22px 24px 8px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isMobile ? 8 : 16 }}>
                                 <div style={{
-                                    width: 42, height: 42, borderRadius: 12,
+                                    width: isMobile ? 32 : 42, height: isMobile ? 32 : 42, borderRadius: 10,
                                     background: `${k.color}10`, color: k.color,
                                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}>
-                                    {k.icon}
+                                    {k.icon ? (isMobile ? <k.icon.type {...k.icon.props} size={14} /> : k.icon) : null}
                                 </div>
                                 <div style={{
-                                    fontSize: '0.75rem', fontWeight: 900,
+                                    fontSize: '0.65rem', fontWeight: 900,
                                     color: k.change.startsWith('+') ? 'var(--accent-emerald)' : 'var(--accent-rose)',
                                     background: k.change.startsWith('+') ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)',
-                                    padding: '4px 10px', borderRadius: 8,
-                                    display: 'inline-flex', alignItems: 'center', gap: 3
+                                    padding: '2px 8px', borderRadius: 6,
+                                    display: 'inline-flex', alignItems: 'center', gap: 2
                                 }}>
-                                    <ArrowUpRight size={12} style={{ transform: k.change.startsWith('+') ? 'none' : 'rotate(90deg)' }} />
                                     {k.change}
                                 </div>
                             </div>
-                            <div style={{ fontSize: '2rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{k.value}</div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--slate-400)', marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
+                            <div style={{ fontSize: isMobile ? '1.4rem' : '2rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{k.value}</div>
+                            <div style={{ fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: 700, color: 'var(--slate-400)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
                         </div>
                         <div style={{ height: 60, width: '100%' }}>
                             <ResponsiveContainer width="100%" height="100%">

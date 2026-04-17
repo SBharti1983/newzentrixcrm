@@ -12,6 +12,7 @@ import {
     ArrowUpRight, Clock
 } from 'lucide-react';
 import { PageLoader, PageError } from '../components/Feedback';
+import { useMobile } from '../hooks/useMobile';
 
 /* ─── Role Visual Config ─── */
 const ROLE_CONFIG = {
@@ -21,7 +22,8 @@ const ROLE_CONFIG = {
     agent:         { icon: User,      color: '#10b981', bg: 'rgba(16, 185, 129, 0.08)', label: 'Sales Agent',    depth: 3, shadow: 'rgba(16, 185, 129, 0.1)' },
 };
 
-const INDENT_PX = 48; 
+const INDENT_PX_DESKTOP = 48; 
+const INDENT_PX_MOBILE = 20; 
 
 /* ─── Action Dropdown ─── */
 const ActionMenu = ({ user, onEdit }) => {
@@ -69,6 +71,8 @@ const ActionMenu = ({ user, onEdit }) => {
 
 /* ─── Tree Node ─── */
 const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLines = [] }) => {
+    const isMobile = useMobile();
+    const INDENT_PX = isMobile ? INDENT_PX_MOBILE : INDENT_PX_DESKTOP;
     const [isExpanded, setIsExpanded] = useState(true);
     const children = useMemo(() => allUsers.filter(u => u.reports_to === user.id), [allUsers, user.id]);
     const hasChildren = children.length > 0;
@@ -119,26 +123,24 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
 
                 <div className="relative flex-shrink-0" style={{ flexShrink: 0 }}>
                     <div 
-                        className="w-16 h-16 flex items-center justify-center text-[17px] font-black shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
+                        className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-[14px] md:text-[17px] font-black"
                         style={{ 
                             background: `linear-gradient(135deg, ${config.color} 0%, ${config.color}dd 50%, ${config.color}aa 100%)`, 
                             display: 'flex',
                             borderRadius: '50%',
                             color: '#ffffff',
                             border: '3px solid rgba(255,255,255,1)',
-                            boxShadow: `0 12px 25px -8px ${config.color}60`,
+                            boxShadow: `0 8px 20px -6px ${config.color}60`,
                             textShadow: '0 2px 4px rgba(0,0,0,0.25)',
                             position: 'relative',
                             overflow: 'hidden'
                         }}
                     >
-                        {/* Subtle Mesh Glow Overlay */}
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(255,255,255,0.25), transparent)', pointerEvents: 'none' }} />
                         <span style={{ position: 'relative', zIndex: 1 }}>
                             {user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                         </span>
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-[3px] border-white bg-emerald-500 shadow-md" title="Active Node" />
                 </div>
 
                 <div className="flex-1 min-w-0" style={{ flex: 1, minWidth: 0 }}>
@@ -159,12 +161,14 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
                     </div>
                 </div>
 
-                <div className="hidden md:flex items-center gap-2 mr-6 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/50 shadow-sm" style={{ display: 'flex' }}>
-                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/10 text-amber-600">
-                        <Zap size={12} strokeWidth={3} />
+                {!isMobile && (
+                    <div className="flex items-center gap-2 mr-6 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/50 shadow-sm" style={{ display: 'flex' }}>
+                        <div className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-500/10 text-amber-600">
+                            <Zap size={12} strokeWidth={3} />
+                        </div>
+                        <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">IQ</span>
                     </div>
-                    <span className="text-[10px] font-black text-slate-700 uppercase tracking-wider">Performance IQ</span>
-                </div>
+                )}
 
                 <ActionMenu user={user} onEdit={onEdit} />
             </div>
@@ -211,8 +215,7 @@ const StatCard = ({ label, value, gradient, iconBg, icon: Icon, change }) => (
 /* ─── Main Page ─── */
 export default function TeamHierarchy() {
     const { user: currentUser } = useAuth();
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const isMobile = useMobile();
     const [searchTerm, setSearchTerm] = useState('');
     const { showToast } = useToast();
     const [showEditModal, setShowEditModal] = useState(false);
@@ -271,89 +274,106 @@ export default function TeamHierarchy() {
     if (loading) return <PageLoader />;
 
     return (
-        <div className="animate-fadeIn" style={{ background: '#f8fafc', padding: '24px', minHeight: '100vh', margin: '-24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div className="animate-fadeIn" style={{ 
+            background: '#f8fafc', 
+            padding: isMobile ? '16px' : '24px', 
+            minHeight: '100vh', 
+            margin: isMobile ? '-16px' : '-24px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: isMobile ? 16 : 24,
+            paddingBottom: isMobile ? 100 : 24
+        }}>
             
             {/* ── Header ── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-light)', paddingBottom: 20 }}>
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row',
+                justifyContent: 'space-between', 
+                alignItems: isMobile ? 'flex-start' : 'flex-end', 
+                borderBottom: '1px solid var(--border-light)', 
+                paddingBottom: 20,
+                gap: 16
+            }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--navy-950)', marginBottom: 4 }}>
-                        Team Hierarchy & Governance
+                    <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: 'var(--navy-950)', marginBottom: 4 }}>
+                        Team Governance
                     </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                        Manage corporate reporting matrix and organizational node density.
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        Organizational reporting matrix.
                     </p>
                 </div>
 
-                <div style={{ width: 400 }} className="search-bar">
+                <div style={{ width: isMobile ? '100%' : 400 }} className="search-bar">
                     <Search size={16} />
                     <input 
                         type="text" 
-                        placeholder="Identify node email or name..."
+                        placeholder="Search team..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
             </div>
 
-            {/* ── Insight Matrix (FORCED SINGLE ROW) ── */}
-            <div className="dash-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
-                <StatCard label="EXECUTIVE ADMINS" value={roleCounts.admin} gradient="linear-gradient(135deg, #3b82f6, #2563eb)" iconBg="#3b82f6" icon={Shield} change="Org Root" />
-                <StatCard label="GLOBAL MANAGERS" value={roleCounts.sales_manager} gradient="linear-gradient(135deg, #6366f1, #4f46e5)" iconBg="#6366f1" icon={Briefcase} change={`${roleCounts.sales_manager} units`} />
-                <StatCard label="OPERATIONAL LEADS" value={roleCounts.team_leader} gradient="linear-gradient(135deg, #06b6d4, #0891b2)" iconBg="#06b6d4" icon={UserCheck} change={`${roleCounts.team_leader} units`} />
-                <StatCard label="FIELD SPECIALISTS" value={roleCounts.agent} gradient="linear-gradient(135deg, #10b981, #059669)" iconBg="#10b981" icon={User} change={`${roleCounts.agent} units`} />
+            {/* ── Insight Matrix (REFACTORED) ── */}
+            <div className="dash-stats-grid" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: isMobile ? 12 : 20 
+            }}>
+                <StatCard label="ADMINS" value={roleCounts.admin} gradient="linear-gradient(135deg, #3b82f6, #2563eb)" iconBg="#3b82f6" icon={Shield} change="Root" />
+                <StatCard label="MANAGERS" value={roleCounts.sales_manager} gradient="linear-gradient(135deg, #6366f1, #4f46e5)" iconBg="#6366f1" icon={Briefcase} change="Unit" />
+                <StatCard label="LEADS" value={roleCounts.team_leader} gradient="linear-gradient(135deg, #06b6d4, #0891b2)" iconBg="#06b6d4" icon={UserCheck} change="Unit" />
+                <StatCard label="AGENTS" value={roleCounts.agent} gradient="linear-gradient(135deg, #10b981, #059669)" iconBg="#10b981" icon={User} change="Unit" />
             </div>
 
             {/* ── Main Tree Layout ── */}
             <div style={{ background: 'white', borderRadius: '16px', border: '1px solid var(--border-light)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ 
+                    padding: isMobile ? '12px 16px' : '16px 24px', 
+                    borderBottom: '1px solid var(--border-light)', 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: isMobile ? 'flex-start' : 'center', 
+                    justifyContent: 'space-between',
+                    gap: 16
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 32, width: '100%', overflowX: isMobile ? 'auto' : 'visible', paddingBottom: isMobile ? 4 : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                             <Network size={18} style={{ color: '#3b82f6' }} />
-                            <span style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--navy-900)' }}>Organizational Matrix</span>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>Matrix</span>
                         </div>
                         
-                        {/* ── BEAUTIFUL PILL LEGEND ── */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', tracking: '0.05em' }}>Legend:</span>
-                            {Object.entries(ROLE_CONFIG).map(([role, cfg]) => {
-                                const Icon = cfg.icon;
-                                return (
-                                    <div key={role} style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: 8, 
-                                        padding: '6px 12px', 
-                                        background: cfg.bg, 
-                                        borderRadius: '100px', 
-                                        border: `1px solid ${cfg.color}15`
-                                    }}>
-                                        <div style={{ 
-                                            width: 18, 
-                                            height: 18, 
-                                            borderRadius: '6px', 
-                                            background: cfg.color, 
-                                            color: 'white', 
-                                            display: 'flex', 
-                                            alignItems: 'center', 
-                                            justifyContent: 'center' 
-                                        }}>
-                                            <Icon size={10} strokeWidth={3} />
-                                        </div>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-600)' }}>{cfg.label}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                            {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
+                                <div key={role} style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 6, 
+                                    padding: '4px 10px', 
+                                    background: cfg.bg, 
+                                    borderRadius: '100px', 
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    <div style={{ width: 14, height: 14, borderRadius: '4px', background: cfg.color, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <cfg.icon size={8} strokeWidth={4} />
                                     </div>
-                                );
-                            })}
+                                    <span style={{ fontSize: '10px', fontWeight: 700 }}>{cfg.label.split(' ')[0]}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-400)' }}>{users.length} Active Nodes Syncing</span>
-                        <div className="dash-live-dot" style={{ background: '#10b981' }} />
-                    </div>
+                    {!isMobile && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-400)' }}>{users.length} Active Nodes Syncing</span>
+                            <div className="dash-live-dot" style={{ background: '#10b981' }} />
+                        </div>
+                    )}
                 </div>
 
-                <div style={{ padding: '40px', minHeight: '500px', background: '#f1f5f9' }}>
-                    <div style={{ maxWidth: '940px', margin: '0 auto' }}>
+                <div style={{ padding: isMobile ? '20px' : '40px', minHeight: '500px', background: '#f1f5f9', overflowX: 'auto' }}>
+                    <div style={{ maxWidth: '940px', margin: '0 auto', width: isMobile ? 'fit-content' : 'auto' }}>
                         {roots.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '60px', opacity: 0.2 }}>
                                 <Users size={48} style={{ marginBottom: 16 }} />

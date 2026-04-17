@@ -14,6 +14,7 @@ import {
     ShieldCheck, Sparkles, Box, LayoutGrid, ChevronRight,
     ArrowUpRight, MapPin, DollarSign, Wallet
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 import InventoryMap from '../components/InventoryMap';
 
 const COLORS = {
@@ -148,6 +149,7 @@ const STYLES = `
 
 export default function Inventory() {
     const { showToast } = useToast();
+    const isMobile = useMobile();
     const { data: projectsRaw, loading: loadingProjects, error: projError, refetch: refetchProjects } = useApi(() => projectsApi.list());
     const projects = useMemo(() => projectsRaw || [], [projectsRaw]);
 
@@ -236,85 +238,90 @@ export default function Inventory() {
     if (error) return <PageError message={error} onRetry={() => { refetchProjects(); refetchUnits(); }} />;
 
     return (
-        <div className="inventory-vault" style={{ padding: '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
+        <div className="inventory-vault" style={{ 
+            padding: isMobile ? '16px' : '32px 40px', 
+            paddingBottom: isMobile ? 100 : 32,
+            background: '#f8fafc', 
+            minHeight: '100vh' 
+        }}>
             
             {/* 💎 Asset Intelligence Ribbon */}
             <div className="premium-card shimmer-ai" style={{ 
                 background: `linear-gradient(135deg, ${COLORS.slate950} 0%, ${COLORS.slate900} 100%)`, 
-                padding: '18px 40px', color: 'white', marginBottom: '32px', border: 'none'
+                padding: isMobile ? '24px 20px' : '18px 40px', color: 'white', marginBottom: isMobile ? '24px' : '32px', border: 'none'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 24 : 0 }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                             <Box size={16} color={COLORS.cyan} strokeWidth={2.5} />
-                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                             <Box size={14} color={COLORS.cyan} strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
                                 Institutional Asset Repository
                              </span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1, color: COLORS.white }}>
-                            The Inventory <span style={{ color: COLORS.cyan }}>Vault</span>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1.1, color: COLORS.white }}>
+                            Asset <span style={{ color: COLORS.cyan }}>Vault</span>
                         </h1>
-                        <p style={{ margin: '6px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
-                            Managing {units.length} institutional assets across {projects.length} strategic portfolios.
+                        <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 600 }}>
+                            {units.length} institutional assets.
                         </p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-                        {[
-                            { label: 'Available', val: counts.Available, color: COLORS.emerald },
-                            { label: 'Reservations', val: counts.Booked, color: COLORS.amber },
-                            { label: 'Value', val: '₹142Cr', color: COLORS.white }
-                        ].map((stat, i) => (
-                            <div key={i} style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: stat.color, letterSpacing: '-0.5px' }}>{stat.val}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
-                            </div>
-                        ))}
-                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '40px' }} />
+                    <div style={{ display: 'flex', gap: isMobile ? '20px' : '32px', alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end', borderTop: isMobile ? '1px solid rgba(255,255,255,0.1)' : 'none', paddingTop: isMobile ? 20 : 0 }}>
+                        <div style={{ display: 'flex', gap: isMobile ? 16 : 32 }}>
+                            {[
+                                { label: 'Live', val: counts.Available, color: COLORS.emerald },
+                                { label: 'Booked', val: counts.Booked, color: COLORS.amber },
+                            ].map((stat, i) => (
+                                <div key={i} style={{ textAlign: isMobile ? 'left' : 'center' }}>
+                                    <div style={{ fontSize: isMobile ? '1.2rem' : '1.6rem', fontWeight: 950, color: stat.color, letterSpacing: '-0.5px' }}>{stat.val}</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
                         <button onClick={() => setShowModal(true)} style={{ 
                             background: COLORS.white, 
                             color: COLORS.slate950, 
                             border: 'none', 
-                            padding: '12px 24px', 
-                            borderRadius: '14px',
-                            fontWeight: 900, 
-                            fontSize: '0.9rem', 
+                            padding: isMobile ? '10px 16px' : '12px 24px', 
+                            borderRadius: '12px',
+                            fontWeight: 950, 
+                            fontSize: '0.8rem', 
                             display: 'flex', 
                             alignItems: 'center', 
-                            gap: '8px',
+                            gap: '6px',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease'
                         }} className="hover-lift">
-                            <Plus size={18} strokeWidth={3} /> ADD ASSET
+                            <Plus size={16} strokeWidth={3} /> ADD
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '16px', marginBottom: '40px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: isMobile ? '24px' : '40px', alignItems: 'center', flexWrap: 'wrap', flexDirection: isMobile ? 'column' : 'row' }}>
                 <div style={{ 
-                    flex: '2 1 400px', 
-                    padding: '0 20px', 
+                    flex: isMobile ? '1 1 100%' : '2 1 400px', 
+                    padding: '0 16px', 
                     display: 'flex', 
                     alignItems: 'center', 
-                    gap: '16px', 
+                    gap: '12px', 
                     background: 'white',
                     border: `1.5px solid ${COLORS.slate200}`,
                     borderRadius: '16px',
-                    minWidth: 0
+                    width: isMobile ? '100%' : 'auto'
                 }}>
-                    <Search size={18} color={COLORS.slate400} strokeWidth={2.5} />
+                    <Search size={16} color={COLORS.slate400} strokeWidth={2.5} />
                     <input 
                         value={search} onChange={e => setSearch(e.target.value)}
-                        placeholder="Search by Unit No, Type or Project Portfolio..."
+                        placeholder="Search assets..."
                         style={{ 
                             width: '100%', 
-                            height: '52px', 
+                            height: '48px', 
                             border: 'none', 
                             background: 'transparent', 
                             outline: 'none', 
                             fontWeight: 700, 
-                            fontSize: '0.95rem',
+                            fontSize: '0.9rem',
                             color: COLORS.slate950
                         }}
                     />
@@ -325,28 +332,27 @@ export default function Inventory() {
                     background: 'white',
                     border: `1.5px solid ${COLORS.slate200}`,
                     borderRadius: '16px',
-                    flex: '1 1 auto',
-                    overflow: 'hidden',
-                    minWidth: '280px'
+                    flex: isMobile ? '1 1 100%' : '1 1 auto',
+                    width: isMobile ? '100%' : 'auto',
+                    overflow: 'hidden'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                         <select 
                             value={filterProject} onChange={e => setFilterProject(e.target.value)}
                             style={{ 
                                 width: '100%',
-                                padding: '0 16px', 
-                                height: '52px', 
+                                padding: '0 12px', 
+                                height: '48px', 
                                 border: 'none', 
                                 background: 'transparent', 
                                 fontWeight: 850, 
-                                fontSize: '0.75rem', 
+                                fontSize: '0.7rem', 
                                 color: COLORS.slate950, 
-                                outline: 'none', 
                                 cursor: 'pointer',
                                 textTransform: 'uppercase'
                             }}
                         >
-                            <option value="All">All Projects</option>
+                            <option value="All">Projects</option>
                             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
                     </div>
@@ -356,54 +362,55 @@ export default function Inventory() {
                             value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                             style={{ 
                                 width: '100%',
-                                padding: '0 16px', 
-                                height: '52px', 
+                                padding: '0 12px', 
+                                height: '48px', 
                                 border: 'none', 
                                 background: 'transparent', 
                                 fontWeight: 850, 
-                                fontSize: '0.75rem', 
+                                fontSize: '0.7rem', 
                                 color: COLORS.slate950, 
-                                outline: 'none', 
                                 cursor: 'pointer',
                                 textTransform: 'uppercase'
                             }}
                         >
-                            <option value="All">All Status</option>
+                            <option value="All">Status</option>
                             {['Available', 'Booked', 'Sold', 'On Hold'].map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                     </div>
                 </div>
 
-                <div style={{ 
-                    display: 'flex', 
-                    padding: '4px',
-                    background: COLORS.slate50,
-                    border: `1.5px solid ${COLORS.slate200}`,
-                    borderRadius: '16px'
-                }}>
-                    <button onClick={() => setViewMode('grid')} style={{ 
-                        width: 44, height: 44, borderRadius: '12px', border: 'none',
-                        background: viewMode === 'grid' ? 'white' : 'transparent',
-                        color: viewMode === 'grid' ? COLORS.slate950 : COLORS.slate500,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                        boxShadow: viewMode === 'grid' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                {!isMobile && (
+                    <div style={{ 
+                        display: 'flex', 
+                        padding: '4px',
+                        background: COLORS.slate50,
+                        border: `1.5px solid ${COLORS.slate200}`,
+                        borderRadius: '16px'
                     }}>
-                        <LayoutGrid size={20} />
-                    </button>
-                    <button onClick={() => setViewMode('list')} style={{ 
-                        width: 44, height: 44, borderRadius: '12px', border: 'none',
-                        background: viewMode === 'list' ? 'white' : 'transparent',
-                        color: viewMode === 'list' ? COLORS.slate950 : COLORS.slate500,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                        boxShadow: viewMode === 'list' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
-                    }}>
-                        <List size={22} />
-                    </button>
-                </div>
+                        <button onClick={() => setViewMode('grid')} style={{ 
+                            width: 44, height: 44, borderRadius: '12px', border: 'none',
+                            background: viewMode === 'grid' ? 'white' : 'transparent',
+                            color: viewMode === 'grid' ? COLORS.slate950 : COLORS.slate500,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            boxShadow: viewMode === 'grid' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                        }}>
+                            <LayoutGrid size={20} />
+                        </button>
+                        <button onClick={() => setViewMode('list')} style={{ 
+                            width: 44, height: 44, borderRadius: '12px', border: 'none',
+                            background: viewMode === 'list' ? 'white' : 'transparent',
+                            color: viewMode === 'list' ? COLORS.slate950 : COLORS.slate500,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                            boxShadow: viewMode === 'list' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none'
+                        }}>
+                            <List size={22} />
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* 🏗️ Assets Display */}
-            {viewMode === 'list' ? (
+            {viewMode === 'list' && !isMobile ? (
                 <div className="premium-card" style={{ padding: 0, background: 'white' }}>
                     <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                         <thead style={{ background: COLORS.slate50 }}>
@@ -454,47 +461,40 @@ export default function Inventory() {
                     </table>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', gap: isMobile ? '20px' : '32px' }}>
                     {filtered.map(unit => (
                         <div key={unit.id} className="premium-card unit-card-luxury" onClick={() => setSelectedUnit(unit)} style={{ cursor: 'pointer' }}>
-                            <div className="unit-image-placeholder">
-                                <div className={`badge-status status-${(unit.status || 'Available').replace(' ', '')}`}>
+                            <div className="unit-image-placeholder" style={{ height: isMobile ? 120 : 140 }}>
+                                <div className={`badge-status status-${(unit.status || 'Available').replace(' ', '')}`} style={{ fontSize: isMobile ? '0.6rem' : '0.7rem', padding: isMobile ? '4px 10px' : '6px 14px' }}>
                                     {unit.status}
                                 </div>
-                                <div className="price-tag">
+                                <div className="price-tag" style={{ fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
                                     {unit.base_price ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(unit.base_price) : unit.price}
                                 </div>
                                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.05)' }}>
-                                    <Building2 size={120} />
+                                    <Building2 size={isMobile ? 80 : 120} />
                                 </div>
                             </div>
-                            <div style={{ padding: '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ padding: isMobile ? '20px' : '24px', flex: 1, display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '20px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 950, fontSize: '1.4rem', color: COLORS.slate950, letterSpacing: '-0.8px' }}>{unit.unit_no || unit.unitNo}</div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: COLORS.slate500 }}>{unit.projectName}</div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ fontWeight: 950, fontSize: isMobile ? '1.2rem' : '1.4rem', color: COLORS.slate950, letterSpacing: '-0.8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{unit.unit_no || unit.unitNo}</div>
+                                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: COLORS.slate500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{unit.projectName}</div>
                                     </div>
-                                    <div style={{ background: `${COLORS.indigo}10`, color: COLORS.indigo, padding: '6px 14px', borderRadius: '12px', fontWeight: 900, fontSize: '0.75rem' }}>
+                                    <div style={{ background: `${COLORS.indigo}10`, color: COLORS.indigo, padding: '4px 10px', borderRadius: '10px', fontWeight: 900, fontSize: '0.65rem', flexShrink: 0 }}>
                                         {unit.property_type || unit.type}
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                                    <div style={{ background: COLORS.slate50, padding: '12px', borderRadius: '16px' }}>
-                                        <div style={{ fontSize: '0.7rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Floor</div>
-                                        <div style={{ fontWeight: 900, fontSize: '1rem' }}>{unit.floor} Tier</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div style={{ background: COLORS.slate50, padding: '10px', borderRadius: '14px' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Floor</div>
+                                        <div style={{ fontWeight: 900, fontSize: '0.85rem' }}>{unit.floor} Tier</div>
                                     </div>
-                                    <div style={{ background: COLORS.slate50, padding: '12px', borderRadius: '16px' }}>
-                                        <div style={{ fontSize: '0.7rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Structure</div>
-                                        <div style={{ fontWeight: 900, fontSize: '1rem' }}>{unit.facing} Look</div>
+                                    <div style={{ background: COLORS.slate50, padding: '10px', borderRadius: '14px' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Structure</div>
+                                        <div style={{ fontWeight: 900, fontSize: '0.85rem' }}>{unit.facing}</div>
                                     </div>
-                                </div>
-
-                                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '16px', borderTop: `1px dashed ${COLORS.slate200}` }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: COLORS.emerald, fontWeight: 900, fontSize: '0.85rem' }}>
-                                        <Sparkles size={16} /> Portfolio Managed
-                                    </div>
-                                    <ArrowUpRight size={18} color={COLORS.slate300} />
                                 </div>
                             </div>
                         </div>
@@ -504,15 +504,24 @@ export default function Inventory() {
 
             {/* 🛸 Selected Asset Side Ledger */}
             {selectedUnit && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }} onClick={() => setSelectedUnit(null)}>
-                    <div className="premium-card" style={{ width: '100%', maxWidth: '480px', height: '100%', borderRadius: '40px 0 0 40px', background: 'white', position: 'relative', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ padding: '40px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', justifyContent: isMobile ? 'flex-end' : 'flex-end', alignItems: isMobile ? 'flex-end' : 'stretch' }} onClick={() => setSelectedUnit(null)}>
+                    <div className="premium-card animate-slideUp" style={{ 
+                        width: '100%', 
+                        maxWidth: isMobile ? '100%' : '480px', 
+                        height: isMobile ? '85vh' : '100%', 
+                        borderRadius: isMobile ? '32px 32px 0 0' : '40px 0 0 40px', 
+                        background: 'white', 
+                        position: 'relative', 
+                        overflowY: 'auto' 
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ padding: isMobile ? '32px 24px' : '40px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
                                 <div>
-                                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.indigo, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Institutional Ledger</div>
-                                    <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: 950, color: COLORS.slate950 }}>Asset {selectedUnit.unit_no || selectedUnit.unitNo}</h2>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.indigo, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Institutional Ledger</div>
+                                    <h2 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 950, color: COLORS.slate950 }}>Unit {selectedUnit.unit_no || selectedUnit.unitNo}</h2>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: COLORS.slate500, marginTop: 4 }}>{selectedUnit.projectName}</div>
                                 </div>
-                                <button onClick={() => setSelectedUnit(null)} style={{ background: COLORS.slate100, border: 'none', width: 44, height: 44, borderRadius: '14px', cursor: 'pointer' }}><X size={24} /></button>
+                                <button onClick={() => setSelectedUnit(null)} style={{ background: COLORS.slate50, border: 'none', width: 44, height: 44, borderRadius: '14px', cursor: 'pointer', flexShrink: 0 }}><X size={24} /></button>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>

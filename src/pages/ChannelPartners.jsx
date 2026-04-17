@@ -4,10 +4,9 @@ import { PageLoader, PageError } from '../components/Feedback';
 import { channelPartnersApi, projectsApi, leadsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import {
-    Plus, Search, Star, Phone, Mail, Edit2, Trash2, X,
-    TrendingUp, Users, DollarSign, Award, Building2, MapPin,
     CheckCircle, Clock, Eye, FileText, ChevronRight, Share2,
 } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 
 // ─── Constants ────────────────────────────────────────────────────────
 const STATUS_COLORS = {
@@ -73,6 +72,7 @@ function MiniStat({ label, value, color }) {
 // ─── Main Component ──────────────────────────────────────────────────
 export default function ChannelPartners() {
     const { showToast } = useToast();
+    const isMobile = useMobile();
     const { data: partnersRaw, loading, error, refetch } = useApi(() => channelPartnersApi.list());
     const { data: projectsRaw } = useApi(() => projectsApi.list());
     const partners = partnersRaw || [];
@@ -167,57 +167,69 @@ export default function ChannelPartners() {
     return (
         <div className="animate-fadeIn">
             {/* ── Page Header ─────────────────────────────────────────── */}
-            <div className="page-header">
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row', 
+                justifyContent: 'space-between', 
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: 16,
+                marginBottom: 24,
+                padding: isMobile ? '0 4px' : 0
+            }}>
                 <div className="page-header-left">
-                    <h1 className="page-title">Channel Partners</h1>
-                    <p className="page-subtitle">{partners.length} partners · {activeCount} active · Manage brokers & referrals</p>
+                    <h1 className="page-title" style={{ fontSize: isMobile ? '1.75rem' : '2.2rem', margin: 0 }}>Partners</h1>
+                    <p className="page-subtitle" style={{ fontSize: isMobile ? '0.85rem' : '1rem', margin: '4px 0 0' }}>{partners.length} agencies · Manage broker network</p>
                 </div>
-                <div className="page-actions">
-                    <button className="btn btn-primary" onClick={openAdd}>
-                        <Plus size={15} /> Add Partner
+                <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto' }}>
+                    <button className="btn btn-primary" onClick={openAdd} style={{ width: isMobile ? '100%' : 'auto', justifyContent: 'center', height: 44, borderRadius: 12 }}>
+                        <Plus size={18} /> Add Partner
                     </button>
                 </div>
             </div>
 
             {/* ── Summary Stats ────────────────────────────────────────── */}
-            <div className="grid grid-4 mb-6">
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4, 1fr)', 
+                gap: isMobile ? 12 : 24, 
+                marginBottom: 24 
+            }}>
                 {[
-                    { label: 'Total Partners', value: partners.length, icon: '🤝', color: 'var(--navy-500)', bg: 'var(--navy-50)' },
-                    { label: 'Active Partners', value: activeCount, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)' },
-                    { label: 'Total Referrals', value: totalLeadsReferred, icon: '📋', color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.07)' },
-                    { label: 'Commission Paid', value: totalCommissionPaid, icon: '💰', color: 'var(--accent-amber-dark)', bg: 'rgba(245,158,11,0.07)' },
+                    { label: 'Total', value: partners.length, icon: '🤝', color: 'var(--navy-500)', bg: 'var(--navy-50)' },
+                    { label: 'Active', value: activeCount, icon: '✅', color: 'var(--accent-emerald)', bg: 'rgba(16,185,129,0.07)' },
+                    { label: 'Referrals', value: totalLeadsReferred, icon: '📋', color: 'var(--accent-cyan-dark)', bg: 'rgba(6,182,212,0.07)' },
+                    { label: 'Earning', value: totalCommissionPaid, icon: '💰', color: 'var(--accent-amber-dark)', bg: 'rgba(245,158,11,0.07)' },
                 ].map(s => (
-                    <div key={s.label} className="card" style={{ background: s.bg, border: `1px solid ${s.color}20` }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                            <span style={{ fontSize: '1.4rem' }}>{s.icon}</span>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.label}</span>
+                    <div key={s.label} className="card" style={{ background: s.bg, border: `1px solid ${s.color}20`, padding: isMobile ? '16px' : '20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <span style={{ fontSize: '1.2rem' }}>{s.icon}</span>
+                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{s.label}</span>
                         </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: isMobile ? '1.4rem' : '1.8rem', fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
                     </div>
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start' }}>
-                <div>
+            <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: '1fr 380px', gap: 24, alignItems: 'start', paddingBottom: isMobile ? 100 : 0 }}>
+                <div style={{ display: (isMobile && selectedPartner) ? 'none' : 'block' }}>
                     {/* Filters */}
-                    <div className="card mb-4" style={{ padding: '14px 18px' }}>
-                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <div className="search-bar" style={{ width: 260 }}>
+                    <div className="card mb-4" style={{ padding: isMobile ? '16px' : '14px 18px' }}>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row' }}>
+                            <div className="search-bar" style={{ width: isMobile ? '100%' : 260 }}>
                                 <Search size={14} />
                                 <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search partners..." />
                             </div>
-                            <select className="form-control" style={{ width: 130 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                                <option value="All">All Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                                <option value="Pending">Pending</option>
-                            </select>
-                            <select className="form-control" style={{ width: 130 }} value={filterCity} onChange={e => setFilterCity(e.target.value)}>
-                                <option value="All">All Cities</option>
-                                {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                            <div style={{ marginLeft: 'auto', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                                {filtered.length} results
+                            <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
+                                <select className="form-control" style={{ flex: 1 }} value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                                    <option value="All">All Status</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Pending">Pending</option>
+                                </select>
+                                <select className="form-control" style={{ flex: 1 }} value={filterCity} onChange={e => setFilterCity(e.target.value)}>
+                                    <option value="All">All Cities</option>
+                                    {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -238,32 +250,34 @@ export default function ChannelPartners() {
                                         outline: isSelected ? '2px solid var(--navy-400)' : 'none',
                                     }}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: isMobile ? 12 : 16 }}>
                                         <div style={{
-                                            width: 50, height: 50, borderRadius: '12px',
+                                            width: isMobile ? 44 : 50, height: isMobile ? 44 : 50, borderRadius: '12px',
                                             background: `linear-gradient(135deg, ${PARTNER_COLORS[idx % PARTNER_COLORS.length]}, ${PARTNER_COLORS[(idx + 2) % PARTNER_COLORS.length]})`,
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '0.9rem', fontWeight: 800, color: 'white', flexShrink: 0
+                                            fontSize: '0.85rem', fontWeight: 800, color: 'white', flexShrink: 0
                                         }}>
                                             {partner.avatar || partner.name?.substring(0, 2).toUpperCase()}
                                         </div>
 
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
-                                                <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>{partner.name}</span>
-                                                <span className={`badge ${STATUS_COLORS[partner.status] || 'badge-slate'}`}>{partner.status}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                                                <span style={{ fontWeight: 800, fontSize: isMobile ? '0.9rem' : '0.95rem' }}>{partner.name}</span>
+                                                <span className={`badge ${STATUS_COLORS[partner.status] || 'badge-slate'}`} style={{ fontSize: '0.6rem' }}>{partner.status}</span>
                                             </div>
-                                            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 8 }}>
+                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 👤 {partner.contact_person || partner.contactPerson} · 📍 {partner.city}
                                             </div>
-                                            <StarRating rating={partner.rating} />
+                                            {!isMobile && <StarRating rating={partner.rating} />}
                                         </div>
 
-                                        <div style={{ display: 'flex', gap: 24, borderLeft: '1px solid var(--border-light)', paddingLeft: 20 }}>
-                                            <MiniStat label="Leads" value={partner.total_leads_referred || 0} />
-                                            <MiniStat label="Won" value={partner.total_bookings || 0} color="var(--accent-emerald)" />
-                                            <MiniStat label="Comm." value={`${partner.commission_rate || partner.commissionRate}%`} />
-                                        </div>
+                                        {!isMobile && (
+                                            <div style={{ display: 'flex', gap: 24, borderLeft: '1px solid var(--border-light)', paddingLeft: 20 }}>
+                                                <MiniStat label="Leads" value={partner.total_leads_referred || 0} />
+                                                <MiniStat label="Won" value={partner.total_bookings || 0} color="var(--accent-emerald)" />
+                                                <MiniStat label="Comm." value={`${partner.commission_rate || partner.commissionRate}%`} />
+                                            </div>
+                                        )}
 
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                             <button className="btn-icon" onClick={(e) => openEdit(partner, e)}><Edit2 size={14} /></button>
@@ -276,8 +290,12 @@ export default function ChannelPartners() {
                     </div>
                 </div>
 
-                {/* Info Panel */}
-                <div style={{ position: 'sticky', top: 24 }}>
+                {/* Info Panel / Drill Down */}
+                <div style={{ 
+                    position: isMobile ? 'static' : 'sticky', 
+                    top: 24, 
+                    display: (isMobile && !selectedPartner) ? 'none' : 'block' 
+                }}>
                     {selectedPartner ? (
                         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                             <div style={{

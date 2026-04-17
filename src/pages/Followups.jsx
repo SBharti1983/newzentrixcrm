@@ -44,6 +44,13 @@ export default function Followups() {
     const [sortMode, setSortMode] = useState('time'); 
     const [viewMode, setViewMode] = useState('list'); 
     const [notifyTarget, setNotifyTarget] = useState(null);
+
+    // Reset viewMode to 'list' on mobile if somehow initialized/left in kanban/calendar
+    useEffect(() => {
+        if (isMobile && (viewMode === 'kanban')) {
+            setViewMode('list');
+        }
+    }, [isMobile, viewMode]);
     const [saving, setSaving] = useState(false);
     const [previewLead, setPreviewLead] = useState(null);
     const [hoverContext, setHoverContext] = useState(null); // { x, y, lead }
@@ -259,7 +266,7 @@ export default function Followups() {
     const highPriority = (followups || []).filter(f => f.priority === 'High' && f.status === 'Pending').length;
 
     return (
-        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px' }}>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px', paddingBottom: isMobile ? 100 : 0 }}>
             <div className="premium-card shimmer-ai" style={{ 
                 background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
                 padding: isMobile ? '24px' : '32px 40px', color: 'white', marginBottom: '32px', border: 'none',
@@ -327,9 +334,11 @@ export default function Followups() {
                     <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
                         <List size={isMobile ? 12 : 14} /> {isMobile ? '' : 'LIST'}
                     </button>
-                    <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
-                        <LayoutGrid size={isMobile ? 12 : 14} /> {isMobile ? '' : 'KANBAN'}
-                    </button>
+                    {!isMobile && (
+                        <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8' }}>
+                            <LayoutGrid size={14} /> KANBAN
+                        </button>
+                    )}
                     <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
                         <Calendar size={isMobile ? 12 : 14} /> {isMobile ? '' : 'CALENDAR'}
                     </button>
@@ -585,7 +594,7 @@ export default function Followups() {
                                 </div>
                                 
                                 {/* Group Items */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: isMobile ? '24px' : '40px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingLeft: isMobile ? '16px' : '40px' }}>
                                     {items.map(f => {
                                         const lead = leadMap[f.lead_id];
                                         const budgetVal = lead?.budget ? (parseFloat(String(lead.budget).replace(/[^0-9.]/g, '')) || 0) : 0;
@@ -792,18 +801,18 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
             onDragStart={onDragStart}
             className={`premium-card hover-lift ${isHighValue ? 'shimmer-highvalue' : (urgent && f.status === 'Pending' ? 'shimmer-urgent' : '')}`} 
             style={{
-                padding: isCompact ? '16px 20px' : (isMobile ? '10px 14px' : '14px 20px'),
+                padding: isCompact || isMobile ? '16px 20px' : '14px 20px',
                 display: 'flex', 
-                flexDirection: isCompact ? 'column' : 'row',
-                alignItems: isCompact ? 'flex-start' : 'center', 
-                gap: isCompact ? '12px' : 0,
+                flexDirection: isCompact || isMobile ? 'column' : 'row',
+                alignItems: isCompact || isMobile ? 'flex-start' : 'center', 
+                gap: isCompact || isMobile ? '10px' : 0,
                 background: 'white',
                 minHeight: isCompact ? '110px' : 'auto',
                 opacity: f.status === 'Completed' ? 0.6 : 1,
                 position: 'relative',
                 boxShadow: isHighValue ? '0 0 25px rgba(251, 191, 36, 0.15)' : (urgent && f.status === 'Pending' ? '0 0 15px rgba(244, 63, 94, 0.12)' : '0 2px 4px rgba(0,0,0,0.02)'),
                 border: isHighValue ? '2px solid #fbbf24' : (urgent && f.status === 'Pending' ? '1px solid #fecdd3' : (isTeamView ? '1.5px solid #3b82f644' : '1px solid #f1f5f9')),
-                borderRadius: '24px',
+                borderRadius: isMobile ? '16px' : '24px',
                 cursor: onDragStart ? 'grab' : 'default',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
@@ -825,11 +834,11 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
 
             {/* Left Column: Status (Only in List View or Absolute in Compact) */}
             <div style={{ 
-                width: isCompact ? 'auto' : '40px', 
+                width: (isCompact || isMobile) ? 'auto' : '40px', 
                 flexShrink: 0,
-                position: isCompact ? 'absolute' : 'static', 
-                top: isCompact ? '20px' : 'auto', 
-                right: isCompact ? '20px' : 'auto', 
+                position: (isCompact || isMobile) ? 'absolute' : 'static', 
+                top: (isCompact || isMobile) ? '20px' : 'auto', 
+                right: (isCompact || isMobile) ? '20px' : 'auto', 
                 zIndex: 2,
                 display: 'flex',
                 justifyContent: 'center'
@@ -851,30 +860,30 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
             <div style={{ 
                 flex: 1, 
                 display: 'flex', 
-                flexDirection: isCompact ? 'column' : 'row', 
-                alignItems: isCompact ? 'flex-start' : 'center',
-                gap: isCompact ? '8px' : '24px',
+                flexDirection: (isCompact || isMobile) ? 'column' : 'row', 
+                alignItems: (isCompact || isMobile) ? 'flex-start' : 'center',
+                gap: (isCompact || isMobile) ? '6px' : '24px',
                 minWidth: 0
             }}>
                 {/* Lead Info Column */}
-                <div style={{ width: isCompact ? '100%' : '220px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                <div style={{ width: (isCompact || isMobile) ? '100%' : '220px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px', flexWrap: 'wrap' }}>
                         <span 
                             onClick={() => onPreview(f.lead_id || f.leadId)} 
                             onMouseEnter={(e) => onHover(e, leadDetails)}
                             onMouseLeave={() => onHover(null)}
-                            style={{ fontWeight: 950, fontSize: isCompact ? '1rem' : '0.95rem', cursor: 'pointer', color: '#0f172a' }} 
+                            style={{ fontWeight: 950, fontSize: isMobile ? '0.9rem' : (isCompact ? '1rem' : '0.95rem'), cursor: 'pointer', color: '#0f172a' }} 
                             className="hover-underline"
                         >
                             {f.lead_name || f.leadName}
                         </span>
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {score > 0 && <span style={{ padding: '2px 6px', borderRadius: '6px', background: score > 80 ? '#ecfdf5' : '#f8fafc', color: score > 80 ? '#059669' : '#64748b', fontSize: '10px', fontWeight: 900, border: score > 80 ? '1px solid #10b98122' : '1px solid #e2e8f0' }}>{score}%</span>}
                             {budget && <span style={{ padding: '2px 6px', borderRadius: '6px', background: isHighValue ? '#fff7ed' : '#f1f5f9', color: isHighValue ? '#d97706' : '#64748b', fontSize: '10px', fontWeight: 900, border: isHighValue ? '1px solid #fbbf2444' : '1px solid #e2e8f0' }}>₹{budget}</span>}
                         </div>
                     </div>
-                    {isCompact && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                    {(isCompact || isMobile) && (
+                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                             <Calendar size={12} color={isHighValue ? "#fbbf24" : "#94a3b8"} /> {day} · {time}
                         </div>
                     )}
@@ -918,15 +927,15 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
 
             {/* Right Column: Actions */}
             <div style={{ 
-                width: isCompact ? '100%' : '120px', 
+                width: (isCompact || isMobile) ? '100%' : '120px', 
                 flexShrink: 0,
                 display: 'flex', 
                 alignItems: 'center', 
-                justifyContent: 'flex-end',
-                gap: '12px', 
-                marginTop: isCompact ? '12px' : '0',
-                paddingTop: isCompact ? '12px' : '0',
-                borderTop: isCompact ? '1px solid #f1f5f9' : 'none'
+                justifyContent: isMobile ? 'flex-start' : 'flex-end',
+                gap: '8px', 
+                marginTop: (isCompact || isMobile) ? '8px' : '0',
+                paddingTop: (isCompact || isMobile) ? '10px' : '0',
+                borderTop: (isCompact || isMobile) ? '1px solid #f1f5f9' : 'none'
             }}>
                 {!isCompact && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '8px' }}>
@@ -939,11 +948,11 @@ function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {f.status !== 'Completed' ? (
                         <>
-                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id || f.leadId, f.lead_phone || leadDetails?.phone, f.lead_name || f.leadName)} style={{ background: '#0f172a', color: 'white', width: '40px', height: '40px', borderRadius: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Phone size={18} />
+                            <button className="icon-btn-sm" onClick={() => onDial(f.lead_id || f.leadId, f.lead_phone || leadDetails?.phone, f.lead_name || f.leadName)} style={{ background: '#0f172a', color: 'white', width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isMobile ? '10px' : '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Phone size={isMobile ? 16 : 18} />
                             </button>
-                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: f.lead_phone || leadDetails?.phone })} style={{ background: '#10b981', color: 'white', width: '40px', height: '40px', borderRadius: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Send size={18} />
+                            <button className="icon-btn-sm" onClick={() => onNotify({ id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: f.lead_phone || leadDetails?.phone })} style={{ background: '#10b981', color: 'white', width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isMobile ? '10px' : '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Send size={isMobile ? 16 : 18} />
                             </button>
                         </>
                     ) : (

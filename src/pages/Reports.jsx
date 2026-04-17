@@ -382,132 +382,112 @@ export default function Reports() {
     };
 
     return (
-        <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
+        <div className="animate-fadeIn" style={{ paddingBottom: isMobile ? 100 : 60, padding: isMobile ? '0 4px' : 0 }}>
             {/* Header / Command Ribbon */}
             <div className="glass-panel" style={{ 
-                padding: '36px 48px', 
-                borderRadius: 32, 
-                marginBottom: 32,
+                padding: isMobile ? '24px 20px' : '36px 48px', 
+                borderRadius: isMobile ? 24 : 32, 
+                marginBottom: 24,
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.8))',
                 border: '1px solid rgba(255,255,255,0.8)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.04)',
-                position: 'relative',
-                overflow: 'hidden'
+                boxShadow: '0 20px 60px rgba(0,0,0,0.04)'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: 24 }}>
-                    <div style={{ flex: '1 1 400px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                            <div style={{ padding: '8px 16px', background: 'var(--navy-900)', borderRadius: '12px', color: 'white', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-                                Intelligence Hub
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 800, color: 'var(--accent-violet)' }}>
-                                <FileText size={14} /> AD-HOC ON DEMAND
-                            </div>
-                        </div>
-                        <h1 style={{ fontSize: '2.8rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.04em' }}>
-                            Custom Reporting Engine
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div>
+                        <h1 style={{ fontSize: isMobile ? '1.8rem' : '2.8rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.04em' }}>
+                            Report <span style={{ color: 'var(--accent-violet)' }}>Engine</span>
                         </h1>
-                        <p style={{ color: 'var(--slate-500)', fontSize: '1.1rem', marginTop: 12, fontWeight: 500, maxWidth: 600 }}>
-                            Build, save, and export high-fidelity data cuts tailored to specific institutional analysis requirements.
+                        <p style={{ color: 'var(--slate-500)', fontSize: isMobile ? '0.9rem' : '1.1rem', marginTop: 8, fontWeight: 500 }}>
+                            Build and export high-fidelity data cuts.
                         </p>
                     </div>
 
+                    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <button 
-                            className="btn hover-lift" 
+                            className="btn" 
                             onClick={() => setActiveTab('exports')}
                             style={{ 
-                                background: activeTab === 'exports' ? 'var(--navy-50)' : 'white', 
+                                background: activeTab === 'exports' ? 'var(--navy-900)' : 'white', 
                                 border: '1px solid var(--border-light)', 
-                                color: 'var(--navy-900)', 
-                                height: 52, padding: '0 24px', borderRadius: '16px', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', gap: 10
+                                color: activeTab === 'exports' ? 'white' : 'var(--navy-900)', 
+                                padding: '10px 16px', borderRadius: 12, fontWeight: 800,
+                                fontSize: '0.8rem', flex: isMobile ? 1 : 'none', justifyContent: 'center'
                             }}
                         >
-                            <Download size={18} /> EXPORT CENTER
+                            History
                         </button>
                         <button 
-                            className="btn hover-lift" 
-                            onClick={() => showToast('Ad-Hoc Report Builder is loading...', 'info')}
+                            className="btn" 
+                            onClick={() => showToast('Builder loading...', 'info')}
                             style={{ 
-                                background: 'var(--navy-900)', color: 'white', 
-                                height: 52, padding: '0 24px', borderRadius: '16px', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', gap: 10,
-                                boxShadow: '0 10px 24px rgba(10,22,40,0.2)'
+                                background: 'var(--accent-violet)', color: 'white', 
+                                padding: '10px 16px', borderRadius: 12, fontWeight: 800,
+                                fontSize: '0.8rem', flex: isMobile ? 1 : 'none', justifyContent: 'center'
                             }}
                         >
-                            <Plus size={18} /> BUILD NEW REPORT
+                            Build
                         </button>
+                    </div>
                 </div>
             </div>
 
             {/* Main Workspace */}
-            <div className="grid grid-2" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 4fr)', gap: 32, alignItems: 'start' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 32, alignItems: 'start' }}>
                 
-                {/* Left Navigation Sidebar (Restricted to Library) */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <div className="glass-card" style={{ padding: 24, borderRadius: 24 }}>
-                        <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 16 }}>
-                            Report Library
-                        </h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {[
-                                { id: 'templates', label: 'Curated Templates', icon: FileText },
-                                { id: 'saved', label: 'My Saved Reports', icon: FileSpreadsheet },
-                                { id: 'exports', label: 'Recent Exports', icon: FileJson },
-                            ].map(tab => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-                                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12,
-                                    border: 'none', background: activeTab === tab.id ? 'var(--navy-50)' : 'transparent',
-                                    color: activeTab === tab.id ? 'var(--navy-900)' : 'var(--slate-500)',
-                                    fontWeight: activeTab === tab.id ? 800 : 600, fontSize: '0.95rem', cursor: 'pointer',
-                                    transition: 'all 0.2s', textAlign: 'left'
-                                }}>
-                                    <tab.icon size={18} style={{ color: activeTab === tab.id ? 'var(--accent-cyan)' : 'inherit' }} />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
+                {/* Left Navigation (Tabs) */}
+                <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0 }}>
+                    <div className="glass-card hide-scrollbar" style={{ 
+                        padding: 12, borderRadius: 20, 
+                        display: 'flex', 
+                        flexDirection: isMobile ? 'row' : 'column', 
+                        gap: 8,
+                        overflowX: isMobile ? 'auto' : 'visible'
+                    }}>
+                        {[
+                            { id: 'templates', label: 'Library', icon: FileText },
+                            { id: 'exports', label: 'History', icon: FileJson },
+                            { id: 'saved', label: 'Saved', icon: FileSpreadsheet },
+                        ].map(tab => (
+                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', borderRadius: 12,
+                                border: 'none', background: activeTab === tab.id ? 'var(--navy-50)' : 'transparent',
+                                color: activeTab === tab.id ? 'var(--navy-900)' : 'var(--slate-500)',
+                                fontWeight: activeTab === tab.id ? 800 : 600, fontSize: '0.9rem', cursor: 'pointer',
+                                whiteSpace: 'nowrap'
+                            }}>
+                                <tab.icon size={16} />
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 {/* Right Content Area */}
-                <div>
+                <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                     {/* Horizontal Global Filters Row */}
-                    <div className="glass-card" style={{ padding: '20px 32px', borderRadius: 24, marginBottom: 32 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Agent</label>
+                    <div className="glass-card" style={{ padding: '20px 24px', borderRadius: 24, marginBottom: 24 }}>
+                        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                             <div style={{ flex: isMobile ? '1 1 100%' : 'none' }}>
+                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Agent</label>
                                 <select 
                                     className="form-control" 
                                     value={agentFilter} 
                                     onChange={e => setAgentFilter(e.target.value)}
-                                    style={{ borderRadius: 12, fontSize: '0.85rem', width: 180, border: '1px solid var(--border-light)' }}
+                                    style={{ borderRadius: 12, fontSize: '0.85rem', width: '100%' }}
                                 >
-                                    <option value="All">All Team Members</option>
+                                    <option value="All">All Members</option>
                                     {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                                 </select>
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>From</label>
-                                <input 
-                                    type="date" 
-                                    className="form-control" 
-                                    value={startDate} 
-                                    onChange={e => setStartDate(e.target.value)}
-                                    style={{ borderRadius: 12, fontSize: '0.85rem', width: 150, border: '1px solid var(--border-light)' }}
-                                />
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>From</label>
+                                <input type="date" className="form-control" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ borderRadius: 12, fontSize: '0.85rem' }} />
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>To</label>
-                                <input 
-                                    type="date" 
-                                    className="form-control" 
-                                    value={endDate} 
-                                    onChange={e => setEndDate(e.target.value)}
-                                    style={{ borderRadius: 12, fontSize: '0.85rem', width: 150, border: '1px solid var(--border-light)' }}
-                                />
+                            <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>To</label>
+                                <input type="date" className="form-control" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ borderRadius: 12, fontSize: '0.85rem' }} />
                             </div>
                         </div>
                     </div>
@@ -533,57 +513,51 @@ export default function Reports() {
                             </div>
 
                             {/* Templates Grid */}
-                            <div className="grid grid-2" style={{ gap: 24 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
                                 {REPORT_TEMPLATES.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase())).map(template => (
-                                    <div key={template.id} className="glass-card hover-lift" style={{ 
-                                        padding: 32, borderRadius: 24, cursor: 'pointer',
-                                        border: '1px solid rgba(255,255,255,0.8)',
-                                        background: 'linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.8))'
+                                    <div key={template.id} className="glass-card" style={{ 
+                                        padding: isMobile ? 24 : 32, 
+                                        borderRadius: 20,
+                                        background: 'white',
+                                        border: '1px solid var(--border-light)'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                                             <div style={{ 
-                                                width: 48, height: 48, borderRadius: 14, 
+                                                width: 44, height: 44, borderRadius: 12, 
                                                 background: 'var(--navy-50)', color: 'var(--accent-violet)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                             }}>
-                                                <template.icon size={24} />
+                                                <template.icon size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', margin: 0 }}>{template.title}</h3>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontWeight: 700, textTransform: 'uppercase' }}>{template.type}</span>
                                             </div>
                                         </div>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--navy-900)', marginBottom: 8 }}>{template.title}</h3>
-                                        <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', lineHeight: 1.5, margin: 0 }}>{template.description}</p>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', margin: '0 0 20px', lineHeight: 1.5 }}>{template.description}</p>
                                         
-                                        <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                                        <div style={{ display: 'flex', gap: 10 }}>
                                             <button 
                                                 onClick={() => {
                                                     if (template.id === 'telephony') generateTelephonyReport('pdf');
                                                     else if (template.id === 'monthly') generateMonthlyReport();
                                                     else if (template.id === 'project-wise') generateProjectReport('pdf');
-                                                    else showToast('Template build in progress', 'info');
+                                                    else showToast('Builder online soon', 'info');
                                                 }}
-                                                style={{ 
-                                                    padding: '8px 12px', background: 'var(--navy-900)', color: 'white', borderRadius: 8, 
-                                                    border: 'none', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', gap: 6
-                                                }}
+                                                className="btn btn-primary btn-sm"
+                                                style={{ flex: 1, borderRadius: 10 }}
                                                 disabled={generating}
-                                            >
-                                                <FileText size={14} /> PDF
-                                            </button>
+                                            >PDF</button>
                                             <button 
                                                 onClick={() => {
                                                     if (template.id === 'telephony') generateTelephonyReport('csv');
                                                     else if (template.id === 'project-wise') generateProjectReport('csv');
-                                                    else showToast('CSV export for this template coming soon', 'info');
+                                                    else showToast('CSV build active', 'info');
                                                 }}
-                                                style={{ 
-                                                    padding: '8px 12px', background: 'white', color: 'var(--navy-900)', borderRadius: 8, 
-                                                    border: '1px solid var(--border-light)', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer',
-                                                    display: 'flex', alignItems: 'center', gap: 6
-                                                }}
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ flex: 1, borderRadius: 10 }}
                                                 disabled={generating}
-                                            >
-                                                <FileSpreadsheet size={14} /> CSV (EXCEL)
-                                            </button>
+                                            >CSV</button>
                                         </div>
                                     </div>
                                 ))}

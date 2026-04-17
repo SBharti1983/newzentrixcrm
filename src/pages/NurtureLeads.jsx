@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { leadsApi } from '../api/client';
-import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp } from 'lucide-react';
+import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp, Menu } from 'lucide-react';
+import { useMobile } from '../hooks/useMobile';
 import { useToast } from '../hooks/useToast';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
 
@@ -17,6 +18,7 @@ export default function NurtureLeads() {
     const [page, setPage] = useState(1);
     const [limit] = useState(50);
     const [previewLeadId, setPreviewLeadId] = useState(null);
+    const isMobile = useMobile();
 
     useEffect(() => {
         const prev = document.body.style.overflowX;
@@ -67,11 +69,20 @@ export default function NurtureLeads() {
     }, [leads]);
 
     return (
-        <div className="animate-fadeIn" style={{ paddingRight: 20, paddingBottom: 60 }}>
+        <div className="animate-fadeIn" style={{ 
+            paddingLeft: isMobile ? 16 : 0, 
+            paddingRight: isMobile ? 16 : 20, 
+            paddingBottom: 80 
+        }}>
             {/* ─── Page Header ─── */}
             <div style={{
-                display: 'flex', justifyContent: 'space-between',
-                alignItems: 'center', marginBottom: 28, paddingBottom: 24,
+                display: 'flex', 
+                justifyContent: 'space-between',
+                flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center', 
+                marginBottom: 28, 
+                paddingBottom: 24,
+                gap: 16,
                 borderBottom: '1px solid var(--border-light)'
             }}>
                 <div>
@@ -79,68 +90,88 @@ export default function NurtureLeads() {
                         <div style={{ width: 36, height: 36, borderRadius: 12, background: '#7c3aed10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <RotateCw size={18} color="#7c3aed" />
                         </div>
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.03em' }}>
+                        <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.6rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.03em' }}>
                             Nurture Leads
                         </h1>
                     </div>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 500, marginTop: 2, marginLeft: 46 }}>
-                        Long-term follow-ups and re-engagement pipeline
-                    </p>
+                    { !isMobile && (
+                        <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 500, marginTop: 2, marginLeft: 46 }}>
+                            Long-term follow-ups and re-engagement pipeline
+                        </p>
+                    )}
                 </div>
-                <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
+                <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> <span style={{ fontSize: '0.75rem' }}>Refresh</span>
                     </button>
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Users size={14} /> Active Pipeline
+                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <Users size={14} /> <span style={{ fontSize: '0.75rem' }}>Active Pipeline</span>
                     </button>
                 </div>
             </div>
 
             {/* ─── KPI Strategy Cards ─── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 28 }}>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)',
+                gap: isMobile ? 8 : 20, 
+                marginBottom: 32
+            }}>
                 {[
                     { id: 'All', label: 'Nurture Pool', value: totalCount, sub: 'Total Leads', icon: Users, color: '#7c3aed', bg: '#7c3aed08' },
                     { id: 'Due Today', label: 'Due Today', value: dueCount, sub: 'Action Required', icon: Clock, color: '#3b82f6', bg: '#3b82f608' },
                     { id: 'Overdue', label: 'Overdue', value: overdueCount, sub: 'Escalated', icon: AlertCircle, color: '#ef4444', bg: '#ef444408' },
-                    { id: null, label: 'Avg. Nurture Age', value: `${nurtureStats.avgDays}d`, sub: 'Days in Pipeline', icon: TrendingUp, color: '#f59e0b', bg: '#f59e0b08' },
-                    { id: null, label: 'Re-engage Ready', value: nurtureStats.reengageReady, sub: '14+ Days', icon: Sparkles, color: '#10b981', bg: '#10b98108' },
-                ].map((card, i) => {
-                    const isClickable = card.id !== null;
+                    { id: 'AvgAge', label: 'Avg. Nurture Age', value: `${nurtureStats.avgDays}d`, sub: 'Days in Pipeline', icon: TrendingUp, color: '#f59e0b', bg: '#f59e0b08' },
+                    { id: 'Ready', label: 'Re-engage Ready', value: nurtureStats.reengageReady, sub: '14+ Days', icon: Sparkles, color: '#10b981', bg: '#10b98108' },
+                ].filter(card => !isMobile || (card.id !== 'AvgAge' && card.id !== 'Ready')).map((card, i) => {
+                    const isClickable = !['AvgAge', 'Ready'].includes(card.id);
                     const isActive = isClickable && filterType === card.id;
                     return (
                         <div
                             key={i}
                             onClick={isClickable ? () => setFilterType(card.id) : undefined}
                             style={{
-                                padding: '20px', borderRadius: 16, background: 'white',
+                                padding: isMobile ? '12px 10px' : '20px', borderRadius: 16, background: 'white',
                                 border: `1px solid ${isActive ? card.color : 'var(--border-light)'}`,
                                 boxShadow: isActive ? `0 4px 16px ${card.color}15` : '0 1px 4px rgba(0,0,0,0.03)',
                                 cursor: isClickable ? 'pointer' : 'default',
                                 transition: 'all 0.25s ease',
-                                transform: isActive ? 'translateY(-1px)' : 'none'
+                                transform: isActive ? 'translateY(-1px)' : 'none',
+                                textAlign: isMobile ? 'center' : 'left'
                             }}
                         >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <div style={{ width: 38, height: 38, borderRadius: 10, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <card.icon size={18} color={card.color} />
+                            <div style={{ 
+                                display: 'flex', 
+                                justifyContent: isMobile ? 'center' : 'space-between', 
+                                alignItems: 'center', 
+                                marginBottom: isMobile ? 8 : 12 
+                            }}>
+                                <div style={{ width: isMobile ? 30 : 38, height: isMobile ? 30 : 38, borderRadius: 10, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <card.icon size={isMobile ? 14 : 18} color={card.color} />
                                 </div>
-                                {isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: card.color }} />}
+                                {!isMobile && isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: card.color }} />}
                             </div>
-                            <div style={{ fontSize: '1.8rem', fontWeight: 950, color: isActive ? card.color : 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{card.value}</div>
-                            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 6 }}>{card.label}</div>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--slate-400)', marginTop: 2 }}>{card.sub}</div>
+                            <div style={{ fontSize: isMobile ? '1.2rem' : '1.8rem', fontWeight: 950, color: isActive ? card.color : 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{card.value}</div>
+                            <div style={{ fontSize: isMobile ? '0.55rem' : '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: isMobile ? 4 : 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.label}</div>
+                            {!isMobile && <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--slate-400)', marginTop: 2 }}>{card.sub}</div>}
                         </div>
                     );
                 })}
             </div>
 
             {/* ─── Search & Filter Bar ─── */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row',
+                justifyContent: 'space-between', 
+                alignItems: isMobile ? 'stretch' : 'center', 
+                marginBottom: 20,
+                gap: 12
+            }}>
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
                     background: 'white', borderRadius: 12, border: '1px solid var(--border-light)',
-                    width: 340, boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                    width: isMobile ? '100%' : 340, boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                 }}>
                     <Search size={16} color="var(--slate-400)" />
                     <input
@@ -149,23 +180,40 @@ export default function NurtureLeads() {
                         style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.85rem', fontWeight: 500, color: 'var(--navy-900)', width: '100%' }}
                     />
                 </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-400)' }}>
-                        {leads.length} of {totalCount} leads
-                    </span>
-                    <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Filter size={14} /> Filters
-                    </button>
-                </div>
+                {!isMobile && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--slate-400)' }}>
+                            {leads.length} of {totalCount} leads
+                        </span>
+                        <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Filter size={14} /> Filters
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* ─── Data Table ─── */}
+            {/* ─── Data Content ─── */}
             {loading ? <PageLoader /> : error ? <PageError message={typeof error === 'string' ? error : 'Failed to load nurture data'} onRetry={refetch} /> : (
-                <div style={{
-                    background: 'white', borderRadius: 20, overflow: 'hidden',
-                    border: '1px solid var(--border-light)',
-                    boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-                }}>
+                isMobile ? (
+                    /* Mobile Card View */
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {leads.map(lead => (
+                            <MobileNurtureCard 
+                                key={lead.id} 
+                                lead={lead} 
+                                onReactivate={() => reactivateLead(lead.id)}
+                                onClick={() => setPreviewLeadId(lead.id)}
+                                onEdit={() => navigate(`/leads/${lead.id}`)}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    /* Desktop Table View */
+                    <div style={{
+                        background: 'white', borderRadius: 20, overflow: 'hidden',
+                        border: '1px solid var(--border-light)',
+                        boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+                    }}>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead>
@@ -364,7 +412,7 @@ export default function NurtureLeads() {
                                     disabled={page >= Math.ceil(totalCount / limit)}
                                     onClick={() => setPage(p => p + 1)}
                                     style={{
-                                        padding: '6px 16px', borderRadius: 8, border: '1px solid var(--border-light)',
+                                        padding: '16px 16px', borderRadius: 8, border: '1px solid var(--border-light)',
                                         background: 'var(--navy-900)', color: 'white', fontSize: '0.78rem', fontWeight: 700,
                                         cursor: page >= Math.ceil(totalCount / limit) ? 'not-allowed' : 'pointer'
                                     }}
@@ -373,6 +421,7 @@ export default function NurtureLeads() {
                         </div>
                     )}
                 </div>
+                )
             )}
 
             {/* Contact Preview Sidebar */}
@@ -383,6 +432,121 @@ export default function NurtureLeads() {
                     refetch={refetch}
                 />
             )}
+        </div>
+    );
+}
+
+function MobileNurtureCard({ lead, onReactivate, onClick, onEdit }) {
+    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date) < new Date().setHours(0,0,0,0);
+    const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
+
+    const lcReason = (lead.nurture_reason || '').toLowerCase();
+    let pillCol = '#6366f1'; let pillBg = '#eef2ff';
+    if (lcReason.includes('budget')) { pillCol = '#eab308'; pillBg = '#fefce8'; }
+    else if (lcReason.includes('response')) { pillCol = '#f43f5e'; pillBg = '#fff1f2'; }
+    else if (lcReason.includes('timeline') || lcReason.includes('later')) { pillCol = '#3b82f6'; pillBg = '#eff6ff'; }
+
+    return (
+        <div 
+            onClick={onClick}
+            style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '16px',
+                border: '1px solid var(--border-light)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14
+            }}
+        >
+            {/* Header: Name & ID */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                    <div style={{
+                        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                        background: `hsl(${(lead.id || '0').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
+                        color: 'white', fontWeight: 900, fontSize: '0.9rem',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>{lead.name?.[0]}</div>
+                    <div>
+                        <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)' }}>{lead.name}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--slate-400)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2, fontWeight: 600 }}>
+                            <Phone size={10} strokeWidth={3} /> {lead.phone}
+                        </div>
+                    </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 900, color: 'var(--navy-700)' }}>{lead.stage}</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', marginTop: 2 }}>Prior Stage</div>
+                </div>
+            </div>
+
+            {/* Mid: Reason & Date */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '12px' }}>
+                <div>
+                   <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 4 }}>Reason</div>
+                   <span style={{
+                        fontSize: '0.65rem', fontWeight: 800, color: pillCol,
+                        background: pillBg, border: `1px solid ${pillCol}25`,
+                        padding: '3px 8px', borderRadius: 6,
+                        textTransform: 'uppercase', letterSpacing: '0.02em'
+                    }}>
+                        {lead.nurture_reason || 'General'}
+                    </span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 4 }}>Reconnect</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'flex-end' }}>
+                        <Calendar size={12} color={isOverdue ? '#ef4444' : isDueToday ? '#3b82f6' : '#94a3b8'} />
+                        <span style={{
+                            fontSize: '0.8rem', fontWeight: 900,
+                            color: isOverdue ? '#dc2626' : 'var(--navy-900)'
+                        }}>
+                            {lead.reconnect_date ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'TBD'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Footer: Agent & Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                        width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                        background: 'var(--slate-100)', color: 'var(--navy-700)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '9px', fontWeight: 800, border: '1px solid var(--slate-200)'
+                    }}>{lead.agent_name?.[0]}</div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--navy-800)' }}>{lead.agent_name || 'Unassigned'}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onReactivate(); }}
+                        style={{
+                            background: 'var(--accent-emerald)', color: 'white',
+                            fontWeight: 900, fontSize: '0.7rem', padding: '8px 16px',
+                            border: 'none', borderRadius: 10, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            boxShadow: '0 4px 10px rgba(16,185,129,0.2)'
+                        }}
+                    >
+                        <ArrowRight size={14} /> Reactivate
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onEdit(); }}
+                        style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: 'white', border: '1px solid var(--border-light)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Edit2 size={14} color="var(--slate-500)" />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

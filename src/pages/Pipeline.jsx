@@ -8,7 +8,7 @@ import { leadsApi, projectsApi, usersApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import {
     Plus, X, GripVertical, Search, Filter, ChevronDown, ChevronRight,
-    Phone, Mail, MapPin, TrendingUp, Clock, Star, Zap, Eye,
+    Phone, Mail, MapPin, TrendingUp, Clock, Star, Zap, Eye, Calendar,
     ArrowRight, MoreHorizontal, AlertCircle, CheckCircle2, Target,
     DollarSign, Award, List as ViewListIcon, Sparkles, Bot, Wand2,
     Home, Handshake, Layout, Users, Table, RotateCw
@@ -114,6 +114,8 @@ export default function Pipeline() {
     const EXPLORER_PAGE_SIZE = 10;
     const { user: currentUser } = useAuth();
     const { viewers, trackPage } = usePresence();
+    const [mobileActiveStage, setMobileActiveStage] = useState(PIPELINE_STAGES[0]);
+    const [showStagePicker, setShowStagePicker] = useState(null); // ID of lead for picker
 
     useEffect(() => {
         trackPage('/pipeline');
@@ -198,32 +200,50 @@ export default function Pipeline() {
     if (error && !leadsRes) return <PageError message={error} onRetry={refetch} />;
 
     return (
-        <div className="animate-fadeIn" style={{ maxWidth: '100%', overflowX: 'hidden', minHeight: 0, paddingBottom: 60 }}>
+        <div className="animate-fadeIn" style={{ maxWidth: '100%', overflowX: 'hidden', minHeight: 0, paddingBottom: isMobile ? 100 : 60, padding: isMobile ? '8px 12px' : '24px' }}>
             {/* Ultra-Compact Enterprise Command Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, borderBottom: '1px solid #e2e8f0', paddingBottom: 12, flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', marginBottom: 16, borderBottom: '1px solid #e2e8f0', paddingBottom: 16, flexWrap: 'wrap', gap: isMobile ? 10 : 16, flexDirection: isMobile ? 'column' : 'row' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.4)', animation: 'pulse-dialer 2s infinite' }} />
-                        <h1 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.02em' }}>Revenue Pipeline</h1>
+                        <h1 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Revenue Pipeline</h1>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 8, borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? 0 : 16, flexWrap: 'wrap' }}>
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', 
+                        gap: 8, 
+                        borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', 
+                        paddingLeft: isMobile ? 0 : 16, 
+                        flex: 1,
+                        width: isMobile ? '100%' : 'auto'
+                    }}>
                         {[
-                            { label: 'Pipeline Val', val: totalPipelineVal, icon: <DollarSign size={13}/>, color: '#3b82f6' },
-                            { label: 'Active', val: active, icon: <Zap size={13}/>, color: '#f59e0b' },
-                            { label: 'Win', val: `${convRate}%`, icon: <Award size={13}/>, color: '#10b981' },
-                            { label: 'Lost', val: lost, icon: <TrendingUp size={13} style={{ transform: 'rotate(90deg)' }}/>, color: '#ef4444' },
+                            { label: 'Pipeline', val: totalPipelineVal, icon: <DollarSign size={isMobile ? 12 : 14}/>, color: '#3b82f6' },
+                            { label: 'Active', val: active, icon: <Zap size={isMobile ? 12 : 14}/>, color: '#f59e0b' },
+                            { label: 'Win', val: `${convRate}%`, icon: <Award size={isMobile ? 12 : 14}/>, color: '#10b981' },
+                            { label: 'Lost', val: lost, icon: <TrendingUp size={isMobile ? 12 : 14} style={{ transform: 'rotate(90deg)' }}/>, color: '#ef4444' },
                         ].map(s => (
-                            <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f8fafc', padding: '4px 10px', borderRadius: 6, border: '1px solid #e2e8f0' }}>
+                            <div key={s.label} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: isMobile ? 6 : 8, 
+                                background: '#f8fafc', 
+                                padding: isMobile ? '6px 10px' : '8px 12px', 
+                                borderRadius: 8, 
+                                border: '1px solid #e2e8f0' 
+                            }}>
                                 <div style={{ color: s.color, display: 'flex' }}>{s.icon}</div>
-                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase' }}>{s.label}:</span>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--navy-900)' }}>{s.val}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                                    <span style={{ fontSize: isMobile ? '0.6rem' : '0.65rem', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{s.label}</span>
+                                    <span style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', fontWeight: 900, color: 'var(--navy-900)' }}>{s.val}</span>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
                     <div style={{ display: 'flex', background: '#f8fafc', padding: 2, borderRadius: 8, border: '1px solid #e2e8f0' }}>
                         {[
                             { id: 'metrics', label: 'Metrics', icon: TrendingUp },
@@ -233,51 +253,120 @@ export default function Pipeline() {
                                 key={m.id}
                                 className={`btn btn-sm ${viewMode === m.id ? 'btn-white shadow-sm' : 'btn-ghost'}`}
                                 onClick={() => setViewMode(m.id)}
-                                style={{ borderRadius: 6, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 800, gap: 4, color: viewMode === m.id ? 'var(--navy-900)' : 'var(--slate-500)' }}
+                                style={{ borderRadius: 6, padding: '6px 12px', fontSize: '0.75rem', fontWeight: 800, gap: 6, color: viewMode === m.id ? 'var(--navy-900)' : 'var(--slate-500)' }}
                             >
-                                <m.icon size={12} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>{m.label}</span>
+                                <m.icon size={14} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>{m.label}</span>
                             </button>
                         ))}
                     </div>
-                    <button className="hover-lift" style={{ background: 'var(--navy-900)', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => { setAddForm(DEFAULT_LEAD); setShowAddModal('New'); }}>
+                    <button className="hover-lift" style={{ background: 'var(--navy-900)', border: 'none', padding: '6px 14px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, color: 'white', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => { setAddForm(DEFAULT_LEAD); setShowAddModal('New'); }}>
                         <Plus size={14} /> <span style={{ display: isMobile ? 'none' : 'inline' }}>Add Lead</span>
                     </button>
                 </div>
             </div>
 
-            {/* Compressed Intelligent Funnel */}
-            <div style={{ display: 'flex', width: '100%', gap: 6, marginBottom: 12, paddingBottom: 4 }}>
-                {PIPELINE_STAGES.map((stage, idx) => {
+            {/* ══════════════════════════════════════════════════════
+                ENTERPRISE COMMAND TILES: PIPELINE INTELLIGENCE
+            ══════════════════════════════════════════════════════ */}
+            {!(isMobile && viewMode === 'kanban') && (
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', 
+                gap: isMobile ? 6 : 12, 
+                marginBottom: 20,
+            }}>
+                {PIPELINE_STAGES.map((stage) => {
+                    if (isMobile && stage === 'Proposal Shared') return null;
                     const sc = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
-                    const count = byStage(stage).length;
+                    const stageLeads = byStage(stage);
+                    const count = stageLeads.length;
                     const val = stageValueL(stage);
                     const isEmpty = count === 0;
 
                     return (
-                        <div key={stage} style={{
-                            flex: '1 1 0%',
-                            minWidth: 0,
-                            overflow: 'hidden',
-                            background: isEmpty ? '#f8fafc' : 'white',
-                            borderRadius: '8px',
-                            padding: '8px 10px',
-                            border: '1px solid',
-                            borderColor: isEmpty ? '#f1f5f9' : '#e2e8f0',
-                            borderTop: `3px solid ${isEmpty ? '#e2e8f0' : sc.accent}`,
-                            opacity: isEmpty ? 0.6 : 1,
-                        }}>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: isEmpty ? '#94a3b8' : 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>{stage}</div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 900, lineHeight: 1, color: isEmpty ? '#cbd5e1' : sc.color }}>{count}</div>
-                                {val > 0 && <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-500)' }}>{fmtL(val)}</div>}
+                        <div key={stage} 
+                            style={{
+                                background: isEmpty ? 'rgba(248, 250, 252, 0.5)' : 'white',
+                                borderRadius: '14px',
+                                padding: isMobile ? '8px' : '14px 16px',
+                                border: '1px solid #eef2f6',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                boxShadow: isEmpty ? 'none' : '0 4px 15px rgba(10, 22, 40, 0.03)',
+                                minHeight: isMobile ? 65 : 90
+                            }}
+                            className="hover-lift"
+                        >
+                            {/* Accent Glow Lip */}
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: isEmpty ? '#f1f5f9' : sc.accent }} />
+                            
+                            {/* Ghost Icon background for depth */}
+                            <div style={{ position: 'absolute', right: -3, bottom: -3, opacity: 0.04, fontSize: isMobile ? '2rem' : '3rem', pointerEvents: 'none', transform: 'rotate(-10deg)' }}>
+                                {sc.emoji || '💼'}
                             </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, minWidth: 0 }}>
+                                <span style={{ fontSize: isMobile ? '0.58rem' : '0.68rem', fontWeight: 900, color: isEmpty ? '#94a3b8' : 'var(--navy-600)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {stage}
+                                </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 'auto' }}>
+                                <div style={{ 
+                                    fontSize: isMobile ? '1.1rem' : '1.6rem', 
+                                    fontWeight: 1000, 
+                                    color: isEmpty ? '#cbd5e1' : 'var(--navy-950)',
+                                    lineHeight: 1,
+                                    letterSpacing: '-0.03em'
+                                }}>
+                                    {count}
+                                </div>
+                                {val > 0 && (
+                                    <div style={{ 
+                                        fontSize: isMobile ? '0.5rem' : '0.72rem', 
+                                        fontWeight: 850, 
+                                        color: sc.color,
+                                        background: `${sc.bg}cc`,
+                                        padding: '1px 4px',
+                                        borderRadius: '4px',
+                                        border: `1px solid ${sc.color}15`
+                                    }}>
+                                        {fmtL(val)}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Micro Indicator Bar */}
+                            {!isEmpty && (
+                                <div style={{ marginTop: 8, height: 2, width: '100%', background: '#f1f5f9', borderRadius: 10, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: '40%', background: sc.accent, borderRadius: 10 }} />
+                                </div>
+                            )}
                         </div>
                     );
                 })}
             </div>
+            )}
 
             {/* Compressed Search & Filters Hub */}
-            <div style={{ background: 'white', padding: '6px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ 
+                background: 'rgba(255, 255, 255, 0.95)', 
+                padding: '10px 14px', 
+                borderRadius: '12px', 
+                border: '1px solid #eef2f6', 
+                marginBottom: 16, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 12,
+                position: 'sticky',
+                top: isMobile ? 0 : 0, 
+                zIndex: 50,
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 15px rgba(10, 22, 40, 0.02)'
+            }}>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                     <input
@@ -326,18 +415,20 @@ export default function Pipeline() {
                         {/* --- TOP ROW CONTROLS --- */}
                         <div className={isMobile ? 'flex-column' : 'grid'} style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, alignItems: 'stretch' }}>
                             {/* Visual Sales Funnel */}
-                            <div className="card" style={{ flex: '1.6 1 0%', minWidth: 0, padding: '16px 20px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                            <div className="card" style={{ flex: '1.6 1 0%', minWidth: 0, padding: isMobile ? '14px' : '16px 20px', background: 'white', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Target size={18} className="text-primary" /> Visual Sales Funnel
+                                    <h3 style={{ margin: 0, fontSize: isMobile ? '0.9rem' : '1.1rem', fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <Target size={isMobile ? 16 : 18} className="text-primary" /> Visual Sales Funnel
                                     </h3>
-                                    <div style={{ display: 'flex', gap: 12, paddingRight: 8 }}>
-                                        <div style={{ textAlign: 'right', width: 80 }}><div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
-                                        <div style={{ textAlign: 'right', width: 70 }}><div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
+                                    <div style={{ display: 'flex', gap: isMobile ? 8 : 12, paddingRight: isMobile ? 0 : 8 }}>
+                                        <div style={{ textAlign: 'right', width: isMobile ? 'auto' : 80 }}><div style={{ fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: 900, color: 'var(--accent-emerald-dark)' }}>{convRate}%</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Success</div></div>
+                                        <div style={{ textAlign: 'right', width: isMobile ? 'auto' : 70 }}><div style={{ fontSize: isMobile ? '0.9rem' : '1rem', fontWeight: 900, color: 'var(--navy-600)' }}>{active}</div><div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>In Flow</div></div>
                                     </div>
                                 </div>
-                                <div className="pipeline-funnel-grid" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: 24, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                                    <div className="pipeline-funnel-graph" style={{ position: 'relative', flex: isMobile ? '1 1 100%' : '0 0 340px', height: '100%', minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: '100%', minWidth: 0 }}>
+                                <div className="pipeline-funnel-grid" style={{ display: 'flex', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 12 : 24, alignItems: 'center', flex: 1, minWidth: 0 }}>
+                                    {/* SVG Funnel - hidden on mobile for cleaner layout */}
+                                    {!isMobile && (
+                                    <div className="pipeline-funnel-graph" style={{ position: 'relative', flex: '0 0 340px', height: '100%', minHeight: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', maxWidth: '100%', minWidth: 0 }}>
                                         <svg width="100%" height="280" viewBox="0 0 400 280" preserveAspectRatio="xMidYMid meet">
                                             <defs>
                                                 <filter id="fShadow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur in="SourceAlpha" stdDeviation="2" /><feOffset dx="0" dy="2" /><feComponentTransfer><feFuncA type="linear" slope="0.1" /></feComponentTransfer><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge></filter>
@@ -362,13 +453,14 @@ export default function Pipeline() {
                                             })}
                                         </svg>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', gap: 2, maxHeight: 280, overflowY: 'auto', minWidth: 0, width: '100%', paddingRight: 4 }}>
+                                    )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', gap: 2, maxHeight: isMobile ? 'none' : 280, overflowY: isMobile ? 'visible' : 'auto', minWidth: 0, width: '100%', paddingRight: isMobile ? 0 : 4 }}>
                                         {/* Headers for columns */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', gap: '8px', padding: '2px 8px', marginBottom: 2 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1.2fr) minmax(0, 1fr) 50px 32px' : 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', gap: isMobile ? '4px' : '8px', padding: '2px 8px', marginBottom: 2 }}>
                                             <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Stage</div>
                                             <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Progression</div>
                                             <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Value</div>
-                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Count</div>
+                                            <div style={{ fontSize: '0.5rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>#</div>
                                         </div>
                                         {(() => {
                                             const maxCount = Math.max(1, ...PIPELINE_STAGES.map(s => byStage(s).length));
@@ -376,14 +468,14 @@ export default function Pipeline() {
                                                 const count = byStage(stage).length; const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                                                 const pct = `${(count / maxCount) * 100}%`;
                                                 return (
-                                                    <div key={stage} style={{ padding: '2px 6px', background: 'var(--slate-50)', borderRadius: '4px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', alignItems: 'center', gap: '8px' }}>
-                                                        <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
+                                                    <div key={stage} style={{ padding: isMobile ? '4px 6px' : '2px 6px', background: 'var(--slate-50)', borderRadius: '4px', borderLeft: `3px solid ${cfg.accent}`, display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1.2fr) minmax(0, 1fr) 50px 32px' : 'minmax(0, 1.4fr) minmax(0, 1fr) 70px 40px', alignItems: 'center', gap: isMobile ? '4px' : '8px' }}>
+                                                        <div style={{ fontSize: isMobile ? '0.6rem' : '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</div>
                                                         {/* Volume Sparkline */}
-                                                        <div style={{ height: '3px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
+                                                        <div style={{ height: isMobile ? '4px' : '3px', background: 'var(--slate-200)', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
                                                             <div style={{ width: pct, height: '100%', background: cfg.accent, borderRadius: '2px', transition: 'width 0.5s ease' }}></div>
                                                         </div>
-                                                        <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--navy-800)', textAlign: 'right' }}>{fmtL(stageValueL(stage))}</div>
-                                                        <div style={{ fontSize: '0.6rem', fontWeight: 800, color: cfg.accent, textAlign: 'right' }}>{count}</div>
+                                                        <div style={{ fontSize: isMobile ? '0.65rem' : '0.6rem', fontWeight: 800, color: 'var(--navy-800)', textAlign: 'right' }}>{fmtL(stageValueL(stage))}</div>
+                                                        <div style={{ fontSize: isMobile ? '0.7rem' : '0.6rem', fontWeight: 900, color: cfg.accent, textAlign: 'right' }}>{count}</div>
                                                     </div>
                                                 );
                                             });
@@ -426,34 +518,54 @@ export default function Pipeline() {
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* --- BOTTOM ROW: LIVE PIPELINE TABLE --- */}
+
+                        {/* --- BOTTOM ROW: LIVE PIPELINE DATA --- */}
                         <div className="card" style={{ padding: 0, background: 'white', border: '1px solid var(--border-light)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
-                            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
-                                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <ViewListIcon size={16} color="var(--blue-500)" /> Pipeline Data Explorer
+                            <div style={{ padding: isMobile ? '12px 16px' : '16px 20px', borderBottom: '1px solid var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
+                                <h3 style={{ margin: 0, fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 900, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <ViewListIcon size={16} color="var(--blue-500)" /> Explorer
                                 </h3>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--slate-500)' }}>Displaying active deals sorted by engagement</div>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--slate-500)' }}>{isMobile ? 'Active deals' : 'Displaying active deals sorted by engagement'}</div>
                             </div>
                             
-                            {/* Grid Header */}
-                            <div style={{ padding: '0 24px' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1.8fr) 1fr 1fr 1.2fr 1fr 1.4fr 1fr 40px', padding: '16px 0', borderBottom: '1px solid var(--slate-100)' }}>
-                                    {['Lead Details', 'Location', 'Budget', 'Stage', 'Priority', 'Agent', 'Score', ''].map((h, i) => (
-                                        <div key={i} style={{
-                                            fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em',
-                                            textAlign: i === 6 || i === 7 ? 'right' : 'left'
-                                        }}>{h}</div>
-                                    ))}
+                            {/* Grid Header - Hidden on mobile */}
+                            {!isMobile && (
+                                <div style={{ padding: '0 24px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1.8fr) 1fr 1fr 1.2fr 1fr 1.4fr 1fr 40px', padding: '16px 0', borderBottom: '1px solid var(--slate-100)' }}>
+                                        {['Lead Details', 'Location', 'Budget', 'Stage', 'Priority', 'Agent', 'Score', ''].map((h, i) => (
+                                            <div key={i} style={{
+                                                fontSize: '0.65rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                                textAlign: i === 6 || i === 7 ? 'right' : 'left'
+                                            }}>{h}</div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                            {/* Flexible Data List */}
-                            <div style={{ padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {/* Flexible Data List / Cards on Mobile */}
+                            <div style={{ padding: isMobile ? '8px' : '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px' }}>
                                 {filteredLeads.slice((explorerPage - 1) * EXPLORER_PAGE_SIZE, explorerPage * EXPLORER_PAGE_SIZE).map((l, i) => {
                                     const cfg = STAGE_CONFIG[l.stage] || DEFAULT_STAGE_CONFIG;
                                     const pc = PRIORITY_CONFIG[l.priority] || PRIORITY_CONFIG.Low;
                                     const avatarHue = (l.name.charCodeAt(0) * 47) % 360;
+
+                                    if (isMobile) {
+                                        return (
+                                            <div key={l.id} onClick={() => setSelectedLead(l)} style={{ 
+                                                padding: '12px', border: '1px solid #e2e8f0', borderRadius: 12, 
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                            }}>
+                                                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: 8, background: `hsl(${avatarHue}, 70%, 55%)`, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 900 }}>{l.name[0]}</div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-900)' }}>{l.name}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{l.budget || '—'} · {l.stage}</div>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight size={14} color="var(--slate-400)" />
+                                            </div>
+                                        );
+                                    }
 
                                     return (
                                         <div key={l.id}
@@ -470,20 +582,9 @@ export default function Pipeline() {
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                                                margin: '0 -20px' // Visually float the rows just a hair inside the bounds 
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.borderColor = 'var(--blue-200)';
-                                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(59, 130, 246, 0.08)';
-                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.borderColor = 'var(--slate-100)';
-                                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
-                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                margin: '0 -20px'
                                             }}>
-                                            
-                                            {/* Lead Details Col */}
+                                            {/* (Row contents unchanged for desktop...) */}
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                                                 <div style={{
                                                     width: 42, height: 42, borderRadius: '10px',
@@ -500,61 +601,13 @@ export default function Pipeline() {
                                                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--slate-500)' }}>{l.email || 'No email provided'}</div>
                                                 </div>
                                             </div>
-
-                                            {/* Location Col */}
                                             <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-600)' }}>{l.city || '—'}</div>
-
-                                            {/* Budget Col */}
-                                            <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)' }}>
-                                                {l.budget ? (parseBudgetL(l.budget) > 0 ? fmtL(parseBudgetL(l.budget)) : l.budget) : '—'}
-                                            </div>
-
-                                            {/* Stage Col */}
-                                            <div>
-                                                <span style={{
-                                                    padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem',
-                                                    fontWeight: 800, background: cfg.bg, color: cfg.color, display: 'inline-flex', alignItems: 'center', gap: '6px'
-                                                }}>
-                                                    {cfg.icon && <span style={{ fontSize: '0.8rem' }}>{cfg.icon}</span>}
-                                                    {l.stage}
-                                                </span>
-                                            </div>
-
-                                            {/* Priority Col */}
-                                            <div>
-                                                <span style={{
-                                                    padding: '4px 12px', borderRadius: '20px', fontSize: '0.7rem',
-                                                    fontWeight: 800, background: pc.bg, color: pc.color,
-                                                    border: `1px solid ${pc.color}20`
-                                                }}>
-                                                    {l.priority}
-                                                </span>
-                                            </div>
-
-                                            {/* Agent Col */}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, color: 'var(--slate-600)' }}>
-                                                    {(l.agent_name || 'U')[0]}
-                                                </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-700)' }}>{l.agent_name || 'Unassigned'}</span>
-                                            </div>
-
-                                            {/* Score Col */}
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                                                    <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: '1' }}>{l.score}</span>
-                                                    <div style={{ height: 4, width: 36, background: 'var(--slate-100)', borderRadius: 10, overflow: 'hidden', display: 'flex' }}>
-                                                        <div style={{ height: '100%', width: `${l.score}%`, background: l.score > 80 ? 'var(--accent-emerald)' : l.score > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Action Col */}
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '8px', background: 'var(--slate-50)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--slate-400)' }}>
-                                                    <ChevronRight size={16} />
-                                                </div>
-                                            </div>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)' }}>{l.budget ? (parseBudgetL(l.budget) > 0 ? fmtL(parseBudgetL(l.budget)) : l.budget) : '—'}</div>
+                                            <div><span style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, background: cfg.bg, color: cfg.color, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{cfg.icon && <span style={{ fontSize: '0.8rem' }}>{cfg.icon}</span>}{l.stage}</span></div>
+                                            <div><span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 800, background: pc.bg, color: pc.color, border: `1px solid ${pc.color}20` }}>{l.priority}</span></div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}><div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--slate-100)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.65rem', fontWeight: 900, color: 'var(--slate-600)' }}>{(l.agent_name || 'U')[0]}</div><span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--slate-700)' }}>{l.agent_name || 'Unassigned'}</span></div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}><div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}><span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: '1' }}>{l.score}</span><div style={{ height: 4, width: 36, background: 'var(--slate-100)', borderRadius: 10, overflow: 'hidden', display: 'flex' }}><div style={{ height: '100%', width: `${l.score}%`, background: l.score > 80 ? 'var(--accent-emerald)' : l.score > 60 ? 'var(--accent-amber)' : 'var(--accent-rose)' }} /></div></div></div>
+                                            <div style={{ textAlign: 'right' }}><div style={{ width: 32, height: 32, borderRadius: '8px', background: 'var(--slate-50)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'var(--slate-400)' }}><ChevronRight size={16} /></div></div>
                                         </div>
                                     );
                                 })}
@@ -587,7 +640,6 @@ export default function Pipeline() {
                                                 style={{ 
                                                     padding: '6px 14px', borderRadius: '8px', fontSize: '0.7rem', fontWeight: 800, 
                                                     border: '1px solid var(--slate-200)', background: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'var(--slate-50)' : 'white', 
-                                                    color: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'var(--slate-400)' : 'var(--navy-900)', 
                                                     cursor: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'not-allowed' : 'pointer',
                                                     boxShadow: explorerPage * EXPLORER_PAGE_SIZE >= filteredLeads.length ? 'none' : '0 1px 2px rgba(0,0,0,0.05)'
                                                 }}
@@ -607,9 +659,69 @@ export default function Pipeline() {
                 KANBAN VIEW
             ══════════════════════════════════════════════════════ */}
             {viewMode === 'kanban' && (
-                <div style={{ flex: 1, minHeight: 0, minWidth: 0, width: '100%', overflow: 'hidden' }}>
-                    <div className="pipeline-board">
-                        {PIPELINE_STAGES.map((stage) => {
+                <div style={{ 
+                    flex: 1, 
+                    minHeight: 0, 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    width: '100%',
+                    overflow: 'hidden'
+                }}>
+                    {/* Mobile Stage Selector Tab bar */}
+                    {isMobile && (
+                        <div style={{ 
+                            display: 'flex', 
+                            flexWrap: 'wrap',
+                            gap: 8, 
+                            padding: '0 12px 12px', 
+                            borderBottom: '1px solid #f1f5f9',
+                            marginBottom: 12,
+                            background: 'white'
+                        }}>
+                            {PIPELINE_STAGES.map(stage => {
+                                const count = byStage(stage).length;
+                                const isActive = mobileActiveStage === stage;
+                                const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
+                                return (
+                                    <button 
+                                        key={stage}
+                                        onClick={() => setMobileActiveStage(stage)}
+                                        style={{
+                                            padding: '6px 10px',
+                                            borderRadius: '10px',
+                                            border: '1px solid',
+                                            borderColor: isActive ? cfg.color : '#e2e8f0',
+                                            background: isActive ? cfg.bg : 'white',
+                                            color: isActive ? cfg.color : '#64748b',
+                                            fontWeight: isActive ? 900 : 700,
+                                            fontSize: '0.72rem',
+                                            whiteSpace: 'nowrap',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                            transition: 'all 0.2s',
+                                            boxShadow: isActive ? `0 2px 8px ${cfg.color}20` : 'none'
+                                        }}
+                                    >
+                                        {cfg.emoji || cfg.icon} {stage}
+                                        <span style={{ fontSize: '0.65rem', opacity: 0.6, background: isActive ? 'white' : '#f1f5f9', padding: '2px 6px', borderRadius: 99 }}>{count}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    <div className="pipeline-board hide-scrollbar" style={{ 
+                        display: 'flex', 
+                        gap: isMobile ? 0 : 16, 
+                        flex: 1,
+                        height: '100%', 
+                        padding: isMobile ? '0 12px' : '0 4px', 
+                        overflowX: isMobile ? 'hidden' : 'auto',
+                        WebkitOverflowScrolling: 'touch',
+                        paddingBottom: isMobile ? '80px' : '0'
+                    }}>
+                        {(isMobile ? [mobileActiveStage] : PIPELINE_STAGES).map((stage) => {
                             const stageLeads = byStage(stage);
                             const cfg = STAGE_CONFIG[stage] || DEFAULT_STAGE_CONFIG;
                             const isOver = dragOver === stage;
@@ -620,50 +732,54 @@ export default function Pipeline() {
                                 <div key={stage}
                                     className="pipeline-column"
                                     style={{
-                                        borderTop: `4px solid ${cfg.accent}`,
+                                        borderTop: isMobile ? 'none' : `4px solid ${cfg.accent}`,
                                         outline: isOver ? `2px dashed ${cfg.accent}` : 'none',
-                                        background: isOver ? `linear-gradient(${cfg.bg}, white)` : 'var(--slate-50)',
-                                        transition: 'all 0.15s',
-                                        width: '100%',
+                                        background: isOver ? `linear-gradient(${cfg.bg}, white)` : (isMobile ? 'transparent' : '#fcfdfe'),
+                                        transition: 'all 0.2s ease',
+                                        width: isMobile ? '100%' : '320px',
+                                        flexShrink: 0,
                                         height: '100%',
-                                        minWidth: 0,
-                                        borderRadius: '12px 12px 0 0',
-                                        boxShadow: 'var(--shadow-sm)',
+                                        scrollSnapAlign: isMobile ? 'center' : 'none',
+                                        borderRadius: isMobile ? '0' : '16px',
+                                        boxShadow: isMobile ? 'none' : '0 8px 24px rgba(10, 22, 40, 0.04)',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        overflow: 'hidden'
+                                        overflow: 'hidden',
+                                        maxHeight: '100%',
+                                        border: isMobile ? 'none' : '1px solid #eef2f6'
                                     }}
                                     onDragOver={e => onDragOver(e, stage)}
                                     onDrop={e => onDrop(e, stage)}
                                 >
-                                    {/* Column Header */}
-                                    <div className="pipeline-col-header" style={{ gap: 4, padding: '4px 6px', borderBottom: '1px solid var(--border-light)', flexShrink: 0 }}>
+                                    {/* Column Header (Hidden on Mobile as Tabs provide context) */}
+                                    {!isMobile && (
+                                    <div className="pipeline-col-header" style={{ gap: 8, padding: '12px 14px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}>
                                         {isCollapsed ? (
                                             <button onClick={() => setCollapsed(c => ({ ...c, [stage]: false }))}
                                                 style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%' }}>
-                                                <span style={{ fontSize: '1rem' }}>{cfg.icon}</span>
-                                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: cfg.color, writingMode: 'vertical-lr', textOrientation: 'mixed', letterSpacing: '0.04em' }}>{stage}</span>
-                                                <span className="pipeline-col-count" style={{ background: cfg.bg, color: cfg.color }}>{stageLeads.length}</span>
+                                                <span style={{ fontSize: '1.2rem' }}>{cfg.emoji || '📁'}</span>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, writingMode: 'vertical-lr', textOrientation: 'mixed', letterSpacing: '0.04em' }}>{stage}</span>
+                                                <span className="pipeline-col-count" style={{ background: cfg.bg, color: cfg.color, padding: '2px 8px', borderRadius: 20, fontSize: '10px' }}>{stageLeads.length}</span>
                                             </button>
                                         ) : (
                                             <>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                                                    <div style={{ width: 26, height: 26, borderRadius: '8px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
                                                         {cfg.emoji || '📁'}
                                                     </div>
                                                     <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
-                                                            <span className="pipeline-col-name" style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.8rem', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
-                                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '2px 6px', borderRadius: 99, flexShrink: 0 }}>{stageLeads.length}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
+                                                            <span className="pipeline-col-name" style={{ fontWeight: 900, color: 'var(--navy-900)', fontSize: '0.9rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
+                                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '2px 8px', borderRadius: 99, flexShrink: 0 }}>{stageLeads.length}</span>
                                                         </div>
-                                                        <div style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, marginTop: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {fmtL(val)} pipe <ChevronRight size={10} strokeWidth={3} />
+                                                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: cfg.color, marginTop: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {fmtL(val)} <ChevronRight size={10} strokeWidth={3} />
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                                                     <button onClick={() => { setAddForm({ ...DEFAULT_LEAD, stage }); setShowAddModal(stage); }}
-                                                        style={{ border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 6, borderRadius: 8, transition: 'all 0.2s' }}
+                                                        style={{ border: 'none', background: 'rgba(15, 22, 40, 0.04)', cursor: 'pointer', color: 'var(--navy-600)', width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                                                         className="hover-lift" title="Add lead">
                                                         <Plus size={16} strokeWidth={2.5} />
                                                     </button>
@@ -671,6 +787,7 @@ export default function Pipeline() {
                                             </>
                                         )}
                                     </div>
+                                    )}
 
                                     {!isCollapsed && (
                                         <div className="pipeline-col-body" style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', minHeight: 0 }}>
@@ -682,61 +799,99 @@ export default function Pipeline() {
                                                 return (
                                                     <div key={lead.id}
                                                         className="kanban-card"
-                                                        draggable
-                                                        onDragStart={e => onDragStart(e, lead.id)}
+                                                        draggable={!isMobile}
+                                                        onDragStart={e => !isMobile && onDragStart(e, lead.id)}
                                                         onDragEnd={onDragEnd}
                                                         onClick={(e) => { e.stopPropagation(); setSelectedLead(lead); }}
                                                         style={{
                                                             opacity: isDragging ? 0.35 : 1,
                                                             background: 'white',
-                                                            borderRadius: '12px',
-                                                            padding: '10px',
-                                                            border: '1px solid #e2e8f0',
-                                                            boxShadow: isDragging ? 'none' : '0 2px 8px rgba(10,22,40,0.04)',
+                                                            borderRadius: isMobile ? '12px' : '14px',
+                                                            padding: isMobile ? '8px 12px' : '12px',
+                                                            border: '1px solid #f1f5f9',
+                                                            boxShadow: isDragging ? 'none' : (isMobile ? '0 2px 6px rgba(10, 22, 40, 0.03)' : '0 4px 12px rgba(10, 22, 40, 0.03)'),
                                                             display: 'flex',
-                                                            flexDirection: 'column',
-                                                            gap: 8,
-                                                            cursor: 'grab'
+                                                            flexDirection: isMobile ? 'row' : 'column',
+                                                            alignItems: isMobile ? 'center' : 'stretch',
+                                                            gap: isMobile ? 12 : 10,
+                                                            cursor: isMobile ? 'pointer' : 'grab',
+                                                            transition: 'all 0.2s ease',
+                                                            marginBottom: isMobile ? 8 : 0
                                                         }}
                                                     >
-                                                        {/* Top: Info */}
-                                                        <div style={{ display: 'flex', gap: 8, minWidth: 0 }}>
-                                                            <div style={{ width: 34, height: 34, borderRadius: '10px', background: avatarBg, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900, flexShrink: 0 }}>
-                                                                {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
-                                                            </div>
-                                                            <div style={{ minWidth: 0, flex: 1 }}>
-                                                                <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{lead.name}</div>
-                                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.city || 'Pune'}</div>
+                                                        {/* Avatar/Info */}
+                                                        <div style={{ 
+                                                            width: isMobile ? 36 : 40, 
+                                                            height: isMobile ? 36 : 40, 
+                                                            borderRadius: isMobile ? '10px' : '12px', 
+                                                            background: `linear-gradient(135deg, ${avatarBg}, ${avatarBg}cc)`, 
+                                                            color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                            fontSize: isMobile ? '11px' : '13px', fontWeight: 1000, flexShrink: 0,
+                                                            boxShadow: `0 4px 10px ${avatarBg}33`
+                                                        }}>
+                                                            {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                                        </div>
+
+                                                        <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                            <div style={{ fontWeight: 950, fontSize: isMobile ? '0.88rem' : '0.94rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{lead.name}</div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-emerald-dark)' }}>{lead.budget || '₹60L'}</span>
+                                                                {!isMobile && <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1' }} />}
+                                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>{lead.city || 'Pune'}</span>
+                                                                {isMobile && (
+                                                                    <div style={{ padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 900, background: pc.bg, color: pc.color, textTransform: 'uppercase' }}>{lead.priority}</div>
+                                                                )}
                                                             </div>
                                                         </div>
 
-                                                        {/* Project Badge */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', fontWeight: 700, color: 'var(--slate-600)', background: 'var(--slate-50)', padding: '5px 8px', borderRadius: '8px' }}>
-                                                            <Home size={11} style={{ opacity: 0.6 }} />
-                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.project || 'Zentrix Elite'}</span>
-                                                        </div>
+                                                        {!isMobile && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                                {/* Project Badge */}
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', fontWeight: 750, color: 'var(--navy-600)', background: 'rgba(59, 99, 184, 0.04)', padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(59, 99, 184, 0.08)' }}>
+                                                                    <Home size={12} strokeWidth={3} />
+                                                                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.project || 'Zentrix Elite'}</span>
+                                                                </div>
 
-                                                        {/* Tags */}
-                                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                                            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: pc.bg, color: pc.color }}>{lead.priority}</span>
-                                                            <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, background: 'var(--slate-100)', color: 'var(--slate-600)' }}>{lead.source}</span>
-                                                        </div>
-
-                                                        {/* Stats Footer */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-light)', paddingTop: 8, marginTop: 2 }}>
-                                                            <div style={{ fontWeight: 900, fontSize: '0.85rem', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                <Zap size={12} fill="var(--accent-emerald)" color="transparent" />
-                                                                {lead.budget || '₹60L'}
+                                                                {/* Tags */}
+                                                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                                                                    <span style={{ padding: '3px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: 1000, background: pc.bg, color: pc.color, letterSpacing: '0.02em', textTransform: 'uppercase' }}>{lead.priority}</span>
+                                                                    <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1' }} />
+                                                                    <span style={{ fontSize: '10px', fontWeight: 850, color: 'var(--slate-500)' }}>{lead.source}</span>
+                                                                </div>
                                                             </div>
-                                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)' }}>Today</div>
-                                                        </div>
+                                                        )}
+
+                                                        {/* Action End (Mobile) */}
+                                                        {isMobile && (
+                                                            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                                                                <a href={`tel:${lead.phone}`} onClick={e => e.stopPropagation()} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+                                                                    <Phone size={14} strokeWidth={3} />
+                                                                </a>
+                                                                <button onClick={e => { e.stopPropagation(); setSelectedLead(lead); }} style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(59, 99, 184, 0.1)', color: 'var(--navy-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none' }}>
+                                                                    <ChevronRight size={16} strokeWidth={3} />
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Stats Footer (Desktop) */}
+                                                        {!isMobile && (
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f8fafc', paddingTop: 10, marginTop: 4 }}>
+                                                                <div style={{ fontWeight: 1000, fontSize: '0.95rem', color: 'var(--accent-emerald-dark)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                                    <Zap size={14} fill="var(--accent-emerald)" color="transparent" />
+                                                                    {lead.budget || '₹60L'}
+                                                                </div>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)' }}>
+                                                                    <Calendar size={11} strokeWidth={2.5} />Today
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
 
                                             {/* Minimalist Ghost Slot */}
                                             {stageLeads.length < 1 && (
-                                                <div style={{ border: '1.5px dashed var(--border-light)', borderRadius: 12, height: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, background: 'var(--slate-50)' }}>
+                                                <div style={{ border: '1.5px dashed var(--border-light)', borderRadius: 12, height: 60, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700, background: 'var(--slate-50)' }}>
                                                     {isOver ? '📥 Release to Move' : 'Empty Stage'}
                                                 </div>
                                             )}
@@ -778,9 +933,14 @@ export default function Pipeline() {
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,22,40,0.45)', backdropFilter: 'blur(2px)' }} />
                         {/* Panel */}
                         <div style={{
-                            position: 'relative', width: 420, background: 'white', height: '100%',
-                            display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 40px rgba(10,22,40,0.18)',
-                            animation: 'slideInRight 0.25s ease',
+                            position: 'relative', 
+                            width: isMobile ? '100%' : 420, 
+                            background: 'white', 
+                            height: '100%',
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            boxShadow: '-4px 0 40px rgba(10,22,40,0.18)',
+                            animation: isMobile ? 'fadeIn 0.3s ease' : 'slideInRight 0.25s ease',
                         }} onClick={e => e.stopPropagation()}>
                             {/* Panel Header */}
                             <div style={{ padding: '20px 22px', borderBottom: '1px solid var(--border-light)', background: cfg.light }}>
@@ -814,16 +974,87 @@ export default function Pipeline() {
                                         <X size={18} />
                                     </button>
                                 </div>
-                                {/* Stage mover */}
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                    <button onClick={() => mvStage(l, -1)} disabled={stageIdx === 0}
-                                        className="btn btn-secondary btn-sm" style={{ fontSize: '0.72rem', flex: 1, opacity: stageIdx === 0 ? 0.4 : 1 }}>
-                                        ← Prev Stage
+                                {/* Advanced Stage Switcher */}
+                                <div style={{ position: 'relative' }}>
+                                    <button 
+                                        onClick={() => setShowStagePicker(showStagePicker === l.id ? null : l.id)}
+                                        className="btn btn-primary btn-sm" 
+                                        style={{ 
+                                            width: '100%', 
+                                            justifyContent: 'center', 
+                                            fontSize: '0.8rem', 
+                                            fontWeight: 900, 
+                                            padding: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            background: cfg.accent,
+                                            border: 'none',
+                                            boxShadow: `0 4px 12px ${cfg.accent}25`
+                                        }}
+                                    >
+                                        <ChevronRight size={16} strokeWidth={3} /> Change Stage to Desired...
                                     </button>
-                                    <button onClick={() => mvStage(l, 1)} disabled={stageIdx === PIPELINE_STAGES.length - 1}
-                                        className="btn btn-primary btn-sm" style={{ fontSize: '0.72rem', flex: 1, opacity: stageIdx === PIPELINE_STAGES.length - 1 ? 0.4 : 1 }}>
-                                        Next Stage →
-                                    </button>
+
+                                    {showStagePicker === l.id && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            right: 0,
+                                            marginTop: 8,
+                                            background: 'white',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 10px 30px rgba(10, 22, 40, 0.15)',
+                                            border: '1px solid #eef2f6',
+                                            zIndex: 50,
+                                            padding: 6,
+                                            animation: 'slideInY 0.2s ease'
+                                        }}>
+                                            <div style={{ 
+                                                display: 'grid', 
+                                                gridTemplateColumns: 'repeat(2, 1fr)', 
+                                                gap: 4 
+                                            }}>
+                                                {PIPELINE_STAGES.map((s) => {
+                                                    const sc = STAGE_CONFIG[s] || DEFAULT_STAGE_CONFIG;
+                                                    const active = s === l.stage;
+                                                    return (
+                                                        <button 
+                                                            key={s}
+                                                            onClick={async () => {
+                                                                try {
+                                                                    await leadsApi.update(l.id, { stage: s });
+                                                                    setSelectedLead(prev => ({ ...prev, stage: s }));
+                                                                    setShowStagePicker(null);
+                                                                    refetch();
+                                                                } catch { showToast('Failed', 'error'); }
+                                                            }}
+                                                            style={{
+                                                                padding: '10px 8px',
+                                                                borderRadius: '8px',
+                                                                border: '1px solid',
+                                                                borderColor: active ? sc.accent : '#f1f5f9',
+                                                                background: active ? sc.bg : 'white',
+                                                                color: active ? sc.color : 'var(--navy-600)',
+                                                                fontSize: '0.68rem',
+                                                                fontWeight: 800,
+                                                                textAlign: 'left',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 6,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.1s'
+                                                            }}
+                                                        >
+                                                            <span style={{ fontSize: '0.9rem' }}>{sc.emoji}</span>
+                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
