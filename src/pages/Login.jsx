@@ -338,26 +338,27 @@ export default function Login() {
             {/* ═══ RIGHT PANEL — Login Form ═══ */}
             <div style={{
                 width: '100%', 
-                maxWidth: isMobile ? 'calc(100% - 32px)' : 520, 
+                maxWidth: isMobile ? '100%' : 520, 
+                minHeight: isMobile ? '100vh' : 'auto',
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
-                padding: isMobile ? '32px 24px' : 'clamp(24px, 5vw, 48px)',
-                background: isMobile ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.98)',
-                backdropFilter: isMobile ? 'blur(24px)' : 'none',
-                borderRadius: isMobile ? 32 : 0,
+                padding: isMobile ? '48px 24px' : 'clamp(24px, 5vw, 48px)',
+                background: isMobile ? 'white' : 'rgba(255,255,255,0.98)',
+                backdropFilter: isMobile ? 'none' : 'none',
+                borderRadius: isMobile ? 0 : 0,
                 borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)',
-                border: isMobile ? '1px solid rgba(255,255,255,0.2)' : 'none',
+                border: 'none',
                 position: 'relative', 
                 zIndex: 2,
-                boxShadow: isMobile ? '0 32px 80px rgba(0,0,0,0.4)' : '-24px 0 80px rgba(0,0,0,0.25)',
+                boxShadow: isMobile ? 'none' : '-24px 0 80px rgba(0,0,0,0.25)',
                 ...(mounted ? { animation: 'loginScaleIn 0.5s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both' } : {}),
             }}>
                 {/* Accent stripe at top */}
                 <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: 4,
-                    background: 'linear-gradient(90deg, #6366f1, #06b6d4, #8b5cf6)',
-                    borderRadius: isMobile ? '32px 32px 0 0' : 0
+                    position: 'absolute', top: 0, left: 0, right: 0, height: 6,
+                    background: 'linear-gradient(90deg, #1e3a8a, #3b82f6, #6366f1)',
+                    borderRadius: 0
                 }} />
 
                 <div style={{ width: '100%', maxWidth: 420 }}>
@@ -365,11 +366,11 @@ export default function Login() {
                     {isMobile && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32 }}>
                             <div style={{
-                                width: 56, height: 56, borderRadius: 16,
+                                width: 52, height: 52, borderRadius: 8,
                                 background: tenantColor,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '1.6rem', fontWeight: 900, color: 'white',
-                                boxShadow: `0 12px 24px ${tenantColor}40`,
+                                fontSize: '1.5rem', fontWeight: 950, color: 'white',
+                                boxShadow: `0 8px 16px ${tenantColor}35`,
                                 marginBottom: 12
                             }}>{tenantLogo}</div>
                             <h2 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>{tenantName}</h2>
@@ -405,7 +406,7 @@ export default function Login() {
                                         width: '100%', padding: '16px 16px 16px 44px',
                                         fontSize: '0.95rem', fontWeight: 600,
                                         border: '1.5px solid #e2e8f0',
-                                        borderRadius: 16, outline: 'none',
+                                        borderRadius: 8, outline: 'none',
                                         background: '#f8fafc',
                                         color: '#0f172a',
                                         transition: 'all 0.3s ease',
@@ -431,7 +432,7 @@ export default function Login() {
                                         width: '100%', padding: '16px 52px 16px 44px',
                                         fontSize: '0.95rem', fontWeight: 600,
                                         border: '1.5px solid #e2e8f0',
-                                        borderRadius: 16, outline: 'none',
+                                        borderRadius: 8, outline: 'none',
                                         background: '#f8fafc',
                                         color: '#0f172a',
                                         transition: 'all 0.3s ease',
@@ -454,7 +455,7 @@ export default function Login() {
                         {/* Error */}
                         {loginError && (
                             <div style={{
-                                padding: '12px 16px', borderRadius: 14, marginBottom: 20,
+                                padding: '12px 16px', borderRadius: 8, marginBottom: 20,
                                 background: '#fef2f2', border: '1px solid #fee2e2',
                                 fontSize: '0.85rem', color: '#ef4444', fontWeight: 700,
                                 display: 'flex', alignItems: 'center', gap: 10,
@@ -472,7 +473,7 @@ export default function Login() {
                             style={{
                                 width: '100%', padding: '16px', fontSize: '1rem', fontWeight: 900,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                                borderRadius: 16, border: 'none', cursor: 'pointer',
+                                borderRadius: 8, border: 'none', cursor: 'pointer',
                                 color: 'white', letterSpacing: '0.01em',
                                 opacity: loading ? 0.85 : 1,
                                 background: 'linear-gradient(135deg, #0f172a, #1e293b)',
