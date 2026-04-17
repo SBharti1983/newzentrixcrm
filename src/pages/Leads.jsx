@@ -62,6 +62,83 @@ const SOURCES = [
 ];
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
+// Mobile Card Component
+const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }) => {
+    const leadScore = typeof lead.score === 'number' ? lead.score : 0;
+    return (
+        <div 
+            onClick={() => onNavigate(lead.id)}
+            style={{
+                background: isSelected ? 'var(--navy-50)' : 'white',
+                borderRadius: 16,
+                border: isSelected ? '2px solid var(--navy-400)' : '1px solid var(--border-light)',
+                padding: '14px',
+                marginBottom: 10,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+            }}
+        >
+            {/* Top row: Avatar + Name + Stage badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div onClick={e => { e.stopPropagation(); onSelect(lead.id); }} style={{ flexShrink: 0 }}>
+                    <div className="avatar avatar-sm" style={{ 
+                        background: isSelected ? 'var(--navy-500)' : `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, 
+                        width: 36, height: 36, fontSize: '12px', 
+                        border: isSelected ? '2px solid var(--navy-300)' : 'none'
+                    }}>
+                        {isSelected ? '✓' : String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                    </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name || '—'}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1 }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
+                </div>
+                <span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.65rem', padding: '2px 8px', flexShrink: 0 }}>{lead.stage || '—'}</span>
+            </div>
+
+            {/* Contact row */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Phone size={11} style={{ color: 'var(--text-muted)' }} />
+                    <span>{lead.phone || '—'}</span>
+                </div>
+                {lead.email && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
+                        <Mail size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.email}</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Bottom row: Status + Score + Source + Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
+                    <span style={{ 
+                        fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, 
+                        background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9', 
+                        color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569' 
+                    }}>{lead.status || 'Active'}</span>
+                    <span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.62rem', padding: '1px 6px' }}>{lead.source || '—'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+                        <div className="progress-bar" style={{ width: 30, height: 3 }}>
+                            <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
+                        </div>
+                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--navy-700)' }}>{leadScore}</span>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4, marginLeft: 8, flexShrink: 0 }}>
+                    <button className="btn btn-ghost" onClick={() => onCall(lead.id, lead.phone, lead.name)} style={{ width: 30, height: 30, padding: 0, borderRadius: 8 }}><Phone size={13} style={{ color: '#00a38d' }} /></button>
+                    <button className="btn btn-ghost" onClick={() => onEdit(lead)} style={{ width: 30, height: 30, padding: 0, borderRadius: 8 }}><Edit2 size={13} /></button>
+                    <button className="btn btn-ghost" onClick={() => onDelete(lead.id)} style={{ color: 'var(--accent-rose)', width: 30, height: 30, padding: 0, borderRadius: 8 }}><Trash2 size={13} /></button>
+                </div>
+            </div>
+        </div>
+    );
+});
+
 // Optimized Memoized Row Component
 const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }) => {
     const [hovered, setHovered] = useState(false);
@@ -554,14 +631,31 @@ export default function Leads() {
                     </div>
                 )}
 
-                <div className="table-wrapper" style={{ overflowX: 'auto', overflowY: 'scroll', maxHeight: 'calc(100vh - 260px)', background: 'white' }}>
+                <div className="table-wrapper" style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
                     {leads.length === 0 && !leadsLoading ? (
                         <div className="empty-state" style={{ padding: '80px 0' }}>
                             <div className="empty-state-icon">🔍</div>
                             <div className="empty-state-title">No leads found</div>
                             <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
                         </div>
+                    ) : isMobile ? (
+                        /* ═══ MOBILE CARD VIEW ═══ */
+                        <div style={{ padding: '8px 0' }}>
+                            {leads.map(lead => (
+                                <MobileLeadCard
+                                    key={lead.id}
+                                    lead={lead}
+                                    isSelected={selectedIds.has(lead.id)}
+                                    onSelect={toggleSelect}
+                                    onDelete={deleteLead}
+                                    onEdit={openEdit}
+                                    onCall={(id, num, name) => dialerEvents.call(id, num, name)}
+                                    onNavigate={(id) => navigate(`/leads/${id}`)}
+                                />
+                            ))}
+                        </div>
                     ) : (
+                        /* ═══ DESKTOP TABLE VIEW ═══ */
                         <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px', borderCollapse: 'separate', borderSpacing: 0 }}>
                             <thead>
                                 <tr>
@@ -609,14 +703,15 @@ export default function Leads() {
 
                 {/* Pagination Section - Now ALWAYS stable and positioned correctly */}
                 <div style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '12px 20px', borderTop: '1px solid var(--border-light)',
-                    background: 'var(--slate-50)', borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: 12,
-                    zIndex: 100, position: 'relative'
+                    display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center',
+                    padding: isMobile ? '10px 12px' : '12px 20px', borderTop: '1px solid var(--border-light)',
+                    background: 'var(--slate-50)', borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: isMobile ? 8 : 12,
+                    zIndex: 100, position: 'relative',
+                    flexDirection: isMobile ? 'column' : 'row'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 16, justifyContent: isMobile ? 'center' : 'flex-start', width: isMobile ? '100%' : 'auto' }}>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-                            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, leadsRes?.total || 0)} of {leadsRes?.total || 0} leads
+                            {isMobile ? `${leadsRes?.total || 0} leads` : `Showing ${((page - 1) * limit) + 1} to ${Math.min(page * limit, leadsRes?.total || 0)} of ${leadsRes?.total || 0} leads`}
                         </div>
                         
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
@@ -635,7 +730,7 @@ export default function Leads() {
                         </div>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: 8, marginRight: '100px' }}>
+                    <div style={{ display: 'flex', gap: 8, marginRight: isMobile ? 0 : '100px', justifyContent: isMobile ? 'center' : 'flex-end', width: isMobile ? '100%' : 'auto' }}>
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => { setPage(p => Math.max(1, p - 1)); showToast(`Loading page ${page - 1}...`, 'info'); }}
@@ -899,7 +994,7 @@ export default function Leads() {
             {/* Floating Bulk Action Bar */}
             {selectedIds.size > 0 && (
                 <div style={{
-                    position: 'fixed', bottom: 30, left: isMobile ? 20 : 280,
+                    position: 'fixed', bottom: isMobile ? 90 : 30, left: isMobile ? 16 : 280, right: isMobile ? 16 : 'auto',
                     background: 'var(--navy-900)', color: 'white',
                     padding: '12px 20px', borderRadius: 100,
                     display: 'flex', alignItems: 'center', gap: 20, zIndex: 100,

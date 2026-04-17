@@ -10,6 +10,7 @@ import Dialer from './components/Dialer';
 import ZapierAssistant from './components/ZapierAssistant';
 import AgentCopilotWidget from './components/AgentCopilotWidget';
 import MobileActionHub from './components/MobileActionHub';
+import MobileBottomNav from './components/MobileBottomNav';
 // PWA removed
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
@@ -196,7 +197,7 @@ function ProtectedApp() {
           isMobile={isMobile}
           onToggle={handleNavToggle}
         />
-        <main className="page-content">
+        <main className="page-content" style={isMobile ? { paddingBottom: 80 } : undefined}>
           <Suspense fallback={<PageLoader />}>
             <Routes>
             <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : <Dashboard />}</RoleGuard>} />
@@ -243,8 +244,8 @@ function ProtectedApp() {
           </Suspense>
         </main>
       </div>
-      {(user?.role === 'agent' || user?.role === 'sales_manager') && <AgentCopilotWidget />}
-      {/* {isMobile && (user?.role === 'agent' || user?.role === 'sales_manager') && <MobileActionHub />} */}
+      {(user?.role === 'agent' || user?.role === 'sales_manager') && !isMobile && <AgentCopilotWidget />}
+      {isMobile && <MobileBottomNav onOpenSidebar={() => setMobileOpen(true)} />}
     </div>
     <Dialer />
     </>

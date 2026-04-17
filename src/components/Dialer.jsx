@@ -12,6 +12,7 @@ import { useApi } from '../hooks/useApi';
 import { leadsApi } from '../api/client';
 import { useToast } from '../hooks/useToast';
 import { dialerEvents } from '../constants/events';
+import { useMobile } from '../hooks/useMobile';
 
 const firebaseConfig = {
     databaseURL: "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app/"
@@ -23,6 +24,7 @@ const database = getDatabase(firebaseApp);
 export default function Dialer() {
     const { showToast } = useToast();
     const { user, refreshUser } = useAuth();
+    const isMobile = useMobile(768);
     const [isOpen, setIsOpen] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [callState, setCallState] = useState('idle');
@@ -243,13 +245,13 @@ export default function Dialer() {
     };
 
     if (!isOpen) return (
-        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 12, right: 12, zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
             <Smartphone size={28} />
         </button>
     );
 
     return (
-        <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 'calc(100vw - 24px)', maxWidth: isMinimized ? 240 : 320, maxHeight: isMinimized ? 48 : 520, height: isMinimized ? 48 : 'auto', background: '#0a1a2e', borderRadius: 20, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '48px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ position: 'fixed', bottom: isMobile ? 80 : 12, right: 12, zIndex: 9999, width: isMinimized ? 240 : 'calc(100vw - 24px)', maxWidth: isMinimized ? 240 : 320, maxHeight: isMinimized ? 48 : 520, height: isMinimized ? 48 : 'auto', background: '#0a1a2e', borderRadius: 20, color: 'white', boxShadow: '0 30px 90px rgba(0,0,0,0.6)', overflow: 'hidden', transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)', display: 'grid', gridTemplateRows: isMinimized ? '1fr' : '48px 1fr auto', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' }} />

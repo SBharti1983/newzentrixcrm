@@ -302,32 +302,50 @@ export default function Followups() {
                         </div>
                     )}
                 </div>
+
+                {/* Mobile Mini Stats Row */}
+                {isMobile && (
+                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
+                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Pending</div>
+                        </div>
+                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
+                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Overdue</div>
+                        </div>
+                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
+                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Done</div>
+                        </div>
+                    </div>
+                )}
             </div>
 
-            <div style={{ padding: '12px 24px', background: 'white', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'center', borderRadius: '18px', border: '1px solid #f1f5f9' }}>
-                <div style={{ display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '12px', marginRight: '8px' }}>
-                    <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8' }}>
-                        <List size={14} /> LIST
+            <div style={{ padding: isMobile ? '8px 12px' : '12px 24px', background: 'white', marginBottom: isMobile ? '12px' : '24px', display: 'flex', gap: isMobile ? '6px' : '12px', alignItems: 'center', borderRadius: isMobile ? '12px' : '18px', border: '1px solid #f1f5f9', flexWrap: isMobile ? 'wrap' : 'nowrap', overflowX: isMobile ? 'auto' : 'visible' }}>
+                <div style={{ display: 'flex', background: '#f8fafc', padding: '3px', borderRadius: '10px', marginRight: isMobile ? '0' : '8px', flexShrink: 0 }}>
+                    <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
+                        <List size={isMobile ? 12 : 14} /> {isMobile ? '' : 'LIST'}
                     </button>
-                    <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8' }}>
-                        <LayoutGrid size={14} /> KANBAN
+                    <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
+                        <LayoutGrid size={isMobile ? 12 : 14} /> {isMobile ? '' : 'KANBAN'}
                     </button>
-                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8' }}>
-                        <Calendar size={14} /> CALENDAR
+                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
+                        <Calendar size={isMobile ? 12 : 14} /> {isMobile ? '' : 'CALENDAR'}
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none', flex: isMobile ? '1 1 100%' : 'none', order: isMobile ? 1 : 0 }}>
                     {['All', 'Today', 'Upcoming', 'Overdue', 'Completed'].map(s => (
                         <button key={s} onClick={() => setFilterStatus(s)} style={{
-                            padding: '6px 14px', borderRadius: '12px', border: '1px solid',
+                            padding: isMobile ? '5px 10px' : '6px 14px', borderRadius: '12px', border: '1px solid',
                             background: filterStatus === s ? 'var(--navy-600)' : 'white',
                             color: filterStatus === s ? 'white' : 'var(--slate-600)',
                             borderColor: filterStatus === s ? 'var(--navy-600)' : 'var(--border-medium)',
-                            fontSize: '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s'
+                            fontSize: isMobile ? '0.68rem' : '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s'
                         }}>{s}</button>
                     ))}
                 </div>
-                {canManageTeam && (
+                {canManageTeam && !isMobile && (
                     <>
                         <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
                             style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '7px 12px', borderRadius: '12px' }}>
@@ -346,24 +364,26 @@ export default function Followups() {
                     </>
                 )}
 
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                    <button 
-                        onClick={() => {
-                            if (sortMode === 'time') setSortMode('score');
-                            else if (sortMode === 'score') setSortMode('value');
-                            else setSortMode('time');
-                        }} 
-                        style={{ 
-                            border: '1px solid #e2e8f0', 
-                            background: sortMode !== 'time' ? '#0f172a' : 'white', 
-                            color: sortMode !== 'time' ? 'white' : '#64748b', 
-                            padding: '6px 14px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center' 
-                        }}
-                    >
-                        {sortMode === 'time' ? <Clock size={12} /> : sortMode === 'score' ? <Sparkles size={12} /> : <TrendingUp size={12} />}
-                        {sortMode === 'time' ? 'SORT: TIME' : sortMode === 'score' ? 'WIN PROBABILITY' : 'DEAL VALUE'}
-                    </button>
-                </div>
+                {!isMobile && (
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+                        <button 
+                            onClick={() => {
+                                if (sortMode === 'time') setSortMode('score');
+                                else if (sortMode === 'score') setSortMode('value');
+                                else setSortMode('time');
+                            }} 
+                            style={{ 
+                                border: '1px solid #e2e8f0', 
+                                background: sortMode !== 'time' ? '#0f172a' : 'white', 
+                                color: sortMode !== 'time' ? 'white' : '#64748b', 
+                                padding: '6px 14px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center' 
+                            }}
+                        >
+                            {sortMode === 'time' ? <Clock size={12} /> : sortMode === 'score' ? <Sparkles size={12} /> : <TrendingUp size={12} />}
+                            {sortMode === 'time' ? 'SORT: TIME' : sortMode === 'score' ? 'WIN PROBABILITY' : 'DEAL VALUE'}
+                        </button>
+                    </div>
+                )}
             </div>
 
             {viewMode === 'kanban' ? (
@@ -684,6 +704,33 @@ export default function Followups() {
 
             {hoverContext && !isMobile && (
                 <QuickViewTooltip context={hoverContext} />
+            )}
+
+            {/* Mobile FAB: New Task */}
+            {isMobile && (
+                <button
+                    onClick={() => setShowModal(true)}
+                    style={{
+                        position: 'fixed',
+                        bottom: 85,
+                        right: 80,
+                        width: 54,
+                        height: 54,
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--navy-600), var(--navy-800))',
+                        color: 'white',
+                        border: 'none',
+                        boxShadow: '0 8px 24px rgba(15,23,42,0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        zIndex: 9998,
+                        transition: 'transform 0.2s'
+                    }}
+                >
+                    <Plus size={24} strokeWidth={3} />
+                </button>
             )}
         </div>
     );
