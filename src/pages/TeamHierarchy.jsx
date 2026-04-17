@@ -220,7 +220,10 @@ export default function TeamHierarchy() {
     const { showToast } = useToast();
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
 
     useEffect(() => { fetchUsers(); }, []);
 
