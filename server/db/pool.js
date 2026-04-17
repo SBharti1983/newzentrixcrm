@@ -9,14 +9,25 @@ let connectionString = process.env.DATABASE_URL;
 
 if (connectionString && connectionString.includes('db.uvnkbewvpewocaqzysqb.supabase.co')) {
     console.log('⚠️  Detecting direct Supabase IPv6 hostname. Patching for IPv4/Railway compatibility...');
-    connectionString = connectionString
-        .replace('db.uvnkbewvpewocaqzysqb.supabase.co', 'aws-0-ap-southeast-1.pooler.supabase.com')
-        .replace(':5432', ':6543'); 
     
-    if (!connectionString.includes('postgres.uvnkbewvpewocaqzysqb')) {
-        connectionString = connectionString.replace('postgres:', 'postgres.uvnkbewvpewocaqzysqb:');
+    // Replace hostname
+    connectionString = connectionString.replace('db.uvnkbewvpewocaqzysqb.supabase.co', 'aws-0-ap-southeast-1.pooler.supabase.com');
+    
+    // Use pooler port (6543) if port 5432 is found or if no port is specified
+    if (connectionString.includes(':5432')) {
+        connectionString = connectionString.replace(':5432', ':6543');
+    } else if (!connectionString.includes(':6543')) {
+        // Find host and append port
+        connectionString = connectionString.replace('.supabase.com', '.supabase.com:6543');
+    }
+    
+    // Ensure the username includes the project ref (required by the pooler)
+    // The username is between '//' and the next ':'
+    if (connectionString.includes('//postgres:') && !connectionString.includes('postgres.uvnkbewvpewocaqzysqb')) {
+        connectionString = connectionString.replace('//postgres:', '//postgres.uvnkbewvpewocaqzysqb:');
     }
 }
+
 
 const poolConfig = connectionString 
     ? { connectionString }
