@@ -7,29 +7,36 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Detect Supabase IPv6-only hostname and suggest/use pooler for IPv4 compatibility (Railway fix)
 let connectionString = process.env.DATABASE_URL;
 
-if (connectionString && connectionString.includes('db.uvnkbewvpewocaqzysqb.supabase.co')) {
-    console.log('⚠️  Detecting direct Supabase IPv6 hostname. Patching for IPv4/Railway compatibility...');
+if (connectionString && (connectionString.includes('supabase.co') || connectionString.includes('supabase.com'))) {
+    console.log('⚠️  Detecting Supabase connection. Optimizing for IPv4/Pooler compatibility...');
     
     try {
-        // Use the pooler host (which supports IPv4)
-        const poolerHost = 'aws-0-ap-southeast-1.pooler.supabase.com';
-        connectionString = connectionString.replace('db.uvnkbewvpewocaqzysqb.supabase.co', poolerHost);
+        const url = new URL(connectionString);
         
-        // Use port 5432 for Session Mode (more compatible with direct-style queries)
-        // or ensure 6543 is used if preferred. We'll stick to the host's default or 5432.
+        // 1. Force use of the IPv4-compatible pooler host
+        url.hostname = 'aws-0-ap-southeast-1.pooler.supabase.com';
         
-        // Ensure username is postgres.uvnkbewvpewocaqzysqb
-        if (connectionString.includes('://postgres:') && !connectionString.includes('postgres.uvnkbewvpewocaqzysqb:')) {
-            connectionString = connectionString.replace('://postgres:', '://postgres.uvnkbewvpewocaqzysqb:');
+        // 2. Use Session Mode port (5432) or Transaction Mode port (6543)
+        // Railway works best with 5432 (Session) or 6543. We'll try 6543 (Pooler) first.
+        url.port = '6543';
+        
+        // 3. Ensure username includes the project ref (required by pooler)
+        if (!url.username.includes('uvnkbewvpewocaqzysqb')) {
+            url.username = 'postgres.uvnkbewvpewocaqzysqb';
         }
+        
+        // 4. Critical: The URL class will automatically percent-encode the password
+        // This fixes issues if the password contains '@', which confuses simpler parsers.
+        connectionString = url.toString();
 
-        // Log masked version (hide password)
+        // Log masked version for verification
         const masked = connectionString.replace(/:([^:@]+)@/, ':****@');
-        console.log('✅ Patched Connection String:', masked);
+        console.log('✅ Optimized Connection String:', masked);
     } catch (e) {
-        console.error('❌ Failed to patch connection string:', e.message);
+        console.error('❌ Failed to optimize connection string:', e.message);
     }
 }
+
 
 
 
