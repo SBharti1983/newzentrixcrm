@@ -1,7 +1,11 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/(.*)",
+      "destination": "https://zentrixcrmindia-production.up.railway.app/api/$1"
+    },
+    {
+      "source": "/((?!api|manifest.json|sw.js|zentrix_fav.png|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
