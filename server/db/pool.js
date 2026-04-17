@@ -14,7 +14,9 @@ if (connectionString && (connectionString.includes('supabase.co') || connectionS
         const url = new URL(connectionString);
         
         // 1. Force use of the IPv4-compatible pooler host for the Mumbai region
-        url.hostname = 'aws-0-ap-south-1.pooler.supabase.com';
+        // Note: Project uvnkbewvpewocaqzysqb uses cluster aws-1
+        url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
+
         
         // 2. Use Transaction Mode port (6543) or Session Mode (5432). 
         // 6543 is standard for poolers.
