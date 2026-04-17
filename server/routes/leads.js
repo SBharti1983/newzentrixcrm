@@ -175,9 +175,10 @@ router.get('/:id', async (req, res) => {
                         SELECT b.id, b.status, b.total_amount, COALESCE(i.unit_no, b.unit_no) as unit_number, i.floor, proj.name as project_name
                         FROM bookings b
                         JOIN customers c ON b.customer_id = c.id
-                        LEFT JOIN inventory i ON b.unit_id = i.id
+                        LEFT JOIN inventory i ON b.inventory_id = i.id
                         LEFT JOIN projects proj ON b.project_id = proj.id
                         WHERE c.lead_id = l.id
+
                     ) deal
                 ) as deals,
                 (
