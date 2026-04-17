@@ -10,23 +10,27 @@ let connectionString = process.env.DATABASE_URL;
 if (connectionString && connectionString.includes('db.uvnkbewvpewocaqzysqb.supabase.co')) {
     console.log('⚠️  Detecting direct Supabase IPv6 hostname. Patching for IPv4/Railway compatibility...');
     
-    // Replace hostname
-    connectionString = connectionString.replace('db.uvnkbewvpewocaqzysqb.supabase.co', 'aws-0-ap-southeast-1.pooler.supabase.com');
-    
-    // Use pooler port (6543) if port 5432 is found or if no port is specified
-    if (connectionString.includes(':5432')) {
-        connectionString = connectionString.replace(':5432', ':6543');
-    } else if (!connectionString.includes(':6543')) {
-        // Find host and append port
-        connectionString = connectionString.replace('.supabase.com', '.supabase.com:6543');
-    }
-    
-    // Ensure the username includes the project ref (required by the pooler)
-    // The username is between '//' and the next ':'
-    if (connectionString.includes('//postgres:') && !connectionString.includes('postgres.uvnkbewvpewocaqzysqb')) {
-        connectionString = connectionString.replace('//postgres:', '//postgres.uvnkbewvpewocaqzysqb:');
+    try {
+        // Use the pooler host (which supports IPv4)
+        const poolerHost = 'aws-0-ap-southeast-1.pooler.supabase.com';
+        connectionString = connectionString.replace('db.uvnkbewvpewocaqzysqb.supabase.co', poolerHost);
+        
+        // Use port 5432 for Session Mode (more compatible with direct-style queries)
+        // or ensure 6543 is used if preferred. We'll stick to the host's default or 5432.
+        
+        // Ensure username is postgres.uvnkbewvpewocaqzysqb
+        if (connectionString.includes('://postgres:') && !connectionString.includes('postgres.uvnkbewvpewocaqzysqb:')) {
+            connectionString = connectionString.replace('://postgres:', '://postgres.uvnkbewvpewocaqzysqb:');
+        }
+
+        // Log masked version (hide password)
+        const masked = connectionString.replace(/:([^:@]+)@/, ':****@');
+        console.log('✅ Patched Connection String:', masked);
+    } catch (e) {
+        console.error('❌ Failed to patch connection string:', e.message);
     }
 }
+
 
 
 const poolConfig = connectionString 
