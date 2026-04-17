@@ -38,10 +38,12 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     const [searchVal, setSearchVal] = useState('');
     const [results, setResults] = useState({ leads: [], projects: [] });
     const [searching, setSearching] = useState(false);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
     const dropdownRef = useRef(null);
+    const userMenuRef = useRef(null);
+
+    const { logout } = useAuth();
 
     const page = PAGE_TITLES[location.pathname] || { title: branding?.company_name || 'Zentrix CRM', subtitle: '' };
 
@@ -87,11 +89,14 @@ export default function Header({ collapsed, isMobile, onToggle }) {
         return () => clearTimeout(timer);
     }, [searchVal]);
 
-    // Close dropdown on click outside
+    // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setShowDropdown(false);
+            }
+            if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+                setShowUserMenu(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -309,23 +314,90 @@ export default function Header({ collapsed, isMobile, onToggle }) {
                     )}
                 </div>
 
-                <div 
-                    title={user?.name || 'User'}
-                    style={{
-                        width: 36, height: 36,
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--navy-500), var(--accent-cyan))',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontWeight: 700, fontSize: '0.8rem', color: 'white',
-                        cursor: 'pointer', flexShrink: 0,
-                        border: '2px solid white',
-                        boxShadow: 'var(--shadow-sm)'
-                    }}
-                >
-                    {user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? (
-                        <img src={user.avatar} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                        user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'
+                <div style={{ position: 'relative' }} ref={userMenuRef}>
+                    <div 
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        title={user?.name || 'User Profile'}
+                        style={{
+                            width: 36, height: 36,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, var(--navy-500), var(--accent-cyan))',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontWeight: 700, fontSize: '0.8rem', color: 'white',
+                            cursor: 'pointer', flexShrink: 0,
+                            border: '2px solid white',
+                            boxShadow: 'var(--shadow-sm)',
+                            transition: 'transform 0.2s',
+                            transform: showUserMenu ? 'scale(1.05)' : 'scale(1)'
+                        }}
+                    >
+                        {user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? (
+                            <img src={user.avatar} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                            user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'
+                        )}
+                        
+                        <div style={{ 
+                            position: 'absolute', bottom: -1, right: -1, 
+                            width: 10, height: 10, borderRadius: '50%', 
+                            background: '#10b981', border: '1.5px solid white' 
+                        }} />
+                    </div>
+
+                    {showUserMenu && (
+                        <div className="glass-panel animate-scaleIn" style={{
+                            position: 'absolute', top: 'calc(100% + 12px)', right: 0,
+                            width: 240, background: 'white', borderRadius: 16,
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.15)', padding: 8,
+                            zIndex: 1001, border: '1px solid var(--border-light)'
+                        }}>
+                            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--slate-50)', marginBottom: 4 }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-900)' }}>{user?.name || 'My Account'}</div>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>{user?.email}</div>
+                                <div style={{ 
+                                    display: 'inline-block', marginTop: 8, padding: '2px 8px', 
+                                    borderRadius: 6, background: 'var(--navy-50)', color: 'var(--navy-600)',
+                                    fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase'
+                                }}>
+                                    ID: {user?.id?.slice(0, 8)}
+                                </div>
+                            </div>
+                            
+                            <button 
+                                onClick={() => { setShowUserMenu(false); navigate('/admin'); }}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
+                                    padding: '10px 12px', border: 'none', background: 'transparent',
+                                    borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                                    transition: 'background 0.2s'
+                                }}
+                                className="hover-bg-slate"
+                            >
+                                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--navy-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy-600)' }}>
+                                    <User size={16} />
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-900)' }}>User Profile</div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Security & Preferences</div>
+                                </div>
+                            </button>
+
+                            <button 
+                                onClick={logout}
+                                style={{ 
+                                    display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
+                                    padding: '10px 12px', border: 'none', background: 'transparent',
+                                    borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                                    transition: 'all 0.2s', marginTop: 4, color: 'var(--accent-rose)'
+                                }}
+                                className="hover-bg-rose-light"
+                            >
+                                <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(244,63,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <ArrowRight size={16} />
+                                </div>
+                                <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Sign Out</div>
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>
