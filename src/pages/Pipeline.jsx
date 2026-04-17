@@ -271,8 +271,8 @@ export default function Pipeline() {
             {!(isMobile && viewMode === 'kanban') && (
             <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(5, 1fr)', 
-                gap: isMobile ? 6 : 12, 
+                gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(10, 1fr)', 
+                gap: isMobile ? 6 : 8, 
                 marginBottom: 20,
             }}>
                 {PIPELINE_STAGES.map((stage) => {
@@ -287,8 +287,8 @@ export default function Pipeline() {
                         <div key={stage} 
                             style={{
                                 background: isEmpty ? 'rgba(248, 250, 252, 0.5)' : 'white',
-                                borderRadius: '14px',
-                                padding: isMobile ? '8px' : '14px 16px',
+                                borderRadius: '12px',
+                                padding: isMobile ? '8px' : '10px 12px',
                                 border: '1px solid #eef2f6',
                                 position: 'relative',
                                 overflow: 'hidden',
@@ -296,7 +296,7 @@ export default function Pipeline() {
                                 flexDirection: 'column',
                                 transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                 boxShadow: isEmpty ? 'none' : '0 4px 15px rgba(10, 22, 40, 0.03)',
-                                minHeight: isMobile ? 65 : 90
+                                minHeight: isMobile ? 65 : 75
                             }}
                             className="hover-lift"
                         >
@@ -308,15 +308,15 @@ export default function Pipeline() {
                                 {sc.emoji || '💼'}
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, minWidth: 0 }}>
-                                <span style={{ fontSize: isMobile ? '0.58rem' : '0.68rem', fontWeight: 900, color: isEmpty ? '#94a3b8' : 'var(--navy-600)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, minWidth: 0 }}>
+                                <span style={{ fontSize: isMobile ? '0.58rem' : '0.6rem', fontWeight: 900, color: isEmpty ? '#94a3b8' : 'var(--navy-600)', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {stage}
                                 </span>
                             </div>
 
                             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 'auto' }}>
                                 <div style={{ 
-                                    fontSize: isMobile ? '1.1rem' : '1.6rem', 
+                                    fontSize: isMobile ? '1.1rem' : '1.3rem', 
                                     fontWeight: 1000, 
                                     color: isEmpty ? '#cbd5e1' : 'var(--navy-950)',
                                     lineHeight: 1,
