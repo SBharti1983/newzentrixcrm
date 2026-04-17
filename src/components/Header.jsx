@@ -38,6 +38,8 @@ export default function Header({ collapsed, isMobile, onToggle }) {
     const [searchVal, setSearchVal] = useState('');
     const [results, setResults] = useState({ leads: [], projects: [] });
     const [searching, setSearching] = useState(false);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showNotifications, setShowNotifications] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const dropdownRef = useRef(null);
