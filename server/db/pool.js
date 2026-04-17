@@ -4,8 +4,22 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-const poolConfig = process.env.DATABASE_URL 
-    ? { connectionString: process.env.DATABASE_URL }
+// Detect Supabase IPv6-only hostname and suggest/use pooler for IPv4 compatibility (Railway fix)
+let connectionString = process.env.DATABASE_URL;
+
+if (connectionString && connectionString.includes('db.uvnkbewvpewocaqzysqb.supabase.co')) {
+    console.log('⚠️  Detecting direct Supabase IPv6 hostname. Patching for IPv4/Railway compatibility...');
+    connectionString = connectionString
+        .replace('db.uvnkbewvpewocaqzysqb.supabase.co', 'aws-0-ap-southeast-1.pooler.supabase.com')
+        .replace(':5432', ':6543'); 
+    
+    if (!connectionString.includes('postgres.uvnkbewvpewocaqzysqb')) {
+        connectionString = connectionString.replace('postgres:', 'postgres.uvnkbewvpewocaqzysqb:');
+    }
+}
+
+const poolConfig = connectionString 
+    ? { connectionString }
     : {
         host: process.env.DB_HOST || 'localhost',
         port: parseInt(process.env.DB_PORT) || 5432,
@@ -16,21 +30,23 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool({
     ...poolConfig,
-    max: 40,
+    max: 20, 
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 30000,
-    ssl: (isProduction || process.env.DATABASE_URL) ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000,
+    ssl: (isProduction || connectionString) ? { rejectUnauthorized: false } : false,
 });
 
-// Test connection on startup
 pool.connect((err, client, release) => {
     if (err) {
-        console.error('❌ Database connection failed:', err);
-        console.error('   Config used:', process.env.DATABASE_URL ? 'DATABASE_URL' : `Host: ${process.env.DB_HOST}`);
+        console.error('❌ Database connection failed:', err.message);
+        if (err.message.includes('ENETUNREACH')) {
+            console.error('   💡 Tip: This host is IPv6-only. Use the Supabase Connection Pooler for IPv4 environments like Railway.');
+        }
     } else {
-        console.log('✅ Database connected — PostgreSQL', process.env.DB_NAME);
+        console.log('✅ Database connected — PostgreSQL ready');
         release();
     }
 });
+
 
 module.exports = pool;
