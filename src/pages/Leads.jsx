@@ -305,13 +305,14 @@ export default function Leads() {
             if (activeSearch && activeSearch.trim()) p.q = activeSearch.trim();
 
             const res = await leadsApi.list(p);
-            setLeadsRes(res);
+            setLeadsRes(res || { data: [], total: 0 });
         } catch (err) {
-            console.error(err);
+            console.error('Fetch leads error:', err);
+            showToast('Failed to load leads', 'error');
         } finally {
             setLeadsLoading(false);
         }
-    }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, debouncedSearch, filterNurtureDue, startDate, endDate]);
+    }, [limit, page, filterStage, filterSource, filterStatus, filterAgent, debouncedSearch, filterNurtureDue, startDate, endDate, showToast]);
 
     useEffect(() => {
         fetchLeads();
@@ -561,14 +562,14 @@ export default function Leads() {
                         onClick={() => { setPage(1); setFilterNurtureDue(!filterNurtureDue); }}
                     >
                         🎯 Nurture Due
-                        {leadsRes?.nurture?.due_today > 0 && (
-                            <span style={{ background: filterNurtureDue ? 'rgba(255,255,255,0.2)' : 'var(--accent-rose)', color: filterNurtureDue ? 'white' : 'white', padding: '0 6px', borderRadius: 6, fontSize: '0.65rem' }}>
-                                {leadsRes.nurture.due_today}
+                        {leadsRes?.counts?.dueToday > 0 && (
+                            <span style={{ background: filterNurtureDue ? 'rgba(255,255,255,0.2)' : 'var(--accent-rose)', color: 'white', padding: '0 6px', borderRadius: 6, fontSize: '0.65rem' }}>
+                                {leadsRes.counts.dueToday}
                             </span>
                         )}
-                        {leadsRes?.nurture?.overdue > 0 && !filterNurtureDue && (
+                        {leadsRes?.counts?.overdue > 0 && !filterNurtureDue && (
                             <span style={{ background: '#ef4444', color: 'white', padding: '0 6px', borderRadius: 6, fontSize: '0.65rem' }} title="Overdue">
-                                {leadsRes.nurture.overdue}
+                                {leadsRes.counts.overdue}
                             </span>
                         )}
                     </button>

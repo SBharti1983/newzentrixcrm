@@ -169,14 +169,14 @@ export default function Header({ collapsed, isMobile, onToggle }) {
                         onChange={e => setSearchVal(e.target.value)}
                         placeholder={isMobile ? "Search..." : "Search leads, projects..."}
                         onFocus={(e) => {
-                            if (isMobile) e.target.style.width = '140px';
+                            if (isMobile) e.target.style.width = '180px';
                             searchVal.trim().length >= 2 && setShowDropdown(true);
                         }}
                         onBlur={(e) => {
-                            if (isMobile) e.target.style.width = '80px';
+                            if (isMobile) e.target.style.width = '100px';
                         }}
                         style={{ 
-                            width: isMobile ? '80px' : '100%',
+                            width: isMobile ? '100px' : '100%',
                             transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                         }}
                     />

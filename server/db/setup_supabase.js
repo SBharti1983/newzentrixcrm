@@ -302,14 +302,20 @@ CREATE TABLE enquiries (
 CREATE TABLE documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
-    entity_id UUID, -- lead_id or customer_id
-    entity_type TEXT,
-    file_name TEXT NOT NULL,
-    url TEXT NOT NULL,
-    size INTEGER,
-    mime_type TEXT,
+    booking_id UUID REFERENCES bookings(id) ON DELETE SET NULL,
+    customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
     uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    name TEXT NOT NULL,
+    type TEXT DEFAULT 'Other',
+    file_url TEXT,
+    file_size INTEGER,
+    mime_type TEXT,
+    status TEXT DEFAULT 'Draft',
+    notes TEXT,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    signed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE channel_partners (

@@ -355,10 +355,10 @@ export default function Pipeline() {
             {/* Compressed Search & Filters Hub */}
             <div style={{ 
                 background: 'rgba(255, 255, 255, 0.95)', 
-                padding: '10px 14px', 
+                padding: '8px 12px', 
                 borderRadius: '12px', 
                 border: '1px solid #eef2f6', 
-                marginBottom: 16, 
+                marginBottom: 12, 
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: 12,
@@ -366,7 +366,7 @@ export default function Pipeline() {
                 top: isMobile ? 0 : 0, 
                 zIndex: 50,
                 backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 15px rgba(10, 22, 40, 0.02)'
+                boxShadow: '0 2px 10px rgba(10, 22, 40, 0.02)'
             }}>
                 <div style={{ flex: 1, position: 'relative' }}>
                     <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -737,7 +737,8 @@ export default function Pipeline() {
                                         outline: isOver ? `2px dashed ${cfg.accent}` : 'none',
                                         background: isOver ? `linear-gradient(${cfg.bg}, white)` : (isMobile ? 'transparent' : '#fcfdfe'),
                                         transition: 'all 0.2s ease',
-                                        width: isMobile ? '100%' : '320px',
+                                        width: isMobile ? '100%' : 'calc(20% - 12.8px)', // Fits 5 columns exactly
+                                        minWidth: isMobile ? '100%' : '250px',
                                         flexShrink: 0,
                                         height: '100%',
                                         scrollSnapAlign: isMobile ? 'center' : 'none',
@@ -754,27 +755,27 @@ export default function Pipeline() {
                                 >
                                     {/* Column Header (Hidden on Mobile as Tabs provide context) */}
                                     {!isMobile && (
-                                    <div className="pipeline-col-header" style={{ gap: 8, padding: '12px 14px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}>
+                                    <div className="pipeline-col-header" style={{ gap: 6, padding: '10px 12px', borderBottom: '1px solid #f1f5f9', flexShrink: 0, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)' }}>
                                         {isCollapsed ? (
                                             <button onClick={() => setCollapsed(c => ({ ...c, [stage]: false }))}
-                                                style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, width: '100%' }}>
-                                                <span style={{ fontSize: '1.2rem' }}>{cfg.emoji || '📁'}</span>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: cfg.color, writingMode: 'vertical-lr', textOrientation: 'mixed', letterSpacing: '0.04em' }}>{stage}</span>
-                                                <span className="pipeline-col-count" style={{ background: cfg.bg, color: cfg.color, padding: '2px 8px', borderRadius: 20, fontSize: '10px' }}>{stageLeads.length}</span>
+                                                style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: '100%' }}>
+                                                <span style={{ fontSize: '1rem' }}>{cfg.emoji || '📁'}</span>
+                                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: cfg.color, writingMode: 'vertical-lr', textOrientation: 'mixed', letterSpacing: '0.04em' }}>{stage}</span>
+                                                <span className="pipeline-col-count" style={{ background: cfg.bg, color: cfg.color, padding: '1px 6px', borderRadius: 20, fontSize: '9px' }}>{stageLeads.length}</span>
                                             </button>
                                         ) : (
                                             <>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                                                    <div style={{ width: 32, height: 32, borderRadius: '10px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                                                    <div style={{ width: 28, height: 28, borderRadius: '8px', background: cfg.bg, color: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>
                                                         {cfg.emoji || '📁'}
                                                     </div>
                                                     <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap' }}>
-                                                            <span className="pipeline-col-name" style={{ fontWeight: 900, color: 'var(--navy-900)', fontSize: '0.9rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
-                                                            <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '2px 8px', borderRadius: 99, flexShrink: 0 }}>{stageLeads.length}</span>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
+                                                            <span className="pipeline-col-name" style={{ fontWeight: 900, color: 'var(--navy-900)', fontSize: '0.8rem', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stage}</span>
+                                                            <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--text-muted)', background: 'var(--slate-100)', padding: '1px 6px', borderRadius: 99, flexShrink: 0 }}>{stageLeads.length}</span>
                                                         </div>
-                                                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: cfg.color, marginTop: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {fmtL(val)} <ChevronRight size={10} strokeWidth={3} />
+                                                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: cfg.color, marginTop: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {fmtL(val)} <ChevronRight size={8} strokeWidth={3} />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -807,14 +808,14 @@ export default function Pipeline() {
                                                         style={{
                                                             opacity: isDragging ? 0.35 : 1,
                                                             background: 'white',
-                                                            borderRadius: isMobile ? '12px' : '14px',
-                                                            padding: isMobile ? '8px 12px' : '12px',
+                                                            borderRadius: isMobile ? '12px' : '12px',
+                                                            padding: isMobile ? '8px 12px' : '10px',
                                                             border: '1px solid #f1f5f9',
-                                                            boxShadow: isDragging ? 'none' : (isMobile ? '0 2px 6px rgba(10, 22, 40, 0.03)' : '0 4px 12px rgba(10, 22, 40, 0.03)'),
+                                                            boxShadow: isDragging ? 'none' : (isMobile ? '0 2px 6px rgba(10, 22, 40, 0.03)' : '0 2px 8px rgba(10, 22, 40, 0.03)'),
                                                             display: 'flex',
                                                             flexDirection: isMobile ? 'row' : 'column',
                                                             alignItems: isMobile ? 'center' : 'stretch',
-                                                            gap: isMobile ? 12 : 10,
+                                                            gap: isMobile ? 12 : 8,
                                                             cursor: isMobile ? 'pointer' : 'grab',
                                                             transition: 'all 0.2s ease',
                                                             marginBottom: isMobile ? 8 : 0
@@ -822,23 +823,23 @@ export default function Pipeline() {
                                                     >
                                                         {/* Avatar/Info */}
                                                         <div style={{ 
-                                                            width: isMobile ? 36 : 40, 
-                                                            height: isMobile ? 36 : 40, 
-                                                            borderRadius: isMobile ? '10px' : '12px', 
+                                                            width: isMobile ? 36 : 32, 
+                                                            height: isMobile ? 36 : 32, 
+                                                            borderRadius: isMobile ? '10px' : '10px', 
                                                             background: `linear-gradient(135deg, ${avatarBg}, ${avatarBg}cc)`, 
                                                             color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                                            fontSize: isMobile ? '11px' : '13px', fontWeight: 1000, flexShrink: 0,
-                                                            boxShadow: `0 4px 10px ${avatarBg}33`
+                                                            fontSize: isMobile ? '11px' : '11px', fontWeight: 1000, flexShrink: 0,
+                                                            boxShadow: `0 4px 8px ${avatarBg}25`
                                                         }}>
                                                             {(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                                                         </div>
 
                                                         <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                                            <div style={{ fontWeight: 950, fontSize: isMobile ? '0.88rem' : '0.94rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>{lead.name}</div>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                                                <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--accent-emerald-dark)' }}>{lead.budget || '₹60L'}</span>
-                                                                {!isMobile && <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#cbd5e1' }} />}
-                                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>{lead.city || 'Pune'}</span>
+                                                            <div style={{ fontWeight: 950, fontSize: isMobile ? '0.88rem' : '0.85rem', color: 'var(--navy-950)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.1 }}>{lead.name}</div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-emerald-dark)' }}>{lead.budget || '₹60L'}</span>
+                                                                {!isMobile && <div style={{ width: 2, height: 2, borderRadius: '50%', background: '#cbd5e1' }} />}
+                                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>{lead.city || 'Pune'}</span>
                                                                 {isMobile && (
                                                                     <div style={{ padding: '1px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 900, background: pc.bg, color: pc.color, textTransform: 'uppercase' }}>{lead.priority}</div>
                                                                 )}
@@ -848,8 +849,8 @@ export default function Pipeline() {
                                                         {!isMobile && (
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                                                 {/* Project Badge */}
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', fontWeight: 750, color: 'var(--navy-600)', background: 'rgba(59, 99, 184, 0.04)', padding: '6px 12px', borderRadius: '10px', border: '1px solid rgba(59, 99, 184, 0.08)' }}>
-                                                                    <Home size={12} strokeWidth={3} />
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', fontWeight: 750, color: 'var(--navy-600)', background: 'rgba(59, 99, 184, 0.04)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(59, 99, 184, 0.08)' }}>
+                                                                    <Home size={10} strokeWidth={3} />
                                                                     <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.project || 'Zentrix Elite'}</span>
                                                                 </div>
 
@@ -877,8 +878,8 @@ export default function Pipeline() {
                                                         {/* Stats Footer (Desktop) */}
                                                         {!isMobile && (
                                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f8fafc', paddingTop: 10, marginTop: 4 }}>
-                                                                <div style={{ fontWeight: 1000, fontSize: '0.95rem', color: 'var(--accent-emerald-dark)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                                    <Zap size={14} fill="var(--accent-emerald)" color="transparent" />
+                                                                <div style={{ fontWeight: 1000, fontSize: '0.85rem', color: 'var(--accent-emerald-dark)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                                    <Zap size={12} fill="var(--accent-emerald)" color="transparent" />
                                                                     {lead.budget || '₹60L'}
                                                                 </div>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-muted)' }}>

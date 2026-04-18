@@ -178,6 +178,13 @@ async function migrate() {
                 }
             } catch (e) { /* silent */ }
 
+            // -- DOCUMENTS --
+            try {
+                const { rows: docs } = await neonClient.query('SELECT * FROM documents WHERE tenant_id = $1', [tid]);
+                const docCount = await bulkInsert(supaClient, 'documents', docs);
+                console.log(`  ✓ Documents: ${docCount}`);
+            } catch (e) { console.log(`  - Documents: skipped (${e.message.slice(0,50)})`); }
+
             // -- PAYMENT PLANS & INSTALLMENTS --
             try {
                 const { rows: pp } = await neonClient.query('SELECT * FROM payment_plans WHERE tenant_id = $1', [tid]);
