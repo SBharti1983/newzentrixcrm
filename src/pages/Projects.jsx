@@ -1,5 +1,10 @@
+import { useState, useEffect } from 'react';
 import { Plus, Search, Building2, MapPin, Home, X, Info, TrendingUp, Sparkles, ArrowRight } from 'lucide-react';
 import { useMobile } from '../hooks/useMobile';
+import { useApi } from '../hooks/useApi';
+import { projectsApi } from '../api/client';
+import { useToast } from '../hooks/useToast';
+import { PageLoader, PageError } from '../components/Feedback';
 
 const STATUS_BADGE = {
     Active: 'badge-green',
@@ -18,6 +23,14 @@ const DEFAULT_FORM = {
 
 export default function Projects() {
     const isMobile = useMobile();
+    const { addToast } = useToast();
+    
+    // Missing States
+    const [search, setSearch] = useState('');
+    const [filterStatus, setFilterStatus] = useState('All');
+    const [showModal, setShowModal] = useState(false);
+    const [viewProject, setViewProject] = useState(null);
+    const [form, setForm] = useState(DEFAULT_FORM);
     const [saving, setSaving] = useState(false);
 
     const params = {};
@@ -42,9 +55,9 @@ export default function Projects() {
                 possession_date: form.completion || null,
                 amenities: form.amenities.split(',').map(a => a.trim()).filter(Boolean),
             });
-            showToast('Project added!', 'success');
+            addToast({ title: 'Project added!', type: 'success' });
             setShowModal(false); setForm(DEFAULT_FORM); refetch();
-        } catch (err) { showToast(err.error || 'Failed to add project', 'error'); }
+        } catch (err) { addToast({ title: err.error || 'Failed to add project', type: 'error' }); }
         finally { setSaving(false); }
     };
 
@@ -278,7 +291,7 @@ export default function Projects() {
                                                                  return (
                                                                       <div 
                                                                           key={unitNum} 
-                                                                          onClick={() => isAvailable ? showToast(`Unit ${unitNum} selected for express booking!`, 'success') : showToast('Unit already sold', 'error')}
+                                                                          onClick={() => isAvailable ? addToast({ title: `Unit ${unitNum} selected for express booking!`, type: 'success' }) : addToast({ title: 'Unit already sold', type: 'error' })}
                                                                           style={{ 
                                                                               padding: '16px', background: isAvailable ? 'var(--accent-emerald)' : '#ef4444', 
                                                                               borderRadius: '14px', color: 'white', fontWeight: 900, fontSize: '14px', textAlign: 'center',
