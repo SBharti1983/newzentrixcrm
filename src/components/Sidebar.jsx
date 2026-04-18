@@ -60,6 +60,7 @@ const NAV_SECTIONS = [
             { path: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
             { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
             { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
+            { path: '/academy', label: 'Zentrix Academy', icon: Sparkles },
             { path: '/reports', label: 'Custom Reports', icon: FileCheck },
         ],
     },

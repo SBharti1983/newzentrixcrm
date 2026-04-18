@@ -22,8 +22,8 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
             finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
         }
 
-        // Use stable and performant models. gemini-1.5-flash is ideal for low-latency tasks like scoring.
-        const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        // Use stable and performant models. gemini-2.5-flash and gemini-2.0-flash are current standard.
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {

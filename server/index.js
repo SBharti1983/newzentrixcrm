@@ -188,6 +188,7 @@ app.use('/api/search', require('./routes/search'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/broker', require('./routes/broker'));
+app.use('/api/academy', require('./routes/academy'));
 
 app.get('/', (req, res) => { res.json({ message: 'ZentrixCRM API Running', health: '/api/health' }); });
 

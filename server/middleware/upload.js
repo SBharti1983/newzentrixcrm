@@ -33,8 +33,11 @@ const fileFilter = (req, file, cb) => {
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.ms-excel',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'text/csv',
-        'audio/wav', 'audio/mpeg', 'audio/x-wav', 'audio/mp3', 'audio/ogg', 'audio/m4a'
+        'audio/wav', 'audio/mpeg', 'audio/x-wav', 'audio/mp3', 'audio/ogg', 'audio/m4a',
+        'video/mp4', 'video/mpeg', 'video/quicktime'
     ];
     if (allowed.includes(file.mimetype)) {
         cb(null, true);
@@ -47,7 +50,7 @@ const upload = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024, // 10 MB max
+        fileSize: 50 * 1024 * 1024, // 50 MB max
     },
 });
 

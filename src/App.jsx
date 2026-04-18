@@ -62,6 +62,7 @@ const Reports = lazy(() => import('./pages/Reports'));
 const TeamHierarchy = lazy(() => import('./pages/TeamHierarchy'));
 const WorkspaceManagement = lazy(() => import('./pages/WorkspaceManagement'));
 const PublicSignup = lazy(() => import('./pages/PublicSignup'));
+const Academy = lazy(() => import('./pages/Academy'));
 
 // --- Pre-loaded Critical Components ---
 import { PageLoader } from './components/Feedback';
@@ -238,6 +239,7 @@ function ProtectedApp() {
             <Route path="/whatsapp-marketing" element={<RoleGuard path="/whatsapp-marketing"><WhatsAppMarketing /></RoleGuard>} />
             <Route path="/billing" element={<RoleGuard path="/billing"><Billing /></RoleGuard>} />
             <Route path="/command-center" element={<RoleGuard path="/command-center"><CommandCenter /></RoleGuard>} />
+            <Route path="/academy" element={<RoleGuard path="/academy"><Academy /></RoleGuard>} />
             <Route path="/billing/success" element={<BillingSuccess />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -307,6 +307,20 @@ export const notificationsApi = {
     update: (id, data) => api(`/notifications/${id}`, { method: 'PATCH', body: data }),
 };
 
+export const academyApi = {
+    getModules: (params = {}) => api('/academy/modules?' + new URLSearchParams(params)),
+    upload: (formData) => api('/academy/upload', { method: 'POST', body: formData }),
+    updateProgress: (data) => api('/academy/progress', { method: 'POST', body: data }),
+    getLeaderboard: () => api('/academy/leaderboard'),
+    deleteModule: (id) => api(`/academy/modules/${id}`, { method: 'DELETE' }),
+    // Battle Cards
+    getBattleCards: () => api('/academy/battle-cards'),
+    createBattleCard: (data) => api('/academy/battle-cards', { method: 'POST', body: data }),
+    updateBattleCard: (id, data) => api(`/academy/battle-cards/${id}`, { method: 'PUT', body: data }),
+    deleteBattleCard: (id) => api(`/academy/battle-cards/${id}`, { method: 'DELETE' }),
+    simulate: (data) => api('/academy/simulate', { method: 'POST', body: data }),
+};
+
 // ─── Super Admin ──────────────────────────────────────────────────
 export const superAdminApi = {
     getTenants: () => api('/superadmin/tenants'),
