@@ -42,7 +42,7 @@ router.get('/:id', async (req, res) => {
 // POST /api/projects - create a new project
 router.post('/', async (req, res) => {
     try {
-        if (!['superadmin', 'admin'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager', 'agent'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
         const { name, location, type, status, total_units, available_units, price_range, rera_number, possession_date, amenities } = req.body;
@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
 // PATCH /api/projects/:id - update a project
 router.patch('/:id', async (req, res) => {
     try {
-        if (!['superadmin', 'admin'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager', 'agent'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
         const allowed = ['name', 'location', 'type', 'status', 'total_units', 'available_units', 'price_range', 'rera_number', 'possession_date', 'amenities'];
@@ -161,7 +161,7 @@ router.patch('/:id/inventory/:unitId', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const client = await pool.connect();
     try {
-        if (!['superadmin', 'admin'].includes(req.user.role))
+        if (!['superadmin', 'admin', 'sales_manager', 'agent'].includes(req.user.role))
             return res.status(403).json({ error: 'Insufficient permissions' });
 
         await client.query('BEGIN');

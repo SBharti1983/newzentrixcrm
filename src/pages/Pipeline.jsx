@@ -716,10 +716,11 @@ export default function Pipeline() {
                         display: 'flex', 
                         gap: isMobile ? 0 : 16, 
                         flex: 1,
-                        height: '100%', 
+                        minHeight: isMobile ? '400px' : '650px', // Ensure viewport fill
+                        width: '100%',
                         padding: isMobile ? '0 12px' : '0 4px', 
-                        overflowX: isMobile ? 'hidden' : 'auto',
-                        WebkitOverflowScrolling: 'touch',
+                        overflowX: 'auto', // Always allow horizontal scroll on desktop if needed
+                        overflowY: 'hidden', 
                         paddingBottom: isMobile ? '80px' : '0'
                     }}>
                         {(isMobile ? [mobileActiveStage] : PIPELINE_STAGES).map((stage) => {
@@ -737,9 +738,7 @@ export default function Pipeline() {
                                         outline: isOver ? `2px dashed ${cfg.accent}` : 'none',
                                         background: isOver ? `linear-gradient(${cfg.bg}, white)` : (isMobile ? 'transparent' : '#fcfdfe'),
                                         transition: 'all 0.2s ease',
-                                        width: isMobile ? '100%' : 'calc(20% - 12.8px)', // Fits 5 columns exactly
-                                        minWidth: isMobile ? '100%' : '250px',
-                                        flexShrink: 0,
+                                        flex: isMobile ? '0 0 100%' : '0 0 calc(20% - 12.8px)', // Use flex shorthand for stability
                                         height: '100%',
                                         scrollSnapAlign: isMobile ? 'center' : 'none',
                                         borderRadius: isMobile ? '0' : '16px',
