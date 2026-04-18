@@ -26,7 +26,7 @@ export const ROLE_ACCESS = {
         label: 'Agent',
         color: 'var(--accent-emerald)',
         bg: 'rgba(16,185,129,0.1)',
-        pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/followups', '/site-visits',
+        pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/followups', '/site-visits',
             '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/marketing', '/command-center', '/leaderboard', '/analytics', '/team-hierarchy', '/agreements'],
     },
     customer: {
