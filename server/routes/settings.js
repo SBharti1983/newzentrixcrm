@@ -33,19 +33,25 @@ router.get('/', async (req, res) => {
         const permissions = settings.role_permissions || defaultPermissions;
         
         if (['admin', 'superadmin'].includes(req.user.role)) {
-            // Priority: DB Setting > Environment Variable > Default
-            settings.telephony_secret = settings.telephony_secret || process.env.ZAPIER_WEBHOOK_SECRET || 'missing_secret';
+            // Priority: DB Setting > Environment Variable (Only for primary Zentrix tenant) > Default
+            const isPrimaryTenant = !!(settings.company_name?.toLowerCase().includes('zentrix') || req.user.email.endsWith('@zentrix.com'));
+
+            settings.telephony_secret = settings.telephony_secret || (isPrimaryTenant ? process.env.ZAPIER_WEBHOOK_SECRET : null) || 'missing_secret';
             
             // Storage URL is usually generated but can be overridden
             if (!settings.android_storage_url) {
-                settings.android_storage_url = `${process.env.VITE_API_URL || 'https://api.zentrixcrm.com/api'}/telephony/upload-recording?token=${settings.telephony_secret}:${targetTenantId}`;
+                if (isPrimaryTenant || settings.android_storage_url) {
+                    settings.android_storage_url = settings.android_storage_url || `${process.env.VITE_API_URL || 'https://api.zentrixcrm.com/api'}/telephony/upload-recording?token=${settings.telephony_secret}:${targetTenantId}`;
+                } else {
+                    settings.android_storage_url = 'Not Configured';
+                }
             }
             
-            settings.firebase_project_id = settings.firebase_project_id || process.env.FIREBASE_PROJECT_ID || 'Not Configured';
-            settings.firebase_database_url = settings.firebase_database_url || process.env.FIREBASE_DATABASE_URL || 'Not Configured';
+            settings.firebase_project_id = settings.firebase_project_id || (isPrimaryTenant ? process.env.FIREBASE_PROJECT_ID : 'Not Configured');
+            settings.firebase_database_url = settings.firebase_database_url || (isPrimaryTenant ? process.env.FIREBASE_DATABASE_URL : 'Not Configured');
             
             // Allow Gemini API Key override via DB settings
-            settings.gemini_api_key = settings.gemini_api_key || process.env.GEMINI_API_KEY || '';
+            settings.gemini_api_key = settings.gemini_api_key || (isPrimaryTenant ? process.env.GEMINI_API_KEY : '');
         }
 
         res.json({ ...settings, role_permissions: permissions });

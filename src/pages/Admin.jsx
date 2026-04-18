@@ -1012,7 +1012,7 @@ export default function Admin() {
             {tab === 'settings' && (
                 <div className="grid grid-2">
                     {[
-                        { title: 'Company Information', fields: [['Company Name', 'Zentrix Realty Pvt. Ltd.'], ['Website', 'www.zentrixrealty.com'], ['Support Email', 'support@zentrixrealty.com'], ['Phone', '+91 22 4567 8900']] },
+                        { title: 'Company Information', fields: [['Company Name', 'Your Company Name'], ['Website', 'www.yourwebsite.com'], ['Support Email', 'support@yourcompany.com'], ['Phone', '+91 XXXXX XXXXX']] },
                         { title: 'CRM Configuration', fields: [['Lead Expiry (days)', '30'], ['Auto-assign Leads', 'Enabled'], ['Default Currency', 'INR (₹)'], ['Fiscal Year Start', 'April']] },
                         { title: 'Communication Gateways', fields: [['WhatsApp Phone ID', 'Not configured'], ['WhatsApp API Key', '••••••••'], ['SMTP Host', 'smtp.gmail.com'], ['SMTP User', 'Not configured'], ['SMTP Password', '••••••••']] },
                         { title: 'System Integrations (WTI App)', fields: [
