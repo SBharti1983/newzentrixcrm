@@ -25,7 +25,7 @@ module.exports = async function auth(req, res, next) {
         req.user = payload;
         
         // --- STRICT SUPERADMIN ACCESS ---
-        const SUPER_ADMIN_EMAILS = ['rohan.mishra@zentrixcrm.com'];
+        const SUPER_ADMIN_EMAILS = ['rohan.mishra@zentrixcrm.com', 'sikandar.b@zentrixcrm.com'];
         if (SUPER_ADMIN_EMAILS.includes(req.user.email.toLowerCase())) {
             req.user.role = 'superadmin';
         }
