@@ -102,10 +102,8 @@ export function BrandingProvider({ children }) {
         // Dynamically update Manifest link for multi-tenant PWA
         const manifestLink = document.querySelector("link[rel='manifest']") || document.createElement('link');
         manifestLink.rel = 'manifest';
-        // Note: BASE_URL is handled by the client.js, but here we construct it 
-        // to point to the Public API for the specific tenant
-        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
-        manifestLink.href = `${API_BASE}/public/manifest.json?hostname=${window.location.hostname}`;
+        const manifestUrl = `/api/public/manifest.json?hostname=${window.location.hostname}`;
+        manifestLink.href = manifestUrl;
         if (!manifestLink.parentNode) document.head.appendChild(manifestLink);
 
     }, [branding, loaded]);
