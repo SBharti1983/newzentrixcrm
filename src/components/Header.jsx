@@ -132,7 +132,7 @@ export default function Header({ collapsed, isMobile, onToggle }) {
                 {!isMobile && (
                     <div style={{ display: 'flex', alignItems: 'center', marginRight: 24, gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'center' }}>
-                            {onlineUsers.filter(u => u.id !== user?.id).slice(0, 3).map((u, i) => (
+                            {(onlineUsers || []).filter(u => u.id !== user?.id).slice(0, 3).map((u, i) => (
                                 <div key={u.id} title={`${u.name} is active`} style={{
                                     width: 28, height: 28, borderRadius: '50%',
                                     background: 'var(--navy-600)', border: '2px solid white',
@@ -162,22 +162,49 @@ export default function Header({ collapsed, isMobile, onToggle }) {
                     </div>
                 )}
 
-                <div className="search-bar hide-mobile-sm" style={{ position: 'relative' }}>
+                <div className="search-bar" style={{ position: 'relative' }}>
                     {searching ? <Loader2 size={14} className="animate-spin" style={{ color: 'var(--navy-400)' }} /> : <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
                     <input
                         value={searchVal}
                         onChange={e => setSearchVal(e.target.value)}
-                        placeholder="Search leads, projects..."
-                        onFocus={() => searchVal.trim().length >= 2 && setShowDropdown(true)}
+                        placeholder={isMobile ? "Search..." : "Search leads, projects..."}
+                        onFocus={(e) => {
+                            if (isMobile) e.target.style.width = '140px';
+                            searchVal.trim().length >= 2 && setShowDropdown(true);
+                        }}
+                        onBlur={(e) => {
+                            if (isMobile) e.target.style.width = '80px';
+                        }}
+                        style={{ 
+                            width: isMobile ? '80px' : '100%',
+                            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}
                     />
                     
                     {showDropdown && (
                         <div 
                             ref={dropdownRef}
                             className="glass-panel animate-fadeIn" 
-                            style={{ 
-                                position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: -100, 
-                                minWidth: 320, background: 'white', borderRadius: 16, 
+                            style={isMobile ? {
+                                position: 'fixed',
+                                top: '70px',
+                                left: '16px',
+                                right: '16px',
+                                width: 'auto',
+                                background: 'white',
+                                borderRadius: 16,
+                                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+                                overflow: 'hidden',
+                                padding: 0,
+                                zIndex: 1000,
+                                border: '1px solid var(--border-light)',
+                                animation: 'fadeIn 0.3s ease'
+                            } : {
+                                position: 'absolute', top: 'calc(100% + 8px)', 
+                                left: 0, 
+                                right: -100, 
+                                minWidth: 320, 
+                                background: 'white', borderRadius: 16, 
                                 boxShadow: '0 10px 40px rgba(0,0,0,0.15)', overflow: 'hidden', 
                                 padding: 0, zIndex: 1000, border: '1px solid var(--border-light)' 
                             }}

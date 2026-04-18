@@ -153,6 +153,7 @@ export default function NotificationDropdown({ onClose }) {
                     top: 100%;
                     right: 0;
                     width: 400px;
+                    max-width: calc(100vw - 32px);
                     max-height: 560px;
                     margin-top: 16px;
                     background: rgba(255, 255, 255, 0.85);
@@ -357,6 +358,19 @@ export default function NotificationDropdown({ onClose }) {
                     font-weight: 700;
                     color: var(--navy-900);
                     margin: 12px 0 4px;
+                }
+                @media (max-width: 768px) {
+                    .notification-dropdown {
+                        position: fixed;
+                        top: 70px;
+                        left: 12px;
+                        right: 12px;
+                        width: auto;
+                        max-width: none;
+                        max-height: calc(100vh - 100px);
+                        margin-top: 0;
+                        border-radius: 20px;
+                    }
                 }
             `}} />
         </div>

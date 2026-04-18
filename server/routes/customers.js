@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
                      ) ORDER BY i.date DESC)
                      FROM interactions i
                      LEFT JOIN users u ON i.user_id = u.id
-                     WHERE i.customer_id = c.id
+                     WHERE i.lead_id = c.lead_id
                  ) as interactions
              FROM customers c LEFT JOIN bookings b ON b.customer_id = c.id
              WHERE c.tenant_id=$1 GROUP BY c.id
@@ -52,7 +52,7 @@ router.get('/:id', async (req, res) => {
                     ) ORDER BY i.date DESC)
                         FROM interactions i
                         LEFT JOIN users u ON i.user_id = u.id
-                        WHERE i.customer_id = c.id
+                        WHERE i.lead_id = c.lead_id
             ) as interactions
              FROM customers c LEFT JOIN bookings b ON b.customer_id = c.id
              WHERE c.id = $1 AND c.tenant_id = $2 GROUP BY c.id`,
