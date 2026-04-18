@@ -93,7 +93,7 @@ router.get('/manifest.json', async (req, res) => {
                     purpose: 'any'
                 }
             ],
-            start_url: '.',
+            start_url: '/',
             display: 'standalone',
             theme_color: primaryColor,
             background_color: '#0a1628',
