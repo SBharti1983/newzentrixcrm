@@ -1710,7 +1710,7 @@ export default function Academy() {
                     }}>
                     <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                     
-                    <div style={{ position: 'relative', textAlign: 'center', maxWidth: 960, width: '100%', padding: '0 20px' }}>
+                    <div style={{ position: 'relative', textAlign: 'center', width: '100%', padding: '0 20px' }}>
                         <div style={{ width: 60, height: 60, borderRadius: '20px', background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '2px solid rgba(139, 92, 246, 0.3)' }}>
                             <Zap size={30} />
                         </div>
