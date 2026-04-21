@@ -1681,24 +1681,24 @@ export default function Academy() {
                     }}>
                     <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                     
-                    <div style={{ position: 'relative', textAlign: 'center', maxWidth: 960, width: '100%', padding: '0 40px' }}>
-                        <div style={{ width: 80, height: 80, borderRadius: '24px', background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', border: '2px solid rgba(139, 92, 246, 0.3)' }}>
-                            <Zap size={40} />
+                    <div style={{ position: 'relative', textAlign: 'center', maxWidth: 960, width: '100%', padding: '0 20px' }}>
+                        <div style={{ width: 60, height: 60, borderRadius: '20px', background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '2px solid rgba(139, 92, 246, 0.3)' }}>
+                            <Zap size={30} />
                         </div>
-                        <h2 style={{ color: 'white', fontSize: '2.5rem', fontWeight: 950, marginBottom: 16, letterSpacing: '-0.03em' }}>ZenZone: AI Simulator</h2>
-                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '1.1rem', lineHeight: 1.6, marginBottom: 32 }}>
-                            Hone your edge against high-fidelity AI personas. Real-time objection handling, sentiment analysis, and instant closing reports.
+                        <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 950, marginBottom: 8, letterSpacing: '-0.02em' }}>ZenZone: AI Simulator</h2>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: 24, maxWidth: 600, margin: '0 auto 24px' }}>
+                            Hone your edge against high-fidelity AI personas with real-time feedback.
                         </p>
 
-                        <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.05)', padding: '6px', borderRadius: '16px', marginBottom: 40, border: '1px solid rgba(255,255,255,0.1)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '12px', marginBottom: 24, border: '1px solid rgba(255,255,255,0.1)', flexWrap: 'wrap', justifyContent: 'center' }}>
                             {['English', 'Hindi', 'Hinglish'].map(lang => (
                                 <button
                                     key={lang}
                                     onClick={() => setSimLanguage(lang)}
                                     style={{
-                                        padding: isMobile ? '8px 16px' : '8px 24px', borderRadius: '12px', border: 'none',
+                                        padding: isMobile ? '6px 12px' : '6px 18px', borderRadius: '10px', border: 'none',
                                         background: simLanguage === lang ? COLORS.purple : 'transparent',
-                                        color: 'white', fontWeight: 800, fontSize: isMobile ? '0.65rem' : '0.75rem', cursor: 'pointer',
+                                        color: 'white', fontWeight: 800, fontSize: isMobile ? '0.6rem' : '0.7rem', cursor: 'pointer',
                                         transition: 'all 0.2s'
                                     }}
                                 >
@@ -1707,7 +1707,7 @@ export default function Academy() {
                             ))}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: 16, marginBottom: 40, width: '100%' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: 12, marginBottom: 24, width: '100%' }}>
                             {SCENARIOS.map(sc => (
                                 <button 
                                     key={sc.id}
@@ -1754,7 +1754,7 @@ export default function Academy() {
                         </div>
 
                         <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
-                            <button onClick={() => startSimulation(SCENARIOS[0])} style={{ background: COLORS.purple, color: 'white', border: 'none', padding: '18px 48px', borderRadius: '20px', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 10px 25px rgba(139,92,246,0.3)' }}>Quick Start Simulation</button>
+                            <button onClick={() => startSimulation(SCENARIOS[0])} style={{ background: COLORS.purple, color: 'white', border: 'none', padding: '14px 40px', borderRadius: '16px', fontWeight: 900, fontSize: '0.9rem', cursor: 'pointer', boxShadow: '0 8px 20px rgba(139,92,246,0.25)' }}>Quick Start Simulation</button>
                         </div>
                     </div>
                     </div>
