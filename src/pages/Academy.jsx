@@ -438,11 +438,16 @@ export default function Academy() {
                 if (error === 'no-speech' || error === 'aborted') return;
 
                 if (error === 'not-allowed' || error === 'service-not-allowed') {
-                    showToast('Microphone blocked! Please check browser permissions or other apps.', 'error');
+                    const advice = error === 'service-not-allowed' 
+                        ? 'Mic blocked by system (possibly Screen Recording). Please stop other recording apps and tap the Mic button to retry.' 
+                        : 'Microphone permission denied. Please allow access in browser settings.';
+                    showToast(advice, 'error');
                     setIsHandsFree(false);
                     isHandsFreeRef.current = false;
                     setIsListening(false);
                     isListeningRef.current = false;
+                    // Tag the state as 'emergency_stopped' to allow the toggle to act as a reset
+                    recognitionRef.current = null;
                     return;
                 }
 
@@ -533,9 +538,20 @@ export default function Academy() {
     };
 
     const toggleListening = () => {
+        // If we are in an error state or recognition is null, force a full reset
+        if (!recognitionRef.current || (!isListening && isHandsFree)) {
+            console.log('[Voice] Force Resetting Mic Engine...');
+            window.speechSynthesis.cancel();
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort(); } catch(e) {}
+                recognitionRef.current = null;
+            }
+            startListening();
+            return;
+        }
+
         if (isListeningRef.current) {
             stopListening();
-            // We no longer turn off Hands-Free here to allow "pause and resume" without breaking the automation
         } else {
             startListening();
         }
