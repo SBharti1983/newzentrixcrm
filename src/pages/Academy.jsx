@@ -432,9 +432,20 @@ export default function Academy() {
             };
 
             recognition.onerror = (event) => {
-                if (event.error === 'no-speech' || event.error === 'aborted') return;
-                console.error('[Voice] Recognition error:', event.error);
-                if (event.error === 'not-allowed') showToast('Microphone access blocked. Please allow mic in browser settings.', 'error');
+                const error = event.error;
+                console.error('[Voice] Recognition error:', error);
+                
+                if (error === 'no-speech' || error === 'aborted') return;
+
+                if (error === 'not-allowed' || error === 'service-not-allowed') {
+                    showToast('Microphone blocked! Please check browser permissions or other apps.', 'error');
+                    setIsHandsFree(false);
+                    isHandsFreeRef.current = false;
+                    setIsListening(false);
+                    isListeningRef.current = false;
+                    return;
+                }
+
                 setIsListening(false);
                 isListeningRef.current = false;
             };
@@ -500,13 +511,15 @@ export default function Academy() {
                 recognition.start();
             }
         } catch (e) {
-            if (e.name === 'NotAllowedError') {
-                showToast('Microphone blocked. Please allow mic access in your browser settings.', 'error');
+            if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+                showToast('Microphone access blocked in browser.', 'error');
+                setIsHandsFree(false);
+                isHandsFreeRef.current = false;
             } else if (e.name === 'InvalidStateError' || (e.message && e.message.includes('already started'))) {
                 setIsListening(true);
                 isListeningRef.current = true;
             } else {
-                console.error('[Voice] Mike Error:', e);
+                console.error('[Voice] Mic Start Error:', e);
             }
         }
     };
