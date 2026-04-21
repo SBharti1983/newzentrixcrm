@@ -1690,7 +1690,7 @@ export default function Academy() {
                     <div style={{ 
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'linear-gradient(45deg, #0f172a, #1e293b)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)',
-                        position: 'relative', overflow: 'hidden', padding: '32px 24px'
+                        position: 'relative', padding: '32px 24px'
                     }}>
                     <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                     
@@ -1720,7 +1720,7 @@ export default function Academy() {
                             ))}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 20, width: '100%' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 20, width: '100%' }}>
                             {SCENARIOS.map(sc => (
                                 <button 
                                     key={sc.id}
