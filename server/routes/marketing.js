@@ -243,4 +243,39 @@ router.patch('/chatbot', async (req, res) => {
     }
 });
 
+// POST /api/marketing/generate-template - AI Campaign Generator
+router.post('/generate-template', async (req, res) => {
+    const { goal, segment } = req.body;
+    const { generateAIResponse } = require('../utils/ai');
+
+    try {
+        const prompt = `
+            SYSTEM: You are a high-performance Real Estate Marketing Director at Zentrix CRM.
+            Your goal is to generate 3 distinct WhatsApp message variations that are high-converting, professional, and personalized for the Indian market.
+            
+            GOAL: ${goal}
+            TARGET SEGMENT: ${segment}
+            
+            GUIDELINES:
+            1. Use emojis strategically (not excessively).
+            2. Keep it concise (WhatsApp format).
+            3. Use {{name}} as the placeholder for the first name.
+            4. Include a clear "Call to Action" (CTA).
+            
+            Return ONLY a JSON array of objects:
+            [
+              { "title": "Variation Name", "body": "The message text" },
+              { "title": "Variation Name", "body": "The message text" },
+              { "title": "Variation Name", "body": "The message text" }
+            ]
+        `;
+
+        const variations = await generateAIResponse(prompt, true);
+        res.json(variations);
+    } catch (err) {
+        console.error('[AI-Marketing] Template generation failed:', err);
+        res.status(500).json({ error: 'AI failed to generate templates' });
+    }
+});
+
 module.exports = router;

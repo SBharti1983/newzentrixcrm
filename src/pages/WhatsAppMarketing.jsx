@@ -115,9 +115,13 @@ export default function WhatsAppMarketing() {
     const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 1000 }));
     const leads = leadsRes?.data || [];
 
-    // Chatbot State
     const [chatbot, setChatbot] = useState(null);
     const [_savingBot, setSavingBot] = useState(false);
+
+    // AI Generator State
+    const [aiGoal, setAiGoal] = useState('');
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+    const [aiVariations, setAiVariations] = useState([]);
 
     useEffect(() => {
         const styleEl = document.createElement('style');
@@ -168,6 +172,23 @@ export default function WhatsAppMarketing() {
             showToast('Update failed', 'error');
         } finally {
             setSavingBot(false);
+        }
+    };
+
+    const handleGenerateAITemplates = async () => {
+        if (!aiGoal) return showToast('Please define a goal first', 'warning');
+        setIsGeneratingAI(true);
+        try {
+            const res = await marketingApi.generateCampaignTemplate({
+                goal: aiGoal,
+                segment: broadcastForm.segment
+            });
+            setAiVariations(res);
+            showToast('AI synthesized 3 variations!', 'success');
+        } catch (err) {
+            showToast('AI failed to generate templates', 'error');
+        } finally {
+            setIsGeneratingAI(false);
         }
     };
 
@@ -246,22 +267,75 @@ export default function WhatsAppMarketing() {
                         >
                             <Rocket size={32} strokeWidth={2.5} style={{ marginBottom: '12px' }} />
                             <div style={{ fontWeight: 900, fontSize: '1rem' }}>Initiate Campaign</div>
-                        </button>
+                        </div>
                     </div>
 
                     {/* 🚀 Campaign Launcher */}
                     {isCreating && (
-                        <div className="premium-card" style={{ padding: '40px', border: `2px solid ${COLORS.indigo}` }}>
+                        <div className="premium-card" style={{ padding: '40px', border: `2px solid ${COLORS.indigo}`, marginBottom: '40px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950, color: COLORS.slate950 }}>New Strategic Broadcast</h3>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950, color: COLORS.slate950 }}>New Strategic Broadcast</h3>
+                                    <p style={{ margin: '4px 0 0', color: COLORS.slate500, fontSize: '0.85rem', fontWeight: 600 }}>Craft a high-frequency campaign manually or use AI Intelligence.</p>
+                                </div>
                                 <button onClick={() => setIsCreating(false)} style={{ background: COLORS.slate100, border: 'none', width: 40, height: 40, borderRadius: '12px', cursor: 'pointer' }}><X size={20} /></button>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '40px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.2fr)', gap: '48px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Campaign Persona</label>
-                                        <input className="input-field" value={broadcastForm.name} onChange={e => setBroadcastForm({...broadcastForm, name: e.target.value})} placeholder="e.g. Premium Penthouse Launch" />
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Campaign Name</label>
+                                        <input className="input-field" value={broadcastForm.name} onChange={e => setBroadcastForm({...broadcastForm, name: e.target.value})} placeholder="e.g. M3M Antalya Hills Launch" />
                                     </div>
+                                    
+                                    <div style={{ padding: '24px', background: `${COLORS.indigo}05`, borderRadius: '24px', border: `1px solid ${COLORS.indigo}15` }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', color: COLORS.indigo }}>
+                                            <Sparkles size={18} />
+                                            <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>AI Template Generator</span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <input 
+                                                className="input-field" 
+                                                style={{ border: 'none', background: 'white', fontSize: '0.85rem' }} 
+                                                value={aiGoal} 
+                                                onChange={e => setAiGoal(e.target.value)} 
+                                                placeholder="What's the goal? (e.g. invite to site visit)" 
+                                            />
+                                            <button 
+                                                onClick={handleGenerateAITemplates}
+                                                disabled={isGeneratingAI}
+                                                style={{ 
+                                                    width: '100%', padding: '14px', borderRadius: '14px', border: 'none', 
+                                                    background: COLORS.indigo, color: 'white', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 
+                                                }}
+                                            >
+                                                {isGeneratingAI ? <RotateCw className="animate-spin" size={16} /> : <Cpu size={16} />}
+                                                {isGeneratingAI ? 'Synthesizing...' : 'Generate AI Variations'}
+                                            </button>
+                                        </div>
+
+                                        {aiVariations.length > 0 && (
+                                            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                {aiVariations.map((v, i) => (
+                                                    <div 
+                                                        key={i} 
+                                                        onClick={() => setBroadcastForm({...broadcastForm, message_body: v.body})}
+                                                        style={{ 
+                                                            padding: '16px', background: 'white', borderRadius: '14px', border: `1.5px solid ${broadcastForm.message_body === v.body ? COLORS.indigo : 'transparent'}`,
+                                                            cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+                                                        }}
+                                                    >
+                                                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: COLORS.indigo, textTransform: 'uppercase', marginBottom: '4px' }}>{v.title}</div>
+                                                        <div style={{ fontSize: '0.8rem', color: COLORS.slate600, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{v.body}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Target Segment</label>
                                         <select className="input-field" value={broadcastForm.segment} onChange={e => setBroadcastForm({...broadcastForm, segment: e.target.value})}>
@@ -271,16 +345,16 @@ export default function WhatsAppMarketing() {
                                             <option>Hot Leads (Score &gt; 80)</option>
                                         </select>
                                     </div>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Message Architecture (supports {"{{name}}"})</label>
-                                    <textarea className="input-field" style={{ height: '160px', resize: 'none' }} value={broadcastForm.message_body} onChange={e => setBroadcastForm({...broadcastForm, message_body: e.target.value})} placeholder="Hello {{name}}! We are thrilled to invite you..." />
-                                    <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-                                        <button onClick={handleCreateBroadcast} style={{ 
-                                            flex: 2, padding: '16px', borderRadius: '18px', border: 'none', background: COLORS.slate950, 
-                                            color: 'white', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 12px 24px rgba(15,23,42,0.2)' 
-                                        }}>Launch Mission</button>
-                                        <button onClick={() => setIsCreating(false)} style={{ flex: 1, padding: '16px', borderRadius: '18px', border: `2px solid ${COLORS.slate200}`, background: 'transparent', fontWeight: 900, cursor: 'pointer' }}>Save Draft</button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.slate500, textTransform: 'uppercase' }}>Message Body (Protocol)</label>
+                                        <textarea className="input-field" style={{ height: '180px', resize: 'none', background: '#fafafa' }} value={broadcastForm.message_body} onChange={e => setBroadcastForm({...broadcastForm, message_body: e.target.value})} placeholder="Message content..." />
+                                        <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+                                            <button onClick={handleCreateBroadcast} style={{ 
+                                                flex: 2, padding: '18px', borderRadius: '18px', border: 'none', background: COLORS.slate950, 
+                                                color: 'white', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', boxShadow: '0 12px 24px rgba(15,23,42,0.2)' 
+                                            }}>Launch Campaign</button>
+                                            <button onClick={() => setIsCreating(false)} style={{ flex: 1, padding: '18px', borderRadius: '18px', border: `2px solid ${COLORS.slate200}`, background: 'transparent', fontWeight: 800, cursor: 'pointer' }}>Cancel</button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
