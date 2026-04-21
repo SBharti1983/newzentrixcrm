@@ -8,10 +8,10 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 
 // In dev mode or on localhost, use relative '/api' so requests go through the Vite proxy.
 // In production (non-localhost), use the full Railway backend URL.
-const defaultApiUrl = '/api';
+const defaultApiUrl = typeof window !== 'undefined' ? `${window.location.origin}/api` : '/api';
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
-console.log('[API MODE] Host:', window.location.hostname, '| isLocal:', isLocal, '| Target:', BASE_URL);
+console.log('[API MODE] Host:', typeof window !== 'undefined' ? window.location.hostname : 'ssr', '| Target:', BASE_URL);
 console.log('[API DEBUG] Base URL Mode:', isLocal ? 'Local' : 'Remote', '| Resolved:', BASE_URL);
 
 // For public endpoints (doesn't require auth token)
@@ -40,48 +40,57 @@ async function api(path, options = {}) {
     };
 
     const fullUrl = `${BASE_URL}${path}`;
-    const res = await fetch(fullUrl, {
-        ...options,
-        headers,
-        body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
-    });
+    try {
+        const res = await fetch(fullUrl, {
+            ...options,
+            headers,
+            body: options.body instanceof FormData ? options.body : (options.body ? JSON.stringify(options.body) : undefined),
+        });
 
-    // Handle 401 — token expired → try to refresh (except for login/register)
-    if (res.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/register')) {
-        const refreshed = await tryRefresh();
-        if (refreshed) {
-            // Retry once with new token
-            const retryRes = await fetch(`${BASE_URL}${path}`, {
-                ...options,
-                headers: { ...headers, Authorization: `Bearer ${getToken()}` },
-                body: options.body ? JSON.stringify(options.body) : undefined,
-            });
-            if (!retryRes.ok) throw await retryRes.json();
-            return retryRes.json();
-        } else {
-            clearTokens();
-            window.location.href = '/login';
-            throw new Error('Session expired');
-        }
-    }
-
-    if (res.status === 403) {
-        try {
-            const clone = res.clone();
-            const json = await clone.json();
-            if (json.code === 'ACCOUNT_LOCKED') {
-                window.dispatchEvent(new CustomEvent('zentrix_lockout'));
+        // Handle 401 — token expired → try to refresh (except for login/register)
+        if (res.status === 401 && !path.includes('/auth/login') && !path.includes('/auth/register')) {
+            const refreshed = await tryRefresh();
+            if (refreshed) {
+                // Retry once with new token
+                const retryRes = await fetch(`${BASE_URL}${path}`, {
+                    ...options,
+                    headers: { ...headers, Authorization: `Bearer ${getToken()}` },
+                    body: options.body ? JSON.stringify(options.body) : undefined,
+                });
+                if (!retryRes.ok) throw await retryRes.json();
+                return retryRes.json();
+            } else {
+                clearTokens();
+                window.location.href = '/login';
+                throw new Error('Session expired');
             }
-        } catch (e) {}
-    }
+        }
 
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-        console.error(`[API ERROR] Path: ${path} | Status: ${res.status}`, err);
-        throw err;
-    }
+        if (res.status === 403) {
+            try {
+                const clone = res.clone();
+                const json = await clone.json();
+                if (json.code === 'ACCOUNT_LOCKED') {
+                    window.dispatchEvent(new CustomEvent('zentrix_lockout'));
+                }
+            } catch (e) {}
+        }
 
-    return res.json();
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+            console.error(`[API ERROR] Path: ${path} | Status: ${res.status}`, err);
+            throw err;
+        }
+
+        return res.json();
+    } catch (e) {
+        if (e.message === 'Failed to fetch') {
+            const diag = `Network Error (Failed to fetch). Target: ${fullUrl}. Check if your backend is alive and CORS is allowed.`;
+            console.error(diag);
+            throw new Error(diag);
+        }
+        throw e;
+    }
 }
 
 async function tryRefresh() {
