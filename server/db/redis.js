@@ -34,6 +34,14 @@ redisClient.connect().catch((err) => {
     console.warn(`[REDIS] Local server not running. Bypass mode active.`);
 });
 
+// Helper to wrap promise with a timeout
+const withTimeout = (promise, ms) => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis timeout')), ms))
+    ]);
+};
+
 /**
  * Safe execution wrapper. If Redis is down, it bypasses silently.
  */
@@ -41,7 +49,7 @@ const cacheDb = {
     async get(key) {
         if (!redisClient.isReady) return null;
         try {
-            return await redisClient.get(key);
+            return await withTimeout(redisClient.get(key), 2000);
         } catch (e) {
             return null;
         }
@@ -49,26 +57,28 @@ const cacheDb = {
     async setEx(key, seconds, value) {
         if (!redisClient.isReady) return;
         try {
-            await redisClient.setEx(key, seconds, value);
+            await withTimeout(redisClient.setEx(key, seconds, value), 2000);
         } catch (e) {
             // ignore
         }
     },
     async del(keyPattern) {
         if (!redisClient.isReady) return;
+        
         try {
             // For simple keys
             if (!keyPattern.includes('*')) {
-                await redisClient.del(keyPattern);
+                await withTimeout(redisClient.del(keyPattern), 2000);
                 return;
             }
             // For wildcards (Note: in production using SCAN is better than KEYS)
-            const keys = await redisClient.keys(keyPattern);
-            if (keys.length > 0) {
-                await redisClient.del(keys);
+            const keys = await withTimeout(redisClient.keys(keyPattern), 2000);
+            if (keys && keys.length > 0) {
+                // Batch delete
+                await withTimeout(redisClient.del(keys), 2000);
             }
         } catch (e) {
-            console.error('[REDIS DEL ERR]', e);
+            console.warn('[REDIS DEL ERR]', e.message);
         }
     }
 };

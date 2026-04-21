@@ -112,6 +112,42 @@ io.on('connection', (socket) => {
         presence.users.delete(user_id);
         broadcastPresence();
     });
+
+    // --- Academy Dual Roleplay Events ---
+    socket.on('academy_battle_invite', ({ toUserId, scenarioId }) => {
+        const target = presence.users.get(toUserId);
+        if (target) {
+            io.to(target.socketId).emit('academy_battle_challenge', { 
+                fromUser: { id: user_id, name, avatar },
+                scenarioId 
+            });
+        }
+    });
+
+    socket.on('academy_battle_accept', ({ challengerId, scenarioId }) => {
+        const challenger = presence.users.get(challengerId);
+        if (challenger) {
+            const roomName = `battle_${challengerId}_${user_id}`;
+            socket.join(roomName);
+            // We need to tell the challenger to join too
+            io.to(challenger.socketId).emit('academy_battle_join_room', { roomName, partnerId: user_id, role: 'seller' });
+            socket.emit('academy_battle_join_room', { roomName, partnerId: challengerId, role: 'buyer' });
+            
+            // Notify both to start
+            setTimeout(() => {
+                io.to(roomName).emit('academy_battle_start', { scenarioId });
+            }, 1000);
+        }
+    });
+
+    socket.on('academy_battle_sync', ({ roomName, message }) => {
+        // Broadcast to everyone in the room except the sender
+        socket.to(roomName).emit('academy_battle_sync', { message });
+    });
+
+    socket.on('academy_battle_end', ({ roomName }) => {
+        io.to(roomName).emit('academy_battle_end');
+    });
 });
 
 // ─── Security & Middleware ────────────────────────────────────────

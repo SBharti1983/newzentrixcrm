@@ -1,7 +1,5 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateAIResponse } = require('../utils/ai');
 const pool = require('../db/pool');
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
  * AIScreener handles the "First Handshake" with new leads.
@@ -13,8 +11,8 @@ class AIScreener {
     async triggerHandshake(lead, io) {
         const { tenant_id, id: lead_id, name, phone, source, project_id } = lead;
         
-        if (!phone || !process.env.GEMINI_API_KEY) {
-            console.log('[AI Screener] Skipping handshake: No phone or API Key.');
+        if (!phone) {
+            console.log('[AI Screener] Skipping handshake: No phone.');
             return;
         }
 
@@ -27,7 +25,6 @@ class AIScreener {
             }
 
             // 2. Draft personalized message using AI
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const prompt = `
                 You are a friendly, professional Real Estate Concierge for ZentrixCRM. 
                 A new lead just signed up from ${source} ${projectContext}.
@@ -40,8 +37,7 @@ class AIScreener {
                 Keep it conversational, professional, and under 160 characters. No placeholders like [Agent Name]. Use 'the Zentrix Team'.
             `;
 
-            const result = await model.generateContent(prompt);
-            const message = result.response.text().trim();
+            const message = await generateAIResponse(prompt, null, 'greeting');
 
             // 3. Record in notifications (Simulating WhatsApp Outbound)
             await pool.query(
@@ -81,7 +77,6 @@ class AIScreener {
             const { rows: [lead] } = await pool.query('SELECT * FROM leads WHERE id = $1', [leadId]);
             if (!lead) return;
 
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             const prompt = `
                 You are a Lead Analyst. Extract structured data from this customer reply:
                 Reply: "${replyText}"
@@ -95,15 +90,8 @@ class AIScreener {
                 Example: {"intent": 8, "budget_info": "75L", "user_use": "Investment", "summary": "Interested in 2BHK for investment."}
             `;
 
-            const result = await model.generateContent(prompt);
-            let aiData;
-            try {
-                const text = result.response.text().trim().replace(/^```json/, '').replace(/```$/, '');
-                aiData = JSON.parse(text);
-            } catch (e) {
-                console.error('[AI Screener] Parse failed:', result.response.text());
-                return;
-            }
+            const aiData = await generateAIResponse(prompt, null, 'json');
+            if (!aiData) return;
 
             // Update lead with AI findings
             const updates = [];

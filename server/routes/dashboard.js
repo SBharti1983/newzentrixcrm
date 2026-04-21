@@ -222,7 +222,18 @@ router.get('/', cacheResponse(300), async (req, res) => {
                 JOIN projects p ON l.project_id = p.id
                 WHERE l.tenant_id = $1 ${effectivePersonal ? ' AND l.assigned_to = $2' : (downlineIds.length ? ' AND l.assigned_to = ANY($2)' : '')}
                 GROUP BY p.id, p.name
-                ORDER BY lead_count DESC LIMIT 3`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid]))
+                ORDER BY lead_count DESC LIMIT 3`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
+
+            // 🔥 Academy Stats (Level, XP, Certs, Performance)
+            pool.query(`
+                SELECT json_build_object(
+                    'total_xp', COALESCE(total_xp, 0),
+                    'level', (COALESCE(total_xp, 0) / 1000) + 1,
+                    'certifications', (SELECT COUNT(*) FROM training_progress WHERE user_id = $1 AND is_certified = TRUE),
+                    'avg_sim_score', (SELECT COALESCE(ROUND(AVG(best_score)), 0) FROM training_progress WHERE user_id = $1 AND best_score > 0)
+                ) as academy_stats
+                FROM users WHERE id = $1
+            `, [targetUserId])
         ];
 
         // Only fetch members list in global mode
@@ -265,10 +276,11 @@ router.get('/', cacheResponse(300), async (req, res) => {
             executeQuery(queries[10], 'ActiveDeals'),
             executeQuery(queries[11], 'AssignedTeam'),
             executeQuery(queries[12], 'TopProjects'),
-            queries[13] ? executeQuery(queries[13], 'Members') : Promise.resolve({ rows: [] })
+            executeQuery(queries[13], 'AcademyStats'),
+            queries[14] ? executeQuery(queries[14], 'Members') : Promise.resolve({ rows: [] })
         ]);
         
-        const [kpiResult, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, activeDeals, assignedTeam, topProjects, membersResult] = results;
+        const [kpiResult, stages, followups, nurture, sentiment, alerts, trends, agentStats, projectHeatmap, agentHeatmap, activeDeals, assignedTeam, topProjects, academyResult, membersResult] = results;
         const kpis = kpiResult.rows[0] || {};
 
         res.json({
@@ -300,6 +312,7 @@ router.get('/', cacheResponse(300), async (req, res) => {
             active_deals: activeDeals.rows,
             assigned_team: assignedTeam.rows,
             top_projects: topProjects.rows,
+            academy: (academyResult.rows[0]?.academy_stats) || { total_xp: 0, level: 1, certifications: 0, avg_sim_score: 0 },
             members: membersResult.rows
         });
     } catch (err) {

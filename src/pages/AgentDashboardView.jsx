@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
     Phone, Mail, Calendar, MapPin, CalendarCheck, ChevronDown, 
     Bell, Search, MessageSquare, Flame, TrendingUp, Clock, UserCheck, 
-    ChevronRight, Users, LayoutDashboard, Briefcase, Sparkles,
-    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone
+    ChevronRight, Users, LayoutDashboard, Briefcase, Sparkles, GraduationCap, Award, ShieldCheck,
+    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone, Zap
 } from 'lucide-react';
 import { useMobile } from '../hooks/useMobile';
 
@@ -303,6 +303,65 @@ const ActiveDealsCard = ({ deals = [] }) => (
     </div>
 );
 
+
+const AcademyCard = ({ xp = 0, level = 1, certifications = 0, score = 0, onClick }) => (
+    <div 
+        onClick={onClick}
+        style={{ 
+            background: 'linear-gradient(135deg, #4f46e5, #8b5cf6)', borderRadius: '24px', padding: '24px', 
+            color: 'white', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1,
+            boxShadow: '0 10px 25px -5px rgba(139, 92, 246, 0.4)', position: 'relative', overflow: 'hidden',
+            cursor: 'pointer'
+        }}
+        className="hover-lift"
+    >
+        <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.15 }}>
+            <GraduationCap size={120} />
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '12px' }}>
+                    <ShieldCheck size={20} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', opacity: 0.8 }}>Zentrix Rank</span>
+                    <span style={{ fontSize: '1rem', fontWeight: 950 }}>Level {level} Closer</span>
+                </div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.2)', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 900 }}>
+                {(parseInt(xp)||0).toLocaleString()} XP
+            </div>
+        </div>
+
+        <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700, marginBottom: '8px' }}>
+                <span>XP Progress</span>
+                <span>{((xp % 1000)/1000 * 100).toFixed(0)}% to Level {level + 1}</span>
+            </div>
+            <div style={{ height: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${(xp % 1000)/1000 * 100}%`, height: '100%', background: '#fff', borderRadius: '4px' }} />
+            </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', position: 'relative', zIndex: 1 }}>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '12px', borderRadius: '16px', backdropFilter: 'blur(4px)' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 950 }}>{certifications}</div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.8 }}>Certifications</div>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.1)', padding: '12px', borderRadius: '16px', backdropFilter: 'blur(4px)' }}>
+                <div style={{ fontSize: '1.2rem', fontWeight: 950 }}>{score}%</div>
+                <div style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.8 }}>Avg. Sim Score</div>
+            </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', position: 'relative', zIndex: 1 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Objection Master"><Zap size={16} /></div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="HNI Expert"><Award size={16} /></div>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900 }}>+3</div>
+        </div>
+    </div>
+);
 
 // --- MAIN DASHBOARD VIEW ---
 export default function AgentDashboardView({ user, data = {}, recentLeads = [], loading }) {
@@ -627,7 +686,16 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
 
 
             {/* Bottom Section */}
-            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 2fr 1.2fr', gap: '16px' }}>
+            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1.5fr 1.5fr 1.2fr', gap: '16px' }}>
+                
+                {/* Academy Progress Card */}
+                <AcademyCard 
+                    xp={stats.academy?.total_xp} 
+                    level={stats.academy?.level} 
+                    certifications={stats.academy?.certifications} 
+                    score={stats.academy?.avg_sim_score}
+                    onClick={() => navigate('/academy')} 
+                />
                 
                 {/* Activities */}
                 <div style={{ 

@@ -319,8 +319,19 @@ router.get('/me', require('../middleware/auth'), async (req, res) => {
             ...user,
             features: user.settings?.features || {}
         });
-    } catch (_err) {
-        res.status(500).json({ error: 'Failed to fetch profile' });
+    } catch (err) {
+        console.error('CRITICAL [AUTH] GET /me error:', {
+            message: err.message,
+            code: err.code,
+            detail: err.detail,
+            stack: err.stack,
+            userId: req.user?.id
+        });
+        res.status(500).json({ 
+            error: 'Failed to fetch profile',
+            details: err.message,
+            code: err.code 
+        });
     }
 });
 

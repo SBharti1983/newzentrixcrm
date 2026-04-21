@@ -1,38 +1,21 @@
 const { Pool } = require('pg');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const config = require('../config/secrets');
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-// Detect Supabase IPv6-only hostname and suggest/use pooler for IPv4 compatibility (Railway fix)
-let connectionString = process.env.DATABASE_URL;
+let connectionString = config.database.connectionString;
 
 if (connectionString && (connectionString.includes('supabase.co') || connectionString.includes('supabase.com'))) {
     console.log('⚠️  Detecting Supabase connection. Optimizing for IPv4/Pooler compatibility...');
     
     try {
         const url = new URL(connectionString);
-        
-        // 1. Force use of the IPv4-compatible pooler host for the Mumbai region
-        // Note: Project uvnkbewvpewocaqzysqb uses cluster aws-1
         url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
-
-        
-        // 2. Use Transaction Mode port (6543) or Session Mode (5432). 
-        // 6543 is standard for poolers.
         url.port = '6543';
 
-        
-        // 3. Ensure username includes the project ref (required by pooler)
         if (!url.username.includes('uvnkbewvpewocaqzysqb')) {
             url.username = 'postgres.uvnkbewvpewocaqzysqb';
         }
         
-        // 4. Critical: The URL class will automatically percent-encode the password
-        // This fixes issues if the password contains '@', which confuses simpler parsers.
         connectionString = url.toString();
-
-        // Log masked version for verification
         const masked = connectionString.replace(/:([^:@]+)@/, ':****@');
         console.log('✅ Optimized Connection String:', masked);
     } catch (e) {
@@ -40,25 +23,12 @@ if (connectionString && (connectionString.includes('supabase.co') || connectionS
     }
 }
 
-
-
-
-const poolConfig = connectionString 
-    ? { connectionString }
-    : {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT) || 5432,
-        database: process.env.DB_NAME || 'zentrixcrm',
-        user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD,
-    };
-
 const pool = new Pool({
-    ...poolConfig,
+    connectionString,
     max: 20, 
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
-    ssl: (isProduction || connectionString) ? { rejectUnauthorized: false } : false,
+    ssl: config.database.ssl,
 });
 
 pool.connect((err, client, release) => {

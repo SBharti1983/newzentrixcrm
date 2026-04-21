@@ -36,8 +36,8 @@ const fileFilter = (req, file, cb) => {
         'application/vnd.ms-powerpoint',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'text/csv',
-        'audio/wav', 'audio/mpeg', 'audio/x-wav', 'audio/mp3', 'audio/ogg', 'audio/m4a',
-        'video/mp4', 'video/mpeg', 'video/quicktime'
+        'audio/wav', 'audio/mpeg', 'audio/x-wav', 'audio/mp3', 'audio/ogg', 'audio/m4a', 'audio/webm',
+        'video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'
     ];
     if (allowed.includes(file.mimetype)) {
         cb(null, true);

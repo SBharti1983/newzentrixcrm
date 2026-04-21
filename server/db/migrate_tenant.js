@@ -201,6 +201,34 @@ async function migrate() {
                     console.log(`  ✓ Installments: ${inst.length}`);
                 }
             } catch (e) { console.log(`  - Installments: skipped`); }
+
+            // -- ACADEMY: MODULES --
+            try {
+                const { rows: mods } = await neonClient.query('SELECT * FROM training_modules WHERE tenant_id = $1', [tid]);
+                const modCount = await bulkInsert(supaClient, 'training_modules', mods);
+                console.log(`  ✓ Training Modules: ${modCount}`);
+            } catch (e) { console.log(`  - Training Modules: skipped (${e.message.slice(0,50)})`); }
+
+            // -- ACADEMY: PROGRESS --
+            try {
+                const { rows: prog } = await neonClient.query('SELECT * FROM training_progress WHERE tenant_id = $1', [tid]);
+                const progCount = await bulkInsert(supaClient, 'training_progress', prog);
+                console.log(`  ✓ Training Progress: ${progCount}`);
+            } catch (e) { console.log(`  - Training Progress: skipped (${e.message.slice(0,50)})`); }
+
+            // -- ACADEMY: BATTLE CARDS --
+            try {
+                const { rows: cards } = await neonClient.query('SELECT * FROM project_battle_cards WHERE tenant_id = $1', [tid]);
+                const cardCount = await bulkInsert(supaClient, 'project_battle_cards', cards);
+                console.log(`  ✓ Battle Cards: ${cardCount}`);
+            } catch (e) { console.log(`  - Battle Cards: skipped (${e.message.slice(0,50)})`); }
+
+            // -- ACADEMY: SIM REPORTS --
+            try {
+                const { rows: reports } = await neonClient.query('SELECT * FROM simulation_reports WHERE tenant_id = $1', [tid]);
+                const reportCount = await bulkInsert(supaClient, 'simulation_reports', reports);
+                console.log(`  ✓ Sim Reports: ${reportCount}`);
+            } catch (e) { console.log(`  - Sim Reports: skipped (${e.message.slice(0,50)})`); }
         }
 
         await supaClient.query('COMMIT');

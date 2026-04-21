@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader, PageError } from '../components/Feedback';
 import { leadsApi, projectsApi, usersApi, notificationsApi, channelPartnersApi } from '../api/client';
-import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar, Upload } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../hooks/useAuth';
 import ContactPreviewSidebar from '../components/ContactPreviewSidebar';
@@ -371,14 +371,26 @@ export default function Leads() {
                 showToast('Lead updated successfully', 'success');
                 await fetchLeads();
             } else {
-                await leadsApi.create(sanitized);
+                const created = await leadsApi.create(sanitized);
                 showToast('Lead added successfully', 'success');
+                // Optimistic UI update: prepend the new lead to the list immediately
+                if (created) {
+                    setLeadsRes(prev => ({
+                        ...prev,
+                        data: [created, ...(prev?.data || [])],
+                        total: (prev?.total || 0) + 1
+                    }));
+                }
                 setSearch('');
                 setDebouncedSearch('');
+                setFilterStage('All');
+                setFilterStatus('All');
+                setFilterSource('All');
+                setFilterAgent('All');
+                setFilterNurtureDue(false);
                 setPage(1);
-                // Explicitly call with Page 1 and Empty Search to prevent race conditions 
-                // between state updates and the network request closure.
-                await fetchLeads(1, ''); 
+                // Re-fetch in background to ensure all calculated fields (assigned_to name, etc) are loaded
+                fetchLeads(1, '').catch(() => {}); 
             }
             setShowModal(false);
         } catch (err) {
@@ -504,7 +516,7 @@ export default function Leads() {
                         <RotateCw size={14} className={leadsLoading ? 'animate-spin' : ''} /> Refresh
                     </button>
                     <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading} style={{ flex: isMobile ? 1 : 'none' }}>
-                        <Filter size={14} /> Import
+                        <Upload size={14} /> Import
                     </button>
                     <button className="btn btn-primary btn-sm" onClick={openAdd} style={{ flex: isMobile ? 1 : 'none' }}>
                         <Plus size={15} /> Add Lead

@@ -8,8 +8,8 @@ const pool = new Pool({
 
 async function run() {
     try {
-        // 1. Find an existing admin
-        const { rows: admins } = await pool.query("SELECT id, tenant_id FROM users WHERE role IN ('admin', 'superadmin') LIMIT 1");
+        // 1. Find the local admin
+        const { rows: admins } = await pool.query("SELECT id, tenant_id FROM users WHERE email = 'arjun@zentrix.com' LIMIT 1");
         if (!admins.length) return console.log('No Admin found');
         const tid = admins[0].tenant_id;
         const aid = admins[0].id;

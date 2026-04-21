@@ -232,8 +232,9 @@ router.get('/:id', async (req, res) => {
 // GET /api/leads — list with filters + search + pagination
 router.get('/', (req, res, next) => {
     // Only use cache for non-search list requests
-    if (req.query.q) return next();
-    return cacheResponse(60)(req, res, next);
+    // if (req.query.q) return next();
+    // return cacheResponse(60)(req, res, next);
+    return next();
 }, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
@@ -440,8 +441,8 @@ function emptyToNull(val) {
 
 // POST /api/leads
 router.post('/', validateLead, async (req, res) => {
-    try {
-        // Plan limit enforcement
+    try {        // Plan limit enforcement
+        console.log(`[POST /leads] Starting lead creation for tenant ${req.tenantId}...`);
         const { rows: [tenant] } = await pool.query(`SELECT max_leads FROM tenants WHERE id=$1`, [req.tenantId]);
         if (!tenant) {
             return res.status(400).json({ error: 'Tenant not found' });
@@ -457,7 +458,8 @@ router.post('/', validateLead, async (req, res) => {
             nurture_reason, reconnect_date
         } = req.body;
 
-        // Safety check: name and phone are mandatory
+        console.log(`[POST /leads] Data received for: ${name} (${phone})`);
+
         if (!name || !phone) {
             return res.status(400).json({ error: 'Name and phone are required' });
         }
@@ -465,6 +467,7 @@ router.post('/', validateLead, async (req, res) => {
         // Duplicate check by phone within tenant
         const dup = await pool.query(`SELECT id FROM leads WHERE tenant_id=$1 AND phone=$2`, [req.tenantId, phone]);
         if (dup.rows.length) {
+            console.log(`[POST /leads] Duplicate detected: ${phone}`);
             return res.status(409).json({ error: 'A lead with this phone number already exists.', existing_id: dup.rows[0].id });
         }
 
@@ -511,43 +514,48 @@ router.post('/', validateLead, async (req, res) => {
                 }
             }
 
-            // Activity log
-            try {
-                await client.query(
-                    `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-                     VALUES ($1,$2,'lead',$3,'created',$4)`,
-                    [req.tenantId, req.user.id, rows[0].id, JSON.stringify(rows[0])]
-                );
-            } catch (logErr) {
-                console.error('[Activity Log] Non-critical error:', logErr.message);
-            }
+            await client.query('COMMIT');
+            
+            // --- NON-BLOCKING BACKGROUND TASKS ---
+            
+            // 1. Activity Log
+            pool.query(
+                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
+                 VALUES ($1, $2, 'lead', $3, 'created', $4)`,
+                [req.tenantId, req.user.id, newLead.id, JSON.stringify(newLead)]
+            ).catch(err => console.error('[Activity Log] Background error:', err.message));
 
-            if (assigned_to && String(assigned_to) !== String(req.user.id) && req.io) {
-                req.io.to(`user_${assigned_to}`).emit('notification', {
+            // 2. Trigger automated workflows
+            automationService.handleLeadCreate(newLead, req.io).catch(err => {
+                console.error('[Automation Trigger] Background error:', err);
+            });
+
+            // 3. Notify assigned agent
+            if (newLead.assigned_to && String(newLead.assigned_to) !== String(req.user.id) && req.io) {
+                req.io.to(`user_${newLead.assigned_to}`).emit('notification', {
                     title: 'New Lead Assigned',
                     message: `You have been assigned a new lead: ${name}`,
                     type: 'lead_assigned',
-                    data: rows[0]
+                    data: newLead
                 });
             }
-            await client.query('COMMIT');
 
-            // Flush cache on lead creation
-            await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-            await redis.del(`dash:${req.tenantId}:*`);
+            // 4. Flush cache
+            redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
+            redis.del(`dash:${req.tenantId}:*`);
 
-            res.status(201).json(rows[0]);
+            console.log(`[POST /leads] Success! Lead ID: ${newLead.id}`);
+            res.status(201).json(newLead);
         } catch (err) {
+            console.log(`[POST /leads] Error occurred, rolling back:`, err.message);
             await client.query('ROLLBACK');
-            throw err; // Re-throw to be caught by outer catch
+            throw err;
         } finally {
             client.release();
         }
     } catch (err) {
-        console.error('[POST /leads] Error:', err.message, err.detail || '');
-        // Always return a clean string error to prevent frontend rendering crashes
-        const errMsg = typeof err.message === 'string' ? err.message : 'Failed to create lead';
-        res.status(500).json({ error: errMsg });
+        console.error('[POST /leads] Route Error:', err.message);
+        res.status(500).json({ error: err.message || 'Failed to create lead' });
     }
 });
 
@@ -861,7 +869,9 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
 
         const workbook = xlsx.readFile(req.file.path);
         const sheetName = workbook.SheetNames[0];
-        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = xlsx.utils.sheet_to_json(worksheet, { defval: null });
+        console.log(`[IMPORT] Processing ${rows.length} rows from sheet "${sheetName}"...`);
 
         if (!rows || rows.length === 0) {
             return res.status(400).json({ error: 'Empty file or invalid format' });
@@ -883,8 +893,10 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
         for (const row of rows) {
             // Normalize header access to be case-insensitive
             const getVal = (fields) => {
+                const keys = Object.keys(row);
                 for (const f of fields) {
-                    const foundKey = Object.keys(row).find(k => k.toLowerCase().replace(/[\s_]/g, '') === f.toLowerCase().replace(/[\s_]/g, ''));
+                    const normalizedF = f.toLowerCase().replace(/[\s_]/g, '');
+                    const foundKey = keys.find(k => k.toLowerCase().replace(/[\s_]/g, '') === normalizedF);
                     if (foundKey) return row[foundKey];
                 }
                 return null;
@@ -922,8 +934,8 @@ router.post('/import', secureUpload.single('file'), async (req, res) => {
             }
 
             await pool.query(
-                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, assigned_to, status, budget)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'Medium', $8, $9, $10, $11)`,
+                `INSERT INTO leads (tenant_id, name, phone, email, city, source, stage, priority, score, assigned_to, status, budget, created_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'Medium', $8, $9, $10, $11, NOW())`,
                 [req.tenantId, name, phone, email || null, city || null, source, stage, score, assignedTo, status, budget || null]
             );
             importedCount++;

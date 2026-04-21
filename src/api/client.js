@@ -319,6 +319,13 @@ export const academyApi = {
     updateBattleCard: (id, data) => api(`/academy/battle-cards/${id}`, { method: 'PUT', body: data }),
     deleteBattleCard: (id) => api(`/academy/battle-cards/${id}`, { method: 'DELETE' }),
     simulate: (data) => api('/academy/simulate', { method: 'POST', body: data }),
+    analyze: (data) => api('/academy/analyze', { method: 'POST', body: data }),
+    generateBattleCard: (data) => api('/academy/battle-cards/generate', { method: 'POST', body: data }),
+    generatePitch: (data) => api('/academy/generate-pitch', { method: 'POST', body: data }),
+    getBattleMission: (scenarioId) => api('/academy/battle/init', { method: 'POST', body: { scenarioId } }),
+    judgeBattle: (data) => api('/academy/battle/judge', { method: 'POST', body: data }),
+    initializeLeadSimulation: (leadId) => api('/academy/simulate/lead-init', { method: 'POST', body: { leadId } }),
+    calibrateVoice: (formData) => api('/academy/calibrate', { method: 'POST', body: formData }),
 };
 
 // ─── Super Admin ──────────────────────────────────────────────────
