@@ -23,7 +23,7 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
         }
 
         // Using Gemini 2.5 Flash as the primary engine for high-speed sales training simulations.
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest", "gemini-1.5-flash", "gemini-pro"];
+        const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
         let lastError = null;
 
         for (const modelName of modelsToTry) {
@@ -35,7 +35,13 @@ async function generateAIResponse(prompt, isJson = true, customKey = null) {
                     attempts++;
                     const model = localGenAI.getGenerativeModel({ 
                         model: modelName,
-                        generationConfig: { temperature: 0 }
+                        generationConfig: { temperature: 0.7, topP: 0.8, topK: 40 },
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
                     });
                     const result = await model.generateContent(finalPrompt);
                     const response = result.response;
