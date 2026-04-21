@@ -1736,7 +1736,7 @@ export default function Academy() {
                             ))}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 20, width: '100%' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(145px, 1fr))', gap: 12, marginBottom: 20, width: '100%', justifyContent: 'center' }}>
                             {SCENARIOS.map(sc => (
                                 <button 
                                     key={sc.id}
