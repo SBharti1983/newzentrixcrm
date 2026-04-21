@@ -731,17 +731,26 @@ export default function Academy() {
             }
         };
         
-        // Find a suitable voice based on language
+        // Intelligent voice selection - prioritize high-quality natural voices
         const voices = window.speechSynthesis.getVoices();
-        if (simLanguage === 'Hindi' || simLanguage === 'Hinglish') {
-            const hindiVoice = voices.find(v => v.lang.includes('hi')) || voices.find(v => v.lang.includes('IN'));
-            if (hindiVoice) utterance.voice = hindiVoice;
+        const isHindi = text.match(/[\u0900-\u097F]/) || simLanguage === 'Hindi' || simLanguage === 'Hinglish';
+        
+        let selectedVoice = null;
+        if (isHindi) {
+            // Priority: Google Hindi, any Hindi, then generic Indian
+            selectedVoice = voices.find(v => v.lang.startsWith('hi') && v.name.includes('Google')) ||
+                            voices.find(v => v.lang.startsWith('hi')) ||
+                            voices.find(v => v.lang.includes('hi')) ||
+                            voices.find(v => v.lang.includes('IN'));
         } else {
-            const indianEnglishVoice = voices.find(v => v.lang.includes('en-IN')) || voices.find(v => v.name.includes('India'));
-            const englishVoice = indianEnglishVoice || voices.find(v => v.name.includes('Google US English')) || voices.find(v => v.lang.includes('en'));
-            if (englishVoice) utterance.voice = englishVoice;
+            // Priority: Google Natural, English India, then US/UK
+            selectedVoice = voices.find(v => v.name.includes('Google') && v.name.includes('Natural')) ||
+                            voices.find(v => v.lang === 'en-IN') ||
+                            voices.find(v => v.name.includes('Google US English')) ||
+                            voices.find(v => v.lang.startsWith('en'));
         }
         
+        if (selectedVoice) utterance.voice = selectedVoice;
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
 
@@ -1031,13 +1040,15 @@ export default function Academy() {
                 gap: 24
             }}>
                 <div style={{ flex: '1', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, flexWrap: 'nowrap' }}>
-                        <div style={{ background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, padding: '4px 12px', borderRadius: '12px', fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <GraduationCap size={14} /> Academy
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'nowrap' }}>
+                        <div style={{ background: 'var(--navy-900)', color: 'white', padding: '4px 12px', borderRadius: '8px', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <GraduationCap size={12} /> Zentrix Academy
                         </div>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Level 12 • 4,500 XP Earned</span>
+                        <div style={{ padding: '4px 10px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: COLORS.emerald, fontSize: '0.65rem', fontWeight: 900 }}>
+                            Level 12 • Diamond Closer
+                        </div>
                     </div>
-                    <h1 style={{ fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 950, color: COLORS.navy, letterSpacing: '-0.03em', margin: 0, lineHeight: 1 }}>Knowledge Command</h1>
+                    <h1 style={{ fontSize: isMobile ? '1.6rem' : '2.2rem', fontWeight: 950, color: COLORS.navy, letterSpacing: '-0.04em', margin: 0, lineHeight: 1 }}>Academy Intelligence</h1>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, alignItems: 'center', width: isMobile ? '100%' : 'auto' }}>
@@ -2105,6 +2116,130 @@ export default function Academy() {
                     )}
                 </div>
             )}
+            {activeTab === 'voice_studio' && (
+                <div className="animate-fadeIn" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: 32 }}>
+                    {/* Recording Suite */}
+                    <div style={{ background: '#0f172a', borderRadius: '32px', padding: 48, border: '1px solid rgba(255,255,255,0.1)', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(circle, #8b5cf6 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+                        
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 40 }}>
+                                <div style={{ width: 56, height: 56, borderRadius: '18px', background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                                    <Mic2 size={28} />
+                                </div>
+                                <div>
+                                    <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 950, margin: 0, letterSpacing: '-0.02em' }}>Voice Persona Calibration</h2>
+                                    <p style={{ color: 'rgba(255,255,255,0.5)', margin: 0, fontWeight: 600 }}>Record a 30-second sample to sync the AI to your unique sales style.</p>
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '24px', padding: 32, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 40 }}>
+                                <div style={{ color: COLORS.purple, fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 12, letterSpacing: '0.05em' }}>Calibration Script</div>
+                                <div style={{ color: 'white', fontSize: '1.3rem', fontWeight: 700, lineHeight: 1.6, fontStyle: 'italic', color: 'rgba(255,255,255,0.9)' }}>
+                                    "Hello! This is Rohan from Zentrix. I noticed you were exploring our newest luxury project's ROI projections. The reason I'm reaching out is that we've just unlocked a strategic subvention plan for our early investors. I'd love to walk you through how this fits into your current portfolio."
+                                </div>
+                            </div>
+
+                            <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '32px', padding: 60, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                                {isRecordingSample ? (
+                                    <div className="animate-pulse">
+                                        <div style={{ fontSize: '3.5rem', fontWeight: 950, color: COLORS.rose, marginBottom: 16 }}>
+                                            0:{recordingTime < 10 ? `0${recordingTime}` : recordingTime}
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 32 }}>
+                                            {[1,2,3,4,5,6,7,8].map(i => (
+                                                <div key={i} style={{ width: 4, height: 40, background: COLORS.rose, borderRadius: 2, animation: 'wave 0.5s infinite alternate', animationDelay: `${i*0.1}s` }} />
+                                            ))}
+                                        </div>
+                                        <button 
+                                            onClick={handleStopRecording}
+                                            style={{ background: COLORS.rose, color: 'white', border: 'none', padding: '16px 40px', borderRadius: '16px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, margin: '0 auto' }}
+                                        >
+                                            <X size={20} /> Stop Recording
+                                        </button>
+                                    </div>
+                                ) : recordedBlob ? (
+                                    <div>
+                                        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', color: COLORS.emerald, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                            <CheckCircle2 size={40} />
+                                        </div>
+                                        <h3 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Sample Captured</h3>
+                                        <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 32 }}>Voice sample is ready for AI archetype analysis.</p>
+                                        <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+                                            <button onClick={handleStartRecording} style={{ background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', padding: '16px 32px', borderRadius: '16px', fontWeight: 800, cursor: 'pointer' }}>Retake</button>
+                                            <button 
+                                                onClick={handleUploadSample}
+                                                disabled={isAnalyzing}
+                                                style={{ background: COLORS.purple, color: 'white', border: 'none', padding: '16px 48px', borderRadius: '16px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12 }}
+                                            >
+                                                {isAnalyzing ? <RotateCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+                                                {isAnalyzing ? 'Analyzing Persona...' : 'Calibrate My Voice'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(139, 92, 246, 0.1)', color: COLORS.purple, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', animation: 'breath 2s infinite ease-in-out' }}>
+                                            <Mic2 size={40} />
+                                        </div>
+                                        <h3 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, marginBottom: 8 }}>Ready to start?</h3>
+                                        <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 32, maxWidth: 300, margin: '0 auto 32px' }}>Find a quiet place and read the script above clearly for the best results.</p>
+                                        <button 
+                                            onClick={handleStartRecording}
+                                            style={{ background: 'white', color: COLORS.navy, border: 'none', padding: '18px 48px', borderRadius: '16px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, margin: '0 auto', boxShadow: '0 10px 25px rgba(255,255,255,0.1)' }}
+                                        >
+                                            <Play size={20} fill={COLORS.navy} /> Start Calibration
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Results / Sidebar */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        <div style={{ background: 'white', borderRadius: '32px', padding: 32, border: `1px solid ${COLORS.border}` }}>
+                            <h4 style={{ margin: '0 0 20px 0', fontSize: '1rem', fontWeight: 900, color: COLORS.navy }}>Current Archetype</h4>
+                            {simReport ? (
+                                <div className="animate-fadeIn">
+                                    <div style={{ background: 'rgba(139, 92, 246, 0.05)', padding: 24, borderRadius: '24px', border: `1px solid rgba(139, 92, 246, 0.1)`, textAlign: 'center', marginBottom: 24 }}>
+                                        <div style={{ color: COLORS.purple, fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 8 }}>Detected Persona</div>
+                                        <div style={{ fontSize: '1.6rem', fontWeight: 950, color: COLORS.navy }}>{simReport.archetype || 'The Trusted Advisor'}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        {[
+                                            { label: 'Tone Stability', val: '94%', color: COLORS.emerald },
+                                            { label: 'Empathy Score', val: '88%', color: COLORS.purple },
+                                            { label: 'Authority Index', val: '76%', color: COLORS.amber }
+                                        ].map(stat => (
+                                            <div key={stat.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#f8fafc', borderRadius: '12px' }}>
+                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>{stat.label}</span>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 900, color: stat.color }}>{stat.val}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '40px 20px', border: '2px dashed #f1f5f9', borderRadius: 24 }}>
+                                    <div style={{ color: 'rgba(0,0,0,0.2)', marginBottom: 12 }}><ShieldCheck size={40} strokeWidth={1} /></div>
+                                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'rgba(0,0,0,0.4)', fontWeight: 600 }}>No calibration data found. Complete your first sample to unlock insights.</p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', borderRadius: '32px', padding: 32, color: 'white' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                                <Sparkles size={20} />
+                                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 900 }}>Why Calibrate?</h4>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.6, fontWeight: 500, opacity: 0.9 }}>
+                                Calibrating your voice allows Zentrix AI to adjust its empathy filters, tailoring objection handling advice to match your natural cadence and authority.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {activeTab === 'leaderboard' && (
                 <div style={{ background: 'white', borderRadius: '32px', border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
