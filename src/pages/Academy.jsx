@@ -505,27 +505,40 @@ export default function Academy() {
         if (isListeningRef.current || isAITalkingRef.current) return;
 
         try {
-            // Force browser to ask for mic permission if not already granted
+            // Hijack Protocol: Force browser to re-request and lock audio focus
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                await navigator.mediaDevices.getUserMedia({ audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Immediately stop the stream after re-acquiring focus to let SpeechRecognition take it
+                stream.getTracks().forEach(track => track.stop());
             }
 
-            const recognition = initRecognition();
+            // Always create a fresh instance if we had an error previously
+            if (!recognitionRef.current) {
+                initRecognition();
+            }
+
+            const recognition = recognitionRef.current;
             if (recognition) {
                 const langMap = { 'English': 'en-US', 'Hindi': 'hi-IN', 'Hinglish': 'hi-IN' };
                 recognition.lang = langMap[simLanguage] || 'en-US';
-                recognition.start();
+                try {
+                    recognition.start();
+                } catch (startErr) {
+                    console.warn('[Voice] Internal Start Collision:', startErr.message);
+                    // If already started, just sync the state
+                    setIsListening(true);
+                    isListeningRef.current = true;
+                }
             }
         } catch (e) {
             if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-                showToast('Microphone access blocked in browser.', 'error');
+                showToast('Microphone access blocked. Please re-allow in settings.', 'error');
                 setIsHandsFree(false);
                 isHandsFreeRef.current = false;
-            } else if (e.name === 'InvalidStateError' || (e.message && e.message.includes('already started'))) {
-                setIsListening(true);
-                isListeningRef.current = true;
+            } else if (e.name === 'NotReadableError' || e.message?.includes('could not start')) {
+                showToast('System Mic Error: Please close other recording apps or the Screen Recorder.', 'error');
             } else {
-                console.error('[Voice] Mic Start Error:', e);
+                console.error('[Voice] Mic Hijack Error:', e);
             }
         }
     };
