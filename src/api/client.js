@@ -8,7 +8,7 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 
 // In dev mode or on localhost, use relative '/api' so requests go through the Vite proxy.
 // In production (non-localhost), use the full Railway backend URL.
-const defaultApiUrl = typeof window !== 'undefined' ? `${window.location.origin}/api` : '/api';
+const defaultApiUrl = window.location.hostname === 'localhost' ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
 let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
 console.log('[API MODE] Host:', typeof window !== 'undefined' ? window.location.hostname : 'ssr', '| Target:', BASE_URL);
