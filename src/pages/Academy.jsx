@@ -143,10 +143,12 @@ export default function Academy() {
     // Voice Heartbeat: Ensures mic stays alive in Hands-Free mode
     useEffect(() => {
         const interval = setInterval(() => {
-            // Be more brave: restart even if synthesis says it's "speaking" if it's been silent for 1s
             const isReallyTalking = isAITalkingRef.current || window.speechSynthesis.speaking;
             
+            // Safety: if we think we are listening but haven't had a result in 10s, force reset
+            // This handles cases where SpeechRecognition hangs
             if (isHandsFreeRef.current && isSimulatorActiveRef.current && !isReallyTalking && !isListeningRef.current) {
+                console.log('[Voice] Heartbeat: Reviving mic...');
                 startListening();
             }
         }, 1500);
@@ -440,14 +442,10 @@ export default function Academy() {
                 setIsListening(false);
                 isListeningRef.current = false;
                 
-                // Aggressive restart for "Infinite Duplex"
+                // Aggressive restart for "Infinite Duplex" - NO DELAY
                 if (isHandsFreeRef.current && isSimulatorActiveRef.current && !isAITalkingRef.current) {
-                    setTimeout(() => {
-                        // Check again after delay to avoid race with synthesis
-                        if (isHandsFreeRef.current && !isListeningRef.current && !isAITalkingRef.current && isSimulatorActiveRef.current) {
-                            startListening();
-                        }
-                    }, 300);
+                    console.log('[Voice] Autorestart triggered');
+                    startListening();
                 }
             };
 
@@ -708,17 +706,13 @@ export default function Academy() {
         setIsAITalking(true);
         isAITalkingRef.current = true;
 
-        // When AI finishes talking, restart mic if hands-free
+        // When AI finishes talking, restart mic immediately if hands-free
         utterance.onend = () => {
             setIsAITalking(false);
             isAITalkingRef.current = false;
-            // Resume listening after a brief pause
+            console.log('[Voice] AI finished talking');
             if (isHandsFreeRef.current && isSimulatorActiveRef.current) {
-                setTimeout(() => {
-                    if (isHandsFreeRef.current && !isListeningRef.current && isSimulatorActiveRef.current && !isAITalkingRef.current) {
-                        startListening();
-                    }
-                }, 500);
+                startListening();
             }
         };
 
@@ -1988,13 +1982,13 @@ export default function Academy() {
                                             animation: isHandsFree && !isListening && !isAITalking ? 'breath 2s infinite ease-in-out' : 'none'
                                          }}
                                     >
+                                        {isHandsFree && (
+                                            <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: COLORS.emerald, color: 'white', fontSize: '9px', fontWeight: 950, padding: '2px 8px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.4)', zIndex: 5, letterSpacing: '0.05em' }}>
+                                                AUTO
+                                            </div>
+                                        )}
                                         {isListening ? <MicOff size={22} /> : <Mic size={22} />}
                                     </button>
-                                    {isHandsFree && (
-                                        <div style={{ position: 'absolute', top: -10, right: -10, background: COLORS.emerald, color: 'white', fontSize: '10px', fontWeight: 900, padding: '3px 8px', borderRadius: '8px', border: '2px solid #0f172a', zIndex: 10 }}>
-                                            AUTO
-                                        </div>
-                                    )}
                                 </div>
                                 <button 
                                     onClick={() => processAgentInput(agentInput)}
