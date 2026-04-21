@@ -145,6 +145,59 @@ CREATE TABLE IF NOT EXISTS referrals (
     status TEXT DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Training & Academy Tables
+CREATE TABLE IF NOT EXISTS training_modules (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    uploaded_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    category TEXT DEFAULT 'General',
+    type TEXT DEFAULT 'Document',
+    file_url TEXT,
+    thumbnail_url TEXT,
+    file_size BIGINT,
+    mime_type TEXT,
+    xp_points INTEGER DEFAULT 100,
+    duration TEXT,
+    instructor TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS training_progress (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    module_id UUID REFERENCES training_modules(id) ON DELETE CASCADE,
+    progress INTEGER DEFAULT 0,
+    best_score INTEGER DEFAULT 0,
+    is_certified BOOLEAN DEFAULT FALSE,
+    certified_at TIMESTAMP WITH TIME ZONE,
+    completed BOOLEAN DEFAULT FALSE,
+    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    UNIQUE(user_id, module_id)
+);
+
+CREATE TABLE IF NOT EXISTS simulation_reports (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    module_id UUID REFERENCES training_modules(id) ON DELETE SET NULL,
+    persona TEXT,
+    scenario_title TEXT,
+    score INTEGER,
+    grade TEXT,
+    strengths TEXT[],
+    weaknesses TEXT[],
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sim_reports_tenant ON simulation_reports(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_sim_reports_user ON simulation_reports(user_id);
 `;
 
 async function migrate() {
