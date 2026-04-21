@@ -54,33 +54,28 @@ export default function LeadScoreStatus() {
         return counts;
     }, [leads]);
 
-    const calculateLeadScore = useCallback((lead) => {
-        let score = 0;
+    const [selectedLead, setSelectedLead] = useState(null);
+    const [scanningId, setScanningId] = useState(null);
 
-        const called = lead.stage !== 'New Lead' || lead.last_contact_at != null;
-        const siteVisit = ['Site Visit Done', 'Proposal Shared', 'Negotiation', 'Won'].includes(lead.stage);
-        const whatsappReply = !!lead.last_contact_at; // Proxy
-        const budgetMatch = !!lead.budget;
-        const highBudget = lead.budget && lead.budget.includes('Cr');
-        const isRecent = new Date() - new Date(lead.created_at) < 7 * 24 * 60 * 60 * 1000;
-        const inactiveDays = lead.last_contact_at ? (new Date() - new Date(lead.last_contact_at)) / (1000 * 60 * 60 * 24) : 10;
-        const multipleVisits = ['Negotiation', 'Won'].includes(lead.stage);
-
-        if (called) score += 10;
-        if (siteVisit) score += 25;
-        if (whatsappReply) score += 15;
-        if (budgetMatch) score += 20;
-        if (highBudget) score += 15;
-        if (isRecent) score += 10;
-        if (inactiveDays > 7) score -= 10;
-        if (multipleVisits) score += 20;
-
-        return Math.max(0, Math.min(score, 100));
-    }, []);
+    const runAIScore = async (leadId) => {
+        setScanningId(leadId);
+        try {
+            const res = await leadsApi.post(`/${leadId}/ai-score`);
+            showToast('AI Deep-Scan Complete!', 'success');
+            refetch();
+            if (selectedLead?.id === leadId) {
+                setSelectedLead({ ...selectedLead, score: res.score, ai_analysis: res });
+            }
+        } catch (err) {
+            showToast('Deep-Scan failed. Check connection.', 'error');
+        } finally {
+            setScanningId(null);
+        }
+    };
 
     const enrichedLeads = useMemo(() => {
-        return leads.map(l => ({ ...l, calculatedScore: calculateLeadScore(l) }));
-    }, [leads, calculateLeadScore]);
+        return leads.map(l => ({ ...l, calculatedScore: l.score || 0 }));
+    }, [leads]);
 
     const filteredLeads = useMemo(() => {
         return enrichedLeads.filter(l => {
@@ -341,17 +336,21 @@ export default function LeadScoreStatus() {
                                                 </td>
                                                 <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
-                                                        {LEAD_STATUSES.filter(s => s.id !== activeTab).slice(0, 2).map(next => (
-                                                            <button
-                                                                key={next.id}
-                                                                onClick={() => updateStage(lead.id, next.id)}
-                                                                className="btn btn-ghost"
-                                                                style={{ fontSize: '10px', padding: '4px 6px', color: next.color }}
-                                                                disabled={updatingId === lead.id}
-                                                            >
-                                                                To {next.label.split(' ')[0]}
-                                                            </button>
-                                                        ))}
+                                                        <button
+                                                            onClick={() => runAIScore(lead.id)}
+                                                            className="btn btn-ghost"
+                                                            style={{ fontSize: '10px', padding: '4px 8px', borderColor: 'var(--accent-cyan)44', color: 'var(--accent-cyan)' }}
+                                                            disabled={scanningId === lead.id}
+                                                        >
+                                                            {scanningId === lead.id ? 'Analyzing...' : <Brain size={14} />}
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedLead(lead)}
+                                                            className="btn btn-ghost"
+                                                            style={{ fontSize: '10px', padding: '4px 8px' }}
+                                                        >
+                                                            Insights
+                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -417,6 +416,77 @@ export default function LeadScoreStatus() {
             <style>{`
                 .hover-row:hover { background: var(--navy-50) !important; }
             `}</style>
+
+            {/* AI Insights Modal */}
+            {selectedLead && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,22,40,0.8)', backdropFilter: 'blur(8px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+                    <div className="card" style={{ maxWidth: 600, width: '100%', padding: 0, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ padding: '24px', background: 'linear-gradient(135deg, var(--navy-950) 0%, var(--navy-800) 100%)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Brain size={24} color="var(--accent-cyan)" />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>{selectedLead.name}</h3>
+                                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>AI INTEL REPORT • CONFIDENCE: {(selectedLead.ai_analysis?.confidence * 100 || 85).toFixed(0)}%</div>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedLead(null)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+                        </div>
+                        
+                        <div style={{ padding: 24 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                                <div style={{ background: 'var(--slate-50)', padding: 16, borderRadius: 12 }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Lead Classification</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: 950, color: selectedLead.score >= 80 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>
+                                        {selectedLead.ai_analysis?.classification || (selectedLead.score >= 80 ? 'HOT' : 'WARM')}
+                                    </div>
+                                </div>
+                                <div style={{ background: 'var(--slate-50)', padding: 16, borderRadius: 12 }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Predicted Close</div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--navy-900)' }}>
+                                        {selectedLead.ai_analysis?.predicted_close_date || 'Analyzing pattern...'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 24 }}>
+                                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Sparkles size={16} color="var(--accent-violet)" />
+                                    Cognitive Signals
+                                </h4>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                    {(selectedLead.ai_analysis?.signals || ['Engaged Buyer', 'Price Sensitive', 'Recent Momentum']).map((sig, i) => (
+                                        <div key={i} style={{ padding: '6px 12px', background: 'var(--navy-50)', color: 'var(--navy-700)', borderRadius: 8, fontSize: '0.75rem', fontWeight: 800, border: '1px solid var(--navy-100)' }}>
+                                            {sig}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'linear-gradient(to right, #f5f3ff, #ede9fe)', padding: 20, borderRadius: 16, border: '1px solid #ddd6fe' }}>
+                                <h4 style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: 8, color: '#5b21b6', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <Target size={16} /> Best Next Action
+                                </h4>
+                                <p style={{ fontSize: '0.9rem', color: '#4c1d95', margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+                                    {selectedLead.ai_analysis?.action_strategy || 'Call within 2 hours to discuss the recent project floorplans. High conversion probability on next touch.'}
+                                </p>
+                            </div>
+
+                            <div style={{ marginTop: 24, display: 'flex', gap: 12 }}>
+                                <button 
+                                    onClick={() => runAIScore(selectedLead.id)} 
+                                    className="btn btn-primary" 
+                                    style={{ flex: 1, padding: '14px', borderRadius: 12, fontWeight: 900 }}
+                                    disabled={scanningId === selectedLead.id}
+                                >
+                                    {scanningId === selectedLead.id ? 'Recalculating AI Engine...' : 'Run Real-time AI Deep-Scan'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

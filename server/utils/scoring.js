@@ -91,8 +91,12 @@ async function calculateLeadScore(leadId, tenantId) {
             const finalScore = Math.min(100, Math.max(0, blendedScore));
 
             await pool.query(
-                'UPDATE leads SET score = $1 WHERE id = $2 AND tenant_id = $3',
-                [finalScore, leadId, tenantId]
+                `UPDATE leads 
+                 SET score = $1, 
+                     ai_analysis = $2, 
+                     sentiment_pulse = $3 
+                 WHERE id = $4 AND tenant_id = $5`,
+                [finalScore, JSON.stringify(result), result.classification || 'Neutral', leadId, tenantId]
             );
 
             return {

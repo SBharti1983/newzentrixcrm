@@ -605,6 +605,28 @@ router.patch('/:leadId/interactions/:interactionId', async (req, res) => {
     }
 });
 
+// POST /api/leads/:id/ai-score — Trigger deep AI re-scoring
+router.post('/:id/ai-score', async (req, res) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(req.params.id)) return res.status(400).json({ error: 'Invalid Lead ID' });
+    
+    try {
+        const result = await calculateLeadScore(req.params.id, req.tenantId);
+        if (!result) return res.status(404).json({ error: 'Lead not found or scoring failed' });
+        
+        // Clean up cache for this lead
+        await redis.del(`dash:${req.tenantId}:*`);
+        
+        res.json({
+            success: true,
+            ...result
+        });
+    } catch (err) {
+        console.error('AI scoring error:', err);
+        res.status(500).json({ error: 'AI Analysis engine failed to process the lead' });
+    }
+});
+
 // DELETE /api/leads/:leadId/interactions/:interactionId
 router.delete('/:leadId/interactions/:interactionId', async (req, res) => {
     try {
