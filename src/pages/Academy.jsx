@@ -426,6 +426,7 @@ export default function Academy() {
             recognition.interimResults = true;
 
             recognition.onstart = () => {
+                console.log('[Voice] Recognition started in:', recognition.lang);
                 setIsListening(true);
                 isListeningRef.current = true;
             };
@@ -494,6 +495,8 @@ export default function Academy() {
 
             const recognition = initRecognition();
             if (recognition) {
+                const langMap = { 'English': 'en-US', 'Hindi': 'hi-IN', 'Hinglish': 'hi-IN' };
+                recognition.lang = langMap[simLanguage] || 'en-US';
                 recognition.start();
             }
         } catch (e) {
@@ -1988,6 +1991,13 @@ export default function Academy() {
                                             </div>
                                         )}
                                         {isListening ? <MicOff size={22} /> : <Mic size={22} />}
+                                        {isListening && (
+                                            <div style={{ position: 'absolute', bottom: 8, display: 'flex', gap: 2, alignItems: 'center' }}>
+                                                {[1,2,3,4,5].map(i => (
+                                                    <div key={i} style={{ width: 2, height: 8, background: 'white', borderRadius: 1, animation: 'wave 0.4s infinite alternate', animationDelay: `${i*0.1}s` }} />
+                                                ))}
+                                            </div>
+                                        )}
                                     </button>
                                 </div>
                                 <button 
