@@ -113,7 +113,8 @@ export default function Academy() {
     const [pitchDraft, setPitchDraft] = useState('');
     const [coachTip, setCoachTip] = useState(null);
     const [isGeneratingTip, setIsGeneratingTip] = useState(false);
-    const [isRecordingSample, setIsRecordingSample] = useState(false);
+    const [isManualMic, setIsManualMic] = useState(false);
+    const [isRecordingSim, setIsRecordingSim] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [recordedBlob, setRecordedBlob] = useState(null);
     const recorderRef = useRef(null);
@@ -2030,32 +2031,60 @@ export default function Academy() {
                                 </button>
                                 <div style={{ position: 'relative' }}>
                                     <button 
-                                        onClick={toggleListening}
+                                        onClick={async () => {
+                                            if (isManualMic) {
+                                                if (isRecordingSim) {
+                                                    // Stop and send
+                                                    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+                                                        recorderRef.current.onstop = async () => {
+                                                            const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                                                            processAgentInput('', blob);
+                                                            chunksRef.current = [];
+                                                            streamRef.current?.getTracks().forEach(t => t.stop());
+                                                        };
+                                                        recorderRef.current.stop();
+                                                        setIsRecordingSim(false);
+                                                        clearInterval(timerRef.current);
+                                                    }
+                                                } else {
+                                                    // Start manual recording
+                                                    try {
+                                                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                                        streamRef.current = stream;
+                                                        const recorder = new MediaRecorder(stream);
+                                                        chunksRef.current = [];
+                                                        recorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+                                                        recorder.start();
+                                                        recorderRef.current = recorder;
+                                                        setIsRecordingSim(true);
+                                                        setRecordingTime(0);
+                                                        timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
+                                                    } catch (e) { showToast('Mic Access Denied', 'error'); }
+                                                }
+                                            } else {
+                                                toggleListening();
+                                            }
+                                        }}
                                         style={{ 
                                             width: 52, height: 52, borderRadius: '16px', border: 'none', 
-                                            background: isListening ? COLORS.rose : (isAITalking ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.1)'), 
+                                            background: (isManualMic && isRecordingSim) || (!isManualMic && isListening) ? COLORS.rose : (isAITalking ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.1)'), 
                                             color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                                             transition: 'all 0.2s', 
-                                            boxShadow: isListening ? `0 0 25px ${COLORS.rose}66` : (isHandsFree ? `0 0 15px ${COLORS.emerald}44` : 'none'),
-                                            opacity: isAITalking ? 0.3 : 1,
-                                            animation: isHandsFree && !isListening && !isAITalking ? 'breath 2s infinite ease-in-out' : 'none'
+                                            boxShadow: ((isManualMic && isRecordingSim) || (!isManualMic && isListening)) ? `0 0 25px ${COLORS.rose}66` : (isHandsFree ? `0 0 15px ${COLORS.emerald}44` : 'none'),
+                                            opacity: isAITalking ? 0.3 : 1
                                          }}
                                     >
-                                        {isHandsFree && (
-                                            <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: COLORS.emerald, color: 'white', fontSize: '9px', fontWeight: 950, padding: '2px 8px', borderRadius: '4px', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.4)', zIndex: 5, letterSpacing: '0.05em' }}>
-                                                AUTO
-                                            </div>
-                                        )}
-                                        {isListening ? <MicOff size={22} /> : <Mic size={22} />}
-                                        {isListening && (
-                                            <div style={{ position: 'absolute', bottom: 8, display: 'flex', gap: 2, alignItems: 'center' }}>
-                                                {[1,2,3,4,5].map(i => (
-                                                    <div key={i} style={{ width: 2, height: 8, background: 'white', borderRadius: 1, animation: 'wave 0.4s infinite alternate', animationDelay: `${i*0.1}s` }} />
-                                                ))}
-                                            </div>
-                                        )}
+                                        {isManualMic ? (isRecordingSim ? <CheckCircle size={22} /> : <Mic2 size={22} />) : (isListening ? <MicOff size={22} /> : <Mic size={22} />)}
+                                        {isRecordingSim && <div style={{ position: 'absolute', top: -18, fontSize: '10px', color: COLORS.rose, fontWeight: 900 }}>{recordingTime}s</div>}
                                     </button>
                                 </div>
+                                <button 
+                                    onClick={() => setIsManualMic(!isManualMic)}
+                                    style={{ background: isManualMic ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${isManualMic ? COLORS.purple : 'rgba(255,255,255,0.1)'}`, color: isManualMic ? COLORS.purple : 'white', width: 42, height: 42, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    title={isManualMic ? "Switch to Auto-Listen" : "Switch to Manual Audio Uplink"}
+                                >
+                                    <Headphones size={20} />
+                                </button>
                                 <button 
                                     onClick={() => processAgentInput(agentInput)}
                                     style={{ 

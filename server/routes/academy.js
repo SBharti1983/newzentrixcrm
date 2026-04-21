@@ -340,9 +340,20 @@ router.post('/battle-cards/generate', async (req, res) => {
  * POST /api/academy/simulate — Dynamic AI response for ZenZone
  */
 router.post('/simulate', async (req, res) => {
-    const { message, history, persona, language, context } = req.body;
+    let { message, history, persona, language, context, audio, mimeType } = req.body;
 
     try {
+        // If audio is provided, transcribe it first using our audio utility
+        if (audio) {
+            const transcriptionPrompt = `Identify the text of this sales agent's response in ${language}. Return ONLY the transcribed text.`;
+            message = await generateAudioTranscription(transcriptionPrompt, audio, mimeType || 'audio/webm', false);
+            console.log('[Sim Audio-Bypass] Transcribed:', message);
+        }
+
+        if (!message) {
+            return res.status(400).json({ error: 'No message or audio provided' });
+        }
+
         const conversationHistory = history.map(h => 
             `${h.type === 'bot' ? 'Prospect' : 'Agent'}: ${h.text}`
         ).join('\n');
@@ -371,11 +382,11 @@ router.post('/simulate', async (req, res) => {
         `;
 
         const aiResponse = await generateAIResponse(prompt, false);
-        res.json({ text: aiResponse.trim() });
+        res.json({ text: aiResponse.trim(), transcribed: audio ? message : null });
 
     } catch (err) {
         console.error('[Academy Simulator Error]:', err);
-        res.status(500).json({ error: 'AI Simulator failed to respond.' });
+        res.status(500).json({ error: 'AI Simulator failed to respond. ' + err.message });
     }
 });
 
