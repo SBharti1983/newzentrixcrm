@@ -1677,7 +1677,7 @@ export default function Academy() {
                     <div style={{ 
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: 'linear-gradient(45deg, #0f172a, #1e293b)', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)',
-                        position: 'relative', overflow: 'hidden', padding: '60px 40px'
+                        position: 'relative', overflow: 'hidden', padding: '32px 24px'
                     }}>
                     <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(#8b5cf6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
                     
@@ -1707,17 +1707,17 @@ export default function Academy() {
                             ))}
                         </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: 12, marginBottom: 24, width: '100%' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: 20, width: '100%' }}>
                             {SCENARIOS.map(sc => (
                                 <button 
                                     key={sc.id}
                                     onClick={() => startSimulation(sc)}
                                     className="hover-lift"
-                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '24px 16px', borderRadius: '24px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px 12px', borderRadius: '20px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' }}
                                 >
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.purple, textTransform: 'uppercase', marginBottom: 8 }}>{sc.difficulty}</div>
-                                    <div style={{ color: 'white', fontWeight: 800, fontSize: '0.9rem', marginBottom: 4 }}>{sc.title}</div>
-                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Focus: {sc.focus}</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.purple, textTransform: 'uppercase', marginBottom: 6 }}>{sc.difficulty}</div>
+                                    <div style={{ color: 'white', fontWeight: 800, fontSize: '0.8rem', marginBottom: 2, lineHeight: 1.2 }}>{sc.title}</div>
+                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>Focus: {sc.focus}</div>
                                 </button>
                             ))}
                             {/* Custom Card */}
@@ -1727,12 +1727,12 @@ export default function Academy() {
                                 style={{ 
                                     background: 'rgba(139, 92, 246, 0.05)', 
                                     border: `1px dashed ${COLORS.purple}`, 
-                                    padding: '24px 16px', borderRadius: '24px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' 
+                                    padding: '16px 12px', borderRadius: '20px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s' 
                                 }}
                             >
-                                <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.purple, textTransform: 'uppercase', marginBottom: 8 }}>Dynamic</div>
-                                <div style={{ color: 'white', fontWeight: 800, fontSize: '0.9rem', marginBottom: 4 }}>Custom Scenario</div>
-                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Define your own prospect...</div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.purple, textTransform: 'uppercase', marginBottom: 6 }}>Dynamic</div>
+                                <div style={{ color: 'white', fontWeight: 800, fontSize: '0.8rem', marginBottom: 2 }}>Custom Scenario</div>
+                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>Define your own...</div>
                             </button>
 
                             {/* Lead-Based Mock Test Card */}
@@ -1742,14 +1742,14 @@ export default function Academy() {
                                 style={{ 
                                     background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(139, 92, 246, 0.1))', 
                                     border: `1px solid ${COLORS.rose}44`, 
-                                    padding: '24px 16px', borderRadius: '24px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
+                                    padding: '16px 12px', borderRadius: '20px', textAlign: 'left', cursor: 'pointer', transition: 'all 0.2s',
                                     position: 'relative', overflow: 'hidden'
                                 }}
                             >
-                                <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.1 }}><Users size={60} /></div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.rose, textTransform: 'uppercase', marginBottom: 8 }}>Real Data</div>
-                                <div style={{ color: 'white', fontWeight: 800, fontSize: '0.9rem', marginBottom: 4 }}>Practice with Lead</div>
-                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.75rem' }}>Select a real CRM lead...</div>
+                                <div style={{ position: 'absolute', top: -5, right: -5, opacity: 0.1 }}><Users size={40} /></div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.rose, textTransform: 'uppercase', marginBottom: 6 }}>Real Data</div>
+                                <div style={{ color: 'white', fontWeight: 800, fontSize: '0.8rem', marginBottom: 2 }}>Practice with Lead</div>
+                                <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>Select CRM lead...</div>
                             </button>
                         </div>
 
