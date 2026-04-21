@@ -104,6 +104,7 @@ export default function Academy() {
     const [showCustomSim, setShowCustomSim] = useState(false);
     const [customSimForm, setCustomSimForm] = useState({ persona: 'Mr. Khurana', focus: 'ROI', goal: 'Handle aggressive price negotiation.' });
     const [simReport, setSimReport] = useState(null);
+    const [debugLog, setDebugLog] = useState('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
     const [isHandsFree, setIsHandsFree] = useState(false);
@@ -632,7 +633,9 @@ export default function Academy() {
             }
         } catch (err) {
             setIsAITalking(false);
-            showToast('AI Simulation connection interrupted', 'warning');
+            const errorMsg = err.message || (typeof err === 'object' ? JSON.stringify(err) : 'Unknown Error');
+            setDebugLog(`[AI ERROR] ${errorMsg}`);
+            showToast(`AI Error: ${errorMsg}`, 'error');
             
             // Fallback to a static response if API fails
             setTimeout(() => {
@@ -2141,6 +2144,16 @@ export default function Academy() {
                                 </div>
                                 </>
                             )}
+                        </div>
+                    )}
+                    {/* Diagnostic Debug Console (Hidden normally, but helps now) */}
+                    {debugLog && (
+                        <div style={{ position: 'absolute', bottom: 10, left: 10, right: 10, background: 'rgba(0,0,0,0.85)', color: '#ef4444', padding: '10px 15px', borderRadius: '12px', fontSize: '0.7rem', fontFamily: 'monospace', zIndex: 100, border: '1px solid #ef4444', maxHeight: '60px', overflowY: 'auto' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 900 }}>DIAGNOSTIC LOG:</span>
+                                <button onClick={() => setDebugLog('')} style={{ color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}>CLOSE</button>
+                            </div>
+                            {debugLog}
                         </div>
                     )}
                 </div>
