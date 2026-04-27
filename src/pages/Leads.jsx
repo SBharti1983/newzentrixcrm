@@ -58,7 +58,8 @@ const SOURCE_COLORS = {
 const SOURCES = [
     'Website', 'Referral', 'Social Media', 'Walk-in', 'PropTech Portal', 
     'Google Ads', 'WhatsApp', 'Facebook Ads', 'Instagram Ads', 'Zapier',
-    '99 Acres', 'Housing', 'Magic Bricks', 'OLX', 'NoBroker', 'Squareyards', 'Channel Partner'
+    '99 Acres', 'Housing', 'Magic Bricks', 'OLX', 'NoBroker', 'Squareyards', 
+    'Channel Partner', 'SMS', 'Email', 'Bulk SMS', 'Offline Event', 'Direct', 'WTI App'
 ];
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
@@ -483,13 +484,7 @@ export default function Leads() {
         formData.append('file', file);
         try {
             setBulkLoading(true);
-            const res = await fetch((import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')) + '/leads/import', {
-                method: 'POST',
-                headers: { Authorization: `Bearer ${sessionStorage.getItem('zentrix_token')}` },
-                body: formData
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Upload failed');
+            const data = await leadsApi.import(formData);
             showToast(`Imported ${data.imported} leads (${data.duplicates} duplicates skipped)`, 'success');
             fetchLeads();
         } catch (err) {

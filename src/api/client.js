@@ -9,7 +9,7 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 // In dev mode or on localhost, use relative '/api' so requests go through the Vite proxy.
 // In production (non-localhost), use the full Railway backend URL.
 const defaultApiUrl = window.location.hostname === 'localhost' ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
-let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
+export let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
 console.log('[API MODE] Host:', typeof window !== 'undefined' ? window.location.hostname : 'ssr', '| Target:', BASE_URL);
 console.log('[API DEBUG] Base URL Mode:', isLocal ? 'Local' : 'Remote', '| Resolved:', BASE_URL);
@@ -155,6 +155,7 @@ export const leadsApi = {
     deepScore: (id) => api(`/leads/${id}/ai-score`, { method: 'POST' }),
     getMatches: (id) => api(`/leads/${id}/matches`),
     addDeal: (id, data) => api(`/leads/${id}/deals`, { method: 'POST', body: data }),
+    import: (formData) => api('/leads/import', { method: 'POST', body: formData }),
 };
 
 // ─── Projects ─────────────────────────────────────────────────────
