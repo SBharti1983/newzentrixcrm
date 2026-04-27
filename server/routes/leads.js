@@ -371,23 +371,29 @@ router.post('/bulk-update', async (req, res) => {
 
         // Simple activity log for bulk action
         await client.query(
-            `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-             VALUES ($1,$2,'lead',NULL,'bulk_updated',$3)`,
+            `INSERT INTO activity_log (tenant_id, user_id, type, entity_type, entity_id, action, new_data)
+             VALUES ($1,$2,'lead','lead',NULL,'bulk_updated',$3)`,
             [req.tenantId, req.user.id, JSON.stringify({ count: rows.length, updates: validUpdates })]
         );
 
-        if (validUpdates.assigned_to && String(validUpdates.assigned_to) !== String(req.user.id)) {
-            req.io.to(`user_${validUpdates.assigned_to}`).emit('notification', {
-                title: 'Bulk Leads Assigned',
-                message: `You have been assigned ${rows.length} new leads.`,
-                type: 'lead_assigned',
-            });
-        }
         await client.query('COMMIT');
 
-        // Flush cache on lead update
-        await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-        await redis.del(`dash:${req.tenantId}:*`);
+        // Non-blocking: Notify assigned agent
+        if (validUpdates.assigned_to && String(validUpdates.assigned_to) !== String(req.user.id) && req.io) {
+            try {
+                req.io.to(`user_${validUpdates.assigned_to}`).emit('notification', {
+                    title: 'Bulk Leads Assigned',
+                    message: `You have been assigned ${rows.length} new leads.`,
+                    type: 'lead_assigned',
+                });
+            } catch (notifyErr) {
+                console.error('[Bulk Update] Socket notification error:', notifyErr.message);
+            }
+        }
+
+        // Non-blocking cache flush
+        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`).catch(() => {});
+        redis.del(`dash:${req.tenantId}:*`).catch(() => {});
 
         res.json({ message: 'Leads updated successfully', count: rows.length });
     } catch (err) {
@@ -417,9 +423,9 @@ router.post('/bulk-delete', async (req, res) => {
         );
         await client.query('COMMIT');
 
-        // Flush cache on lead deletion
-        await redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`);
-        await redis.del(`dash:${req.tenantId}:*`);
+        // Non-blocking cache flush
+        redis.del(`cache:/api/leads*|tenantId:${req.tenantId}*`).catch(() => {});
+        redis.del(`dash:${req.tenantId}:*`).catch(() => {});
 
         res.json({ message: 'Leads deleted successfully', count: rowCount });
     } catch (err) {
@@ -520,8 +526,8 @@ router.post('/', validateLead, async (req, res) => {
             
             // 1. Activity Log
             pool.query(
-                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-                 VALUES ($1, $2, 'lead', $3, 'created', $4)`,
+                `INSERT INTO activity_log (tenant_id, user_id, type, entity_type, entity_id, action, new_data)
+                 VALUES ($1, $2, 'lead', 'lead', $3, 'created', $4)`,
                 [req.tenantId, req.user.id, newLead.id, JSON.stringify(newLead)]
             ).catch(err => console.error('[Activity Log] Background error:', err.message));
 
@@ -612,7 +618,7 @@ router.post('/:id/ai-score', async (req, res) => {
     
     try {
         const result = await calculateLeadScore(req.params.id, req.tenantId);
-        if (!result) return res.status(404).json({ error: 'Lead not found or scoring failed' });
+        if (!result) return res.status(500).json({ error: 'AI scoring engine failed to return a result.' });
         
         // Clean up cache for this lead
         await redis.del(`dash:${req.tenantId}:*`);
@@ -623,7 +629,7 @@ router.post('/:id/ai-score', async (req, res) => {
         });
     } catch (err) {
         console.error('AI scoring error:', err);
-        res.status(500).json({ error: 'AI Analysis engine failed to process the lead' });
+        res.status(500).json({ error: 'AI Analysis failed: ' + (err.message || 'Unknown engine error') });
     }
 });
 
@@ -695,8 +701,8 @@ router.post('/:id/deals', async (req, res) => {
 
         // Activity log
         await pool.query(
-            `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, new_data)
-             VALUES ($1, $2, 'lead', $3, 'booking_created', $4)`,
+            `INSERT INTO activity_log (tenant_id, user_id, type, entity_type, entity_id, action, new_data)
+             VALUES ($1, $2, 'lead', 'lead', $3, 'booking_created', $4)`,
             [req.tenantId, req.user.id, req.params.id, JSON.stringify(rows[0])]
         );
 
@@ -757,8 +763,8 @@ router.patch('/:id', async (req, res) => {
 
         try {
             await pool.query(
-                `INSERT INTO activity_log (tenant_id, user_id, entity_type, entity_id, action, old_data, new_data)
-                 VALUES ($1,$2,'lead',$3,'updated',$4,$5)`,
+                `INSERT INTO activity_log (tenant_id, user_id, type, entity_type, entity_id, action, old_data, new_data)
+                 VALUES ($1,$2,'lead','lead',$3,'updated',$4,$5)`,
                 [req.tenantId, req.user.id, req.params.id, JSON.stringify(old.rows[0]), JSON.stringify(rows[0])]
             );
         } catch (logErr) {

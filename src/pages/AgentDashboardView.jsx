@@ -8,7 +8,7 @@ import {
     Phone, Mail, Calendar, MapPin, CalendarCheck, ChevronDown, 
     Bell, Search, MessageSquare, Flame, TrendingUp, Clock, UserCheck, 
     ChevronRight, Users, LayoutDashboard, Briefcase, Sparkles, GraduationCap, Award, ShieldCheck,
-    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone, Zap
+    CheckSquare, FileBarChart, Megaphone, Settings, HelpCircle, Plus, Smartphone, Zap, Trophy
 } from 'lucide-react';
 import { useMobile } from '../hooks/useMobile';
 
@@ -362,6 +362,49 @@ const AcademyCard = ({ xp = 0, level = 1, certifications = 0, score = 0, onClick
         </div>
     </div>
 );
+const LeaderboardWidget = ({ data = [], currentUser }) => (
+    <div style={{ 
+        background: '#fff', borderRadius: '24px', padding: '20px', 
+        border: `1px solid ${COLORS.border}`, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        display: 'flex', flexDirection: 'column', gap: '16px', flex: 1.2
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Trophy size={18} color={COLORS.orange} />
+                <h3 style={{ fontSize: '0.85rem', fontWeight: 950, color: COLORS.slate950, margin: 0, textTransform: 'uppercase' }}>Weekly Top Closers</h3>
+            </div>
+            <div style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.slate400, textTransform: 'uppercase' }}>Hall of Fame</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {(data && data.length > 0 ? data.slice(0, 4) : [
+                { name: 'Anjali Sharma', xp: 18400, level: 12 },
+                { name: 'Rahul Varma', xp: 12250, level: 9 },
+                { name: 'Priya Singh', xp: 10800, level: 8 }
+            ]).map((agent, idx) => (
+                <div key={idx} style={{ 
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', 
+                    background: (agent.id === currentUser?.id || agent.isMe) ? 'rgba(139, 92, 246, 0.05)' : '#f8fafc',
+                    borderRadius: '14px', border: (agent.id === currentUser?.id || agent.isMe) ? `1px solid ${COLORS.blue}22` : '1px solid #f1f5f9'
+                }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : COLORS.slate100, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 900, color: idx <= 2 ? '#fff' : COLORS.slate400 }}>
+                        {idx + 1}
+                    </div>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: COLORS.slate200, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: COLORS.slate600 }}>
+                        {agent.avatar ? <img src={agent.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : (agent.name?.charAt(0) || 'U')}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: COLORS.slate950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{agent.name}</div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: COLORS.slate500 }}>Level {agent.level} • {agent.rank_title || 'Closer'}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 900, color: COLORS.blue }}>{(agent.xp || agent.total_xp || 0).toLocaleString()}</div>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: COLORS.slate400 }}>XP</div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
 
 // --- MAIN DASHBOARD VIEW ---
 export default function AgentDashboardView({ user, data = {}, recentLeads = [], loading }) {
@@ -695,6 +738,12 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                     certifications={stats.academy?.certifications} 
                     score={stats.academy?.avg_sim_score}
                     onClick={() => navigate('/academy')} 
+                />
+
+                {/* Weekly Leaderboard Widget */}
+                <LeaderboardWidget 
+                    data={stats.academy?.leaderboard} 
+                    currentUser={user}
                 />
                 
                 {/* Activities */}

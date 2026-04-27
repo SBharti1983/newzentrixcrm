@@ -321,7 +321,7 @@ class AutomationService {
      */
     startBackgroundWorker(io) {
         console.log('⚡ Automation Background Worker started.');
-        // Lead Idle distribution
+        // Lead Idle distribution — check every 10 minutes (was 2min, too aggressive for Supabase)
         setInterval(async () => {
             try {
                 const { rows: workflows } = await pool.query(
@@ -331,18 +331,23 @@ class AutomationService {
                     await this.checkIdleLeads(wf, io);
                 }
             } catch (err) {
-                console.error('[Automation Background Worker] Error:', err);
+                // Silently handle connection errors — don't spam console
+                if (!err.message?.includes('Connection terminated')) {
+                    console.error('[Automation Background Worker] Error:', err.message);
+                }
             }
-        }, 120000);
+        }, 600000); // 10 minutes
 
-        // Process Drip Campaigns
+        // Process Drip Campaigns — check every 5 minutes (was 1min)
         setInterval(async () => {
             try {
                 await this.processDrips(io);
             } catch (err) {
-                console.error('[Drip Engine] Background Process Error:', err);
+                if (!err.message?.includes('Connection terminated')) {
+                    console.error('[Drip Engine] Background Process Error:', err.message);
+                }
             }
-        }, 60000); // Check every minute
+        }, 300000); // 5 minutes
     }
 
     async processDrips(_io) {

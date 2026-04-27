@@ -80,6 +80,7 @@ CREATE TABLE users (
     phone TEXT,
     department TEXT,
     reports_to UUID REFERENCES users(id) ON DELETE SET NULL,
+    telephony_agent_id TEXT,
     last_login_at TIMESTAMP WITH TIME ZONE,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

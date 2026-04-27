@@ -7,7 +7,14 @@ const dotenv = require('dotenv');
 const path = require('path');
 
 // Load environment variables from .env file
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+const rootEnv = path.resolve(__dirname, '../../.env');
+const serverEnv = path.resolve(__dirname, '../.env');
+
+dotenv.config({ path: rootEnv });
+// If root .env didn't have DATABASE_URL, try server .env
+if (!process.env.DATABASE_URL) {
+    dotenv.config({ path: serverEnv });
+}
 
 const config = {
     env: process.env.NODE_ENV || 'development',
@@ -15,7 +22,10 @@ const config = {
     
     database: {
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        // Supabase requires SSL in ALL environments — auto-detect from connection string
+        ssl: (process.env.DATABASE_URL && (process.env.DATABASE_URL.includes('supabase.co') || process.env.DATABASE_URL.includes('supabase.com')))
+            ? { rejectUnauthorized: false }
+            : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false)
     },
     
     jwt: {

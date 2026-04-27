@@ -224,16 +224,25 @@ router.get('/', cacheResponse(300), async (req, res) => {
                 GROUP BY p.id, p.name
                 ORDER BY lead_count DESC LIMIT 3`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
-            // 🔥 Academy Stats (Level, XP, Certs, Performance)
+            // 🔥 Academy Stats (Level, XP, Certs, Performance) + Leaderboard
             pool.query(`
                 SELECT json_build_object(
-                    'total_xp', COALESCE(total_xp, 0),
-                    'level', (COALESCE(total_xp, 0) / 1000) + 1,
+                    'total_xp', COALESCE(xp, 0),
+                    'level', COALESCE(level, 1),
+                    'rank_title', rank_title,
                     'certifications', (SELECT COUNT(*) FROM training_progress WHERE user_id = $1 AND is_certified = TRUE),
-                    'avg_sim_score', (SELECT COALESCE(ROUND(AVG(best_score)), 0) FROM training_progress WHERE user_id = $1 AND best_score > 0)
+                    'avg_sim_score', (SELECT COALESCE(ROUND(AVG(best_score)), 0) FROM training_progress WHERE user_id = $1 AND best_score > 0),
+                    'leaderboard', (
+                        SELECT json_agg(lb) FROM (
+                            SELECT id, name, avatar, xp, level, rank_title 
+                            FROM users 
+                            WHERE tenant_id = $2 AND is_active = TRUE
+                            ORDER BY xp DESC LIMIT 5
+                        ) lb
+                    )
                 ) as academy_stats
                 FROM users WHERE id = $1
-            `, [targetUserId])
+            `, [targetUserId, tid])
         ];
 
         // Only fetch members list in global mode

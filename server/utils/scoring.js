@@ -62,7 +62,14 @@ async function calculateLeadScore(leadId, tenantId) {
 
             INTERACTION PULSE (Last ${interactions.length} activities):
             ${interactions.length > 0 
-                ? interactions.map(i => `[${new Date(i.date).toISOString().split('T')[0]}] ${i.type.toUpperCase()}: ${i.note} (Sentiment: ${i.sentiment || 'Neutral'})`).join('\n')
+                ? interactions.map(i => {
+                    let d = 'Unknown Date';
+                    try { 
+                        const dateVal = i.date || i.created_at;
+                        if (dateVal) d = new Date(dateVal).toISOString().split('T')[0]; 
+                    } catch(e) {}
+                    return `[${d}] ${String(i.type || 'Activity').toUpperCase()}: ${i.note || 'No notes'} (Sentiment: ${i.sentiment || 'Neutral'})`;
+                }).join('\n')
                 : 'CRITICAL: No interaction history found. Cold startup detected.'
             }
 
@@ -90,13 +97,16 @@ async function calculateLeadScore(leadId, tenantId) {
             const blendedScore = Math.round((logicScore * 0.4) + (result.score * 0.6));
             const finalScore = Math.min(100, Math.max(0, blendedScore));
 
+            const classification = (result.classification || 'Neutral').toUpperCase();
+            console.log(`[AI SCORING] Updating lead ${leadId} | Score: ${finalScore} | Sentiment: ${classification}`);
+
             await pool.query(
                 `UPDATE leads 
                  SET score = $1, 
                      ai_analysis = $2, 
                      sentiment_pulse = $3 
                  WHERE id = $4 AND tenant_id = $5`,
-                [finalScore, JSON.stringify(result), result.classification || 'Neutral', leadId, tenantId]
+                [finalScore, JSON.stringify(result), classification, leadId, tenantId]
             );
 
             return {

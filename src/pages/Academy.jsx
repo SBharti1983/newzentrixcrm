@@ -24,8 +24,21 @@ const COLORS = {
     amber: '#f59e0b',
     navy: '#0f172a',
     border: '#e2e8f0',
-    bg: '#f8fafc'
+    bg: '#f8fafc',
+    xp: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+    gold: '#fbbf24'
 };
+
+const LevelBadge = ({ level, rank }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(139, 92, 246, 0.1)', padding: '4px 10px', borderRadius: 8, border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+        <div style={{ background: COLORS.purple, color: 'white', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 900 }}>
+            {level}
+        </div>
+        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: COLORS.purple, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+            {rank}
+        </span>
+    </div>
+);
 
 const MODULES = [
     {
@@ -1312,6 +1325,28 @@ export default function Academy() {
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 320px', gap: 32 }}>
                     {/* Main Content Area */}
                     <div>
+                        {/* Agent XP Progress Bar (Global) */}
+                        <div style={{ marginBottom: 32, background: 'white', borderRadius: '24px', padding: '24px 32px', border: `1px solid ${COLORS.border}`, boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                    <div style={{ width: 48, height: 48, borderRadius: '50%', background: COLORS.purple, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 900, boxShadow: `0 8px 16px ${COLORS.purple}44` }}>
+                                        {user?.level || 1}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: COLORS.navy }}>{user?.rank_title || 'Novice Closer'}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Training at 1.5x XP Velocity today</div>
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.navy }}>{user?.xp || 0} / {(Math.pow((user?.level || 1) * 10, 2))} XP</div>
+                                    <div style={{ fontSize: '0.7rem', color: COLORS.purple, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{(Math.pow((user?.level || 1) * 10, 2)) - (user?.xp || 0)} XP TO LEVEL { (user?.level || 1) + 1 }</div>
+                                </div>
+                             </div>
+                             <div style={{ height: 12, background: '#f1f5f9', borderRadius: 6, overflow: 'hidden' }}>
+                                 <div style={{ height: '100%', width: `${Math.min(100, ((user?.xp || 0) / Math.pow((user?.level || 1) * 10, 2)) * 100)}%`, background: COLORS.xp, borderRadius: 6, transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+                             </div>
+                        </div>
+
                         {/* Management Quick Stats (Admin Only) */}
                         {isAdmin && mgtStats && (
                             <div style={{ marginBottom: 40, background: 'white', borderRadius: '32px', padding: 32, border: `1px solid ${COLORS.border}`, boxShadow: 'var(--shadow-sm)' }}>
@@ -1527,20 +1562,20 @@ export default function Academy() {
                         {/* Learning Profile */}
                         <div style={{ background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', color: 'white', padding: 28, borderRadius: '24px', position: 'relative', overflow: 'hidden' }}>
                             <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.1 }}><Trophy size={120} /></div>
-                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>Closer Profile</h3>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>Rank: #4 / 128 Agents</div>
+                            <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900 }}>{user?.rank_title || 'Closer Profile'}</h3>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>Level {user?.level || 1} Elite Agent</div>
                             
                             <div style={{ margin: '24px 0' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: 8 }}>
                                     <span>XP Progress</span>
-                                    <span>85% to Level 13</span>
+                                    <span>{user?.xp || 0} / {(Math.pow((user?.level || 1) * 10, 2))} XP</span>
                                 </div>
                                 <div style={{ height: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, overflow: 'hidden' }}>
-                                    <div style={{ width: '85%', height: '100%', background: COLORS.purple }} />
+                                    <div style={{ width: `${Math.min(100, ((user?.xp || 0) / Math.pow((user?.level || 1) * 10, 2)) * 100)}%`, height: '100%', background: COLORS.purple, borderRadius: 4, transition: 'width 0.5s ease' }} />
                                 </div>
                             </div>
 
-                            <button onClick={() => setActiveTab('leaderboard')} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>View Achievements</button>
+                            <button onClick={() => setActiveTab('leaderboard')} style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer' }}>Global Rankings</button>
                         </div>
 
                         {/* Recent Badges */}
@@ -2107,25 +2142,32 @@ export default function Academy() {
                         </div>
                     ) : (
                         <div style={{ flex: 1, padding: 60, overflowY: 'auto' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
                                 <div>
                                     <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 950, margin: 0 }}>{battleStage === 'judging' ? 'Battle Adjudication' : 'ZenZone Report'}</h2>
                                     <p style={{ color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>Simulation analyzed by Zentrix AI Coach</p>
                                 </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    {battleStage === 'judging' ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                            <div style={{ color: COLORS.emerald, fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 4 }}>WINNER DECLARED</div>
-                                            <div style={{ color: 'white', fontSize: '1.8rem', fontWeight: 950, background: 'rgba(139, 92, 246, 0.2)', padding: '4px 16px', borderRadius: '12px', border: `1px solid ${COLORS.purple}` }}>{battleAdjudication?.winner || 'Analyzing...'}</div>
+                                <div style={{ textAlign: 'right', display: 'flex', gap: 24, alignItems: 'center' }}>
+                                    {simReport?.xpEarned && (
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ color: COLORS.amber, fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 4 }}>XP BOUNTY</div>
+                                            <div style={{ color: COLORS.amber, fontSize: '1.8rem', fontWeight: 950 }}>+{simReport.xpEarned}</div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div style={{ color: COLORS.emerald, fontSize: '2.5rem', fontWeight: 950 }}>84%</div>
-                                            <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase' }}>Closing Probability</div>
-                                        </>
                                     )}
+                                    <div style={{ width: 1, height: 40, background: 'rgba(255,255,255,0.1)' }} />
+                                    <div style={{ textAlign: 'right' }}>
+                                        {battleStage === 'judging' ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <div style={{ color: COLORS.emerald, fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 4 }}>WINNER DECLARED</div>
+                                                <div style={{ color: 'white', fontSize: '1.8rem', fontWeight: 950, background: 'rgba(139, 92, 246, 0.2)', padding: '4px 16px', borderRadius: '12px', border: `1px solid ${COLORS.purple}` }}>{battleAdjudication?.winner || 'Analyzing...'}</div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div style={{ color: COLORS.emerald, fontSize: '2.5rem', fontWeight: 950 }}>{simReport?.score || 84}%</div>
+                                                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase' }}>Closer Grade</div>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
 
                             {battleStage === 'judging' ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}>
@@ -2343,27 +2385,24 @@ export default function Academy() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {(boardData && boardData.length > 0 ? boardData : [
-                                    { rank: 1, name: 'Anjali Sharma', modules_completed: 45, total_xp: 18400, color: '#fbbf24' },
-                                    { rank: 2, name: 'Rahul Varma', modules_completed: 38, total_xp: 12250, color: '#94a3b8' },
-                                    { rank: 3, name: 'Priya Singh', modules_completed: 32, total_xp: 10800, color: '#b45309' },
-                                    { rank: 4, name: (user?.name || 'Rohan Mishra') + ' (You)', modules_completed: 28, total_xp: 4500, isMe: true }
-                                ]).map((row, idx) => (
-                                    <tr key={row.id || idx} style={{ borderBottom: `1px solid ${COLORS.border}`, background: row.isMe || row.id === user?.id ? '#eff6ff' : 'transparent' }}>
+                                {(boardData || []).map((row, idx) => (
+                                    <tr key={row.id || idx} style={{ borderBottom: `1px solid ${COLORS.border}`, background: row.id === user?.id ? 'rgba(139, 92, 246, 0.05)' : 'transparent' }}>
                                         <td style={{ padding: '20px 0', fontWeight: 900 }}>
                                             {(idx + 1) <= 3 ? <span style={{ color: idx === 0 ? '#fbbf24' : idx === 1 ? '#94a3b8' : '#b45309' }}>#{(idx + 1)}</span> : `#${(idx + 1)}`}
                                         </td>
                                         <td style={{ padding: '20px 0' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: COLORS.navy, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 800 }}>
-                                                    {row.avatar ? <img src={row.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : row.name.charAt(0)}
+                                                    {row.avatar ? <img src={row.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : (row.name?.charAt(0) || 'U')}
                                                 </div>
                                                 <span style={{ fontWeight: 800, color: COLORS.navy }}>{row.name} {row.id === user?.id && '(You)'}</span>
                                             </div>
                                         </td>
-                                        <td style={{ padding: '20px 0', fontWeight: 700 }}>{Math.floor((parseInt(row.total_xp) || 0) / 1000) + 1}</td>
-                                        <td style={{ padding: '20px 0', color: 'var(--text-muted)', fontWeight: 600 }}>{row.modules_completed} Completed</td>
-                                        <td style={{ padding: '20px 0', textAlign: 'right', fontWeight: 900, color: COLORS.navy }}>{(parseInt(row.total_xp) || 0).toLocaleString()}</td>
+                                        <td style={{ padding: '20px 0' }}>
+                                            <LevelBadge level={row.level || 1} rank={row.rank_title || 'Agent'} />
+                                        </td>
+                                        <td style={{ padding: '20px 0', color: 'var(--text-muted)', fontWeight: 600 }}>{row.modules_completed || 0} Projects</td>
+                                        <td style={{ padding: '20px 0', textAlign: 'right', fontWeight: 900, color: COLORS.purple }}>{(parseInt(row.xp || row.total_xp) || 0).toLocaleString()} XP</td>
                                     </tr>
                                 ))}
                             </tbody>

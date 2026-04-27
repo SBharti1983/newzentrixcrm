@@ -152,6 +152,7 @@ export const leadsApi = {
     exportCalls: (params = {}) => api('/leads/export-calls?' + new URLSearchParams(params)),
     generatePhysicalReport: (csvContent, filename) => api('/leads/generate-physical-report', { method: 'POST', body: { csvContent, filename } }),
     aiScore: (id) => api(`/leads/${id}/ai-score`, { method: 'POST' }),
+    deepScore: (id) => api(`/leads/${id}/ai-score`, { method: 'POST' }),
     getMatches: (id) => api(`/leads/${id}/matches`),
     addDeal: (id, data) => api(`/leads/${id}/deals`, { method: 'POST', body: data }),
 };

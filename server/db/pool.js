@@ -2,33 +2,47 @@ const { Pool } = require('pg');
 const config = require('../config/secrets');
 
 let connectionString = config.database.connectionString;
+let sslConfig = config.database.ssl;
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 if (connectionString && (connectionString.includes('supabase.co') || connectionString.includes('supabase.com'))) {
-    console.log('⚠️  Detecting Supabase connection. Optimizing for IPv4/Pooler compatibility...');
-    
-    try {
-        const url = new URL(connectionString);
-        url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
-        url.port = '6543';
+    // Supabase ALWAYS requires SSL — override any dev-mode ssl:false
+    sslConfig = { rejectUnauthorized: false };
 
-        if (!url.username.includes('uvnkbewvpewocaqzysqb')) {
-            url.username = 'postgres.uvnkbewvpewocaqzysqb';
+    if (isProduction) {
+        // Production (Railway/Heroku): Rewrite to use IPv4 connection pooler
+        console.log('⚠️  Production Supabase detected. Switching to IPv4 Pooler...');
+        try {
+            const url = new URL(connectionString);
+            url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
+            url.port = '6543';
+
+            if (!url.username.includes('uvnkbewvpewocaqzysqb')) {
+                url.username = 'postgres.uvnkbewvpewocaqzysqb';
+            }
+            
+            connectionString = url.toString();
+            const masked = connectionString.replace(/:([^:@]+)@/, ':****@');
+            console.log('✅ Pooler Connection:', masked);
+        } catch (e) {
+            console.error('❌ Failed to optimize connection string:', e.message);
         }
-        
-        connectionString = url.toString();
+    } else {
+        // Development: Use the direct Supabase connection (no pooler rewrite)
         const masked = connectionString.replace(/:([^:@]+)@/, ':****@');
-        console.log('✅ Optimized Connection String:', masked);
-    } catch (e) {
-        console.error('❌ Failed to optimize connection string:', e.message);
+        console.log('✅ Direct Supabase Connection (dev):', masked);
     }
 }
 
 const pool = new Pool({
     connectionString,
-    max: 20, 
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-    ssl: config.database.ssl,
+    max: 10, 
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 15000,
+    ssl: sslConfig,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
 });
 
 pool.connect((err, client, release) => {
@@ -36,6 +50,12 @@ pool.connect((err, client, release) => {
         console.error('❌ Database connection failed:', err.message);
         if (err.message.includes('ENETUNREACH')) {
             console.error('   💡 Tip: This host is IPv6-only. Use the Supabase Connection Pooler for IPv4 environments like Railway.');
+        }
+        if (err.message.includes('SSL') || err.message.includes('ssl')) {
+            console.error('   💡 Tip: Supabase requires SSL. Ensure ssl: { rejectUnauthorized: false } is set.');
+        }
+        if (err.message.includes('password authentication failed')) {
+            console.error('   💡 Tip: Check that the @ in your DB password is URL-encoded as %40 in DATABASE_URL.');
         }
     } else {
         console.log('✅ Database connected — PostgreSQL ready');

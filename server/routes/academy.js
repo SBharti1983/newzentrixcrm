@@ -113,13 +113,24 @@ router.post('/progress', async (req, res) => {
             [req.tenantId, req.user.id, module_id, progress || 0, completed || false, completedAt, score || 0, isCertified, isCertified ? new Date() : null]
         );
 
-        // LOG DETAILED REPORT
-        if (score !== undefined) {
-            await pool.query(
-                `INSERT INTO simulation_reports (tenant_id, user_id, module_id, score, persona, scenario_title)
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                [req.tenantId, req.user.id, module_id, score, req.body.persona || 'General', req.body.scenario_title || 'Direct Practise']
-            );
+        // --- XP & LEVELING ENGINE ---
+        if (completed && module_id) {
+            const { rows: modRows } = await pool.query('SELECT xp_points FROM training_modules WHERE id = $1', [module_id]);
+            const xpToAdd = modRows[0]?.xp_points || 50;
+            
+            await pool.query(`
+                UPDATE users 
+                SET xp = xp + $1,
+                    level = floor(sqrt(xp + $1) / 10) + 1,
+                    rank_title = CASE 
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 20 THEN 'Legendary Closer'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 15 THEN 'Deal Master'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 10 THEN 'Negotiation Ninja'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 5 THEN 'Lead Hunter'
+                        ELSE 'Novice Closer'
+                    END
+                WHERE id = $2 AND tenant_id = $3
+            `, [xpToAdd, req.user.id, req.tenantId]);
         }
 
         res.json(rows[0]);
@@ -177,15 +188,10 @@ router.get('/stats/management', async (req, res) => {
 router.get('/leaderboard', async (req, res) => {
     try {
         const { rows } = await pool.query(
-            `SELECT u.id, u.name, u.avatar,
-                    COUNT(p.id) as modules_completed,
-                    SUM(m.xp_points) as total_xp
-             FROM users u
-             JOIN training_progress p ON u.id = p.user_id AND p.completed = TRUE
-             JOIN training_modules m ON p.module_id = m.id
-             WHERE u.tenant_id = $1
-             GROUP BY u.id, u.name, u.avatar
-             ORDER BY total_xp DESC
+            `SELECT id, name, avatar, xp, level, rank_title
+             FROM users 
+             WHERE tenant_id = $1 AND is_active = TRUE
+             ORDER BY xp DESC
              LIMIT 10`,
             [req.tenantId]
         );
@@ -423,6 +429,31 @@ router.post('/analyze', async (req, res) => {
         `;
 
         const report = await generateAIResponse(analysisPrompt, true);
+        
+        // --- GAME-PLAY REWARDS (Simulation XP) ---
+        if (report && typeof report.score === 'number') {
+            const xpEarned = Math.round(report.score * 2.5); // Score of 80 = 200 XP
+            
+            const { rows: userUpdate } = await pool.query(`
+                UPDATE users 
+                SET xp = xp + $1,
+                    level = floor(sqrt(xp + $1) / 10) + 1,
+                    rank_title = CASE 
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 20 THEN 'Legendary Closer'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 15 THEN 'Deal Master'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 10 THEN 'Negotiation Ninja'
+                        WHEN floor(sqrt(xp + $1) / 10) + 1 >= 5 THEN 'Lead Hunter'
+                        ELSE 'Novice Closer'
+                    END
+                WHERE id = $2 AND tenant_id = $3
+                RETURNING xp, level, rank_title
+            `, [xpEarned, req.user.id, req.tenantId]);
+
+            report.xpEarned = xpEarned;
+            report.newLevel = userUpdate[0]?.level;
+            report.newRank = userUpdate[0]?.rank_title;
+        }
+
         res.json(report);
 
     } catch (err) {
