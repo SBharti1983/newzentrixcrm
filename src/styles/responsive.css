@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Responsive Breakpoints
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+
+/* ── Tablet: ≤1200px ─────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Tablet-small / landscape phone: ≤900px ──────────────────────── */
+@media (max-width: 900px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Mobile breakpoint: ≤768px ───────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* ─ Sidebar: off-screen overlay ─ */
+  .sidebar.mobile-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 300;
+    width: 280px;
+    box-shadow: none;
+  }
+
+  .sidebar.mobile-sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 22, 40, 0.5);
+    z-index: 299;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .mobile-close-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  /* ─ Main content: full width on mobile ─ */
+  .main-content.mobile {
+    margin-left: 0 !important;
+  }
+
+  /* ─ Header: full width on mobile ─ */
+  .header.mobile-header {
+    left: 0 !important;
+  }
+
+  .header-title {
+    font-size: 0.95rem;
+  }
+
+  .header-breadcrumb {
+    font-size: 0.72rem;
+  }
+
+  /* ─ Page content ─ */
+  .page-content {
+    padding: 16px 14px;
+  }
+
+  /* ─ Stat cards ─ */
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* ─ Cards ─ */
+  .card-header {
+    padding: 16px 16px 0;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .card-body {
+    padding: 16px;
+  }
+
+  /* ─ Tables ─ */
+  .table-wrapper {
+    border-radius: var(--border-radius-md);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  th,
+  td {
+    padding: 10px 12px;
+    font-size: 0.8rem;
+  }
+
+  /* Make first column sticky in tables */
+  table th:first-child,
+  table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: inherit;
+  }
+
+  table th:first-child {
+    background: var(--slate-50);
+  }
+
+  table td:first-child {
+    background: white;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.04);
+  }
+
+  /* ─ Modals: full-screen on mobile ─ */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+    animation: slideUp var(--transition-normal) ease;
+  }
+
+  .modal-lg {
+    max-width: 100%;
+  }
+
+  .modal-header {
+    padding: 20px 20px 0;
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-footer {
+    padding: 0 20px 20px;
+    flex-wrap: wrap;
+  }
+
+  .modal-footer .btn {
+    flex: 1;
+    min-width: 120px;
+    justify-content: center;
+  }
+
+  /* ─ Filter rows / action bars ─ */
+  .filter-bar,
+  .page-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ─ Buttons ─ */
+  .btn {
+    padding: 10px 16px;
+    font-size: 0.82rem;
+  }
+
+  .btn-sm {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+
+  /* ─ Utility hide classes ─ */
+  .hide-mobile {
+    display: none !important;
+  }
+
+  /* ─ Grid overrides ─ */
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* ── Small phone: ≤640px ─────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .page-content {
+    padding: 12px 10px;
+  }
+
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stat cards stack */
+  .stat-card {
+    padding: 16px;
+  }
+
+  .stat-value {
+    font-size: 1.3rem;
+  }
+
+  /* Search bar hidden at this size */
+  .hide-mobile-sm {
+    display: none !important;
+  }
+
+  /* Header compact */
+  .header {
+    padding: 0 12px;
+    height: 56px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .page-content {
+    margin-top: 56px;
+  }
+
+  /* Cards tighter */
+  .card-header {
+    padding: 12px 14px 0;
+  }
+
+  .card-body {
+    padding: 12px 14px;
+  }
+
+  /* Modal footer stack buttons */
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  /* Table cells even tighter */
+  th,
+  td {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+  }
+}
+
+/* ── Very small phone: ≤480px ────────────────────────────────────── */
+@media (max-width: 480px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  h2 {
+    font-size: 1.15rem;
+  }
+
+  h3 {
+    font-size: 1rem;
+  }
+
+  .page-content {
+    padding: 10px 8px;
+  }
+}
+
+/* ── Login page mobile ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .login-left-panel {
+    display: none !important;
+  }
+}
+
+/* ── Float animation for Register/Login backgrounds ──────────────── */
+@keyframes float {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+/* ── Slide-up animation for mobile modals ────────────────────────── */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+

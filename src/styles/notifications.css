@@ -1,0 +1,32 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Notifications & WhatsApp
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Notification / WhatsApp Button ─────────────────────────────── */
+.btn-whatsapp {
+  background: linear-gradient(135deg, #25d366, #128c7e);
+  color: white;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp:hover {
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.45);
+}
+
+/* Channel badge colors */
+.badge-whatsapp {
+  background: rgba(37, 211, 102, 0.12);
+  color: #128c7e;
+}
+
+.badge-sms {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-emerald-dark);
+}
+
+.badge-email {
+  background: var(--navy-100);
+  color: var(--navy-700);
+}
+

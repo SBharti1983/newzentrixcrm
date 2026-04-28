@@ -1,0 +1,102 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Command Center
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Command Center ────────────────────────────────────────── */
+.command-center-root {
+  padding: 12px 24px 24px;
+  height: calc(100vh - 100px);
+  background: #f8fafc;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: -24px -28px 0 -28px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1024px) {
+  .command-center-root {
+    height: auto;
+    overflow: visible;
+    padding: 12px 16px;
+    margin: 0;
+  }
+}
+
+.command-center-header {
+  padding: 20px 40px;
+  margin: 12px 24px 20px;
+  border-radius: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 768px) {
+  .command-center-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    margin: 10px 0;
+    align-items: flex-start;
+  }
+}
+
+.command-center-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(310px, 1.2fr) 2fr 1.2fr;
+  gap: 20px;
+  overflow: hidden;
+  padding: 0 8px;
+}
+
+@media (max-width: 1024px) {
+  .command-center-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+    gap: 16px;
+  }
+
+  .command-center-grid>div {
+    height: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .command-center-grid>div {
+    height: 500px;
+  }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-state-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.empty-state-text {
+  font-size: 0.875rem;
+}
+

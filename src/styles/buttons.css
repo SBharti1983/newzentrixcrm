@@ -1,0 +1,129 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Buttons
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Buttons ────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--border-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition-fast);
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Material Design Ripple Effect */
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1) translate(-50%, -50%);
+  transform-origin: 50% 50%;
+  z-index: -1;
+}
+
+.btn:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0) translate(-50%, -50%);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: scale(40) translate(-50%, -50%);
+    opacity: 0;
+  }
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--navy-600), var(--navy-500));
+  color: white;
+  box-shadow: 0 2px 8px rgba(30, 58, 115, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--navy-700), var(--navy-600));
+  box-shadow: 0 4px 12px rgba(30, 58, 115, 0.4);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-secondary:hover {
+  background: var(--slate-50);
+  border-color: var(--border-accent);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--slate-100);
+  color: var(--text-primary);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--accent-rose-dark), var(--accent-rose));
+  color: white;
+  box-shadow: 0 2px 8px rgba(244, 63, 94, 0.3);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.4);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--accent-emerald-dark), var(--accent-emerald));
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 0.95rem;
+}
+
+.btn-icon {
+  padding: 9px;
+}
+

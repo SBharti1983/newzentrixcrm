@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Kanban Board & Cards
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Kanban Board ───────────────────────────────────────────────── */
+.pipeline-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  height: calc(100vh - 210px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.pipeline-column {
+  min-width: 0 !important;
+  background: #f1f5f9 !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.pipeline-col-header {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.pipeline-col-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pipeline-col-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.pipeline-col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scrollbar-width: none;
+  min-height: 0;
+}
+
+.pipeline-col-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Kanban Card ────────────────────────────────────────────────── */
+.kanban-card {
+  background: white;
+  border-radius: 10px;
+  border: 1px solid var(--slate-200);
+  padding: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  cursor: grab;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanban-card:hover {
+  border-color: var(--navy-300);
+  box-shadow: 0 4px 12px rgba(10, 22, 40, 0.08);
+  transform: translateY(-2px);
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+}
+
+.kanban-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.kanban-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--navy-900);
+  line-height: 1.3;
+}
+
+.kanban-card-score {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.kanban-card-score.high {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-emerald);
+}
+
+.kanban-card-score.med {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--accent-amber);
+}
+
+.kanban-card-score.low {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--accent-rose);
+}
+
+.kanban-card-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--navy-800);
+}
+
+.info-sub {
+  font-size: 0.725rem;
+  color: var(--text-muted);
+}
+
+.kanban-card-project {
+  font-size: 0.75rem;
+  color: var(--navy-600);
+  font-weight: 600;
+  background: var(--slate-50);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kanban-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.kanban-card-tags {
+  display: flex;
+  gap: 4px;
+}
+
+.tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.tag-high {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--accent-rose);
+}
+
+.tag-medium {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--accent-amber);
+}
+
+.tag-low {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-emerald);
+}
+
+.tag-source {
+  background: var(--slate-100);
+  color: var(--text-muted);
+}
+
+.kanban-card-time {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+

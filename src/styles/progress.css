@@ -1,0 +1,20 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Progress Bar
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Progress Bar ───────────────────────────────────────────────── */
+.progress-bar {
+  height: 6px;
+  background: var(--slate-200);
+  border-radius: var(--border-radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: var(--border-radius-full);
+  background: linear-gradient(90deg, var(--navy-500), var(--accent-cyan));
+  transition: width var(--transition-slow);
+}
+

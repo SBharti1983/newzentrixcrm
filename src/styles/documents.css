@@ -1,0 +1,52 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Document Cards & Checklist
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Document Cards ─────────────────────────────────────────────── */
+.doc-card {
+  background: var(--surface-card);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.doc-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--navy-200);
+}
+
+/* ─── Checklist Items ────────────────────────────────────────────── */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--slate-50);
+  transition: all var(--transition-fast);
+}
+
+.checklist-item.completed {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* ─── Empty State Extended ───────────────────────────────────────── */
+.empty-state-desc {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* ─── mb-6 utility ───────────────────────────────────────────────── */
+.mb-6 {
+  margin-bottom: 24px;
+}
+

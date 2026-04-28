@@ -1,0 +1,104 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Modal & Slide-over
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Slide-over panel ───────────────────────────────────────────── */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ─── Drag ghost styling ─────────────────────────────────────────── */
+.pipeline-card[draggable="true"]:active {
+  box-shadow: var(--shadow-xl);
+  transform: rotate(2deg) scale(1.02);
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────── */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--navy-400), var(--accent-cyan));
+  color: white;
+}
+
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+}
+
+.avatar-lg {
+  width: 48px;
+  height: 48px;
+  font-size: 1rem;
+}
+
+/* ─── Modal ──────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.modal {
+  background: white;
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp var(--transition-normal) ease;
+}
+
+.modal-lg {
+  max-width: 800px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px 0;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.modal-body {
+  padding: 24px 28px;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 28px 24px;
+}
+

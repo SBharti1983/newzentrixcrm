@@ -1,0 +1,36 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Tabs
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Tabs ───────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--slate-100);
+  padding: 4px;
+  border-radius: var(--border-radius-md);
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--text-primary);
+}
+

@@ -1,0 +1,46 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Payment Tracker Timeline
+   Extracted from index.css during modularization
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Payment Tracker — Timeline ─────────────────────────────────── */
+.payment-timeline {
+  position: relative;
+  padding-left: 32px;
+}
+
+.payment-timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent-emerald) 0%, var(--navy-500) 60%, var(--slate-200) 100%);
+  border-radius: 2px;
+}
+
+/* ─── Drag-Drop Upload Zone ──────────────────────────────────────── */
+.dropzone {
+  border: 2px dashed var(--border-medium);
+  border-radius: var(--border-radius-md);
+  background: var(--slate-50);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 130px;
+  padding: 20px;
+  text-align: center;
+}
+
+.dropzone:hover,
+.dropzone.drag-over {
+  background: var(--navy-50);
+  border-color: var(--navy-400);
+  transform: scale(1.01);
+}
+
