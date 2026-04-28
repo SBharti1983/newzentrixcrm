@@ -232,9 +232,8 @@ router.get('/:id', async (req, res) => {
 // GET /api/leads — list with filters + search + pagination
 router.get('/', (req, res, next) => {
     // Only use cache for non-search list requests
-    // if (req.query.q) return next();
-    // return cacheResponse(60)(req, res, next);
-    return next();
+    if (req.query.q) return next();
+    return cacheResponse(60)(req, res, next);
 }, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const page = parseInt(req.query.page) || 1;
