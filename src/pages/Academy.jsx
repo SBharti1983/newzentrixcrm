@@ -2261,7 +2261,7 @@ export default function Academy() {
 
                             <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '24px', padding: 32, border: '1px solid rgba(255,255,255,0.05)', marginBottom: 40 }}>
                                 <div style={{ color: COLORS.purple, fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', marginBottom: 12, letterSpacing: '0.05em' }}>Calibration Script</div>
-                                <div style={{ color: 'white', fontSize: '1.3rem', fontWeight: 700, lineHeight: 1.6, fontStyle: 'italic', color: 'rgba(255,255,255,0.9)' }}>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 700, lineHeight: 1.6, fontStyle: 'italic', color: 'rgba(255,255,255,0.9)' }}>
                                     "Hello! This is Rohan from Zentrix. I noticed you were exploring our newest luxury project's ROI projections. The reason I'm reaching out is that we've just unlocked a strategic subvention plan for our early investors. I'd love to walk you through how this fits into your current portfolio."
                                 </div>
                             </div>
