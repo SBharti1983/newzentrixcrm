@@ -66,10 +66,6 @@ export default defineConfig({
             if (id.includes('lucide')) {
               return 'vendor-ui';
             }
-            // Socket.IO (real-time)
-            if (id.includes('socket.io')) {
-              return 'vendor-socket';
-            }
             // HTTP & networking
             if (id.includes('axios')) {
               return 'vendor-http';

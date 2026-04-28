@@ -1,5 +1,36 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+/* ═══ Module Imports ═══ */
+@import './styles/layout.css';
+@import './styles/sidebar.css';
+@import './styles/header.css';
+@import './styles/cards.css';
+@import './styles/buttons.css';
+@import './styles/badges.css';
+@import './styles/forms.css';
+@import './styles/tables.css';
+@import './styles/page-header.css';
+@import './styles/grid.css';
+@import './styles/pipeline.css';
+@import './styles/modal.css';
+@import './styles/progress.css';
+@import './styles/tabs.css';
+@import './styles/animations.css';
+@import './styles/notifications.css';
+@import './styles/command-center.css';
+@import './styles/tooltip.css';
+@import './styles/utilities.css';
+@import './styles/kanban.css';
+@import './styles/premium-animations.css';
+@import './styles/responsive.css';
+@import './styles/payment-tracker.css';
+@import './styles/documents.css';
+@import './styles/site-visits.css';
+@import './styles/dashboard.css';
+@import './styles/inventory.css';
+@import './styles/contact-preview.css';
+@import './styles/mobile.css';
+
 /* ─── CSS Custom Properties ─────────────────────────────────────── */
 :root {
   /* Navy/Slate Color Palette */
@@ -416,35 +447,3 @@ a:hover {
 /* --- Transitions --- */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-
-/* ═══ Module Imports ═══ */
-@import './styles/layout.css';
-@import './styles/sidebar.css';
-@import './styles/header.css';
-@import './styles/cards.css';
-@import './styles/buttons.css';
-@import './styles/badges.css';
-@import './styles/forms.css';
-@import './styles/tables.css';
-@import './styles/page-header.css';
-@import './styles/grid.css';
-@import './styles/pipeline.css';
-@import './styles/modal.css';
-@import './styles/progress.css';
-@import './styles/tabs.css';
-@import './styles/animations.css';
-@import './styles/notifications.css';
-@import './styles/command-center.css';
-@import './styles/tooltip.css';
-@import './styles/utilities.css';
-@import './styles/kanban.css';
-@import './styles/premium-animations.css';
-@import './styles/responsive.css';
-@import './styles/payment-tracker.css';
-@import './styles/documents.css';
-@import './styles/site-visits.css';
-@import './styles/dashboard.css';
-@import './styles/inventory.css';
-@import './styles/contact-preview.css';
-@import './styles/mobile.css';
