@@ -1,5 +1,9 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+// ─── Sentry MUST be initialized before everything else ───
+const { initSentry, Sentry } = require('./config/sentry');
+
 // ZentrixCRM Main Entry Point
 const express = require('express');
 const cors = require('cors');
@@ -226,7 +230,11 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/broker', require('./routes/broker'));
 app.use('/api/academy', require('./routes/academy'));
 
-app.get('/', (req, res) => { res.json({ message: 'ZentrixCRM API Running', health: '/api/health' }); });
+// ─── Swagger API Documentation ───────────────────────────────────
+const { setupSwagger } = require('./config/swagger');
+setupSwagger(app);
+
+app.get('/', (req, res) => { res.json({ message: 'ZentrixCRM API Running', health: '/api/health', docs: '/api/docs' }); });
 
 app.get('/api/health', async (req, res) => {
     const pool = require('./db/pool');
@@ -262,11 +270,24 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
-app.use((err, req, res, _next) => { console.error(err); res.status(500).json({ error: 'Server error' }); });
+
+// ─── Global Error Handler with Sentry ────────────────────────────
+app.use((err, req, res, _next) => {
+    // Report to Sentry if available
+    if (process.env.SENTRY_DSN) {
+        Sentry.captureException(err);
+    }
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+});
+
+// ─── Initialize Sentry ───────────────────────────────────────────
+initSentry(app);
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, () => {
     console.log(`ZentrixCRM API Cluster Ready on Port ${PORT}`);
+    console.log(`📖 API Docs: http://localhost:${PORT}/api/docs`);
     automationService.startBackgroundWorker(io);
     
     // Start 30-day recording retention auto-cleanup
