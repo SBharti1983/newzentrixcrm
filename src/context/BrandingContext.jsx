@@ -26,8 +26,14 @@ export function BrandingProvider({ children }) {
     const [branding, setBranding] = useState(() => {
         try {
             const cached = sessionStorage.getItem('zentrix_branding');
-            return cached ? { ...DEFAULT_BRANDING, ...JSON.parse(cached) } : DEFAULT_BRANDING;
-        } catch { return DEFAULT_BRANDING; }
+            if (cached && cached !== 'undefined' && cached !== 'null') {
+                return { ...DEFAULT_BRANDING, ...JSON.parse(cached) };
+            }
+            return DEFAULT_BRANDING;
+        } catch (e) { 
+            console.warn('[BRANDING] Cache parse failed, using defaults', e);
+            return DEFAULT_BRANDING; 
+        }
     });
     const [loaded, setLoaded] = useState(false);
 

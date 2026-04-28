@@ -7,7 +7,10 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
         try {
             const stored = sessionStorage.getItem('zentrix_user');
-            return stored ? JSON.parse(stored) : null;
+            if (stored && stored !== 'undefined' && stored !== 'null') {
+                return JSON.parse(stored);
+            }
+            return null;
         } catch { return null; }
     });
     const [loginError, setLoginError] = useState('');

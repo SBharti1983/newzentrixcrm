@@ -1,15 +1,15 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import './index.css';
 import { AuthProvider } from './context/AuthContext';
 import { useAuth } from './hooks/useAuth';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { ToastProvider } from './components/ToastProvider';
 import { useToast } from './hooks/useToast';
-const Dialer = lazy(() => import('./components/Dialer'));
-const AgentCopilotWidget = lazy(() => import('./components/AgentCopilotWidget'));
-const MobileActionHub = lazy(() => import('./components/MobileActionHub'));
-const MobileBottomNav = lazy(() => import('./components/MobileBottomNav'));
+import Dialer from './components/Dialer';
+import AgentCopilotWidget from './components/AgentCopilotWidget';
+import MobileBottomNav from './components/MobileBottomNav';
 import PWAInstallManager from './components/PWAInstallManager';
 import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
@@ -65,7 +65,6 @@ const Academy = lazy(() => import('./pages/Academy'));
 
 // --- Pre-loaded Critical Components ---
 import { PageLoader } from './components/Feedback';
-import './index.css';
 
 // --- UI Overlays ---
 function LockoutOverlay() {
