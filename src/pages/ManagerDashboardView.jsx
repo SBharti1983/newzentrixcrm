@@ -28,15 +28,22 @@ const COLORS = {
     bg: '#f8fafc'
 };
 
-const CHART_DATA = [
-  { name: 'May 1', thisMonth: 4, lastMonth: 3 },
-  { name: 'May 6', thisMonth: 6, lastMonth: 5 },
-  { name: 'May 11', thisMonth: 5, lastMonth: 7 },
-  { name: 'May 16', thisMonth: 8, lastMonth: 6 },
-  { name: 'May 21', thisMonth: 9, lastMonth: 8 },
-  { name: 'May 26', thisMonth: 11, lastMonth: 9 },
-  { name: 'May 31', thisMonth: 14, lastMonth: 10 },
-];
+// Dynamic Chart Data mapping
+    const CHART_DATA = data?.trends?.map(t => ({
+        name: t.name,
+        leads: parseInt(t.leads) || 0,
+        calls: parseInt(t.calls) || 0,
+        followups: parseInt(t.follow) || 0,
+        visits: parseInt(t.visits) || 0
+    })) || [
+        { name: 'May 1', leads: 4, calls: 3 },
+        { name: 'May 6', leads: 6, calls: 5 },
+        { name: 'May 11', leads: 5, calls: 7 },
+        { name: 'May 16', leads: 8, calls: 6 },
+        { name: 'May 21', leads: 9, calls: 8 },
+        { name: 'May 26', leads: 11, calls: 9 },
+        { name: 'May 31', leads: 14, calls: 10 },
+    ];
 
 const KPI_STYLE = {
     background: '#ffffff',
@@ -49,20 +56,24 @@ const KPI_STYLE = {
 
 export default function ManagerDashboardView({ user, data }) {
     const navigate = useNavigate();
-    const [period, setPeriod] = useState('This Month');
     const isMobile = useMobile();
-    
-    const stats = data || {};
-    const members = stats.members || [];
-    const leadsStat = stats.leads || {};
-    const bookings = stats.bookings || {};
 
+    
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good morning';
         if (hour < 17) return 'Good afternoon';
         return 'Good evening';
     };
+
+    const stats = data || {};
+    const members = stats.members || [];
+    const leadsStat = stats.leads || {};
+    const bookings = stats.bookings || {};
+    const upcomingFollowups = stats.upcoming_followups || [];
+    const activeDeals = stats.active_deals || [];
+    const pipeline = stats.pipeline || {};
+    const overdue = stats.overdue || {};
 
     const formatRevenue = (v) => {
         if (!v) return '₹0';
@@ -158,8 +169,8 @@ export default function ManagerDashboardView({ user, data }) {
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
                                 />
-                                <Line type="monotone" name="This Month" dataKey="thisMonth" stroke={COLORS.brand} strokeWidth={3} dot={{ r: 4, fill: COLORS.brand, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
-                                <Line type="monotone" name="Last Month" dataKey="lastMonth" stroke={COLORS.slate400} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                                <Line type="monotone" name="Leads" dataKey="leads" stroke={COLORS.brand} strokeWidth={3} dot={{ r: 4, fill: COLORS.brand, strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+                                <Line type="monotone" name="Calls" dataKey="calls" stroke={COLORS.success} strokeWidth={2} dot={{ r: 3, fill: COLORS.success, strokeWidth: 2, stroke: '#fff' }} />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
@@ -176,22 +187,26 @@ export default function ManagerDashboardView({ user, data }) {
                         <InsightItem 
                             icon={TrendingUp} 
                             color="#10b981" 
-                            title="Great Progress!" 
-                            desc={`Team revenue is ${leadsStat.win_rate > 10 ? '19.6%' : '10.2%'} higher than last month.`} 
+                            title="Revenue Momentum" 
+                            desc={bookings.total_value > 0 
+                                ? `Team has generated ${formatRevenue(bookings.total_value)} this month. Keep it up!`
+                                : `Focus on converting leads to bookings to hit the revenue target.`} 
                         />
                         <InsightItem 
                             icon={AlertCircle} 
                             color="#f59e0b" 
                             title="Follow-ups Pending" 
-                            desc="12 leads haven't been followed up in 24 hrs."
-                            link="View Leads →"
+                            desc={overdue.overdue_count > 0 
+                                ? `${overdue.overdue_count} payments or follow-ups are overdue. Review them now.`
+                                : "No overdue follow-ups! Your team is on track."}
+                            link={overdue.overdue_count > 0 ? "View Overdue →" : null}
                         />
                         <InsightItem 
                             icon={Target} 
                             color="#6366f1" 
-                            title="Focus Opportunity" 
-                            desc="3 deals worth ₹2.6L are in proposal stage."
-                            link="Review Deals →"
+                            title="Conversion Health" 
+                            desc={`Your team's current win rate is ${leadsStat.win_rate || 0}%.`}
+                            link="Review Strategy →"
                         />
                     </div>
                 </div>
@@ -232,9 +247,19 @@ export default function ManagerDashboardView({ user, data }) {
                         <span style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.brand }}>View All Deals →</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <DealItem project="Skyline Heights" config="3 BHK" agent="Aarav Mehta" status="High Risk" riskColor={COLORS.danger} reason="No contact • 2 days" />
-                        <DealItem project="Green Valley" config="2 BHK" agent="Rahul Verma" status="Follow-up Due" riskColor={COLORS.warning} reason="Due today" />
-                        <DealItem project="Palm Springs" config="4 BHK" agent="Neha Patel" status="Proposal Pending" riskColor={COLORS.brand} reason="Since 3 days" />
+                        {activeDeals.length > 0 ? activeDeals.map((deal, idx) => (
+                            <DealItem 
+                                key={idx}
+                                project={deal.project_name} 
+                                config={deal.unit_no} 
+                                agent={deal.agent_name || 'Assigned Agent'} 
+                                status={deal.status} 
+                                riskColor={deal.status === 'Cancelled' ? COLORS.danger : (deal.status === 'Pending' ? COLORS.warning : COLORS.success)} 
+                                reason={formatRevenue(deal.total_amount)} 
+                            />
+                        )) : (
+                            <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>No recent deals found.</div>
+                        )}
                     </div>
                 </div>
 
@@ -245,10 +270,10 @@ export default function ManagerDashboardView({ user, data }) {
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.slate600, background: COLORS.slate100, padding: '4px 12px', borderRadius: '8px' }}>Today <ChevronDown size={12} /></div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <TaskCounter label="Follow-ups" count={5} sub="2 overdue" color={COLORS.success} />
-                        <TaskCounter label="Site Visits" count={8} sub="1 rescheduled" color={COLORS.brand} />
-                        <TaskCounter label="Call Reports" count={3} sub="Pending submission" color="#2dd4bf" />
-                        <TaskCounter label="Deal Updates" count={2} sub="Awaiting approval" color="#fbbf24" />
+                        <TaskCounter label="Follow-ups" count={upcomingFollowups.length} sub={`${upcomingFollowups.filter(f => new Date(f.scheduled_at) < new Date()).length} overdue`} color={COLORS.success} />
+                        <TaskCounter label="Site Visits" count={stats.site_visits || 0} sub="Scheduled" color={COLORS.brand} />
+                        <TaskCounter label="New Leads" count={leadsStat.new_this_month || 0} sub="Unprocessed" color="#2dd4bf" />
+                        <TaskCounter label="Pipeline Val" count={formatRevenue(pipeline.value)} sub="Active" color="#fbbf24" />
                     </div>
                 </div>
 
@@ -259,28 +284,20 @@ export default function ManagerDashboardView({ user, data }) {
                         <span style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.brand }}>View Calendar →</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                        <ActivityEntry 
-                            time="11:00 AM" 
-                            icon={Layout} 
-                            title="Site Visit" 
-                            sub="Rahul & Priya • Skyline Heights" 
-                            action="Confirm"
-                        />
-                        <ActivityEntry 
-                            time="02:30 PM" 
-                            icon={Phone} 
-                            title="Follow-up Call" 
-                            sub="Aman Gupta • Green Valley" 
-                            action="Call"
-                        />
-                        <ActivityEntry 
-                            isLast
-                            time="04:00 PM" 
-                            icon={Users} 
-                            title="Client Meeting" 
-                            sub="InvestCorp • Project Discussion" 
-                            action="Join"
-                        />
+                        {upcomingFollowups.slice(0, 3).map((f, idx) => (
+                            <ActivityEntry 
+                                key={f.id}
+                                time={new Date(f.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                icon={f.type === 'Call' ? Phone : Layout} 
+                                title={f.type} 
+                                sub={`${f.agent_name} • ${f.lead_name}`} 
+                                action="Review"
+                                isLast={idx === Math.min(upcomingFollowups.length, 3) - 1}
+                            />
+                        ))}
+                        {upcomingFollowups.length === 0 && (
+                            <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>No upcoming activities.</div>
+                        )}
                     </div>
                 </div>
 

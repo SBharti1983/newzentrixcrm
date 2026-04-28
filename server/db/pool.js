@@ -38,11 +38,10 @@ if (connectionString && (connectionString.includes('supabase.co') || connectionS
 const pool = new Pool({
     connectionString,
     max: 10, 
-    idleTimeoutMillis: 20000,
-    connectionTimeoutMillis: 15000,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 5000,
     ssl: sslConfig,
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
+    allowExitOnIdle: true
 });
 
 pool.connect((err, client, release) => {

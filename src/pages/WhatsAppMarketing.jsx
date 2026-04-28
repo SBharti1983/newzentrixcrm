@@ -267,7 +267,7 @@ export default function WhatsAppMarketing() {
                         >
                             <Rocket size={32} strokeWidth={2.5} style={{ marginBottom: '12px' }} />
                             <div style={{ fontWeight: 900, fontSize: '1rem' }}>Initiate Campaign</div>
-                        </div>
+                        </button>
                     </div>
 
                     {/* 🚀 Campaign Launcher */}

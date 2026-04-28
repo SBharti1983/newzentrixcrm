@@ -36,9 +36,8 @@ export default function WorkspaceManagement() {
             handleOpenCreate();
         } else if (params.get('edit')) {
             // Find tenant in data (may need to wait for fetch to finish or just use the ID)
-            const tenantId = params.get('edit');
-            // We'll handle this in fetchTenants once data arrives
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchTenants = async () => {
@@ -54,7 +53,7 @@ export default function WorkspaceManagement() {
                 const tenant = data.find(t => t.id === editId);
                 if (tenant) handleOpenEdit(tenant);
             }
-        } catch (err) {
+        } catch (_err) {
             addToast({ type: 'error', title: 'Fetch Failed', message: 'Could not load workspaces.' });
         } finally {
             setLoading(false);
@@ -106,7 +105,7 @@ export default function WorkspaceManagement() {
             setIsModalOpen(false);
             fetchTenants();
         } catch (err) {
-            addToast({ type: 'error', title: 'Transaction Failed', message: err.error || 'Infrastructure error occurred.' });
+            addToast({ type: 'error', title: 'Transaction Failed', message: err?.error || 'Infrastructure error occurred.' });
         }
     };
 
@@ -121,7 +120,7 @@ export default function WorkspaceManagement() {
             setTenantToDelete(null);
             setDeleteConfirmText('');
             fetchTenants();
-        } catch (err) {
+        } catch (_err) {
             addToast({ type: 'error', title: 'Decommission Failed', message: 'Database integrity lock or unauthorized.' });
         } finally {
             setLoading(false);
@@ -139,7 +138,7 @@ export default function WorkspaceManagement() {
             await superAdminApi.updateTenant(tenant.id, { is_active: !tenant.is_active });
             addToast({ type: 'info', title: 'Node State Changed', message: `${tenant.name} is now ${!tenant.is_active ? 'Online' : 'Offline'}.` });
             fetchTenants();
-        } catch (err) {
+        } catch (_err) {
             addToast({ type: 'error', title: 'Toggle Failed', message: 'Could not switch node state.' });
         }
     };

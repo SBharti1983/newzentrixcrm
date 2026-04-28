@@ -59,6 +59,7 @@ public class Wti extends AppCompatActivity {
     private static final int BATTERY_OPTIMIZATION_REQUEST_CODE = 102;
     private static final String DEFAULT_URL = "https://zentrix-wti-default-rtdb.asia-southeast1.firebasedatabase.app/";
     private static final String DEFAULT_STORAGE_SERVER = "https://zentrixcrmindia-production.up.railway.app";
+    private static final String DEFAULT_BRIDGE_NUMBER = "sip:4aec8313-ce5d-4c6a-805a-436d2c2f6e99@sip.vapi.ai";
     private static final String KEY_PREFERRED_SIM_SLOT = "preferred_sim_slot";
     private static final String KEY_ONBOARDING_COMPLETE = "onboarding_complete";
 
@@ -476,7 +477,7 @@ public class Wti extends AppCompatActivity {
     private void loadPreferences() {
         edtFirebaseUrl.setText(prefs.getString("firebase_url", DEFAULT_URL));
         edtAgentName.setText(prefs.getString("agent_name", ""));
-        edtBridgeNumber.setText(prefs.getString("bridge_number", ""));
+        edtBridgeNumber.setText(prefs.getString("bridge_number", DEFAULT_BRIDGE_NUMBER));
         edtStorageServer.setText(prefs.getString("storage_server", DEFAULT_STORAGE_SERVER));
         
         swAvailability.setChecked(prefs.getBoolean("available", true));

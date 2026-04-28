@@ -48,7 +48,7 @@ const KPI_STYLE = {
 
 export default function TeamLeaderDashboardView({ user, data }) {
     const navigate = useNavigate();
-    const [period, setPeriod] = useState('This Month');
+
     
     const stats = data || {};
     const members = stats.agents || [];
@@ -357,7 +357,8 @@ const InsightItem = ({ icon: Icon, color, title, desc, link }) => (
     </div>
 );
 
-const AgentRow = ({ name, revenue, bookings, progress, color }) => (
+const AgentRow = ({ name, revenue, progress, color }) => (
+
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>

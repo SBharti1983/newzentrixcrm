@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.telephony.PhoneStateListener;
 import android.telephony.SignalStrength;
 import android.telephony.TelephonyCallback;
@@ -55,6 +56,7 @@ public class WtiService extends Service {
     private ConnectivityManager.NetworkCallback networkCallback;
     private Handler diagnosticHandler = new Handler(Looper.getMainLooper());
     private int currentSignalDbm = -1;
+    private PowerManager.WakeLock wakeLock;
 
     public static boolean isRunning = false;
 
@@ -75,6 +77,12 @@ public class WtiService extends Service {
     public void onCreate() {
         super.onCreate();
         isRunning = true;
+        
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ZentrixWTI::ServiceWakeLock");
+            wakeLock.acquire();
+        }
         
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         prefs.edit().putBoolean("service_enabled", true).apply();
@@ -254,6 +262,10 @@ public class WtiService extends Service {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null && networkCallback != null) {
             cm.unregisterNetworkCallback(networkCallback);
+        }
+        
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
         }
         
         sendBroadcast(new Intent("com.zentrixcrm.wti.SERVICE_STOPPED"));
