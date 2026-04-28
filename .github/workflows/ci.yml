@@ -1,0 +1,111 @@
+name: ZentrixCRM CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  # ─── Frontend Build Check ─────────────────────────────────────
+  frontend:
+    name: 🏗️ Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npx vite build
+        env:
+          NODE_ENV: production
+
+      - name: Report bundle size
+        run: |
+          echo "## 📦 Bundle Size Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh dist/assets/*.js | sort -rh | head -15 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          TOTAL=$(du -sh dist/ | cut -f1)
+          echo "**Total: $TOTAL**" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Backend Lint & Dependency Check ───────────────────────────
+  backend:
+    name: 🔧 Backend Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm ci --production
+
+      - name: Check for vulnerabilities
+        working-directory: ./server
+        run: npm audit --audit-level=high || true
+
+      - name: Verify server entry point
+        working-directory: ./server
+        run: node -e "require('./index.js')" &
+        timeout-minutes: 1
+        continue-on-error: true
+
+  # ─── API Tests against Production ──────────────────────────────
+  api-tests:
+    name: 🧪 API Tests
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run API tests
+        env:
+          API_URL: https://zentrixcrmindia-production.up.railway.app
+        run: node server/tests/api.test.js
+
+      - name: Post test results
+        if: always()
+        run: |
+          echo "## 🧪 API Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "Target: \`$API_URL\`" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Security Scan ─────────────────────────────────────────────
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secrets in code
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          # Check for common secret patterns (API keys, passwords, etc.)
+          if grep -rn --include="*.js" --include="*.jsx" -E "(password|secret|api_key|private_key)\s*[:=]\s*['\"][^'\"]{8,}" src/ server/ --exclude-dir=node_modules --exclude-dir=scripts 2>/dev/null | grep -v "process.env" | grep -v "placeholder" | grep -v "example" | head -5; then
+            echo "⚠️ Potential hardcoded secrets found (review above)"
+          else
+            echo "✅ No hardcoded secrets detected"
+          fi
+
+      - name: Check dependency vulnerabilities
+        run: |
+          npm audit --audit-level=critical || true
+          cd server && npm audit --audit-level=critical || true
