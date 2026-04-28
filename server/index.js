@@ -192,6 +192,15 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5000 });
 app.use('/api/', limiter);
 
+// ─── Security: Input Sanitization ────────────────────────────────
+const { sanitizeMiddleware } = require('./middleware/sanitize');
+app.use(sanitizeMiddleware);
+
+// ─── Audit Logging ───────────────────────────────────────────────
+const { auditMiddleware, initAuditTable } = require('./services/auditService');
+app.use(auditMiddleware);
+initAuditTable(); // Create audit_logs table if needed
+
 // ─── Routes ──────────────────────────────────────────────────────
 app.use('/api/public', require('./routes/public'));
 app.use('/api/auth', require('./routes/auth'));
