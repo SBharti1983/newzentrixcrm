@@ -148,18 +148,33 @@ router.get('/', cacheResponse(300), async (req, res) => {
                 WHERE i.tenant_id = $1 AND i.sentiment = 'Cold'
                 ORDER BY i.date DESC LIMIT 5`, [tid]),
 
-            // Activity Trend (Last 30 Days)
             pool.query(`
                 WITH series AS (
-                    SELECT generate_series(NOW() - INTERVAL '30 days', NOW(), '1 day')::date as d
+                    SELECT generate_series(NOW() - INTERVAL '29 days', NOW(), '1 day')::date as d
+                ),
+                l_stats AS (
+                    SELECT created_at::date as d, COUNT(*) as leads FROM leads WHERE tenant_id = $1 ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
+                ),
+                c_stats AS (
+                    SELECT date::date as d, COUNT(*) as calls FROM interactions WHERE tenant_id = $1 AND type = 'Call' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
+                ),
+                f_stats AS (
+                    SELECT scheduled_at::date as d, COUNT(*) as follow FROM followups WHERE tenant_id = $1 ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
+                ),
+                v_stats AS (
+                    SELECT created_at::date as d, COUNT(*) as visits FROM activity_log WHERE tenant_id = $1 AND action = 'updated' AND new_data->>'stage' = 'Site Visit Done' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
                 )
                 SELECT 
                     TO_CHAR(s.d, 'Mon DD') as name,
-                    (SELECT COUNT(*) FROM leads l WHERE l.tenant_id = $1 AND l.created_at::date = s.d ${effectivePersonal ? ' AND l.assigned_to = $2' : (downlineIds.length ? ' AND l.assigned_to = ANY($2)' : '')}) as leads,
-                    (SELECT COUNT(*) FROM interactions i WHERE i.tenant_id = $1 AND i.type = 'Call' AND i.date::date = s.d ${effectivePersonal ? ' AND i.user_id = $2' : (downlineIds.length ? ' AND i.user_id = ANY($2)' : '')}) as calls,
-                    (SELECT COUNT(*) FROM followups f WHERE f.tenant_id = $1 AND f.scheduled_at::date = s.d ${effectivePersonal ? ' AND f.assigned_to = $2' : (downlineIds.length ? ' AND f.assigned_to = ANY($2)' : '')}) as follow,
-                    (SELECT COUNT(*) FROM activity_log al WHERE al.tenant_id = $1 AND al.action = 'updated' AND al.new_data->>'stage' = 'Site Visit Done' AND al.created_at::date = s.d ${effectivePersonal ? ' AND al.user_id = $2' : (downlineIds.length ? ' AND al.user_id = ANY($2)' : '')}) as visits
+                    COALESCE(l_stats.leads, 0) as leads,
+                    COALESCE(c_stats.calls, 0) as calls,
+                    COALESCE(f_stats.follow, 0) as follow,
+                    COALESCE(v_stats.visits, 0) as visits
                 FROM series s
+                LEFT JOIN l_stats ON s.d = l_stats.d
+                LEFT JOIN c_stats ON s.d = c_stats.d
+                LEFT JOIN f_stats ON s.d = f_stats.d
+                LEFT JOIN v_stats ON s.d = v_stats.d
                 ORDER BY s.d ASC`, effectivePersonal ? [tid, targetUserId] : (downlineIds.length ? [tid, downlineIds] : [tid])),
 
             // Agent Telephony Quick Stats
