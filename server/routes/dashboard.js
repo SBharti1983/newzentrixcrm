@@ -153,16 +153,16 @@ router.get('/', cacheResponse(300), async (req, res) => {
                     SELECT generate_series(NOW() - INTERVAL '29 days', NOW(), '1 day')::date as d
                 ),
                 l_stats AS (
-                    SELECT created_at::date as d, COUNT(*) as leads FROM leads WHERE tenant_id = $1 ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
+                    SELECT created_at::date as d, COUNT(*) as leads FROM leads WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '30 days' ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
                 ),
                 c_stats AS (
-                    SELECT date::date as d, COUNT(*) as calls FROM interactions WHERE tenant_id = $1 AND type = 'Call' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
+                    SELECT date::date as d, COUNT(*) as calls FROM interactions WHERE tenant_id = $1 AND type = 'Call' AND date >= NOW() - INTERVAL '30 days' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
                 ),
                 f_stats AS (
-                    SELECT scheduled_at::date as d, COUNT(*) as follow FROM followups WHERE tenant_id = $1 ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
+                    SELECT scheduled_at::date as d, COUNT(*) as follow FROM followups WHERE tenant_id = $1 AND scheduled_at >= NOW() - INTERVAL '30 days' ${effectivePersonal ? ' AND assigned_to = $2' : (downlineIds.length ? ' AND assigned_to = ANY($2)' : '')} GROUP BY 1
                 ),
                 v_stats AS (
-                    SELECT created_at::date as d, COUNT(*) as visits FROM activity_log WHERE tenant_id = $1 AND action = 'updated' AND new_data->>'stage' = 'Site Visit Done' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
+                    SELECT created_at::date as d, COUNT(*) as visits FROM activity_log WHERE tenant_id = $1 AND action = 'updated' AND new_data->>'stage' = 'Site Visit Done' AND created_at >= NOW() - INTERVAL '30 days' ${effectivePersonal ? ' AND user_id = $2' : (downlineIds.length ? ' AND user_id = ANY($2)' : '')} GROUP BY 1
                 )
                 SELECT 
                     TO_CHAR(s.d, 'Mon DD') as name,
