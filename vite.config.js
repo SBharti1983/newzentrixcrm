@@ -23,16 +23,27 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 800,
+    // Enable source map for production debugging (optional)
+    sourcemap: false,
+    // Minification optimization
+    minify: 'esbuild',
+    target: 'es2020',
+    // CSS optimization
+    cssMinify: true,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
           if (id.includes('node_modules')) {
-            // React core (react + react-dom + scheduler, no router to avoid circular deps)
+            // React core (react + react-dom + scheduler)
             if ((id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) && !id.includes('react-router')) {
               return 'vendor-react';
             }
+            // React Router (separate from core to reduce initial load)
+            if (id.includes('react-router') || id.includes('@remix-run')) {
+              return 'vendor-router';
+            }
             // Data Visualization
-            if (id.includes('recharts')) {
+            if (id.includes('recharts') || id.includes('d3-')) {
               return 'vendor-charts';
             }
             // Mapping & Geolocation (Heavy)
@@ -48,18 +59,26 @@ export default defineConfig({
               return 'vendor-firebase';
             }
             // Document Generation
-            if (id.includes('jspdf')) {
+            if (id.includes('jspdf') || id.includes('pdfmake') || id.includes('xlsx')) {
               return 'vendor-pdf';
             }
             // UI Icons & Assets
             if (id.includes('lucide')) {
               return 'vendor-ui';
             }
+            // Socket.IO (real-time)
+            if (id.includes('socket.io')) {
+              return 'vendor-socket';
+            }
+            // HTTP & networking
+            if (id.includes('axios')) {
+              return 'vendor-http';
+            }
             // Scanning & Date Utilities
             if (id.includes('qr-scanner') || id.includes('date-fns')) {
               return 'vendor-utils';
             }
-            // Everything else (axios, socket.io, router, etc.) goes into core
+            // Everything else goes into core
             return 'vendor-core';
           }
         }
