@@ -1,7 +1,9 @@
 const { createClient } = require('redis');
 
 // In production (Railway), REDIS_URL will be provided. In dev, it tries localhost.
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+// Fallback to internal Railway hostname if REDIS_URL is missing but we're on Railway.
+const redisUrl = process.env.REDIS_URL || 
+                 (process.env.RAILWAY_STATIC_URL ? 'redis://redis.railway.internal:6379' : 'redis://localhost:6379');
 
 const redisClient = createClient({
     url: redisUrl,
