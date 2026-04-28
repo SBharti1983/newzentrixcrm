@@ -15,9 +15,9 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import { BrandingProvider, useBranding } from './context/BrandingContext';
 // --- Lazy Loaded Pages ---
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Leads from './pages/Leads';
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Leads = lazy(() => import('./pages/Leads'));
 const NurtureLeads = lazy(() => import('./pages/NurtureLeads'));
 const Pipeline = lazy(() => import('./pages/Pipeline'));
 const Projects = lazy(() => import('./pages/Projects'));
