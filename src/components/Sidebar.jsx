@@ -132,12 +132,12 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     useEffect(() => {
         if (user && canAccess('/leads')) {
             leadsApi.list({ limit: 1 })
-                .then(res => setRealLeadCount(res.total))
+                .then(res => setRealLeadCount(res?.total ?? 0))
                 .catch(err => console.error('Failed to update sidebar lead count', err));
         }
         if (user && canAccess('/bookings')) {
             bookingsApi.list({ limit: 100 })
-                .then(res => setRealBookingCount(Array.isArray(res) ? res.length : (res.data?.length || 0)))
+                .then(res => setRealBookingCount(Array.isArray(res) ? res.length : (res?.data?.length || 0)))
                 .catch(err => console.error('Failed to update sidebar booking count', err));
         }
         if (user && canAccess('/followups')) {

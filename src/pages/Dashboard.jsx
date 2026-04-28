@@ -67,10 +67,11 @@ export default function Dashboard() {
 
     // Role-Aware Smart Briefing
     const smartInsights = useMemo(() => {
-        const stageCounts = stages.reduce((acc, s) => ({ ...acc, [s.stage]: parseInt(s.count) }), {});
+        const stageArray = Array.isArray(stages) ? stages : [];
+        const stageCounts = stageArray.reduce((acc, s) => ({ ...acc, [s.stage]: parseInt(s.count) || 0 }), {});
         const hotCount = stageCounts['Negotiation'] || 0;
         const svCount = stageCounts['Site Visit Done'] || 0;
-        const overdueCount = overdue.overdue_count || 0;
+        const overdueCount = (overdue && overdue.overdue_count) ? overdue.overdue_count : 0;
 
         if (personalMode) {
             return [
@@ -122,10 +123,10 @@ export default function Dashboard() {
                 color: '#8b5cf6',
                 bg: 'rgba(139,92,246,0.1)',
                 title: 'Revenue Forecast',
-                desc: `Projected pipeline value: ${formatRevenue(pipeline.value * 0.15)} likely to convert this month.`,
+                desc: `Projected pipeline value: ${formatRevenue((Number(pipeline?.value) || 0) * 0.15)} likely to convert this month.`,
             },
         ];
-    }, [stages, overdue, personalMode, upcomingFollowups, formatRevenue, pipeline.value]);
+    }, [stages, overdue, personalMode, upcomingFollowups, formatRevenue, pipeline]);
 
     // Sync personalMode if user role changes or initial load
     useEffect(() => {

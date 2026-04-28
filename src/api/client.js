@@ -19,15 +19,17 @@ const PUBLIC_BASE_URL = BASE_URL;
 
 // ─── Token helpers ────────────────────────────────────────────────
 export function getToken() {
-    return sessionStorage.getItem('zentrix_token');
+    try { return sessionStorage.getItem('zentrix_token'); } catch { return null; }
 }
 export function setToken(token) {
-    sessionStorage.setItem('zentrix_token', token);
+    try { sessionStorage.setItem('zentrix_token', token); } catch {}
 }
 export function clearTokens() {
-    sessionStorage.removeItem('zentrix_token');
-    sessionStorage.removeItem('zentrix_refresh_token');
-    sessionStorage.removeItem('zentrix_user');
+    try {
+        sessionStorage.removeItem('zentrix_token');
+        sessionStorage.removeItem('zentrix_refresh_token');
+        sessionStorage.removeItem('zentrix_user');
+    } catch {}
 }
 
 // ─── Core fetch wrapper ───────────────────────────────────────────
@@ -72,6 +74,7 @@ async function api(path, options = {}) {
                 const json = await clone.json();
                 if (json.code === 'ACCOUNT_LOCKED') {
                     window.dispatchEvent(new CustomEvent('zentrix_lockout'));
+                    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('zentrix_lockout'));
                 }
             } catch (e) {}
         }

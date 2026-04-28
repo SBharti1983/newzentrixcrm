@@ -30,11 +30,11 @@ export default function SoloDashboard() {
         const load = async () => {
             try {
                 const [sData, lData] = await Promise.all([
-                    dashboardApi.getStats(),
-                    leadsApi.getLeads({ limit: 8, sort: 'created_at:desc' })
+                    dashboardApi.get(),
+                    leadsApi.list({ limit: 8 })
                 ]);
                 setStats(sData);
-                setRecentLeads(lData.leads || []);
+                setRecentLeads(Array.isArray(lData?.data) ? lData.data : []);
             } catch (err) {
                 console.error(err);
             } finally {

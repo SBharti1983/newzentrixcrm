@@ -52,7 +52,9 @@ export function AuthProvider({ children }) {
         if (path === '/automations' && !features.automations) return false;
         if (path === '/lead-scoring' && !features.ai_scoring) return false;
 
-        return ROLE_ACCESS[user.role]?.pages.includes(path) ?? false;
+        const roleRules = ROLE_ACCESS[user.role];
+        if (!roleRules || !Array.isArray(roleRules.pages)) return false;
+        return roleRules.pages.includes(path);
     };
 
     const refreshUser = async () => {

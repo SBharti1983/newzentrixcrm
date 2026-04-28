@@ -28,14 +28,27 @@ const COLORS = {
     bg: '#f8fafc'
 };
 
-// Dynamic Chart Data mapping
-    const CHART_DATA = data?.trends?.map(t => ({
+export default function ManagerDashboardView({ user, data }) {
+    const navigate = useNavigate();
+    const isMobile = useMobile();
+
+    const KPI_STYLE = {
+        background: '#ffffff',
+        borderRadius: '16px',
+        padding: '20px',
+        border: '1px solid #f1f5f9',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        flex: 1
+    };
+
+    // Dynamic Chart Data mapping - moved inside to safely access 'data'
+    const CHART_DATA = Array.isArray(data?.trends) ? data.trends.map(t => ({
         name: t.name,
         leads: parseInt(t.leads) || 0,
         calls: parseInt(t.calls) || 0,
         followups: parseInt(t.follow) || 0,
         visits: parseInt(t.visits) || 0
-    })) || [
+    })) : [
         { name: 'May 1', leads: 4, calls: 3 },
         { name: 'May 6', leads: 6, calls: 5 },
         { name: 'May 11', leads: 5, calls: 7 },
@@ -44,19 +57,6 @@ const COLORS = {
         { name: 'May 26', leads: 11, calls: 9 },
         { name: 'May 31', leads: 14, calls: 10 },
     ];
-
-const KPI_STYLE = {
-    background: '#ffffff',
-    borderRadius: '16px',
-    padding: '20px',
-    border: '1px solid #f1f5f9',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-    flex: 1
-};
-
-export default function ManagerDashboardView({ user, data }) {
-    const navigate = useNavigate();
-    const isMobile = useMobile();
 
     
     const getGreeting = () => {
