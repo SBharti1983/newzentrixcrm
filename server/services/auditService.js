@@ -11,23 +11,37 @@ async function initAuditTable() {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS audit_logs (
         id SERIAL PRIMARY KEY,
-        tenant_id INTEGER,
-        user_id INTEGER,
-        user_email VARCHAR(255),
         action VARCHAR(100) NOT NULL,
-        resource VARCHAR(100),
-        resource_id VARCHAR(50),
-        details JSONB DEFAULT '{}',
-        ip_address VARCHAR(45),
-        user_agent TEXT,
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       );
-      
+    `);
+    
+    // Ensure all columns exist individually to handle schema evolution
+    const columns = [
+      ['tenant_id', 'UUID'],
+      ['user_id', 'UUID'],
+      ['user_email', 'VARCHAR(255)'],
+      ['resource', 'VARCHAR(100)'],
+      ['resource_id', 'VARCHAR(50)'],
+      ['details', 'JSONB DEFAULT \'{}\''],
+      ['ip_address', 'VARCHAR(45)'],
+      ['user_agent', 'TEXT']
+    ];
+
+    for (const [name, type] of columns) {
+      try {
+        await pool.query(`ALTER TABLE audit_logs ADD COLUMN IF NOT EXISTS ${name} ${type}`);
+      } catch (e) { /* ignore */ }
+    }
+
+    // Now create indexes
+    await pool.query(`
       CREATE INDEX IF NOT EXISTS idx_audit_tenant ON audit_logs(tenant_id);
       CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
       CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
       CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at);
     `);
+
     console.log('✅ Audit logging initialized');
   } catch (err) {
     console.error('[AUDIT] Table creation failed:', err.message);

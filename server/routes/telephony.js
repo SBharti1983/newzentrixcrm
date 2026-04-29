@@ -160,7 +160,7 @@ router.post('/upload-recording', authenticateHandset, upload.single('audio'), as
                 const localPath = path.join(localFolder, localFileName);
                 fs.writeFileSync(localPath, req.file.buffer);
                 
-                const baseUrl = process.env.VITE_API_URL ? process.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5050';
+                const baseUrl = process.env.VITE_API_URL ? process.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5051';
                 audioUrl = `${baseUrl}/uploads/${req.tenantId || 'default'}/${localFileName}`;
                 console.log(`[Telephony] Local storage successful: ${audioUrl}`);
 

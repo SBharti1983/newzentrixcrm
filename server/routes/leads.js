@@ -182,6 +182,13 @@ router.get('/:id', async (req, res) => {
                     ) deal
                 ) as deals,
                 (
+                    SELECT json_agg(f) FROM (
+                        SELECT id, type, scheduled_at, status, note, priority
+                        FROM followups WHERE lead_id = l.id AND status = 'Pending'
+                        ORDER BY scheduled_at ASC LIMIT 5
+                    ) f
+                ) as followups,
+                (
                     WITH RECURSIVE hierarchy AS (
                         SELECT id, name, avatar, role, phone, email, reports_to FROM users WHERE id = l.assigned_to
                         UNION ALL

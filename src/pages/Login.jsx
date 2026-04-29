@@ -213,8 +213,9 @@ export default function Login() {
             const success = await login(email, password, subdomain);
             // login navigates on success via context user state change
         } catch (err) {
-            // err.message contains the backend error (e.g. 'Invalid email or password')
-            setLoginError(err.message || 'Authentication failed. Please check your credentials.');
+            // Check for error property which is standard for our backend responses
+            const msg = err.error || err.message || 'Authentication failed. Please check your credentials.';
+            setLoginError(msg);
         } finally {
             setLoading(false);
         }
@@ -458,10 +459,17 @@ export default function Login() {
                                 padding: '12px 16px', borderRadius: 8, marginBottom: 20,
                                 background: '#fef2f2', border: '1px solid #fee2e2',
                                 fontSize: '0.85rem', color: '#ef4444', fontWeight: 700,
-                                display: 'flex', alignItems: 'center', gap: 10,
+                                display: 'flex', flexDirection: 'column', gap: 4,
                                 animation: 'loginSlideUp 0.3s ease both',
                             }}>
-                                <span style={{ fontSize: '1.2rem' }}>⚠️</span> {loginError}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <span style={{ fontSize: '1.2rem' }}>⚠️</span> {loginError}
+                                </div>
+                                {loginError.includes('server side') && (
+                                    <div style={{ fontSize: '0.7rem', color: '#dc2626', opacity: 0.8, paddingLeft: 30, fontWeight: 500 }}>
+                                        Technical details: {email && `Attempted for ${email}`}
+                                    </div>
+                                )}
                             </div>
                         )}
 

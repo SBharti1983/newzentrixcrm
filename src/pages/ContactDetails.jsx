@@ -326,7 +326,7 @@ export default function ContactDetails() {
     const downloadTranscript = async (interactionId) => {
         try {
             const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5050/api';
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5051/api';
             const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -814,8 +814,6 @@ export default function ContactDetails() {
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Dual Intelligence Cards */}
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* AI Strategic Window Card */}
                                 <div style={{ 
@@ -895,6 +893,31 @@ export default function ContactDetails() {
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Suggested Next Best Action Card */}
+                            <div style={{ 
+                                borderRadius: '16px', 
+                                background: 'white', 
+                                border: '1px solid rgba(16, 185, 129, 0.15)', 
+                                borderLeft: '5px solid #10b981',
+                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.05)', 
+                                padding: '12px 16px',
+                                marginBottom: '4px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                                    <div style={{ padding: '6px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px' }}>
+                                        <Rocket size={16} color="#10b981" />
+                                    </div>
+                                    <h3 style={{ fontSize: '11px', fontWeight: 900, color: '#065f46', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Suggested Next Best Action</h3>
+                                </div>
+                                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.5 }}>
+                                    {contact.ai_next_action || "Schedule a personal site visit to demonstrate the luxury amenities and lock in the current inventory price."}
+                                </div>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                                    <button onClick={() => navigate(`/site-visits?leadId=${id}`)} style={{ padding: '6px 12px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none', fontSize: '11px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>Execute Site Visit Plan</button>
+                                    <button onClick={() => { setActivityType('Call'); setShowActivityBox(true); }} style={{ padding: '6px 12px', background: '#f8fafc', color: 'var(--navy-900)', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 900, cursor: 'pointer' }}>Discuss via Call</button>
                                 </div>
                             </div>
 

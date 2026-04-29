@@ -37,9 +37,9 @@ if (connectionString && (connectionString.includes('supabase.co') || connectionS
 
 const pool = new Pool({
     connectionString,
-    max: 10, 
-    idleTimeoutMillis: 10000,
-    connectionTimeoutMillis: 5000,
+    max: 20, 
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
     ssl: sslConfig,
     allowExitOnIdle: true
 });

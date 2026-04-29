@@ -209,6 +209,8 @@ app.use('/api/auth/register', require('./routes/register'));
 app.use('/api/auth', require('./routes/passwordReset'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/leads', require('./routes/leads'));
+const templatesRoutes = require('./routes/templates');
+app.use('/api/templates', templatesRoutes);
 app.use('/api/calls', require('./routes/calls'));
 app.use('/api/projects', require('./routes/projects'));
 app.use('/api/bookings', require('./routes/bookings'));

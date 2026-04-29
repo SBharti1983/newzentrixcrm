@@ -51,23 +51,17 @@ export default function AdminDashboardView({ user, data }) {
     const members = stats.members || [];
     const isMobile = useMobile();
     
-    // DEMO DATA FALLBACKS
-    const sentiment = Array.isArray(stats.sentiment) ? stats.sentiment : [
-        { sentiment: 'Hot', count: 42 },
-        { sentiment: 'Warm', count: 28 },
-        { sentiment: 'Cold', count: 12 }
+    // DYNAMIC DATA MAPPING
+    const sentiment = Array.isArray(stats.sentiment) && stats.sentiment.length > 0 ? stats.sentiment : [
+        { sentiment: 'Positive', count: 0 },
+        { sentiment: 'Neutral', count: 0 },
+        { sentiment: 'Cold', count: 0 }
     ];
-    const trends = Array.isArray(stats.trends) ? stats.trends : [
-        { name: 'Elite Residency', mentions: 85 },
-        { name: 'Palms County', mentions: 62 },
-        { name: 'Skyline Suites', mentions: 45 },
-        { name: 'Green Valley', mentions: 30 }
-    ];
-    const alerts = Array.isArray(stats.alerts) ? stats.alerts : [
-        { lead_name: 'Vikram Singh', agent_name: 'Demo Admin', note: 'Customer expressed significant price objection during 15-min call. Requires discount approval.' },
-        { lead_name: 'Anjali Sharma', agent_name: 'Neha Gupta', note: 'High interest in 3BHK South facing. Requested a floor plan comparison within 2 hours.' },
-        { lead_name: 'Rahul Verma', agent_name: 'Rohan Mishra', note: 'Negative sentiment detected regarding possession date. Manager intervention suggested.' }
-    ];
+    const trends = Array.isArray(stats.top_projects) ? stats.top_projects.map(p => ({
+        name: p.name,
+        mentions: parseInt(p.lead_count) || 0
+    })) : [];
+    const alerts = Array.isArray(stats.alerts) ? stats.alerts : [];
 
     const isSolo = members.length <= 1;
 

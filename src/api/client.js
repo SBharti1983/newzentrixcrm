@@ -204,6 +204,11 @@ export const siteVisitsApi = {
     update: (id, data) => api(`/site-visits/${id}`, { method: 'PATCH', body: data }),
 };
 
+// ─── Templates ────────────────────────────────────────────────────
+export const templatesApi = {
+    list: () => api('/templates'),
+};
+
 // ─── Channel Partners ─────────────────────────────────────────────
 export const channelPartnersApi = {
     list: () => api('/channel-partners'),

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../hooks/useApi';
 import { PageLoader } from './Feedback';
-import { leadsApi } from '../api/client';
+import { leadsApi, templatesApi } from '../api/client';
 import { dialerEvents } from '../constants/events';
 import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight, RotateCw, ClipboardCheck } from 'lucide-react';
 import { usePresence } from '../context/PresenceContext';
@@ -31,7 +31,13 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
     const [dueDate, setDueDate] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [showStagePicker, setShowStagePicker] = useState(false);
+    const [templates, setTemplates] = useState([]);
+    const [showTemplates, setShowTemplates] = useState(false);
     const contactPath = `/leads/${contactId}`;
+
+    useEffect(() => {
+        templatesApi.list().then(setTemplates).catch(console.error);
+    }, []);
 
     useEffect(() => { if (contactId) trackPage(contactPath); }, [contactId]);
 
@@ -195,7 +201,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     ].map(a => (
                                         <button key={a.label} className="cps-action-btn" onClick={() => {
                                             if (a.label === 'Call' && contact.phone) { dialerEvents.call(contact.id, contact.phone, contact.name); }
-                                            else if (a.label === 'WhatsApp' && contact.phone) { const p = contact.phone.replace(/[^0-9]/g, ''); window.open(`https://wa.me/${p.startsWith('91') ? '' : '91'}${p}`, '_blank'); }
+                                            else if (a.label === 'WhatsApp' && contact.phone) { setShowTemplates(!showTemplates); }
                                             else if (a.label === 'Note' && contact.status === 'Nurture') { setActiveAction('Edit Nurture'); }
                                             else { setActiveAction(a.label); }
                                         }}>
@@ -203,6 +209,36 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                             <span>{a.label}</span>
                                         </button>
                                     ))}
+                                    {showTemplates && (
+                                        <div className="cps-template-picker animate-fadeIn" style={{
+                                            position: 'absolute', bottom: '100%', left: 0, width: '100%', background: 'white',
+                                            borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 -10px 30px rgba(0,0,0,0.1)',
+                                            zIndex: 50, padding: '16px', marginBottom: '8px'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                <h4 style={{ margin: 0, fontSize: '11px', fontWeight: 900, color: '#64748b', textTransform: 'uppercase' }}>WhatsApp Templates</h4>
+                                                <button onClick={() => setShowTemplates(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={14} /></button>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                {templates.map(t => (
+                                                    <div key={t.id} className="template-option" onClick={() => {
+                                                        const p = contact.phone.replace(/[^0-9]/g, '');
+                                                        const body = t.body
+                                                            .replace(/{{name}}/g, contact.name || 'Customer')
+                                                            .replace(/{{project}}/g, contact.project_name || 'the project');
+                                                        window.open(`https://wa.me/${p.startsWith('91') ? '' : '91'}${p}?text=${encodeURIComponent(body)}`, '_blank');
+                                                        setShowTemplates(false);
+                                                    }} style={{
+                                                        padding: '10px 14px', borderRadius: '10px', background: '#f8fafc', border: '1px solid #f1f5f9',
+                                                        cursor: 'pointer', transition: 'all 0.2s'
+                                                    }} onMouseOver={e => e.currentTarget.style.background = '#f1f5f9'} onMouseOut={e => e.currentTarget.style.background = '#f8fafc'}>
+                                                        <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginBottom: '2px' }}>{t.name}</div>
+                                                        <div style={{ fontSize: '10px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.body}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     <button className="cps-action-btn" onClick={() => setActiveAction('Move to Nurture')} style={{ background: 'rgba(124,58,237,0.05)' }}>
                                         <div className="cps-action-icon" style={{ '--ac': '#7c3aed' }}><TrendingUp size={14} color="#7c3aed" strokeWidth={2.5} /></div>
                                         <span style={{ color: '#7c3aed', fontWeight: 800 }}>Nurture</span>
@@ -279,6 +315,18 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     </div>
                                     <div className="cps-ai-badge"><Zap size={9} /> LIVE</div>
                                 </div>
+                                <div style={{ display: 'flex', background: 'white', padding: '16px', borderRadius: '20px', border: '1px solid rgba(99, 102, 241, 0.15)', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.05)', marginBottom: '12px' }}>
+                                    <div style={{ background: '#6366f115', padding: '8px', borderRadius: '12px', alignSelf: 'flex-start' }}><Sparkles size={18} color="#6366f1" /></div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', lineHeight: 1.5, marginLeft: '12px' }}>
+                                        <div style={{ color: '#6366f1', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>AI Summary</div>
+                                        {contact.ai_summary || "No AI summary available yet. Interactions are being analyzed to generate a profile."}
+                                        {contact.ai_next_action && (
+                                            <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', borderLeft: '3px solid #10b981', fontSize: '11px', color: '#065f46' }}>
+                                                <strong>AI Suggested Next Action:</strong> {contact.ai_next_action}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                                 <div className="cps-intel-card">
                                     <div className="cps-intel-score-row">
                                         <div>
@@ -312,6 +360,31 @@ export default function ContactPreviewSidebar({ contactId, onClose }) {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* ── Planned Follow-ups ── */}
+                            {Array.isArray(contact.followups) && contact.followups.length > 0 && (
+                                <div className="cps-timeline-section" style={{ marginBottom: '24px' }}>
+                                    <div className="cps-section-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <CalendarIcon size={14} color="#10b981" />
+                                            <span className="cps-section-label" style={{ margin: 0 }}>Planned Follow-ups</span>
+                                        </div>
+                                    </div>
+                                    <div className="cps-timeline" style={{ padding: '0 4px' }}>
+                                        {contact.followups.map((f, idx) => (
+                                            <div key={f.id || idx} className="cps-tl-item" style={{ background: 'white', padding: '12px', borderRadius: '12px', marginBottom: '8px', border: '1px solid #f1f5f9' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                    <span style={{ fontSize: '11px', fontWeight: 800, color: f.priority === 'High' ? '#ef4444' : '#64748b' }}>{f.type.toUpperCase()}</span>
+                                                    <span style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', background: '#f0fdf4', padding: '2px 6px', borderRadius: '6px' }}>
+                                                        {new Date(f.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                    </span>
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 600 }}>{f.note || 'Follow up required'}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* ── Activity Timeline ── */}
                             <div className="cps-timeline-section">

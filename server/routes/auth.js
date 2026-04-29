@@ -210,19 +210,58 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid email or password' });
         }
 
+        // --- Robust Database Interaction with Retries ---
+        const runQuery = async (query, params, maxRetries = 3) => {
+            let lastErr;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    return await pool.query(query, params);
+                } catch (err) {
+                    lastErr = err;
+                    const isTimeout = err.message.includes('timeout') || err.code === 'ETIMEDOUT' || err.message.includes('terminated');
+                    const isDNS = err.code === 'ENOTFOUND';
+                    
+                    if (isTimeout || isDNS) {
+                        console.warn(`[AUTH] DB retry ${i + 1}/${maxRetries} due to: ${err.message}`);
+                        await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Exponential-ish backoff
+                        continue;
+                    }
+                    throw err; // Not a retryable error
+                }
+            }
+            throw lastErr;
+        };
+
         // Update last login
-        await pool.query(`UPDATE users SET last_login_at = NOW() WHERE id = $1`, [user.id]);
+        try {
+            await runQuery(`UPDATE users SET last_login_at = NOW() WHERE id = $1`, [user.id]);
+        } catch (dbErr) {
+            console.error('[AUTH] Failed to update last_login_at:', dbErr.message);
+            // Non-critical, continue
+        }
 
         const { accessToken, refreshToken } = signTokens(user);
+        console.log(`[AUTH] Tokens generated for ${email}`);
 
         // Store refresh token hash
-        const refreshHash = await bcrypt.hash(refreshToken, 8);
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 30);
-        await pool.query(
-            `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
-            [user.id, refreshHash, expiresAt]
-        );
+        try {
+            const refreshHash = await bcrypt.hash(refreshToken, 8);
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+            await runQuery(
+                `INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
+                [user.id, refreshHash, expiresAt]
+            );
+            console.log(`[AUTH] Refresh token stored for ${email}`);
+        } catch (rfErr) {
+            console.error('[AUTH] Refresh token storage failed:', rfErr.message);
+            // Critical failure for session persistence
+            return res.status(500).json({ 
+                error: 'Login failed on server side', 
+                message: 'Database connection unstable. Please try again in 5 seconds.',
+                technical: rfErr.message
+            });
+        }
 
         res.json({
             accessToken,
@@ -237,10 +276,11 @@ router.post('/login', async (req, res) => {
             },
         });
     } catch (err) {
-        console.error('[AUTH] Login error:', err);
+        console.error('[AUTH] Login CRITICAL error:', err);
         res.status(500).json({ 
             error: 'Login failed on server side', 
             details: err.message,
+            code: err.code, // Useful for DB errors
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined 
         });
     }
