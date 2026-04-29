@@ -245,7 +245,7 @@ router.get('/', (req, res, next) => {
     let i = 2;
 
     if (stage) { conditions.push(`l.stage = $${i++}`); params.push(stage); }
-    if (source) { conditions.push(`l.source = $${i++}`); params.push(source); }
+    if (source) { conditions.push(`l.source ILIKE $${i++}`); params.push(source); }
     if (priority) { conditions.push(`l.priority = $${i++}`); params.push(priority); }
     if (agent) { 
         if (agent === 'Unassigned') {
