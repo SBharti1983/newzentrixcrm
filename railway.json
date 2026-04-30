@@ -2,10 +2,10 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd server && npm install --production"
+    "buildCommand": "cd server && npm install && npm run build"
   },
   "deploy": {
-    "startCommand": "cd server && node index.js",
+    "startCommand": "cd server && npm start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }
