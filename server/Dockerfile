@@ -1,5 +1,5 @@
 # ZentrixCRM Backend — Production Dockerfile
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -13,10 +13,10 @@ RUN npm install
 COPY . .
 
 # Compile TypeScript to JavaScript
-RUN npm run build
+RUN npx tsc --project tsconfig.json
 
 # Expose port (Railway injects $PORT at runtime)
 EXPOSE 4000
 
 # Start the compiled server
-CMD ["npm", "start"]
+CMD ["node", "dist/src/index.js"]
