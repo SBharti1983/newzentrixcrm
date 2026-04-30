@@ -27,32 +27,35 @@ const COLORS = {
     bg: '#f8fafc'
 };
 
-const CHART_DATA = [
-  { name: 'May 1', thisMonth: 4, lastMonth: 3 },
-  { name: 'May 6', thisMonth: 6, lastMonth: 5 },
-  { name: 'May 11', thisMonth: 5, lastMonth: 7 },
-  { name: 'May 16', thisMonth: 8, lastMonth: 6 },
-  { name: 'May 21', thisMonth: 9, lastMonth: 8 },
-  { name: 'May 26', thisMonth: 11, lastMonth: 9 },
-  { name: 'May 31', thisMonth: 14, lastMonth: 10 },
-];
-
-const KPI_STYLE = {
-    background: '#ffffff',
-    borderRadius: '16px',
-    padding: '20px',
-    border: '1px solid #f1f5f9',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-    flex: 1
-};
-
 export default function TeamLeaderDashboardView({ user, data }) {
     const navigate = useNavigate();
 
-    
+    const KPI_STYLE = {
+        background: '#ffffff',
+        borderRadius: '16px',
+        padding: '20px',
+        border: '1px solid #f1f5f9',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        flex: 1
+    };
+
+    // Dynamic Chart Data mapping
+    const CHART_DATA = Array.isArray(data?.trends) ? data.trends.map(t => ({
+        name: t.name,
+        thisMonth: parseInt(t.leads) || 0,
+        lastMonth: Math.floor((parseInt(t.leads) || 0) * 0.8)
+    })) : [
+      { name: 'May 1', thisMonth: 4, lastMonth: 3 },
+      { name: 'May 6', thisMonth: 6, lastMonth: 5 },
+      { name: 'May 11', thisMonth: 5, lastMonth: 7 },
+      { name: 'May 16', thisMonth: 8, lastMonth: 6 },
+      { name: 'May 21', thisMonth: 9, lastMonth: 8 },
+      { name: 'May 26', thisMonth: 11, lastMonth: 9 },
+      { name: 'May 31', thisMonth: 14, lastMonth: 10 },
+    ];
     const stats = data || {};
-    const members = stats.agents || [];
-    const team_stats = stats.team_stats || {};
+    const members = stats.members || [];
+    const team_stats = stats.leads || {};
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -105,9 +108,9 @@ export default function TeamLeaderDashboardView({ user, data }) {
 
             {/* KPI Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                <MetricCard title="Squad Revenue" val={formatRevenue(team_stats.total_revenue)} growth="+ 22.4%" icon={Layout} color="#6366f1" />
-                <MetricCard title="Squad Bookings" val={team_stats.total_bookings || 0} growth="+ 12%" icon={Award} color="#8b5cf6" />
-                <MetricCard title="Active Leads" val={team_stats.active_leads || 0} growth="+ 8.4%" icon={Users} color="#3b82f6" />
+                <MetricCard title="Squad Revenue" val={formatRevenue(stats.bookings?.total_value || 0)} growth="+ 22.4%" icon={Layout} color="#6366f1" />
+                <MetricCard title="Squad Bookings" val={stats.bookings?.total || 0} growth="+ 12%" icon={Award} color="#8b5cf6" />
+                <MetricCard title="Active Leads" val={stats.leads?.active_leads || 0} growth="+ 8.4%" icon={Users} color="#3b82f6" />
                 <MetricCard title="Lead Velocity" val="High" growth="Optimal" icon={TrendingUp} color="#10b981" />
                 <MetricCard title="Active Agents" val={`${members.length} Agents`} detail="All squads online" icon={Users} color="#6366f1" />
                 <MetricCard title="Market Index" val="92.4" growth="+ 3.2%" icon={Target} color="#06b6d4" />
@@ -124,13 +127,13 @@ export default function TeamLeaderDashboardView({ user, data }) {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-                        <PipelineMetric step="Leads" val={team_stats.active_leads || 42} />
+                        <PipelineMetric step="Leads" val={stats.leads?.active_leads || 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Calls" val={Math.floor(members.length * 15)} />
+                        <PipelineMetric step="Calls" val={stats.telephony_stats?.calls_today || 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Visits" val={team_stats.site_visits || 14} />
+                        <PipelineMetric step="Visits" val={stats.site_visits || 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Bookings" val={team_stats.total_bookings || 8} />
+                        <PipelineMetric step="Bookings" val={stats.bookings?.total || 0} />
                     </div>
 
                     <div style={{ height: '240px' }}>
@@ -190,9 +193,9 @@ export default function TeamLeaderDashboardView({ user, data }) {
                             <AgentRow 
                                 key={agent.id}
                                 name={agent.name}
-                                revenue={formatRevenue(agent.revenue || 0)}
+                                revenue={formatRevenue(agent.total_value || 0)}
                                 bookings={agent.bookings || 0}
-                                progress={Math.min(100, (agent.bookings / 5) * 100)}
+                                progress={Math.min(100, ((agent.bookings || 0) / 5) * 100)}
                                 color={['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#64748b'][i % 5]}
                             />
                         ))}
@@ -210,17 +213,17 @@ export default function TeamLeaderDashboardView({ user, data }) {
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: COLORS.slate950 }}>Squad Risk Radar</h3>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {(stats.risk_leads || []).slice(0, 3).map((lead, i) => (
+                        {(stats.active_deals || []).slice(0, 3).map((deal, i) => (
                              <DealItem 
                                 key={i}
-                                project={lead.lead_name} 
-                                agent={lead.agent_name} 
-                                status="High Risk" 
-                                riskColor={COLORS.danger} 
-                                reason={lead.note || "No contact today"} 
+                                project={deal.project_name} 
+                                agent={deal.agent_name || 'Unassigned'} 
+                                status={deal.status} 
+                                riskColor={deal.status === 'Cancelled' ? COLORS.danger : (deal.status === 'Pending' ? COLORS.warning : COLORS.success)} 
+                                reason={formatRevenue(deal.total_amount)} 
                             />
                         ))}
-                         {(!stats.risk_leads || stats.risk_leads.length === 0) && (
+                         {(!stats.active_deals || stats.active_deals.length === 0) && (
                             <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>Squad performance is optimal.</div>
                         )}
                     </div>
@@ -244,28 +247,20 @@ export default function TeamLeaderDashboardView({ user, data }) {
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: COLORS.slate950 }}>Squad Agenda</h3>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                        <ActivityEntry 
-                            time="10:00 AM" 
-                            icon={Users} 
-                            title="Daily Huddle" 
-                            sub="Squad Alpha • Strategy Sync" 
-                            action="Join"
-                        />
-                        <ActivityEntry 
-                            time="01:00 PM" 
-                            icon={Phone} 
-                            title="Call Support" 
-                            sub="Aarav Mehta • Live Coaching" 
-                            action="Listen"
-                        />
-                        <ActivityEntry 
-                            isLast
-                            time="04:30 PM" 
-                            icon={Layout} 
-                            title="Site Visit Audit" 
-                            sub="Skyline Heights • Lead QC" 
-                            action="Audit"
-                        />
+                        {(stats.upcoming_followups || []).slice(0, 3).map((f, idx) => (
+                            <ActivityEntry 
+                                key={f.id}
+                                time={new Date(f.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                icon={f.type === 'Call' ? Phone : Layout} 
+                                title={f.type} 
+                                sub={`${f.agent_name} • ${f.lead_name}`} 
+                                action="Review"
+                                isLast={idx === Math.min((stats.upcoming_followups || []).length, 3) - 1}
+                            />
+                        ))}
+                        {(!stats.upcoming_followups || stats.upcoming_followups.length === 0) && (
+                            <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>No upcoming activities.</div>
+                        )}
                     </div>
                 </div>
 

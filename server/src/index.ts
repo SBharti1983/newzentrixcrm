@@ -345,7 +345,7 @@ app.use((err, req, res, _next) => {
 initSentry(app);
 
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
+server.listen(PORT as number, '0.0.0.0', () => {
     console.log(`ZentrixCRM API Cluster Ready on Port ${PORT}`);
     console.log(`📖 API Docs: http://localhost:${PORT}/api/docs`);
     automationService.startBackgroundWorker(io);

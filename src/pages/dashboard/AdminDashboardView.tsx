@@ -111,7 +111,7 @@ export default function AdminDashboardView({ user, data }) {
                     { label: 'Booking Volume', val: bookings.total || 0, icon: Target, color: COLORS.blue, bg: '#dbeafe' },
                     { label: isSolo ? 'Hot Interactions' : 'Talent Pool', val: isSolo ? (sentiment[0]?.count || 0) : members.length, icon: Users, color: '#ec4899', bg: '#fce7f3' },
                     { label: 'AI Prediction Accuracy', val: '94.2%', icon: Sparkles, color: COLORS.gold, bg: COLORS.goldLight },
-                    { label: 'Lead Conversion', val: '18.5%', icon: Zap, color: '#8b5cf6', bg: '#f5f3ff' },
+                    { label: 'Lead Conversion', val: `${stats.leads?.win_rate || 0}%`, icon: Zap, color: '#8b5cf6', bg: '#f5f3ff' },
                     { label: isSolo ? 'Closing Velocity' : 'System Efficiency', val: '92%', icon: Activity, color: '#0ea5e9', bg: '#f0f9ff' }
                 ].map((k, i) => (
                     <div key={i} className="wow-card" style={CARD_STYLE}>
@@ -209,17 +209,20 @@ export default function AdminDashboardView({ user, data }) {
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {alerts.map((alert, i) => (
+                        {(stats.active_deals || []).slice(0, 3).map((alert, i) => (
                             <div key={i} style={{ padding: '16px', background: '#fcfdfe', borderRadius: '18px', border: '1px solid #f1f5f9' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a' }}>{alert.lead_name}</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>{alert.agent_name}</span>
+                                    <span style={{ fontSize: '0.9rem', fontWeight: 900, color: '#0f172a' }}>{alert.project_name}</span>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ef4444' }}>{alert.agent_name || 'Unassigned'}</span>
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 500, fontStyle: 'italic', lineHeight: 1.4, borderLeft: '3px solid #ef444440', paddingLeft: '10px' }}>
-                                    "{alert.note?.substring(0, 85)}..."
+                                    "Status: {alert.status}"
                                 </div>
                             </div>
                         ))}
+                        {(!stats.active_deals || stats.active_deals.length === 0) && (
+                            <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate500, fontSize: '0.85rem', fontWeight: 600 }}>No high friction alerts. System is stable.</div>
+                        )}
                     </div>
                 </div>
 

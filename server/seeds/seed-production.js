@@ -39,10 +39,13 @@ const NEW_CLIENT = {
 async function onboard() {
     let client;
     try {
+        console.log(`🚀 Onboarding new tenant: ${NEW_CLIENT.tenant.name}...`);
+        
+        // Hash password outside of the transaction to prevent connection pool exhaustion
+        const hash = await bcrypt.hash(NEW_CLIENT.admin.password, 10);
+
         client = await pool.connect();
         await client.query('BEGIN');
-
-        console.log(`🚀 Onboarding new tenant: ${NEW_CLIENT.tenant.name}...`);
 
         // 1. Create Tenant
         const { rows: [tenant] } = await client.query(`
@@ -55,7 +58,6 @@ async function onboard() {
         const tid = tenant.id;
 
         // 2. Create Admin User
-        const hash = await bcrypt.hash(NEW_CLIENT.admin.password, 10);
         const initials = NEW_CLIENT.admin.name.split(' ').map(n => n[0]).join('').toUpperCase();
 
         const { rows: [user] } = await client.query(`
@@ -65,6 +67,15 @@ async function onboard() {
             SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role
             RETURNING id
         `, [tid, NEW_CLIENT.admin.name, NEW_CLIENT.admin.email, hash, NEW_CLIENT.admin.role, initials]);
+
+        // 3. Initialize Subscription State
+        const expiresAt = new Date();
+        expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        await client.query(`
+            INSERT INTO subscriptions (tenant_id, plan, status, amount, currency, billing_cycle, expires_at)
+            VALUES ($1, $2, 'active', 0, 'INR', 'monthly', $3)
+            ON CONFLICT DO NOTHING
+        `, [tid, NEW_CLIENT.tenant.plan, expiresAt]);
 
         await client.query('COMMIT');
         

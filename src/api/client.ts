@@ -306,6 +306,7 @@ export const telephonyApi = {
 
 export const aiApi = {
     generateAgreement: (data) => api('/ai/generate-agreement', { method: 'POST', body: data }),
+    generatePitch: (data) => api('/ai/generate-pitch', { method: 'POST', body: data }),
 };
 
 export const copilotApi = {
@@ -376,9 +377,7 @@ export const billingApi = {
     razorpayVerify: (data) => api('/billing/razorpay/verify', { method: 'POST', body: data }),
 };
 
-export const aiApi = {
-    generatePitch: (data) => api('/ai/generate-pitch', { method: 'POST', body: data }),
-};
+
 
 export const brokerApi = {
     getStats: () => api('/broker/stats'),

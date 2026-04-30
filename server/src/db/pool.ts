@@ -15,10 +15,9 @@ function optimizeConnectionString(urlStr: string, name: string) {
         if (isProduction) {
             try {
                 const url = new URL(urlStr);
-                url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
-                url.port = '6543';
-                if (!url.username.includes('uvnkbewvpewocaqzysqb')) {
-                    url.username = 'postgres.uvnkbewvpewocaqzysqb';
+                // Use transaction pooler port 6543 instead of 5432 if supported
+                if (url.port === '5432' && urlStr.includes('pooler.supabase.com')) {
+                    url.port = '6543';
                 }
                 return url.toString();
             } catch (e) {

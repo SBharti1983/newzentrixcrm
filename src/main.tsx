@@ -4,6 +4,16 @@ import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App'
 
+import posthog from 'posthog-js'
+
+// Initialize PostHog Telemetry
+posthog.init(import.meta.env.VITE_POSTHOG_API_KEY || "phc_placeholder_key", {
+  api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com',
+  person_profiles: 'identified_only',
+  autocapture: true,
+  capture_pageview: true,
+})
+
 // Initialize Sentry Error Monitoring
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN || "", // Ensure you add VITE_SENTRY_DSN to your .env file

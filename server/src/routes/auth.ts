@@ -69,6 +69,9 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     try {
+        // Hash password outside the transaction to avoid holding DB connections
+        const passwordHash = await bcrypt.hash(password, 12);
+
         const result = await db.transaction(async (tx) => {
             // Check if email already exists globally
             const { rows: existCheck } = await tx.execute(sql`
@@ -100,8 +103,7 @@ router.post('/register', async (req: Request, res: Response) => {
             `);
             const tenant = tenantRows[0] as any;
 
-            // Hash password and create the admin user
-            const passwordHash = await bcrypt.hash(password, 12);
+            // Create the admin user
             const { rows: userRows } = await tx.execute(sql`
                 INSERT INTO users (tenant_id, name, email, password_hash, phone, role, is_active)
                  VALUES (${tenant.id}, ${name.trim()}, ${email.trim().toLowerCase()}, ${passwordHash}, ${phone || null}, 'admin', true) RETURNING *
