@@ -266,45 +266,45 @@ export default function Followups() {
     const highPriority = (followups || []).filter(f => f.priority === 'High' && f.status === 'Pending').length;
 
     return (
-        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px', paddingBottom: isMobile ? 100 : 0 }}>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px', paddingBottom: isMobile ? 100 : 0, overflowX: 'hidden' }}>
             <div className="premium-card shimmer-ai" style={{ 
                 background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
-                padding: isMobile ? '24px' : '32px 40px', color: 'white', marginBottom: '32px', border: 'none',
-                borderRadius: isMobile ? '0' : '24px'
+                padding: isMobile ? '16px' : '16px 28px', color: 'white', marginBottom: '16px', border: 'none',
+                borderRadius: isMobile ? '0' : '16px'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                             <Clock size={16} color="#fbbf24" strokeWidth={2.5} />
-                             <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                             <Clock size={13} color="#fbbf24" strokeWidth={2.5} />
+                             <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                                 Outreach Intelligence
                              </span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1, color: 'white' }}>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 950, letterSpacing: '-0.5px', lineHeight: 1, color: 'white' }}>
                             Follow-Up <span style={{ color: '#fbbf24' }}>Queue</span>
                         </h1>
-                        <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: 600, maxWidth: '500px' }}>
+                        <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', fontWeight: 600, maxWidth: '500px' }}>
                             Managing {pending} active threads and {overdue} overdue actions.
                         </p>
                     </div>
 
                     {!isMobile && (
-                        <div style={{ display: 'flex', gap: '40px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>PENDING</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>PENDING</div>
                             </div>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>OVERDUE</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>OVERDUE</div>
                             </div>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.6rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>DONE</div>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>DONE</div>
                             </div>
-                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '40px' }} />
-                                <button onClick={() => setShowModal(true)} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '12px 24px', borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Plus size={18} strokeWidth={3} /> NEW TASK
+                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '32px' }} />
+                                <button onClick={() => setShowModal(true)} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '8px 18px', borderRadius: '10px', fontWeight: 900, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <Plus size={16} strokeWidth={3} /> NEW TASK
                             </button>
                         </div>
                     )}
@@ -329,7 +329,7 @@ export default function Followups() {
                 )}
             </div>
 
-            <div style={{ padding: isMobile ? '8px 12px' : '12px 24px', background: 'white', marginBottom: isMobile ? '12px' : '24px', display: 'flex', gap: isMobile ? '6px' : '12px', alignItems: 'center', borderRadius: isMobile ? '12px' : '18px', border: '1px solid #f1f5f9', flexWrap: isMobile ? 'wrap' : 'nowrap', overflowX: isMobile ? 'auto' : 'visible' }}>
+            <div style={{ padding: isMobile ? '6px 10px' : '8px 16px', background: 'white', marginBottom: isMobile ? '8px' : '12px', display: 'flex', gap: isMobile ? '6px' : '8px', alignItems: 'center', borderRadius: isMobile ? '10px' : '14px', border: '1px solid #f1f5f9', flexWrap: 'wrap', overflowX: 'hidden', maxWidth: '100%' }}>
                 <div style={{ display: 'flex', background: '#f8fafc', padding: '3px', borderRadius: '10px', marginRight: isMobile ? '0' : '8px', flexShrink: 0 }}>
                     <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
                         <List size={isMobile ? 12 : 14} /> {isMobile ? '' : 'LIST'}
