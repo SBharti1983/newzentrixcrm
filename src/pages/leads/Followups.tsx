@@ -359,7 +359,7 @@ export default function Followups() {
                         <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
                             style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '7px 12px', borderRadius: '12px' }}>
                             <option value="All">All Agents</option>
-                            {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                            {(agents || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                         </select>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9' }}>
                             <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
