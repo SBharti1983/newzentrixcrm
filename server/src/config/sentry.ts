@@ -43,6 +43,10 @@ export function initSentry(app?: Application) {
     }
   });
 
+  if (app) {
+    Sentry.setupExpressErrorHandler(app);
+  }
+
   console.log('✅ Sentry error monitoring initialized');
   return Sentry;
 }

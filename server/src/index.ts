@@ -18,6 +18,9 @@ import automationService from './services/automationService';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const app = express();
+// ─── Initialize Sentry ───
+initSentry(app);
+
 import http from 'http';
 const server = http.createServer(app);
 
@@ -367,7 +370,7 @@ app.use((err, req, res, _next) => {
 });
 
 // ─── Initialize Sentry ───────────────────────────────────────────
-initSentry(app);
+// initSentry(app); // Already initialized at top
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT as number, '0.0.0.0', () => {
