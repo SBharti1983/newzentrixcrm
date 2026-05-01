@@ -331,14 +331,29 @@ app.get('/api/health', async (req, res) => {
 
 app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
+// ─── Diagnostic Error Buffer ─────────────────────────────────────
+const errorBuffer: any[] = [];
+app.get('/api/diag/logs', (req, res) => {
+    res.json(errorBuffer.slice(-20));
+});
+
 // ─── Global Error Handler with Sentry ────────────────────────────
 app.use((err, req, res, _next) => {
+    const errorDetails = {
+        message: err.message,
+        stack: err.stack,
+        path: req.path,
+        method: req.method,
+        timestamp: new Date().toISOString()
+    };
+    errorBuffer.push(errorDetails);
+    
     // Report to Sentry if available
     if (process.env.SENTRY_DSN) {
         Sentry.captureException(err);
     }
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('[GLOBAL ERROR]', errorDetails);
+    res.status(500).json({ error: 'Server error', details: isProduction ? undefined : err.message });
 });
 
 // ─── Initialize Sentry ───────────────────────────────────────────
