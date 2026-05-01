@@ -329,13 +329,13 @@ app.get('/api/health', async (req, res) => {
     res.status(statusCode).json(health);
 });
 
-app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
-
 // ─── Diagnostic Error Buffer ─────────────────────────────────────
 const errorBuffer: any[] = [];
 app.get('/api/diag/logs', (req, res) => {
     res.json(errorBuffer.slice(-20));
 });
+
+app.use((req, res) => res.status(404).json({ error: 'Route not found' }));
 
 // ─── Global Error Handler with Sentry ────────────────────────────
 app.use((err, req, res, _next) => {
