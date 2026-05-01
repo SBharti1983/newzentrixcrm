@@ -30,6 +30,16 @@ app.use((req, res, next) => {
     next();
 });
 import { Server } from 'socket.io';
+
+// Extend Express Request type to include socket.io
+declare global {
+  namespace Express {
+    interface Request {
+      io: Server;
+      user?: any;
+    }
+  }
+}
 import jwt from 'jsonwebtoken';
 
 const io = new Server(server, {
