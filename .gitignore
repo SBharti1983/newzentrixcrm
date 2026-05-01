@@ -39,6 +39,8 @@ tmp/
 !server/package-lock.json
 !vercel.json
 !railway.json
+!tsconfig.json
+!server/tsconfig.json
 *.txt
 *.hprof
 WTIApp/build/
