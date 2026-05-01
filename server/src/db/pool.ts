@@ -12,17 +12,25 @@ let sslConfig = config.database.ssl;
 // ── Supabase Optimization Helper ────────────────────────────────────
 function optimizeConnectionString(urlStr: string, name: string) {
     if (urlStr && (urlStr.includes('supabase.co') || urlStr.includes('supabase.com'))) {
-        if (isProduction) {
-            try {
-                const url = new URL(urlStr);
-                // Use transaction pooler port 6543 instead of 5432 if supported
-                if (url.port === '5432' && urlStr.includes('pooler.supabase.com')) {
-                    url.port = '6543';
+        try {
+            const url = new URL(urlStr);
+            
+            // Auto-patch IPv4 pooler issue for Railway
+            if (url.hostname === 'db.uvnkbewvpewocaqzysqb.supabase.co') {
+                url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
+                url.port = '6543';
+                if (url.username === 'postgres') {
+                    url.username = 'postgres.uvnkbewvpewocaqzysqb';
                 }
-                return url.toString();
-            } catch (e) {
-                return urlStr;
             }
+            
+            // Use transaction pooler port 6543 instead of 5432 if supported
+            if (url.port === '5432' && urlStr.includes('pooler.supabase.com')) {
+                url.port = '6543';
+            }
+            return url.toString();
+        } catch (e) {
+            return urlStr;
         }
     }
     return urlStr;
