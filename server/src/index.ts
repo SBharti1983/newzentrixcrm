@@ -202,7 +202,7 @@ import { sanitizeMiddleware } from './middleware/sanitize';
 
 // ─── Audit Logging ───────────────────────────────────────────────
 import { auditMiddleware, initAuditTable } from './services/auditService';
-app.use(auditMiddleware);
+// app.use(auditMiddleware);
 initAuditTable(); // Create audit_logs table if needed
 
 // ─── Route Imports ───────────────────────────────────────────────
