@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
-import { leadsApi } from '../../api/client';
-import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp, Menu } from 'lucide-react';
+import { leadsApi, notificationsApi } from '../../api/client';
+import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp, Menu, Wand2 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
 import { useToast } from '../../hooks/useToast';
 import ContactPreviewSidebar from '../../components/shared/ContactPreviewSidebar';
@@ -19,6 +19,22 @@ export default function NurtureLeads() {
     const [limit] = useState(50);
     const [previewLeadId, setPreviewLeadId] = useState(null);
     const isMobile = useMobile();
+    const [draftingId, setDraftingId] = useState(null);
+
+    const generateAIDraft = async (lead) => {
+        try {
+            setDraftingId(lead.id);
+            const res = await notificationsApi.nurtureDraft({ lead_id: lead.id, channel: 'WhatsApp' });
+            if (res.draft) {
+                await navigator.clipboard.writeText(res.draft);
+                showToast('AI Smart-Draft copied to clipboard!', 'success');
+            }
+        } catch (err) {
+            showToast('Failed to generate AI draft', 'error');
+        } finally {
+            setDraftingId(null);
+        }
+    };
 
     useEffect(() => {
         const prev = document.body.style.overflowX;
@@ -231,7 +247,7 @@ export default function NurtureLeads() {
                             </thead>
                             <tbody>
                                 {leads.map((lead, i) => {
-                                    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date) < new Date().setHours(0,0,0,0);
+                                    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date).getTime() < new Date().setHours(0,0,0,0);
                                     const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
 
                                     const lcReason = (lead.nurture_reason || '').toLowerCase();
@@ -346,6 +362,20 @@ export default function NurtureLeads() {
                                                         <ArrowRight size={12} /> Reactivate
                                                     </button>
                                                     <button
+                                                        onClick={() => generateAIDraft(lead)}
+                                                        disabled={draftingId === lead.id}
+                                                        style={{
+                                                            width: 32, height: 32, borderRadius: 8,
+                                                            background: 'linear-gradient(135deg, #7c3aed15, #3b82f615)', 
+                                                            border: '1px solid #7c3aed30',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            cursor: draftingId === lead.id ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease'
+                                                        }}
+                                                        title="Generate AI Smart-Draft"
+                                                    >
+                                                        <Wand2 size={13} className={draftingId === lead.id ? 'animate-pulse' : ''} color="#7c3aed" />
+                                                    </button>
+                                                    <button
                                                         onClick={() => navigate(`/leads/${lead.id}`)}
                                                         style={{
                                                             width: 32, height: 32, borderRadius: 8,
@@ -437,7 +467,7 @@ export default function NurtureLeads() {
 }
 
 function MobileNurtureCard({ lead, onReactivate, onClick, onEdit }) {
-    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date) < new Date().setHours(0,0,0,0);
+    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date).getTime() < new Date().setHours(0,0,0,0);
     const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
 
     const lcReason = (lead.nurture_reason || '').toLowerCase();
@@ -533,6 +563,18 @@ function MobileNurtureCard({ lead, onReactivate, onClick, onEdit }) {
                         }}
                     >
                         <ArrowRight size={14} /> Reactivate
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); generateAIDraft(lead); }}
+                        disabled={draftingId === lead.id}
+                        style={{
+                            width: 36, height: 36, borderRadius: 10,
+                            background: 'white', border: '1.5px solid #7c3aed40',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <Wand2 size={16} className={draftingId === lead.id ? 'animate-pulse' : ''} color="#7c3aed" />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit(); }}

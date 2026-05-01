@@ -270,6 +270,72 @@ class AIService {
             }));
         }
     }
+    /**
+     * Generates a single hyper-personalized follow-up message for a lead
+     */
+    async generateSuggestedMessage(lead: any, interactions: any[], project: any, reason: string) {
+        if (!this.genAI) return `Hi ${lead.name}, reaching out to check in on your interest in ${project?.name || 'our project'}. Let me know if you have any questions!`;
+
+        try {
+            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const interactionsString = interactions.map(i => `[${i.type}] ${i.note}`).join('\n');
+            
+            const prompt = `You are a high-performing real estate sales consultant. 
+            Write a SHORT, warm, and hyper-personalized WhatsApp message for a lead.
+            
+            LEAD: ${lead.name}
+            PROJECT: ${project?.name || 'Zentrix Premium Portfolio'}
+            REASON FOR CONTACT: ${reason}
+            
+            HISTORY:
+            ${interactionsString || 'Initial discovery phase.'}
+            
+            INSTRUCTIONS:
+            1. Use the lead's name.
+            2. Reference a specific detail from their history if available (e.g., they liked the floorplan, they were budget sensitive, they visited on Sunday).
+            3. Address the 'REASON FOR CONTACT'.
+            4. Keep it under 25 words.
+            5. Use a soft, non-pushy tone.
+            6. Include 1 emoji.
+            
+            Return ONLY the message text.`;
+            
+            const result = await model.generateContent(prompt);
+            return result.response.text().trim();
+        } catch (e) {
+            console.error('[AI Suggested Message Error]', e);
+            return `Hi ${lead.name}, reaching out regarding ${project?.name || 'our projects'}. Let's connect soon!`;
+        }
+    }
+    /**
+     * Generates a conversational chat response for the public concierge
+     */
+    async generateChatResponse(systemPrompt: string, message: string, history: any[] = []) {
+        if (!this.genAI) return "I'm sorry, my intelligence systems are currently offline. Please use the 'Enquire Now' form.";
+
+        try {
+            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const chat = model.startChat({
+                history: history.map(h => ({
+                    role: h.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: h.text }]
+                })),
+                generationConfig: {
+                    maxOutputTokens: 250,
+                },
+            });
+
+            const result = await chat.sendMessage([
+                { text: systemPrompt },
+                { text: message }
+            ]);
+            
+            return result.response.text().trim();
+        } catch (e) {
+            console.error('[AI Chat Response Error]', e);
+            return "That's a great question! To provide you with the most accurate details regarding pricing and availability, would you like to leave your number for a quick callback?";
+        }
+    }
 }
 
 export default new AIService();

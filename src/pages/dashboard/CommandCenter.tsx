@@ -7,7 +7,7 @@ import {
     TrendingUp, TrendingDown, Target, Zap, Clock,
     CheckCircle2, AlertCircle, ChevronRight, Filter
 } from 'lucide-react';
-import { leadsApi, notificationsApi } from '../../api/client';
+import { leadsApi, notificationsApi, dashboardApi } from '../../api/client';
 import { PageLoader } from '../../components/feedback/Feedback';
 import { useToast } from '../../hooks/useToast';
 import AIPitchModal from '../../components/modals/AIPitchModal';
@@ -32,34 +32,12 @@ export default function CommandCenter() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Mock intelligence data for demonstration
-    const getLeadIntelligence = (lead) => {
-        if (!lead) return null;
-        // Deterministic mock based on ID (handle both numeric and UUID)
-        let seed = 0;
-        if (typeof lead.id === 'number') {
-            seed = lead.id;
-        } else if (typeof lead.id === 'string') {
-            // Simple hash for UUID
-            seed = lead.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        }
 
-        const closingProb = 45 + (seed % 45);
-        const sentiment = seed % 3 === 0 ? 'Positive' : seed % 3 === 1 ? 'Neutral' : 'Concerned';
-
-        return {
-            closingProbability: closingProb,
-            sentiment,
-            summary: `User is highly interested in ${lead.property_type || '2BHK'} projects in ${lead.city || 'East Pune'}. They have inquired 3 times and are currently comparing with competitor pricing.`,
-            nextAction: closingProb > 75 ? "Send final closing offer" : "Schedule site visit",
-            urgency: closingProb > 80 ? 'High' : 'Medium'
-        };
-    };
 
     const loadLeads = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await leadsApi.list();
+            const res = await dashboardApi.getCommandCenterIntel();
             const data = res.data || [];
             setLeads(data);
             setActiveLeadId(prev => prev || (data.length > 0 ? data[0].id : null));
@@ -92,7 +70,7 @@ export default function CommandCenter() {
     }, [activeLeadId, loadMessages]);
 
     const activeLead = leads.find(l => l.id === activeLeadId);
-    const intel = getLeadIntelligence(activeLead);
+    const intel = activeLead; // Data now comes pre-calculated from the SP!
 
     const handleSend = async () => {
         if (!replyText.trim() || !activeLeadId) return;
@@ -194,7 +172,7 @@ export default function CommandCenter() {
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto' }}>
                         {filteredLeads.map(l => {
-                            const lIntel = getLeadIntelligence(l);
+                            const lIntel = { closingProbability: l.score || 0 };
                             return (
                                 <div
                                     key={l.id}
@@ -408,6 +386,17 @@ export default function CommandCenter() {
                                 </div>
                             </div>
 
+                            <div style={{ marginBottom: 32, padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                                    <Clock size={14} color="#38bdf8" />
+                                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Predictive Window</label>
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'white' }}>
+                                    {intel?.bestTimeToContact || 'Analyzing Patterns...'}
+                                </div>
+                                <div style={{ fontSize: '0.6rem', color: '#64748b', marginTop: 4 }}>Based on historical interaction peaks</div>
+                            </div>
+                            
                             <div style={{ marginBottom: 16 }}>
                                 <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 12, letterSpacing: '0.05em' }}>Executive Analysis</label>
                                 <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.6, fontWeight: 500, boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)' }}>

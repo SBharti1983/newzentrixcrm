@@ -88,4 +88,33 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
     }
 });
 
+// GET /api/dashboard/command-center — real-time intelligence for the strategic view
+router.get('/command-center', async (req: any, res: Response) => {
+    const tid = req.tenantId;
+    try {
+        const spResult = await db.execute(sql`
+            SELECT get_command_center_intel(${tid}::uuid) as data
+        `);
+        const intel = (spResult.rows[0] as any)?.data || [];
+        res.json({ data: intel });
+    } catch (err: any) {
+        console.error('[COMMAND CENTER INTEL ERROR]', err);
+        res.status(500).json({ error: 'Failed to load command center intelligence' });
+    }
+});
+
+// GET /api/dashboard/leaderboard — sales gamification rankings
+router.get('/leaderboard', async (req: any, res: Response) => {
+    const tid = req.tenantId;
+    try {
+        const { rows } = await db.execute(sql`
+            SELECT * FROM get_sales_leaderboard(${tid}::uuid)
+        `);
+        res.json({ data: rows });
+    } catch (err: any) {
+        console.error('[LEADERBOARD ERROR]', err);
+        res.status(500).json({ error: 'Failed to load leaderboard' });
+    }
+});
+
 export default router;

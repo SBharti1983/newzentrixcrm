@@ -179,7 +179,7 @@ export default function Enquiry() {
                                         <span style={{ fontSize: '0.62rem', fontWeight: 600, color: active ? 'var(--navy-600)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>{s}</span>
                                     </div>
                                     {i < STEPS.length - 1 && (
-                                        <div style={{ flex: 1, height: 2, background: done ? 'var(--accent-emerald)' : 'var(--slate-100)', marginBottom: 16, mx: 4, transition: 'all 0.3s' }} />
+                                        <div style={{ flex: 1, height: 2, background: done ? 'var(--accent-emerald)' : 'var(--slate-100)', marginBottom: 16, marginInline: 4, transition: 'all 0.3s' }} />
                                     )}
                                 </div>
                             );

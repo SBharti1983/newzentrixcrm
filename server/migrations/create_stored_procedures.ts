@@ -17,14 +17,14 @@ async function createStoredProcedures() {
 
         // 1. Calculate Commission (Triggered on Booking)
         await client.query(`
-            CREATE OR REPLACE PROCEDURE calculate_commission(p_booking_id INT, p_tenant_id INT)
+            CREATE OR REPLACE PROCEDURE calculate_commission(p_booking_id UUID, p_tenant_id UUID)
             LANGUAGE plpgsql
             AS $$
             DECLARE
                 v_deal_value DECIMAL;
-                v_agent_id INT;
-                v_partner_id INT;
-                v_lead_id INT;
+                v_agent_id UUID;
+                v_partner_id UUID;
+                v_lead_id UUID;
                 v_agent_comm DECIMAL;
                 v_partner_comm DECIMAL;
             BEGIN
@@ -60,12 +60,12 @@ async function createStoredProcedures() {
 
         // 2. Assign Lead Round Robin
         await client.query(`
-            CREATE OR REPLACE FUNCTION assign_lead_round_robin(p_tenant_id INT, p_lead_id INT)
-            RETURNS INT
+            CREATE OR REPLACE FUNCTION assign_lead_round_robin(p_tenant_id UUID, p_lead_id UUID)
+            RETURNS UUID
             LANGUAGE plpgsql
             AS $$
             DECLARE
-                v_selected_user_id INT;
+                v_selected_user_id UUID;
             BEGIN
                 -- Find the agent who was assigned a lead least recently
                 SELECT u.id INTO v_selected_user_id
@@ -93,7 +93,7 @@ async function createStoredProcedures() {
 
         // 3. Lead Scoring Engine (Calculates purely on DB side)
         await client.query(`
-            CREATE OR REPLACE FUNCTION score_lead(p_lead_id INT)
+            CREATE OR REPLACE FUNCTION score_lead(p_lead_id UUID)
             RETURNS INT
             LANGUAGE plpgsql
             AS $$

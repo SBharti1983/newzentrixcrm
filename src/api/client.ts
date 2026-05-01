@@ -137,6 +137,8 @@ export const searchApi = {
 };
 export const dashboardApi = {
     get: (params = {}) => api('/dashboard?' + new URLSearchParams(params)),
+    getCommandCenterIntel: () => api('/dashboard/command-center'),
+    getLeaderboard: () => api('/dashboard/leaderboard'),
 };
 
 // ─── Leads ───────────────────────────────────────────────────────
@@ -169,6 +171,8 @@ export const projectsApi = {
     update: (id, data) => api(`/projects/${id}`, { method: 'PATCH', body: data }),
     delete: (id) => api(`/projects/${id}`, { method: 'DELETE' }),
     inventory: (id, params = {}) => api(`/projects/${id}/inventory?` + new URLSearchParams(params)),
+    addUnit: (id, data) => api(`/projects/${id}/inventory`, { method: 'POST', body: data }),
+    updateUnit: (projectId, unitId, data) => api(`/projects/${projectId}/inventory/${unitId}`, { method: 'PATCH', body: data }),
 };
 
 // ─── Bookings ────────────────────────────────────────────────────
@@ -307,6 +311,7 @@ export const telephonyApi = {
 export const aiApi = {
     generateAgreement: (data) => api('/ai/generate-agreement', { method: 'POST', body: data }),
     generatePitch: (data) => api('/ai/generate-pitch', { method: 'POST', body: data }),
+    suggestMessage: (data) => api('/ai/suggest-message', { method: 'POST', body: data }),
 };
 
 export const copilotApi = {
@@ -326,6 +331,7 @@ export const notificationsApi = {
     send: (data) => api('/notifications/send', { method: 'POST', body: data }),
     bulkSend: (data) => api('/notifications/bulk-send', { method: 'POST', body: data }),
     draftReply: (data) => api('/notifications/draft-reply', { method: 'POST', body: data }),
+    nurtureDraft: (data) => api('/notifications/nurture-draft', { method: 'POST', body: data }),
     update: (id, data) => api(`/notifications/${id}`, { method: 'PATCH', body: data }),
 };
 

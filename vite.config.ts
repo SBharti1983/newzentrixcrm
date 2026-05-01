@@ -22,16 +22,21 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 800,
-    // Enable source map for production debugging (optional)
-    sourcemap: false,
-    // Minification optimization
-    minify: 'esbuild',
-    target: 'es2020',
-    // CSS optimization
-    cssMinify: true,
-    // rollupOptions: {
-    //   output: { ... }
-    // }
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            // Group heavy libraries into their own chunks to reduce main bundle size
+            if (id.includes('firebase')) return 'vendor-firebase';
+            if (id.includes('google-maps')) return 'vendor-maps';
+            if (id.includes('recharts')) return 'vendor-charts';
+            if (id.includes('jspdf') || id.includes('pdfmake') || id.includes('xlsx')) return 'vendor-pdf';
+            if (id.includes('lucide')) return 'vendor-ui';
+            // Leave React and other small libs in the main bundle for stability
+          }
+        }
+      }
+    }
   }
 })

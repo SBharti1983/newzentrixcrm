@@ -80,6 +80,7 @@ const Customers = lazy(() => import('./pages/partners/Customers'));
 
 // Public
 const Enquiry = lazy(() => import('./pages/public/Enquiry'));
+const ProjectMicrosite = lazy(() => import('./pages/public/ProjectMicrosite'));
 const Kiosk = lazy(() => import('./pages/public/Kiosk'));
 const CalendarPage = lazy(() => import('./pages/public/CalendarPage'));
 const PartnerReferral = lazy(() => import('./pages/public/PartnerReferral'));
@@ -290,6 +291,7 @@ export default function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/enquiry" element={<Enquiry />} />
+                  <Route path="/project/:projectId" element={<ProjectMicrosite />} />
                   <Route path="/referral/:partnerId" element={<PartnerReferral />} />
                   <Route path="/kiosk" element={<Kiosk />} />
                   {/* All other routes — protected */}

@@ -27,6 +27,7 @@ const COLORS = {
     slate950: '#040d1a',
     slate900: '#0a1628',
     slate800: '#1e293b',
+    slate700: '#334155',
     slate500: '#64748b',
     slate400: '#94a3b8',
     slate200: '#e2e8f0',
@@ -161,7 +162,7 @@ export default function Inventory() {
         const styleEl = document.createElement('style');
         styleEl.textContent = STYLES;
         document.head.appendChild(styleEl);
-        return () => document.head.removeChild(styleEl);
+        return () => { document.head.removeChild(styleEl); };
     }, []);
 
     useEffect(() => {

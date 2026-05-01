@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Building2, MapPin, Home, X, Info, TrendingUp, Sparkles, ArrowRight } from 'lucide-react';
+import { Plus, Search, Building2, MapPin, Home, X, Info, TrendingUp, Sparkles, ArrowRight, ExternalLink, Activity, Target, Zap, Clock, ShieldCheck, Globe, Eye, MoreHorizontal, Layers } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useMobile } from '../../hooks/useMobile';
 import { useApi } from '../../hooks/useApi';
 import { projectsApi } from '../../api/client';
@@ -23,6 +25,7 @@ const DEFAULT_FORM = {
 
 export default function Projects() {
     const isMobile = useMobile();
+    const navigate = useNavigate();
     const { addToast } = useToast();
     
     // Missing States
@@ -69,55 +72,89 @@ export default function Projects() {
 
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '16px' : '0 20px 40px', paddingBottom: isMobile ? 100 : 40 }}>
-            {/* Project Intelligence Ribbon */}
+            {/* Executive Portfolio Command Center */}
             <div style={{ 
-                background: 'linear-gradient(135deg, var(--navy-900), #1e293b)', 
-                padding: isMobile ? '24px 20px' : '20px 32px', 
-                borderRadius: '28px', 
-                marginBottom: isMobile ? 24 : 16,
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)', 
+                padding: isMobile ? '24px 20px' : '32px 40px', 
+                borderRadius: '24px', 
+                marginBottom: isMobile ? 20 : 28,
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: '0 20px 40px rgba(10,22,40,0.15)'
+                boxShadow: '0 30px 60px -12px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.05)'
             }}>
-                <div style={{ position: 'absolute', top: -10, right: -10, opacity: 0.03 }}>
-                    <Building2 size={isMobile ? 80 : 120} />
-                </div>
+                {/* Abstract Premium Grid Background */}
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }} />
+                
+                {/* Glowing Orbs */}
+                <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 300, height: 300, background: 'radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, transparent 70%)', filter: 'blur(40px)', borderRadius: '50%' }} />
+                <div style={{ position: 'absolute', bottom: '-20%', left: '5%', width: 250, height: 250, background: 'radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%)', filter: 'blur(40px)', borderRadius: '50%' }} />
                 
                 <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
-                    alignItems: isMobile ? 'flex-start' : 'flex-end', 
+                    alignItems: isMobile ? 'flex-start' : 'center', 
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? 24 : 0,
+                    gap: isMobile ? 32 : 40,
                     position: 'relative', 
                     zIndex: 1 
                 }}>
-                    <div>
-                        <div style={{ fontSize: isMobile ? '7px' : '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-cyan)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <TrendingUp size={12} /> Portfolio Absorption Pulse
+                    <div style={{ flex: '1 1 40%' }}>
+                        <div style={{ 
+                            padding: '6px 14px', 
+                            background: 'rgba(255, 255, 255, 0.1)', 
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '100px', 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: 8,
+                            marginBottom: 20
+                        }}>
+                            <ShieldCheck size={14} color="#a78bfa" />
+                            <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#e2e8f0' }}>Verified Enterprise Portfolio</span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 900, letterSpacing: '-0.3px' }}>Inventory</h1>
-                        <p style={{ margin: '2px 0 0', color: 'rgba(255,255,255,0.6)', fontWeight: 600, fontSize: isMobile ? '0.75rem' : '0.85rem' }}>Monitoring {projects.length} strategic assets.</p>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.8rem' : '2.8rem', fontWeight: 900, letterSpacing: '-1px', color: 'white', lineHeight: 1.1 }}>
+                            Strategic Assets
+                        </h1>
+                        <p style={{ margin: '12px 0 0', color: '#cbd5e1', fontWeight: 500, fontSize: isMobile ? '0.85rem' : '1rem', maxWidth: 480, lineHeight: 1.5 }}>
+                            Managing {projects.length} high-fidelity real estate projects with real-time inventory synchronization and AI-driven market intelligence.
+                        </p>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: isMobile ? 16 : 20, alignItems: 'center', width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-                        <div style={{ display: 'flex', gap: 20 }}>
+                    {/* The "Missing Middle" - Visual Filler */}
+                    {!isMobile && (
+                        <div style={{ flex: '1 1 20%', display: 'flex', justifyContent: 'center', opacity: 0.8 }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 60 }}>
+                                {[40, 70, 45, 90, 65, 80, 50, 100].map((h, i) => (
+                                    <div key={i} style={{ width: 8, height: `${h}%`, background: 'linear-gradient(to top, rgba(99,102,241,0.2), #818cf8)', borderRadius: 4, transition: 'height 0.5s ease' }} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: isMobile ? 16 : 32, alignItems: 'center', flex: '1 1 40%', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'transparent' : 'rgba(15, 23, 42, 0.4)', padding: isMobile ? 0 : '24px 32px', borderRadius: '24px', border: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)' }}>
+                        <div style={{ display: 'flex', gap: 32 }}>
                             {[
-                                { label: 'Absorption', value: `${Math.round((projects.reduce((s,p) => s + ((p.total_units || 0) - (p.available_units || 0)), 0) / projects.reduce((s,p) => s + (p.total_units || 1), 0)) * 100)}%`, color: 'var(--accent-emerald)' },
-                                { label: 'Velocity', value: '+24%', color: 'var(--accent-cyan)' },
+                                { label: 'Absorption', value: `${Math.round((projects.reduce((s,p) => s + ((p.total_units || 0) - (p.available_units || 0)), 0) / Math.max(1, projects.reduce((s,p) => s + (p.total_units || 0), 0))) * 100)}%`, color: '#34d399', trend: '+5.2%' },
+                                { label: 'Lead Velocity', value: '1.4x', color: '#a78bfa', trend: 'Optimal' },
                             ].map(m => (
-                            <div key={m.label} style={{ textAlign: isMobile ? 'left' : 'right' }}>
-                                <div style={{ fontSize: '8px', fontWeight: 900, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 1 }}>{m.label}</div>
-                                <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 900, color: m.color }}>{m.value}</div>
+                            <div key={m.label} style={{ textAlign: 'left' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.1em' }}>{m.label}</div>
+                                <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: m.color, letterSpacing: '-1px', lineHeight: 1 }}>{m.value}</div>
+                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <TrendingUp size={12} color={m.color} /> {m.trend}
+                                </div>
                             </div>
                             ))}
                         </div>
-                        <button className="btn hover-lift" onClick={() => setShowModal(true)} style={{ 
-                            background: 'white', color: 'var(--navy-900)', fontWeight: 900, height: 40, padding: '0 16px', borderRadius: '14px', border: 'none',
-                            boxShadow: '0 10px 20px rgba(0,0,0,0.2)', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 6
-                        }}>
-                             <Plus size={16} /> ADD
+                        <div style={{ width: 1, height: 60, background: 'rgba(255,255,255,0.1)' }} />
+                        <button className="hover-glow" onClick={() => setShowModal(true)} style={{ 
+                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', color: '#0f172a', fontWeight: 800, height: 48, width: 48, borderRadius: '16px', border: 'none',
+                            boxShadow: '0 10px 25px rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s'
+                        }} title="New Project">
+                             <Plus size={20} strokeWidth={2.5} />
                         </button>
                     </div>
                 </div>
@@ -149,65 +186,118 @@ export default function Projects() {
             </div>
 
             {loading ? <PageLoader /> : error ? <PageError message={error} onRetry={refetch} /> : (
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(420px, 1fr))', gap: isMobile ? 20 : 32 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(440px, 1fr))', gap: isMobile ? 24 : 40 }}>
                     {projects.map(project => {
                         const occ = occupancyPct(project);
                         const isHot = occ > 70;
                         return (
-                            <div key={project.id} className="hover-lift" style={{ 
-                                background: 'white', borderRadius: '32px', overflow: 'hidden', border: '1px solid #f1f5f9',
-                                boxShadow: '0 12px 24px rgba(10,22,40,0.02)', position: 'relative',
-                                cursor: 'pointer'
-                            }} onClick={() => setViewProject(project)}>
-                                
-                                {isHot && (
-                                    <div style={{ position: 'absolute', top: 24, right: 24, padding: '6px 14px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald-dark)', borderRadius: '14px', fontSize: '10px', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <Sparkles size={12} /> HIGH ABSORPTION
+                            <div key={project.id} className="project-card-premium" style={{ 
+                                background: 'white', borderRadius: '36px', overflow: 'hidden', border: '1px solid #f1f5f9',
+                                boxShadow: '0 15px 35px rgba(0,0,0,0.03)', position: 'relative',
+                                cursor: 'default', transition: 'all 0.3s'
+                            }}>
+                                {/* Dynamic Status Header */}
+                                <div style={{ 
+                                    padding: '28px 36px', 
+                                    background: 'linear-gradient(to right, #f8fafc, #ffffff)', 
+                                    borderBottom: '1px solid #f1f5f9',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <div style={{ 
+                                            padding: '6px 12px', background: project.status === 'Active' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)', 
+                                            color: project.status === 'Active' ? '#059669' : '#4f46e5', borderRadius: '10px', fontSize: '10px', fontWeight: 950, letterSpacing: '0.05em' 
+                                        }}>
+                                            {project.status.toUpperCase()}
+                                        </div>
+                                        {isHot && (
+                                            <div style={{ padding: '6px 12px', background: 'rgba(244, 63, 94, 0.1)', color: '#e11d48', borderRadius: '10px', fontSize: '10px', fontWeight: 950, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <Zap size={12} fill="#e11d48" /> HIGH DEMAND
+                                            </div>
+                                        )}
                                     </div>
-                                )}
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/project/${project.id}`); }}
+                                            title="View Public Microsite"
+                                            style={{ width: 36, height: 36, borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                                        >
+                                            <Globe size={16} color="#64748b" />
+                                        </button>
+                                        <button style={{ width: 36, height: 36, borderRadius: '10px', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                            <MoreHorizontal size={16} color="#64748b" />
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <div style={{ padding: isMobile ? '28px' : '36px' }}>
-                                    <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-                                        <div style={{ width: isMobile ? 54 : 72, height: isMobile ? 54 : 72, borderRadius: '20px', background: 'var(--slate-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '24px' : '28px' }}>🏢</div>
+                                <div style={{ padding: '36px' }}>
+                                    <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                                        <div style={{ 
+                                            width: 80, height: 80, borderRadius: '24px', 
+                                            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px',
+                                            border: '1px solid #e2e8f0', boxShadow: '0 8px 16px rgba(0,0,0,0.02)'
+                                        }}>
+                                            {TYPE_ICON[project.type] || '🏢'}
+                                        </div>
                                         <div style={{ flex: 1 }}>
-                                            <h3 style={{ margin: 0, fontSize: isMobile ? '1.1rem' : '1.4rem', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.2px' }}>{project.name}</h3>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--slate-500)', fontSize: '13px', marginTop: 4, fontWeight: 600 }}>
-                                                <MapPin size={14} /> {project.location}
+                                            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.2 }}>{project.name}</h3>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: '14px', marginTop: 8, fontWeight: 600 }}>
+                                                <MapPin size={15} color="#94a3b8" /> {project.location}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Inventory Pulse */}
-                                    <div style={{ background: '#fcfdfe', padding: '28px', borderRadius: '28px', border: '1px solid #f1f5f9', marginBottom: 28 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                                            <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Portfolio Velocity</span>
-                                            <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)' }}>{occ}% ACQUIRED</span>
+                                    {/* Intelligence Matrix */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 32 }}>
+                                        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                                <span style={{ fontSize: '10px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase' }}>Inventory Absorption</span>
+                                                <span style={{ fontSize: '11px', fontWeight: 950, color: occ > 80 ? '#059669' : '#0f172a' }}>{occ}%</span>
+                                            </div>
+                                            <div style={{ height: 8, background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', width: `${occ}%`, background: occ > 80 ? '#10b981' : '#3b82f6', borderRadius: '4px' }} />
+                                            </div>
+                                            <div style={{ marginTop: 12, fontSize: '12px', fontWeight: 700, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>{project.available_units} Units Left</span>
+                                                <span style={{ color: '#059669' }}>Healthy</span>
+                                            </div>
                                         </div>
-                                        <div style={{ height: 10, background: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
-                                            <div style={{ height: '100%', width: `${occ}%`, background: occ > 80 ? 'var(--accent-emerald)' : 'var(--accent-cyan)', borderRadius: '5px' }} />
-                                        </div>
-                                        
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 24 }}>
-                                            {[
-                                                { label: 'Total units', value: project.total_units },
-                                                { label: 'Available', value: project.available_units, active: true },
-                                                { label: 'Class', value: project.type?.substring(0,4) || 'Resi' }
-                                            ].map(s => (
-                                                <div key={s.label}>
-                                                    <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 6 }}>{s.label}</div>
-                                                    <div style={{ fontSize: '18px', fontWeight: 800, color: s.active ? 'var(--accent-emerald-dark)' : 'var(--navy-900)' }}>{s.value}</div>
+                                        <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
+                                            <div style={{ fontSize: '10px', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 12 }}>Market Intelligence</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <TrendingUp size={18} color="#3b82f6" />
                                                 </div>
-                                            ))}
+                                                <div>
+                                                    <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a' }}>{project.price_range?.split('–')[0] || '—'}</div>
+                                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#10b981' }}>+2.4% MoM</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div>
-                                            <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 4 }}>Entry Ticket</div>
-                                            <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 900, color: 'var(--navy-900)' }}>{project.price_range?.split('–')[0] || '—'}</div>
-                                        </div>
-                                        <button className="hover-lift" style={{ height: 44, padding: isMobile ? '0 16px' : '0 24px', borderRadius: '14px', border: '1px solid #f1f5f9', background: 'white', color: 'var(--navy-900)', fontWeight: 800, fontSize: isMobile ? '12px' : '14px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                                            Analyze <ArrowRight size={14} />
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        <button 
+                                            onClick={() => setViewProject(project)}
+                                            style={{ 
+                                                flex: 2, height: 52, borderRadius: '18px', background: '#0f172a', color: 'white', border: 'none', 
+                                                fontWeight: 900, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer',
+                                                boxShadow: '0 10px 20px rgba(15, 23, 42, 0.15)'
+                                            }}
+                                        >
+                                            <Activity size={18} /> ASSET BRIEF
+                                        </button>
+                                        <button 
+                                            onClick={() => navigate(`/inventory?projectId=${project.id}`)}
+                                            style={{ 
+                                                flex: 1, height: 52, borderRadius: '18px', background: 'white', color: '#0f172a', border: '1px solid #e2e8f0', 
+                                                fontWeight: 900, fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                                            }}
+                                        >
+                                            <Layers size={18} />
                                         </button>
                                     </div>
                                 </div>

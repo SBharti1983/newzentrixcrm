@@ -3,6 +3,7 @@ import pool from '../db/pool';
 import { authenticateToken } from '../middleware/auth';
 import { generateAIResponse } from '../utils/ai';
 import aiService from '../services/aiService';
+import NurtureAutoPilot from '../services/NurtureAutoPilot';
 
 const router = express.Router();
 router.use(authenticateToken);
@@ -148,6 +149,54 @@ router.post('/generate-pitch', async (req: any, res: Response) => {
     } catch (err) {
         console.error('[AI Pitch Generator Error]:', err);
         res.status(500).json({ error: 'AI failed to generate pitch. Please try again.' });
+    }
+});
+
+/**
+ * POST /api/ai/suggest-message
+ * Drafts a personalized WhatsApp/Email message for a specific lead
+ */
+router.post('/suggest-message', async (req: any, res: Response) => {
+    const { lead_id, reason } = req.body;
+
+    try {
+        // 🔥 STORED PROCEDURE: AI Context
+        const spRes = await pool.query('SELECT get_copilot_context($1::uuid, $2::uuid) as data', [lead_id, req.tenantId]);
+        const data = spRes.rows[0]?.data;
+
+        if (!data || !data.lead) {
+            return res.status(404).json({ error: 'Lead not found' });
+        }
+
+        const message = await aiService.generateSuggestedMessage(
+            data.lead,
+            data.interactions || [],
+            data.project,
+            reason || 'Proactive re-engagement'
+        );
+
+        res.json({ message });
+    } catch (err) {
+        console.error('[AI Suggested Message Error]:', err);
+        res.status(500).json({ error: 'Failed to generate message' });
+    }
+});
+
+/**
+ * POST /api/ai/auto-pilot/trigger
+ * Manually triggers the Nurture Auto-Pilot cycle
+ */
+router.post('/auto-pilot/trigger', async (req: any, res: Response) => {
+    try {
+        if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+            return res.status(403).json({ error: 'Unauthorized: Admin only' });
+        }
+
+        const stats = await NurtureAutoPilot.runCycle();
+        res.json({ success: true, ...stats });
+    } catch (err) {
+        console.error('[Auto-Pilot Trigger Error]:', err);
+        res.status(500).json({ error: 'Failed to run auto-pilot' });
     }
 });
 

@@ -178,7 +178,7 @@ export default function CalendarPage() {
     const startDay = firstWeekday(year, month);
     const today = toDateStr(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const allEvents = Object.entries(events).flatMap(([date, evs]) => evs.map(e => ({ ...e, date })));
+    const allEvents = Object.entries(events).flatMap(([date, evs]) => (evs as any[]).map(e => ({ ...e, date })));
     const filteredAllEvents = allEvents.filter(e => filterType === 'All' || e.type === filterType);
 
 
@@ -467,7 +467,7 @@ export default function CalendarPage() {
                         <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 10, color: 'var(--navy-700)' }}>⚡ Overdue</div>
                         {filteredAllEvents.filter(e => e.date < today && e.status !== 'Completed').slice(0, 4).map((e, i) => {
                             const ec = EVENT_TYPE[e.type] || EVENT_TYPE.Meeting;
-                            const daysDue = Math.floor((new Date(today) - new Date(e.date)) / 86400000);
+                            const daysDue = Math.floor((new Date(today).getTime() - new Date(e.date).getTime()) / 86400000);
                             return (
                                 <div key={i} style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0',

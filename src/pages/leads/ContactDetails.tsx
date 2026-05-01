@@ -60,6 +60,8 @@ export default function ContactDetails() {
     const [callOutcome, setCallOutcome] = useState('Connected');
     const [callDuration, setCallDuration] = useState('');
     const [generatingContent, setGeneratingContent] = useState(false);
+    const [generatingAISuggestion, setGeneratingAISuggestion] = useState(false);
+    const [aiSuggestedMessage, setAiSuggestedMessage] = useState('');
     const [showSiteVisitScheduler, setShowSiteVisitScheduler] = useState(false);
     const isMobile = useMobile();
 
@@ -109,6 +111,22 @@ export default function ContactDetails() {
             showToast("AI Generation failed", "error");
         } finally {
             setGeneratingContent(false);
+        }
+    };
+
+    const handleGenerateAISuggestion = async () => {
+        setGeneratingAISuggestion(true);
+        try {
+            const res = await aiApi.suggestMessage({ 
+                lead_id: id, 
+                reason: contact.nurture_reason || 'Proactive Re-engagement' 
+            });
+            setAiSuggestedMessage(res.message);
+            showToast('AI Draft Ready!', 'success');
+        } catch (e) {
+            showToast('Failed to generate AI suggestion', 'error');
+        } finally {
+            setGeneratingAISuggestion(false);
         }
     };
 
@@ -446,6 +464,52 @@ export default function ContactDetails() {
                             <div style={{ fontSize: '12px', fontWeight: 700, color: '#701a75' }}>
                                 Reason: {contact.nurture_reason}
                             </div>
+                            
+                            <button 
+                                onClick={handleGenerateAISuggestion}
+                                disabled={generatingAISuggestion}
+                                style={{
+                                    marginTop: 8, padding: '10px', borderRadius: '12px',
+                                    background: 'white', border: '1.5px solid #f0abfc',
+                                    color: '#a21caf', fontSize: '11px', fontWeight: 900,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    cursor: 'pointer', boxShadow: '0 4px 10px rgba(162,28,175,0.05)'
+                                }}
+                            >
+                                {generatingAISuggestion ? <RefreshCw className="animate-spin" size={14} /> : <Wand2 size={14} />}
+                                {generatingAISuggestion ? 'DRAFTING...' : '✨ MAGIC AI DRAFT'}
+                            </button>
+
+                            {aiSuggestedMessage && (
+                                <div style={{
+                                    marginTop: 12, padding: '12px', borderRadius: '12px',
+                                    background: 'white', border: '1px solid #f5d0fe',
+                                    position: 'relative'
+                                }}>
+                                    <p style={{ fontSize: '12px', color: '#701a75', fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+                                        "{aiSuggestedMessage}"
+                                    </p>
+                                    <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+                                        <button 
+                                            onClick={() => {
+                                                setNewNote(aiSuggestedMessage);
+                                                setActivityType('WhatsApp');
+                                                setShowActivityBox(true);
+                                                setAiSuggestedMessage('');
+                                            }}
+                                            style={{ flex: 1, padding: '6px', borderRadius: '8px', background: '#7c3aed', color: 'white', border: 'none', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}
+                                        >
+                                            USE MESSAGE
+                                        </button>
+                                        <button 
+                                            onClick={() => setAiSuggestedMessage('')}
+                                            style={{ padding: '6px 10px', borderRadius: '8px', background: 'white', color: '#94a3b8', border: '1px solid #e2e8f0', fontSize: '10px', fontWeight: 800, cursor: 'pointer' }}
+                                        >
+                                            DISMISS
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

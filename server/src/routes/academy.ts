@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import pool from '../db/pool';
 import { authenticateToken } from '../middleware/auth';
+import AcademyCoachingService from '../services/AcademyCoachingService';
 import upload from '../middleware/upload';
 import { generateAIResponse, generateAudioTranscription } from '../utils/ai';
 import fs from 'fs/promises';
@@ -138,7 +139,25 @@ router.post('/progress', async (req: any, res: Response) => {
         res.json(rows[0]);
     } catch (err) {
         console.error('POST /academy/progress error:', err);
-        res.status(500).json({ error: 'Failed to update progress' });
+        res.status(500).json({ error: 'Failed to fetch progress' });
+    }
+});
+
+/**
+ * POST /api/academy/coaching/audit
+ * Trigger an automated performance-based coaching audit
+ */
+router.post('/coaching/audit', async (req: any, res: Response) => {
+    const { tenantId, role } = req.user;
+    if (role !== 'admin' && role !== 'manager') {
+        return res.status(403).json({ error: 'Only admins or managers can trigger coaching audits' });
+    }
+
+    try {
+        const result = await AcademyCoachingService.runPerformanceAudit(tenantId);
+        res.json({ message: 'Performance audit completed successfully', ...result });
+    } catch (err) {
+        res.status(500).json({ error: 'Coaching audit failed' });
     }
 });
 

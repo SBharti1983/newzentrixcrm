@@ -9,23 +9,26 @@ router.use(authenticateToken);
 // GET /api/documents — list all documents for tenant
 router.get('/', async (req: any, res: Response) => {
     try {
-        const { booking_id, customer_id, type, status } = req.query;
+        const { booking_id, customer_id, project_id, type, status } = req.query;
         let q = `
             SELECT d.*,
                    b.unit_no, b.token_amount,
                    c.name as customer_name,
                    u.name as uploaded_by_name,
-                   p.name as project_name
+                   p.name as project_name,
+                   p2.name as asset_project_name
             FROM documents d
             LEFT JOIN bookings  b ON d.booking_id  = b.id
             LEFT JOIN customers c ON d.customer_id  = c.id
             LEFT JOIN users     u ON d.uploaded_by  = u.id
             LEFT JOIN projects  p ON b.project_id   = p.id
+            LEFT JOIN projects  p2 ON d.project_id  = p2.id
             WHERE d.tenant_id = $1
         `;
         const params: any[] = [req.tenantId];
         if (booking_id) { q += ` AND d.booking_id  = $${params.length + 1}`; params.push(booking_id); }
         if (customer_id) { q += ` AND d.customer_id = $${params.length + 1}`; params.push(customer_id); }
+        if (project_id) { q += ` AND d.project_id  = $${params.length + 1}`; params.push(project_id); }
         if (type) { q += ` AND d.type        = $${params.length + 1}`; params.push(type); }
         if (status) { q += ` AND d.status      = $${params.length + 1}`; params.push(status); }
         q += ` ORDER BY d.created_at DESC`;
@@ -61,7 +64,7 @@ router.get('/:id', async (req: any, res: Response) => {
 router.post('/', async (req: any, res: Response) => {
     try {
         const {
-            booking_id, customer_id, name, type, file_url, file_size,
+            booking_id, customer_id, project_id, name, type, file_url, file_size,
             mime_type, status, expires_at, notes
         } = req.body;
 
@@ -69,11 +72,11 @@ router.post('/', async (req: any, res: Response) => {
 
         const { rows } = await pool.query(
             `INSERT INTO documents
-                (tenant_id, booking_id, customer_id, uploaded_by, name, type, file_url, file_size, mime_type, status, expires_at, notes)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+                (tenant_id, booking_id, customer_id, project_id, uploaded_by, name, type, file_url, file_size, mime_type, status, expires_at, notes)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
              RETURNING *`,
             [
-                req.tenantId, booking_id || null, customer_id || null, req.user.id,
+                req.tenantId, booking_id || null, customer_id || null, project_id || null, req.user.id,
                 name, type || 'Other', file_url || null, file_size || null,
                 mime_type || null, status || 'Draft', expires_at || null, notes || null,
             ]
@@ -132,15 +135,15 @@ router.post('/upload', (upload as any).single('file'), async (req: any, res: Res
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-        const { booking_id, customer_id, name, type, status, expires_at, notes } = req.body;
+        const { booking_id, customer_id, project_id, name, type, status, expires_at, notes } = req.body;
         const fileUrl = `/uploads/${req.tenantId}/${req.file.filename}`;
 
         const { rows } = await pool.query(
             `INSERT INTO documents
-                (tenant_id, booking_id, customer_id, uploaded_by, name, type, file_url, file_size, mime_type, status, expires_at, notes)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+                (tenant_id, booking_id, customer_id, project_id, uploaded_by, name, type, file_url, file_size, mime_type, status, expires_at, notes)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
             [
-                req.tenantId, booking_id || null, customer_id || null, req.user.id,
+                req.tenantId, booking_id || null, customer_id || null, project_id || null, req.user.id,
                 name || req.file.originalname, type || 'Other', fileUrl,
                 req.file.size, req.file.mimetype, status || 'Draft',
                 expires_at || null, notes || null,

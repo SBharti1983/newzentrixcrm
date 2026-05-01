@@ -289,7 +289,7 @@ export default function Leads() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    const fetchLeads = useCallback(async (overridePage, overrideSearch) => {
+    const fetchLeads = useCallback(async (overridePage?: number, overrideSearch?: string) => {
         setLeadsLoading(true);
         try {
             const activePage = overridePage !== undefined ? overridePage : page;

@@ -12,6 +12,7 @@ function signTokens(user: any) {
         id: user.id, tenantId: user.tenant_id,
         role: user.role, name: user.name, email: user.email, avatar: user.avatar,
         telephony_agent_id: user.telephony_agent_id,
+        channel_partner_id: user.channel_partner_id,
         features: user.settings?.features || {},
     };
     const accessToken = jwt.sign(payload, (process.env.JWT_SECRET as string) || 'secret', {
@@ -160,16 +161,20 @@ router.post('/login', async (req: Request, res: Response) => {
         let result;
         if (subdomain) {
             result = await db.execute(sql`
-                SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active 
+                SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active,
+                       cp.id as channel_partner_id
                 FROM users u 
                 LEFT JOIN tenants t ON u.tenant_id = t.id 
+                LEFT JOIN channel_partners cp ON u.id = cp.user_id
                 WHERE LOWER(u.email) = LOWER(${email}) AND t.slug = ${subdomain}
             `);
         } else {
             result = await db.execute(sql`
-                SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active 
+                SELECT u.*, t.name as tenant_name, t.slug as tenant_slug, t.plan, t.settings, t.is_active as tenant_is_active,
+                       cp.id as channel_partner_id
                 FROM users u 
                 LEFT JOIN tenants t ON u.tenant_id = t.id 
+                LEFT JOIN channel_partners cp ON u.id = cp.user_id
                 WHERE LOWER(u.email) = LOWER(${email})
             `);
         }
@@ -243,6 +248,7 @@ router.post('/login', async (req: Request, res: Response) => {
                 id: user.id, name: user.name, email: user.email,
                 role: user.role, avatar: user.avatar,
                 telephony_agent_id: user.telephony_agent_id,
+                channelPartnerId: user.channel_partner_id,
                 tenantId: user.tenant_id, tenantName: user.tenant_name,
                 tenantSlug: user.tenant_slug, plan: user.plan,
                 features: user.settings?.features || {},

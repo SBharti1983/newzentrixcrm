@@ -206,6 +206,46 @@ router.post('/send', async (req: any, res: Response) => {
     }
 });
 
+// ─── POST /api/notifications/nurture-draft — Specialized AI draft for Nurture stage ────
+router.post('/nurture-draft', async (req: any, res: Response) => {
+    try {
+        const { lead_id, channel } = req.body;
+        if (!lead_id) return res.status(400).json({ error: 'Lead ID required' });
+
+        const leadRes = await pool.query('SELECT * FROM leads WHERE id=$1 AND tenant_id=$2', [lead_id, req.tenantId]);
+        const lead = leadRes.rows[0];
+        if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+        const { generateAIResponse } = await import('../utils/ai');
+
+        const prompt = `
+            You are a senior real estate relationship manager at Zentrix Realty.
+            Draft a empathetic and non-pushy ${channel || 'WhatsApp'} message for a lead named ${lead.name} who is in the "Nurture" stage.
+            
+            Nurture Reason: ${lead.nurture_reason || 'General Follow-up'}
+            Budget: ${lead.budget || 'Market Rate'}
+            Project: ${lead.property_type || 'Residential'}
+            
+            Strategy based on Nurture Reason:
+            - If "Budget issue": Offer a flexible payment plan or a newer, more affordable unit.
+            - If "No response": Send a gentle "Are you still looking?" message with a value-add (like a market report).
+            - If "Timeline delay": Ask if their timeline has shifted and offer to share updated site photos.
+            - If "General": Share a recent success story or a new project highlight.
+            
+            Guidelines:
+            - Concise (under 60 words).
+            - Personal and warm.
+            - No placeholders. Sign off as "Team Zentrix".
+        `;
+
+        const draft = await generateAIResponse(prompt, false);
+        res.json({ draft });
+    } catch (err) {
+        console.error('Nurture draft error:', err);
+        res.status(500).json({ error: 'Failed to generate nurture draft' });
+    }
+});
+
 // ─── POST /api/notifications/draft-reply — AI generated draft ────
 router.post('/draft-reply', async (req: any, res: Response) => {
     try {

@@ -1,0 +1,85 @@
+import pool from '../db/pool';
+import aiService from './aiService';
+import { notificationsApi } from '../../src/api/client'; // Wait, I can't use client in server.
+// I need to use the server's notification logic.
+
+class NurtureAutoPilot {
+    /**
+     * Scans for nurture leads due for contact and sends AI-generated follow-ups
+     */
+    async runCycle() {
+        console.log('🚀 [Auto-Pilot] Starting Nurture Follow-up Cycle...');
+        
+        try {
+            // 1. Fetch leads due for reconnect
+            const { rows: leads } = await pool.query(`
+                SELECT l.*, p.name as project_name, t.settings as tenant_settings
+                FROM leads l
+                LEFT JOIN projects p ON l.project_id = p.id
+                LEFT JOIN tenants t ON l.tenant_id = t.id
+                WHERE l.status = 'Nurture'
+                  AND l.reconnect_date <= CURRENT_DATE
+                  AND (l.last_auto_pilot_at IS NULL OR l.last_auto_pilot_at < CURRENT_DATE)
+                  AND l.is_active = TRUE
+                LIMIT 50
+            `);
+
+            console.log(`[Auto-Pilot] Found ${leads.length} leads due for re-engagement.`);
+
+            for (const lead of leads) {
+                try {
+                    // 2. Fetch recent interactions for context
+                    const { rows: interactions } = await pool.query(
+                        `SELECT * FROM interactions WHERE lead_id = $1 ORDER BY created_at DESC LIMIT 5`,
+                        [lead.id]
+                    );
+
+                    // 3. Generate AI Message
+                    const message = await aiService.generateSuggestedMessage(
+                        lead,
+                        interactions,
+                        { name: lead.project_name },
+                        lead.nurture_reason || 'Periodic check-in'
+                    );
+
+                    // 4. Send Notification (WhatsApp)
+                    // We'll use a direct DB insert into notifications table which the broadcast worker picks up
+                    // or call a internal notification service if available.
+                    
+                    await pool.query(
+                        `INSERT INTO notifications (tenant_id, lead_id, channel, recipient, body, status, subject)
+                         VALUES ($1, $2, 'WhatsApp', $3, $4, 'Pending', 'Auto-Pilot Followup')`,
+                        [lead.tenant_id, lead.id, lead.phone, message]
+                    );
+
+                    // 5. Log activity
+                    await pool.query(
+                        `INSERT INTO interactions (tenant_id, lead_id, user_id, type, note)
+                         VALUES ($1, $2, NULL, 'System', $3)`,
+                        [lead.tenant_id, lead.id, `Auto-Pilot: Sent AI-generated follow-up regarding ${lead.nurture_reason}`]
+                    );
+
+                    // 6. Update lead to avoid duplicate processing today
+                    await pool.query(
+                        `UPDATE leads SET last_auto_pilot_at = NOW() WHERE id = $1`,
+                        [lead.id]
+                    );
+
+                    console.log(`[Auto-Pilot] Processed Lead: ${lead.name} (${lead.id})`);
+
+                } catch (leadErr) {
+                    console.error(`[Auto-Pilot] Error processing lead ${lead.id}:`, leadErr);
+                }
+            }
+
+            console.log('✅ [Auto-Pilot] Cycle complete.');
+            return { processed: leads.length };
+
+        } catch (err) {
+            console.error('[Auto-Pilot Critical Error]', err);
+            throw err;
+        }
+    }
+}
+
+export default new NurtureAutoPilot();

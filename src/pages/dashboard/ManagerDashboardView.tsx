@@ -10,6 +10,7 @@ import {
     ChevronRight, CheckCircle, AlertCircle, Layout, Crown, Award
 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
+import LeaderboardWidget from '../../components/dashboard/LeaderboardWidget';
 
 const COLORS = {
     brand: '#6366f1',
@@ -302,60 +303,8 @@ export default function ManagerDashboardView({ user, data }) {
                 </div>
 
                 {/* Leaderboard */}
-                <div style={KPI_STYLE}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: COLORS.slate950 }}>Leaderboard</h3>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.slate600, background: COLORS.slate100, padding: '4px 12px', borderRadius: '8px' }}>This Month <ChevronDown size={12} /></div>
-                    </div>
-                    
-                    {/* Podium */}
-                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '10px', marginBottom: '20px', paddingBottom: '10px' }}>
-                         {/* 2nd */}
-                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ position: 'relative' }}>
-                                <img src={`https://ui-avatars.com/api/?name=${members[1]?.name || 'Priya'}&background=random`} style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid #e2e8f0', marginBottom: '6px' }} />
-                                <div style={{ position: 'absolute', top: -10, left: 12, width: 20, height: 20, background: '#cbd5e1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 800 }}>2</div>
-                            </div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{members[1]?.name?.split(' ')[0] || 'Priya'}</div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate900 }}>{formatRevenue(members[1]?.total_value || 280000)}</div>
-                        </div>
-                        {/* 1st */}
-                        <div style={{ textAlign: 'center' }}>
-                            <div style={{ position: 'relative' }}>
-                                <Crown size={24} color="#fbbf24" fill="#fbbf24" style={{ position: 'absolute', top: -18, left: 16 }} />
-                                <img src={`https://ui-avatars.com/api/?name=${members[0]?.name || 'Aman'}&background=random`} style={{ width: 56, height: 56, borderRadius: '50%', border: '4px solid #fbbf24', marginBottom: '6px' }} />
-                                <div style={{ position: 'absolute', top: -8, left: 24, width: 24, height: 24, background: '#fbbf24', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px', fontWeight: 800 }}>1</div>
-                            </div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{members[0]?.name?.split(' ')[0] || 'Aman'}</div>
-                            <div style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate900 }}>{formatRevenue(members[0]?.total_value || 390000)}</div>
-                        </div>
-                        {/* 3rd */}
-                        <div style={{ textAlign: 'center' }}>
-                             <div style={{ position: 'relative' }}>
-                                <img src={`https://ui-avatars.com/api/?name=${members[2]?.name || 'Anil'}&background=random`} style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid #e2e8f0', marginBottom: '6px' }} />
-                                <div style={{ position: 'absolute', top: -10, left: 12, width: 20, height: 20, background: '#f59e0b90', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 800 }}>3</div>
-                            </div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{members[2]?.name?.split(' ')[0] || 'Anil'}</div>
-                            <div style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate900 }}>{formatRevenue(members[2]?.total_value || 230000)}</div>
-                        </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-                        {members.slice(3, 5).map((m, i) => (
-                            <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: COLORS.slate400, width: 12 }}>{i + 4}</span>
-                                    <img src={`https://ui-avatars.com/api/?name=${m.name}`} style={{ width: 24, height: 24, borderRadius: '6px' }} />
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: COLORS.slate800 }}>{m.name}</span>
-                                </div>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950 }}>{formatRevenue(m.total_value)}</span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: COLORS.brand, cursor: 'pointer' }}>View Full Leaderboard →</span>
-                    </div>
+                <div style={{ gridColumn: isMobile ? 'span 1' : 'span 1' }}>
+                    <LeaderboardWidget />
                 </div>
 
             </div>

@@ -57,7 +57,7 @@ export default function Kiosk() {
                     <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: 32 }}>
                         Your registration is complete. <strong style={{ color: 'var(--navy-800)' }}>{agentName}</strong> will be with you shortly to show you around.
                     </p>
-                    <button className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: 100 }} onClick={() => { setForm({ name: '', phone: '', email: '', property: '' }); setStep('home'); }}>
+                    <button className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: 100 }} onClick={() => { setForm({ name: '', phone: '', email: '', property_type: '' }); setStep('home'); }}>
                         Back to Home
                     </button>
                 </div>

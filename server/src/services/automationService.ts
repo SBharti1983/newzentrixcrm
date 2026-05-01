@@ -2,6 +2,7 @@ import pool from '../db/pool';
 import aiScreener from './aiScreener';
 import aiService from './aiService';
 import { sendWhatsappMessage } from '../utils/whatsapp';
+import * as notifier from './notifier';
 
 /**
  * AutomationService handles the core logic for CRM workflows.
@@ -366,9 +367,20 @@ class AutomationService {
                 }
             }
         }, 900000); // 15 minutes
+
+        // Followup Reminders — check every 2 minutes
+        setInterval(async () => {
+            try {
+                await this.checkFollowupReminders(io);
+            } catch (err) {
+                if (!err.message?.includes('Connection terminated')) {
+                    console.error('[Followup Reminder] Background Process Error:', err.message);
+                }
+            }
+        }, 120000); // 2 minutes
     }
 
-    async processDrips(_io) {
+    async processDrips(_io: any) {
         const { rows: pending } = await pool.query(
             `SELECT de.*, c.name as campaign_name, l.name as lead_name, l.phone as lead_phone, l.email as lead_email
              FROM drip_enrollments de
@@ -541,6 +553,40 @@ class AutomationService {
                 message: `Automated reminder sent to ${visit.lead_name}`,
                 type: 'info'
             });
+        }
+    }
+
+    async checkFollowupReminders(_io: any) {
+        // Find Pending followups scheduled for "now"
+        const { rows: due } = await pool.query(`
+            SELECT f.*, l.name as lead_name
+            FROM followups f
+            JOIN leads l ON f.lead_id = l.id
+            WHERE f.status = 'Pending'
+              AND f.scheduled_at <= NOW()
+              AND f.scheduled_at > NOW() - interval '30 minutes'
+              AND f.assigned_to IS NOT NULL
+        `);
+
+        for (const f of due) {
+            const { rows: logs } = await pool.query(
+                "SELECT id FROM automation_logs WHERE details->>'followup_id' = $1 AND status = 'notified'",
+                [f.id]
+            );
+
+            if (logs.length === 0) {
+                await notifier.sendFollowupPush(
+                    f.tenant_id, 
+                    f.assigned_to, 
+                    f.lead_name, 
+                    new Date(f.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                );
+
+                await this.logExecution(f.tenant_id, null, f.lead_id, 'notified', {
+                    message: 'Followup push notification sent.',
+                    followup_id: f.id
+                });
+            }
         }
     }
 }

@@ -358,7 +358,7 @@ export default function ChannelPartners() {
 
             {showModal && (
                 <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: 600 }}>
+                    <div className="modal" style={{ maxWidth: 600 }}>
                         <div className="modal-header">
                             <h2 className="modal-title">{editingId ? 'Edit Partner' : 'Add Partner'}</h2>
                             <button className="btn-icon" onClick={() => setShowModal(false)}><X size={20} /></button>

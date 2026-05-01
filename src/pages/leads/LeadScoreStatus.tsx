@@ -60,7 +60,7 @@ export default function LeadScoreStatus() {
     const runAIScore = async (leadId) => {
         setScanningId(leadId);
         try {
-            const res = await leadsApi.post(`/${leadId}/ai-score`);
+            const res = await leadsApi.aiScore(leadId);
             showToast('AI Deep-Scan Complete!', 'success');
             refetch();
             if (selectedLead?.id === leadId) {
