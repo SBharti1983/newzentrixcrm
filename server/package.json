@@ -5,10 +5,10 @@
   "main": "src/index.ts",
   "type": "commonjs",
   "scripts": {
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "railway:build": "npm install --include=dev && tsc",
+    "railway:build": "npm install --include=dev && npx tsc",
     "test": "tsx tests/api.test.js",
     "db:migrate": "tsx migrations/migrate.js",
     "db:seed": "tsx seeds/seed.js",
