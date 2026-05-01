@@ -48,7 +48,7 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
                 ${tid}::uuid,
                 ${targetUserId}::uuid,
                 ${effectivePersonal}::boolean,
-                ${downlineArrayStr}::uuid[]
+                ${downlineArrayStr}::text::uuid[]
             ) as data
         `);
 
@@ -59,7 +59,7 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
             SELECT get_dashboard_supplementary(
                 ${tid}::uuid,
                 ${targetUserId}::uuid,
-                ${downlineArrayStr}::uuid[],
+                ${downlineArrayStr}::text::uuid[],
                 ${effectivePersonal}::boolean
             ) as supp_data
         `);
