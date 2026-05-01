@@ -198,7 +198,7 @@ app.use('/api/', limiter);
 
 // ─── Security: Input Sanitization ────────────────────────────────
 import { sanitizeMiddleware } from './middleware/sanitize';
-app.use(sanitizeMiddleware);
+// app.use(sanitizeMiddleware);
 
 // ─── Audit Logging ───────────────────────────────────────────────
 import { auditMiddleware, initAuditTable } from './services/auditService';
