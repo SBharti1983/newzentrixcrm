@@ -319,7 +319,7 @@ export default function CallRecords() {
         <div className="ent-page-container animate-fadeIn pb-10">
             {/* Header Section */}
             <div className="page-header" style={{ marginBottom: 32 }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <h1 className="ent-section-title" style={{ fontSize: '1.75rem' }}>Voice Intelligence Hub</h1>
                     <p className="ent-section-subtitle">Unified log of all client communications and voice engagements</p>
                 </div>

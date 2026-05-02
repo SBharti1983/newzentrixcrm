@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { settingsApi, publicApi } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 
-export const BrandingContext = createContext({});
+export const BrandingContext = createContext<any>({});
 
 const DEFAULT_BRANDING = {
     company_name: 'Zentrix CRM',
@@ -97,7 +97,7 @@ export function BrandingProvider({ children }) {
 
         // Dynamically update favicon
         const currentFavicon = wb.favicon_url || wb.logo_url || '/zentrix_fav.png';
-        const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+        const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
         link.rel = 'icon';
         link.href = currentFavicon;
         if (!link.parentNode) document.head.appendChild(link);
@@ -106,7 +106,7 @@ export function BrandingProvider({ children }) {
         document.title = wb.company_name || 'Zentrix CRM';
 
         // Dynamically update Manifest link for multi-tenant PWA
-        const manifestLink = document.querySelector("link[rel='manifest']") || document.createElement('link');
+        const manifestLink = document.querySelector("link[rel='manifest']") as HTMLLinkElement || document.createElement('link');
         manifestLink.rel = 'manifest';
         const manifestUrl = `/api/public/manifest.json?hostname=${window.location.hostname}`;
         manifestLink.href = manifestUrl;

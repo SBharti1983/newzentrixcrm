@@ -55,7 +55,7 @@ export default function SoloDashboard() {
         <div style={{ padding: '32px', maxWidth: '1600px', margin: '0 auto' }}>
             {/* Executive Summary */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
-                <div>
+                <div style={{ display: 'none' }}>
                     <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-2px' }}>Welcome Boss.</h1>
                     <p style={{ margin: '4px 0 0', color: COLORS.textSecondary, fontWeight: 500 }}>Your real estate dynasty at a glance.</p>
                 </div>

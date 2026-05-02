@@ -56,12 +56,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  scrollbar-width: none;
+  max-height: 480px; /* Limits height to show approx 2 cards */
   min-height: 0;
 }
 
 .pipeline-col-body::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+
+.pipeline-col-body::-webkit-scrollbar-thumb {
+  background: var(--slate-400);
+  border-radius: 10px;
 }
 
 /* ─── Kanban Card ────────────────────────────────────────────────── */

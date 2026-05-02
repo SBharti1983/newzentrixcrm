@@ -89,8 +89,8 @@ export default function Marketing() {
     return (
         <div className="animate-fadeIn" style={{ paddingBottom: 60 }}>
             {/* Enterprise Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <div>
+            <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                         <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 12px rgba(16,185,129,0.5)', animation: 'pulse-dialer 2s infinite' }} />
                         <span style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--slate-500)' }}>Omnichannel Engine Online</span>

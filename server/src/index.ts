@@ -382,3 +382,15 @@ server.listen(PORT as number, '0.0.0.0', () => {
     startRetentionScheduler();
 });
 
+// Prevent Node.js from crashing entirely on unhandled stream errors (e.g. pg ECONNRESET)
+process.on('uncaughtException', (err: any) => {
+    console.error('🔥 [FATAL] Uncaught Exception:', err);
+    if (err.code === 'ECONNRESET' || err.message?.includes('ECONNRESET')) {
+        console.warn('⚠️ Suppressed ECONNRESET network error (database connection drop).');
+        return;
+    }
+    // For other errors, it's safer to exit, but we'll try to keep the server alive in dev
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
+});

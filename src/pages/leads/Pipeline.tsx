@@ -204,7 +204,7 @@ export default function Pipeline() {
             {/* Ultra-Compact Enterprise Command Header */}
             <div style={{ display: 'flex', alignItems: isMobile ? 'stretch' : 'flex-start', justifyContent: 'space-between', marginBottom: 16, borderBottom: '1px solid #e2e8f0', paddingBottom: 16, flexWrap: 'wrap', gap: isMobile ? 10 : 16, flexDirection: isMobile ? 'column' : 'row' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 16, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <div style={{ display: 'none', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px rgba(16,185,129,0.4)', animation: 'pulse-dialer 2s infinite' }} />
                         <h1 style={{ fontSize: isMobile ? '1.05rem' : '1.3rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>Revenue Pipeline</h1>
                     </div>
@@ -791,7 +791,7 @@ export default function Pipeline() {
                                     )}
 
                                     {!isCollapsed && (
-                                        <div className="pipeline-col-body" style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: 8, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                                        <div className="pipeline-col-body" style={{ padding: '6px', display: 'flex', flexDirection: 'column', gap: 8, flex: '1 1 auto', overflowY: 'auto', maxHeight: '420px', minHeight: 0 }}>
                                             {stageLeads.map(lead => {
                                                 const pc = PRIORITY_CONFIG[lead.priority] || PRIORITY_CONFIG.Medium;
                                                 const isDragging = dragging === lead.id;
@@ -928,8 +928,11 @@ export default function Pipeline() {
                 const pc = PRIORITY_CONFIG[l.priority] || PRIORITY_CONFIG.Medium;
                 const stageIdx = PIPELINE_STAGES.indexOf(l.stage);
                 return (
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}
-                        onClick={() => setSelectedLead(null)}>
+                    <div style={{ 
+                        position: 'fixed', inset: 0, zIndex: 200, display: 'flex', 
+                        justifyContent: 'flex-end', alignItems: isMobile ? 'flex-end' : 'flex-start',
+                        padding: isMobile ? 0 : 16
+                    }} onClick={() => setSelectedLead(null)}>
                         {/* Dim overlay */}
                         <div style={{ position: 'absolute', inset: 0, background: 'rgba(10,22,40,0.45)', backdropFilter: 'blur(2px)' }} />
                         {/* Panel */}
@@ -937,11 +940,14 @@ export default function Pipeline() {
                             position: 'relative', 
                             width: isMobile ? '100%' : 420, 
                             background: 'white', 
-                            height: '100%',
+                            height: isMobile ? '90vh' : 'auto',
+                            maxHeight: isMobile ? '90vh' : 'calc(100vh - 32px)',
+                            borderRadius: isMobile ? '20px 20px 0 0' : '16px',
                             display: 'flex', 
                             flexDirection: 'column', 
                             boxShadow: '-4px 0 40px rgba(10,22,40,0.18)',
-                            animation: isMobile ? 'fadeIn 0.3s ease' : 'slideInRight 0.25s ease',
+                            animation: isMobile ? 'slideUp 0.3s ease' : 'slideInRight 0.25s ease',
+                            overflow: 'hidden'
                         }} onClick={e => e.stopPropagation()}>
                             {/* Panel Header */}
                             <div style={{ padding: '20px 22px', borderBottom: '1px solid var(--border-light)', background: cfg.light }}>
@@ -975,92 +981,110 @@ export default function Pipeline() {
                                         <X size={18} />
                                     </button>
                                 </div>
-                                {/* Advanced Stage Switcher */}
-                                <div style={{ position: 'relative' }}>
-                                    <button 
-                                        onClick={() => setShowStagePicker(showStagePicker === l.id ? null : l.id)}
-                                        className="btn btn-primary btn-sm" 
-                                        style={{ 
-                                            width: '100%', 
-                                            justifyContent: 'center', 
-                                            fontSize: '0.8rem', 
-                                            fontWeight: 900, 
-                                            padding: '10px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                            background: cfg.accent,
-                                            border: 'none',
-                                            boxShadow: `0 4px 12px ${cfg.accent}25`
-                                        }}
-                                    >
-                                        <ChevronRight size={16} strokeWidth={3} /> Change Stage to Desired...
-                                    </button>
+                                    {/* Advanced Stage Switcher */}
+                                    <div style={{ position: 'relative' }}>
+                                        <button 
+                                            onClick={() => setShowStagePicker(showStagePicker === l.id ? null : l.id)}
+                                            className="btn btn-primary btn-sm" 
+                                            style={{ 
+                                                width: '100%', 
+                                                justifyContent: 'center', 
+                                                fontSize: '0.8rem', 
+                                                fontWeight: 900, 
+                                                padding: '10px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                background: cfg.accent,
+                                                border: 'none',
+                                                boxShadow: `0 4px 12px ${cfg.accent}25`
+                                            }}
+                                        >
+                                            <ChevronRight size={16} strokeWidth={3} /> Change Stage to Desired...
+                                        </button>
 
-                                    {showStagePicker === l.id && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '100%',
-                                            left: 0,
-                                            right: 0,
-                                            marginTop: 8,
-                                            background: 'white',
-                                            borderRadius: '12px',
-                                            boxShadow: '0 10px 30px rgba(10, 22, 40, 0.15)',
-                                            border: '1px solid #eef2f6',
-                                            zIndex: 50,
-                                            padding: 6,
-                                            animation: 'slideInY 0.2s ease'
-                                        }}>
-                                            <div style={{ 
-                                                display: 'grid', 
-                                                gridTemplateColumns: 'repeat(2, 1fr)', 
-                                                gap: 4 
+                                        {showStagePicker === l.id && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                marginTop: 8,
+                                                background: 'white',
+                                                borderRadius: '12px',
+                                                boxShadow: '0 10px 30px rgba(10, 22, 40, 0.15)',
+                                                border: '1px solid #eef2f6',
+                                                zIndex: 50,
+                                                padding: 6,
+                                                animation: 'slideInY 0.2s ease'
                                             }}>
-                                                {PIPELINE_STAGES.map((s) => {
-                                                    const sc = STAGE_CONFIG[s] || DEFAULT_STAGE_CONFIG;
-                                                    const active = s === l.stage;
-                                                    return (
-                                                        <button 
-                                                            key={s}
-                                                            onClick={async () => {
-                                                                try {
-                                                                    await leadsApi.update(l.id, { stage: s });
-                                                                    setSelectedLead(prev => ({ ...prev, stage: s }));
-                                                                    setShowStagePicker(null);
-                                                                    refetch();
-                                                                } catch { showToast('Failed', 'error'); }
-                                                            }}
-                                                            style={{
-                                                                padding: '10px 8px',
-                                                                borderRadius: '8px',
-                                                                border: '1px solid',
-                                                                borderColor: active ? sc.accent : '#f1f5f9',
-                                                                background: active ? sc.bg : 'white',
-                                                                color: active ? sc.color : 'var(--navy-600)',
-                                                                fontSize: '0.68rem',
-                                                                fontWeight: 800,
-                                                                textAlign: 'left',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 6,
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.1s'
-                                                            }}
-                                                        >
-                                                            <span style={{ fontSize: '0.9rem' }}>{sc.emoji}</span>
-                                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s}</span>
-                                                        </button>
-                                                    );
-                                                })}
+                                                <div style={{ 
+                                                    display: 'grid', 
+                                                    gridTemplateColumns: 'repeat(2, 1fr)', 
+                                                    gap: 4 
+                                                }}>
+                                                    {PIPELINE_STAGES.map((s) => {
+                                                        const sc = STAGE_CONFIG[s] || DEFAULT_STAGE_CONFIG;
+                                                        const active = s === l.stage;
+                                                        return (
+                                                            <button 
+                                                                key={s}
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        await leadsApi.update(l.id, { stage: s });
+                                                                        setSelectedLead(prev => ({ ...prev, stage: s }));
+                                                                        setShowStagePicker(null);
+                                                                        refetch();
+                                                                    } catch { showToast('Failed', 'error'); }
+                                                                }}
+                                                                style={{
+                                                                    padding: '10px 8px',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid',
+                                                                    borderColor: active ? sc.accent : '#f1f5f9',
+                                                                    background: active ? sc.bg : 'white',
+                                                                    color: active ? sc.color : 'var(--navy-600)',
+                                                                    fontSize: '0.68rem',
+                                                                    fontWeight: 800,
+                                                                    textAlign: 'left',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 6,
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.1s'
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: '0.9rem' }}>{sc.emoji}</span>
+                                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+
+                                    {/* Quick Actions - Moved Up */}
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                                        <button className="btn btn-danger btn-sm" style={{ fontSize: '0.78rem', flex: 1, height: 42, fontWeight: 900 }}
+                                            onClick={async () => {
+                                                try { await leadsApi.update(l.id, { stage: 'Lost' }); setSelectedLead(null); refetch(); }
+                                                catch { showToast('Failed', 'error'); }
+                                            }}>
+                                            ❌ Mark Lost
+                                        </button>
+                                        <button className="btn btn-success btn-sm" style={{ fontSize: '0.78rem', flex: 1.5, height: 42, fontWeight: 900 }}
+                                            onClick={async () => {
+                                                try { await leadsApi.update(l.id, { stage: 'Won' }); setSelectedLead(null); refetch(); }
+                                                catch { showToast('Failed', 'error'); }
+                                            }}>
+                                            🏆 Mark Won
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
 
                             {/* Panel Body */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            <div style={{ flex: '0 1 auto', overflowY: 'auto', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                                 {/* Score */}
                                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 14px', background: 'var(--slate-50)', borderRadius: 'var(--border-radius-md)', border: '1px solid var(--border-light)' }}>
                                     <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
@@ -1155,21 +1179,8 @@ export default function Pipeline() {
                             </div>
 
                             {/* Panel Footer */}
-                            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: 8 }}>
-                                <button className="btn btn-danger btn-sm" style={{ fontSize: '0.78rem' }}
-                                    onClick={async () => {
-                                        try { await leadsApi.update(l.id, { stage: 'Lost' }); setSelectedLead(null); refetch(); }
-                                        catch { showToast('Failed', 'error'); }
-                                    }}>
-                                    ❌ Mark Lost
-                                </button>
-                                <button className="btn btn-success btn-sm" style={{ fontSize: '0.78rem', flex: 1 }}
-                                    onClick={async () => {
-                                        try { await leadsApi.update(l.id, { stage: 'Won' }); setSelectedLead(null); refetch(); }
-                                        catch { showToast('Failed', 'error'); }
-                                    }}>
-                                    🏆 Mark Won
-                                </button>
+                            <div style={{ padding: '14px 22px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: 8, justifyContent: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Quick terminal actions available above</div>
                             </div>
                         </div>
                     </div>

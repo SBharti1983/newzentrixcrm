@@ -1,6 +1,5 @@
 import pool from '../db/pool';
 import aiService from './aiService';
-import { notificationsApi } from '../../src/api/client'; // Wait, I can't use client in server.
 // I need to use the server's notification logic.
 
 class NurtureAutoPilot {

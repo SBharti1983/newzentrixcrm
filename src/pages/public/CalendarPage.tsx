@@ -196,8 +196,7 @@ export default function CalendarPage() {
             {/* Header */}
             <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16 }}>
                 <div>
-                    <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '2rem' }}>Calendar</h1>
-                    <p className="page-subtitle">
+                    <p className="page-subtitle" style={{ margin: 0 }}>
                         {totalThisMonth} activities {isMobile ? '' : `in ${MONTHS[month]}`}
                         {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 700 }}> · {overdueCount} overdue</span>}
                     </p>
@@ -423,8 +422,8 @@ export default function CalendarPage() {
                                             <div style={{ fontWeight: 700, fontSize: '0.84rem', marginBottom: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 {ev.title}
                                                 <div style={{ display: 'flex', gap: 6 }}>
-                                                    <ExternalLink size={12} style={{ cursor: 'pointer', color: 'var(--slate-400)' }} onClick={() => addToGoogle(ev)} title="Add to Google Calendar" />
-                                                    <Smartphone size={12} style={{ cursor: 'pointer', color: 'var(--slate-400)' }} onClick={() => showToast('Syncing to phone...', 'success')} title="Sync to Phone" />
+                                                    <span title="Add to Google Calendar" onClick={() => addToGoogle(ev)} style={{ cursor: 'pointer', display: 'inline-flex' }}><ExternalLink size={12} style={{ color: 'var(--slate-400)' }} /></span>
+                                                    <span title="Sync to Phone" onClick={() => showToast('Syncing to phone...', 'success')} style={{ cursor: 'pointer', display: 'inline-flex' }}><Smartphone size={12} style={{ color: 'var(--slate-400)' }} /></span>
                                                 </div>
                                             </div>
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{ev.type} · {ev.time || 'TBD'}</div>

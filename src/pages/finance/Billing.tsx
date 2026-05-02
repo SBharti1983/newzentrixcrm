@@ -42,7 +42,7 @@ export default function Billing() {
             title: formData.get('title'),
             price: formData.get('price'),
             desc: formData.get('desc'),
-            features: formData.get('features').split(',').map(f => f.trim())
+            features: (formData.get('features') as string).split(',').map(f => f.trim())
         };
         setPlans(plans.map(p => p.name === editingPlan.name ? updated : p));
         setEditingPlan(null);
@@ -101,7 +101,7 @@ export default function Billing() {
 
     return (
         <div className="animate-fadeIn">
-            <div className="page-header" style={{ textAlign: 'center', alignItems: 'center', marginBottom: 12 }}>
+            <div className="page-header" style={{ display: 'none' }}>
                 <div>
                     <h1 className="page-title" style={{ fontSize: '1.4rem', margin: 0 }}>Subscription & Billing</h1>
                     <p className="page-subtitle" style={{ fontSize: '0.85rem', margin: 0 }}>Choose the right plan to scale your real estate agency.</p>

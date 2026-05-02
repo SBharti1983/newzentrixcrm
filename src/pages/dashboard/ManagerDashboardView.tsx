@@ -29,18 +29,18 @@ const COLORS = {
     bg: '#f8fafc'
 };
 
-export default function ManagerDashboardView({ user, data }) {
+const KPI_STYLE = {
+    background: '#ffffff',
+    borderRadius: '16px',
+    padding: '20px',
+    border: '1px solid #f1f5f9',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+    flex: 1
+};
+
+export default function ManagerDashboardView({ user, data }: any) {
     const navigate = useNavigate();
     const isMobile = useMobile();
-
-    const KPI_STYLE = {
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '20px',
-        border: '1px solid #f1f5f9',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        flex: 1
-    };
 
     // Dynamic Chart Data mapping - moved inside to safely access 'data'
     const CHART_DATA = Array.isArray(data?.trends) ? data.trends.map(t => ({
@@ -87,7 +87,7 @@ export default function ManagerDashboardView({ user, data }) {
             
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: isMobile ? '20px' : '32px', gap: isMobile ? 12 : 0 }}>
-                <div>
+                <div style={{ display: 'none' }}>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: COLORS.slate950, letterSpacing: '-0.5px' }}>
                         {getGreeting()}, {user?.name || 'Manager'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: isMobile ? '0' : '12px', marginTop: isMobile ? '8px' : '0', display: isMobile ? 'inline-block' : 'inline', verticalAlign: 'middle' }}>Manager Dashboard</span>
                     </h1>
@@ -320,7 +320,7 @@ export default function ManagerDashboardView({ user, data }) {
 
 // --- SUB-COMPONENTS ---
 
-const MetricCard = ({ title, val, growth, detail, icon: Icon, color }) => (
+const MetricCard = ({ title, val, growth, detail, icon: Icon, color }: any) => (
     <div style={KPI_STYLE}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div style={{ padding: '10px', background: `${color}10`, borderRadius: '12px', color: color }}>
@@ -338,7 +338,7 @@ const MetricCard = ({ title, val, growth, detail, icon: Icon, color }) => (
     </div>
 );
 
-const PipelineMetric = ({ step, val }) => (
+const PipelineMetric = ({ step, val }: any) => (
     <div>
         <div style={{ fontSize: '1.2rem', fontWeight: 900, color: COLORS.slate950 }}>{val}</div>
         <div style={{ fontSize: '0.7rem', fontWeight: 750, color: COLORS.slate400, textTransform: 'uppercase' }}>{step}</div>
@@ -351,7 +351,7 @@ const PipelineDivider = () => (
     </div>
 );
 
-const InsightItem = ({ icon: Icon, color, title, desc, link }) => (
+const InsightItem = ({ icon: Icon, color, title, desc, link }: any) => (
     <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px dotted #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '12px' }}>
             <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
@@ -366,7 +366,7 @@ const InsightItem = ({ icon: Icon, color, title, desc, link }) => (
     </div>
 );
 
-const AgentRow = ({ name, revenue, bookings, progress, color, avatar }) => (
+const AgentRow = ({ name, revenue, bookings, progress, color, avatar }: any) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '4px 0' }}>
         <img src={avatar ? avatar : `https://ui-avatars.com/api/?name=${name}&background=random`} style={{ width: 34, height: 34, borderRadius: '50%' }} />
         <div style={{ flex: 1 }}>
@@ -382,7 +382,7 @@ const AgentRow = ({ name, revenue, bookings, progress, color, avatar }) => (
     </div>
 );
 
-const DealItem = ({ project, config, agent, status, riskColor, reason }) => (
+const DealItem = ({ project, config, agent, status, riskColor, reason }: any) => (
     <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
         <div style={{ width: 44, height: 44, borderRadius: '10px', background: '#f1f5f9', overflow: 'hidden', flexShrink: 0 }}>
              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=100&q=80" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -390,7 +390,7 @@ const DealItem = ({ project, config, agent, status, riskColor, reason }) => (
         <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 850, color: COLORS.slate950 }}>{project} • <span style={{ color: COLORS.slate500 }}>{config}</span></div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 850, color: COLORS.slate950 }}>{project} • <span style={{ color: COLORS.slate600 }}>{config}</span></div>
                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: COLORS.slate600 }}>{agent}</div>
                 </div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 900, color: riskColor, background: `${riskColor}10`, padding: '3px 8px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
@@ -402,7 +402,7 @@ const DealItem = ({ project, config, agent, status, riskColor, reason }) => (
     </div>
 );
 
-const TaskCounter = ({ label, count, sub, color }) => (
+const TaskCounter = ({ label, count, sub, color }: any) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', border: `1px solid #f1f5f9`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900, color: color, boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             {count}
@@ -414,7 +414,7 @@ const TaskCounter = ({ label, count, sub, color }) => (
     </div>
 );
 
-const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }) => (
+const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }: any) => (
     <div style={{ display: 'flex', gap: '16px', position: 'relative', paddingBottom: isLast ? 0 : '24px' }}>
         {!isLast && <div style={{ position: 'absolute', top: 32, left: 74, bottom: 8, width: '2px', background: '#f1f5f9' }} />}
         <div style={{ width: '60px', fontSize: '0.75rem', fontWeight: 800, color: COLORS.slate400, paddingTop: '10px' }}>{time}</div>

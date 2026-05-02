@@ -13,7 +13,7 @@ import { leadsApi, bookingsApi, followupsApi, notificationsApi } from '../../api
 
 const NAV_SECTIONS = [
     {
-        label: 'Overview',
+        label: 'OVERVIEW',
         items: [
             { path: '/', label: 'Dashboard', icon: LayoutDashboard },
             { path: '/command-center', label: 'Command Center', icon: Sparkles },
@@ -21,7 +21,7 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Sales',
+        label: 'SALES',
         items: [
             { path: '/leads', label: 'Leads', icon: Users, badge: null },
             { path: '/pipeline', label: 'Deals', icon: BarChart3 },
@@ -30,21 +30,21 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Planning',
+        label: 'PLANNING',
         items: [
             { path: '/followups', label: 'Follow-Ups', icon: Calendar, badge: null },
             { path: '/site-visits', label: 'Site Visits', icon: MapPin },
         ],
     },
     {
-        label: 'Properties',
+        label: 'PROPERTIES',
         items: [
             { path: '/projects', label: 'Projects', icon: Building2 },
             { path: '/inventory', label: 'Inventory', icon: BookOpen },
         ],
     },
     {
-        label: 'Communications',
+        label: 'COMMUNICATIONS',
         items: [
             { path: '/inbox', label: 'Omnichannel Inbox', icon: MessageSquare, badge: null },
             { path: '/whatsapp-marketing', label: 'WhatsApp Intelligence', icon: Sparkles },
@@ -54,7 +54,7 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Analytics',
+        label: 'ANALYTICS',
         items: [
             { path: '/analytics', label: 'Analytics', icon: BarChart3 },
             { path: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
@@ -65,7 +65,7 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Customers',
+        label: 'CUSTOMERS',
         items: [
             { path: '/customers', label: 'Customers', icon: UserCheck },
             { path: '/bookings', label: 'Bookings', icon: BookOpen, badge: null },
@@ -75,13 +75,13 @@ const NAV_SECTIONS = [
         ],
     },
     {
-        label: 'Partners',
+        label: 'PARTNERS',
         items: [
             { path: '/channel-partners', label: 'Channel Partners', icon: Handshake },
         ],
     },
     {
-        label: 'Admin',
+        label: 'ADMIN',
         items: [
             { path: '/automation-distribution', label: 'Auto-Distribute', icon: Zap },
             { path: '/automations', label: 'Automations', icon: Zap },
@@ -202,35 +202,66 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     return (
         <nav className={sidebarClass}>
             {/* Logo + mobile close button */}
-            <div className="sidebar-logo">
-                {branding.logo_url ? (
-                    <img src={branding.logo_url} alt={branding.company_name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
-                ) : (
-                    <div className="sidebar-logo-icon">{branding.logo_icon || 'Z'}</div>
+            <div className="sidebar-logo" style={{ padding: '16px 20px 8px', marginBottom: 0 }}>
+                <div style={{
+                    width: 36,
+                    height: 36,
+                    background: 'linear-gradient(135deg, #06b6d4, #0ea5e9)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 900,
+                    fontSize: '1.4rem',
+                    flexShrink: 0,
+                    boxShadow: '0 0 15px rgba(6, 182, 212, 0.3)'
+                }}>
+                    {branding.company_name?.[0] || 'M'}
+                </div>
+                {!collapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <span className="sidebar-logo-text" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                            {branding.company_name || 'Maya Infratech'}
+                        </span>
+                    </div>
                 )}
-                <span className="sidebar-logo-text">{branding.company_name || 'Zentrix CRM'}</span>
                 {isMobile && (
-                    <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu">
+                    <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu" style={{ marginLeft: 'auto' }}>
                         <X size={20} />
                     </button>
                 )}
             </div>
 
-            {/* Role badge (when expanded) */}
+            {/* Role Badge */}
             {!collapsed && user && (
-                <div style={{
-                    margin: '0 12px 12px', padding: '6px 10px',
-                    borderRadius: 'var(--border-radius-sm)',
-                    background: roleColors.bg, border: `1px solid ${roleColors.color}30`,
-                    display: 'flex', alignItems: 'center', gap: 6,
-                }}>
+                <div style={{ padding: '0 16px 12px' }}>
                     <div style={{
-                        width: 6, height: 6, borderRadius: '50%',
-                        background: roleColors.color, flexShrink: 0,
-                    }} />
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: roleColors.color, letterSpacing: '0.04em' }}>
-                        {ROLE_LABELS[user.role]}
-                    </span>
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        background: 'rgba(139, 92, 246, 0.15)',
+                        borderRadius: '8px',
+                        border: 'none',
+                        width: '100%',
+                    }}>
+                        <div style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: '#8b5cf6',
+                        }} />
+                        <span style={{
+                            fontSize: '0.75rem',
+                            fontWeight: 800,
+                            color: '#a78bfa',
+                            textTransform: 'capitalize',
+                            letterSpacing: '0.02em'
+                        }}>
+                            {ROLE_LABELS[user.role] || user.role}
+                        </span>
+                    </div>
                 </div>
             )}
 
@@ -278,27 +309,32 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
             </div>
 
             {/* Footer */}
-            <div className="sidebar-footer">
-                <div className="sidebar-user" onClick={() => handleNav('/admin')}>
-                    <div className="sidebar-avatar">{user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}</div>
+            <div className="sidebar-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '24px 16px' }}>
+                <div className="sidebar-user" onClick={() => handleNav('/admin')} style={{ marginBottom: 16 }}>
+                    <div className="sidebar-avatar" style={{
+                        width: 40, height: 40, borderRadius: '50%',
+                        background: '#0ea5e9',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontSize: '1rem', fontWeight: 800
+                    }}>
+                        {user?.name?.[0] || 'M'}
+                    </div>
                     <div className="sidebar-user-info">
-                        <div className="sidebar-user-name">{user?.name || 'User'}</div>
-                        <div className="sidebar-user-role">{ROLE_LABELS[user?.role] || '—'}</div>
+                        <div className="sidebar-user-name" style={{ fontSize: '0.9rem', fontWeight: 800 }}>{user?.name || 'MayaAdmin'}</div>
+                        <div className="sidebar-user-role" style={{ fontSize: '0.75rem', fontWeight: 600 }}>{ROLE_LABELS[user?.role] || 'Admin'}</div>
                     </div>
                 </div>
                 {/* Logout */}
                 {!collapsed && (
                     <button onClick={onLogout} style={{
-                        display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                        padding: '8px 12px', border: 'none', background: 'transparent',
-                        cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.8rem',
-                        fontWeight: 600, borderRadius: 'var(--border-radius-sm)',
-                        transition: 'all 0.15s', marginTop: 4,
+                        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                        padding: '4px 0', border: 'none', background: 'transparent',
+                        cursor: 'pointer', fontSize: '0.85rem',
+                        fontWeight: 600, transition: 'all 0.2s',
                     }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; e.currentTarget.style.color = 'var(--accent-rose)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+                        className="sidebar-logout hover-opacity"
                     >
-                        <LogOut size={15} /> Sign Out
+                        <LogOut size={16} /> Sign Out
                     </button>
                 )}
             </div>

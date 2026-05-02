@@ -176,7 +176,7 @@ export default function ChannelPartners() {
                 marginBottom: 24,
                 padding: isMobile ? '0 4px' : 0
             }}>
-                <div className="page-header-left">
+                <div className="page-header-left" style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <h1 className="page-title" style={{ fontSize: isMobile ? '1.75rem' : '2.2rem', margin: 0 }}>Partners</h1>
                     <p className="page-subtitle" style={{ fontSize: isMobile ? '0.85rem' : '1rem', margin: '4px 0 0' }}>{partners.length} agencies · Manage broker network</p>
                 </div>

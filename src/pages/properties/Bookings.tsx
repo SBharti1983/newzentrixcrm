@@ -232,7 +232,7 @@ export default function Bookings() {
     return (
         <div className="animate-fadeIn" style={{ paddingBottom: isMobile ? 120 : 20 }}>
             <div style={{ 
-                display: 'flex', 
+                display: 'none', 
                 flexDirection: isMobile ? 'column' : 'row', 
                 justifyContent: 'space-between',
                 alignItems: isMobile ? 'flex-start' : 'center', 
@@ -241,7 +241,7 @@ export default function Bookings() {
                 borderBottom: '1px solid var(--border-light)',
                 paddingBottom: 20
             }}>
-                <div>
+                <div style={{ display: 'none' }}>
                     <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.8rem', fontWeight: 800, color: 'var(--navy-950)' }}>Booking Center</h1>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{bookings.length} total nodes in registry</p>
                 </div>

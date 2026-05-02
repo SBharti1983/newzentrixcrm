@@ -131,7 +131,7 @@ export default function PaymentTracker() {
 
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '0 4px' : 0 }}>
-            <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
+            <div className="page-header" style={{ display: 'none', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 0 }}>
                 <div>
                     <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '1.8rem' }}>Payment Ledger</h1>
                     <p className="page-subtitle">

@@ -43,7 +43,7 @@ export default function NurtureLeads() {
     }, []);
 
     const params = useMemo(() => {
-        const p = { limit, page, status: 'Nurture' };
+        const p: any = { limit, page, status: 'Nurture' };
         if (search.trim()) p.q = search.trim();
         if (filterType === 'Due Today') p.nurture_due = 'true';
         else if (filterType === 'Overdue') p.nurture_overdue = 'true';
@@ -90,40 +90,20 @@ export default function NurtureLeads() {
             paddingRight: isMobile ? 16 : 20, 
             paddingBottom: 80 
         }}>
-            {/* ─── Page Header ─── */}
+            {/* ─── Page Actions ─── */}
             <div style={{
                 display: 'flex', 
-                justifyContent: 'space-between',
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'flex-start' : 'center', 
-                marginBottom: 28, 
-                paddingBottom: 24,
-                gap: 16,
-                borderBottom: '1px solid var(--border-light)'
+                justifyContent: 'flex-end',
+                alignItems: 'center', 
+                marginBottom: 20, 
+                gap: 10
             }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 12, background: '#7c3aed10', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <RotateCw size={18} color="#7c3aed" />
-                        </div>
-                        <h1 style={{ fontSize: isMobile ? '1.4rem' : '1.6rem', fontWeight: 900, color: 'var(--navy-900)', margin: 0, letterSpacing: '-0.03em' }}>
-                            Nurture Leads
-                        </h1>
-                    </div>
-                    { !isMobile && (
-                        <p style={{ fontSize: '0.9rem', color: 'var(--slate-500)', fontWeight: 500, marginTop: 2, marginLeft: 46 }}>
-                            Long-term follow-ups and re-engagement pipeline
-                        </p>
-                    )}
-                </div>
-                <div style={{ display: 'flex', gap: 10, width: isMobile ? '100%' : 'auto' }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> <span style={{ fontSize: '0.75rem' }}>Refresh</span>
-                    </button>
-                    <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                        <Users size={14} /> <span style={{ fontSize: '0.75rem' }}>Active Pipeline</span>
-                    </button>
-                </div>
+                <button className="btn btn-secondary btn-sm" onClick={() => refetch()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <RotateCw size={14} className={loading ? 'animate-spin' : ''} /> <span style={{ fontSize: '0.75rem' }}>Refresh</span>
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={() => navigate('/leads')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Users size={14} /> <span style={{ fontSize: '0.75rem' }}>Active Pipeline</span>
+                </button>
             </div>
 
             {/* ─── KPI Strategy Cards ─── */}
@@ -213,13 +193,15 @@ export default function NurtureLeads() {
                 isMobile ? (
                     /* Mobile Card View */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {leads.map(lead => (
+                        {leads.map((lead: any) => (
                             <MobileNurtureCard 
                                 key={lead.id} 
                                 lead={lead} 
                                 onReactivate={() => reactivateLead(lead.id)}
                                 onClick={() => setPreviewLeadId(lead.id)}
                                 onEdit={() => navigate(`/leads/${lead.id}`)}
+                                draftingId={draftingId}
+                                generateAIDraft={generateAIDraft}
                             />
                         ))}
                     </div>
@@ -459,14 +441,13 @@ export default function NurtureLeads() {
                 <ContactPreviewSidebar
                     contactId={previewLeadId}
                     onClose={() => setPreviewLeadId(null)}
-                    refetch={refetch}
                 />
             )}
         </div>
     );
 }
 
-function MobileNurtureCard({ lead, onReactivate, onClick, onEdit }) {
+function MobileNurtureCard({ lead, onReactivate, onClick, onEdit, draftingId, generateAIDraft }: any) {
     const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date).getTime() < new Date().setHours(0,0,0,0);
     const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
 

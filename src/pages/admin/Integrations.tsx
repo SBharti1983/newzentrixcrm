@@ -114,7 +114,7 @@ export default function Integrations() {
                 paddingRight: 32,
                 borderBottom: '1px solid var(--border-light)'
             }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
                         <div style={{ padding: '6px 12px', background: 'var(--navy-900)', color: 'white', borderRadius: '8px', fontSize: '10px', fontWeight: 900, letterSpacing: '0.1em' }}>V.2.0.4</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--accent-emerald)', fontSize: '11px', fontWeight: 700 }}>

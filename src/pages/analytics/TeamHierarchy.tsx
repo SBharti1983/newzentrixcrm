@@ -298,7 +298,7 @@ export default function TeamHierarchy() {
                 paddingBottom: 20,
                 gap: 16
             }}>
-                <div>
+                <div style={{ display: 'none' }}>
                     <h1 style={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, color: 'var(--navy-950)', marginBottom: 4 }}>
                         Team Governance
                     </h1>

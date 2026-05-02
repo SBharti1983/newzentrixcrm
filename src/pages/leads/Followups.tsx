@@ -11,29 +11,42 @@ import { useAuth } from '../../hooks/useAuth';
 import { dialerEvents } from '../../constants/events';
 import NotificationComposer from '../../components/notifications/NotificationComposer';
 import { useMobile } from '../../hooks/useMobile';
+import { usePageInfo } from '../../context/PageContext';
 
 const TYPE_ICON = { Call: '📞', Email: '📧', WhatsApp: '💬', 'Site Visit': '🏠', Meeting: '🤝' };
 
 function isOverdue(date) { return new Date(date) < new Date() && date; }
 function isUrgent(date) {
     if (!date) return false;
-    const diff = new Date() - new Date(date);
+    const diff = new Date().getTime() - new Date(date).getTime();
     return diff > 7200000; 
 }
 
 export default function Followups() {
-    const { data: followups = [], loading, error, refetch } = useApi(followupsApi.list);
-    const { data: agents = [] } = useApi(usersApi.list);
-    const { data: allLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
+    const { data: rawFollowups, loading, error, refetch } = useApi(followupsApi.list);
+    const followups = useMemo(() => {
+        const raw = (rawFollowups?.data || rawFollowups || []);
+        return raw.map(f => ({
+            ...f,
+            scheduled_at: f.scheduled_at || f.scheduledAt // Normalize field name
+        }));
+    }, [rawFollowups]);
+    
+    const { data: rawAgents = [] } = useApi(usersApi.list);
+    const agents = useMemo(() => (rawAgents?.data || rawAgents || []), [rawAgents]);
+
+    const { data: rawLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
+    const allLeads = useMemo(() => (rawLeads?.data || rawLeads || []), [rawLeads]);
+
     const { data: drips = [] } = useApi(marketingApi.getDrips);
     const isMobile = useMobile();
+    const { setPageInfo } = usePageInfo();
     const { showToast } = useToast();
 
     // Map leads for quick attribute lookup (score/budget)
     const leadMap = useMemo(() => {
         const map = {};
-        const data = allLeads?.data || allLeads || [];
-        data.forEach(l => { map[l.id] = l; });
+        allLeads.forEach(l => { map[l.id] = l; });
         return map;
     }, [allLeads]);
 
@@ -45,15 +58,16 @@ export default function Followups() {
     const [viewMode, setViewMode] = useState('list'); 
     const [notifyTarget, setNotifyTarget] = useState(null);
 
-    // Reset viewMode to 'list' on mobile if somehow initialized/left in kanban/calendar
+    // Reset viewMode to 'list' on mobile
     useEffect(() => {
         if (isMobile && (viewMode === 'kanban')) {
             setViewMode('list');
         }
     }, [isMobile, viewMode]);
+
     const [saving, setSaving] = useState(false);
     const [previewLead, setPreviewLead] = useState(null);
-    const [hoverContext, setHoverContext] = useState(null); // { x, y, lead }
+    const [hoverContext, setHoverContext] = useState(null); 
     const [isTeamView, setIsTeamView] = useState(false);
     const { user } = useAuth();
     const canManageTeam = user?.role === 'admin' || user?.role === 'sales_manager';
@@ -64,61 +78,57 @@ export default function Followups() {
             return;
         }
         const rect = e.currentTarget.getBoundingClientRect();
-        setHoverContext({
-            x: rect.left,
-            y: rect.top,
-            lead
-        });
+        setHoverContext({ x: rect.left, y: rect.top, lead });
     };
 
+    const filtered = useMemo(() => {
+        return (followups || []).filter(f => {
+            if (!f) return false;
+            const now = new Date();
+            const scheduledDate = f.scheduled_at ? new Date(f.scheduled_at) : null;
+            
+            const isToday = scheduledDate && scheduledDate.toDateString() === now.toDateString();
+            const isUpcomingDate = scheduledDate && scheduledDate > now && !isToday;
+            const isOverdueVal = scheduledDate && scheduledDate < now && !isToday && f.status !== 'Completed';
+            const isUrgentVal = f.scheduled_at && isUrgent(f.scheduled_at) && f.status !== 'Completed';
 
+            let ms = false;
+            if (filterStatus === 'All') ms = true;
+            else if (filterStatus === 'Pending') ms = f.status === 'Pending';
+            else if (filterStatus === 'Completed') ms = f.status === 'Completed';
+            else if (filterStatus === 'Critical') ms = isUrgentVal;
+            else if (filterStatus === 'Overdue') ms = isOverdueVal;
+            else if (filterStatus === 'Today') ms = isToday;
+            else if (filterStatus === 'Upcoming') ms = isUpcomingDate;
+            
+            const ma = filterAgent === 'All' || String(f.assigned_to) === String(filterAgent);
+            
+            if (isTeamView) {
+                return (isOverdueVal || isUrgentVal) && ma;
+            }
 
-    const filtered = (followups || []).filter(f => {
-        if (!f || !f.scheduled_at) return false;
-        const now = new Date();
-        const scheduledDate = new Date(f.scheduled_at);
-        const isToday = scheduledDate.toDateString() === now.toDateString();
-        const isUpcomingDate = scheduledDate > now && !isToday;
-        const isOverdueVal = scheduledDate < now && !isToday && f.status !== 'Completed';
-        const isUrgentVal = isUrgent(f.scheduled_at) && f.status !== 'Completed';
-
-        let ms = false;
-        if (filterStatus === 'All') ms = true;
-        else if (filterStatus === 'Pending') ms = f.status === 'Pending';
-        else if (filterStatus === 'Completed') ms = f.status === 'Completed';
-        else if (filterStatus === 'Critical') ms = isUrgentVal;
-        else if (filterStatus === 'Overdue') ms = isOverdueVal;
-        else if (filterStatus === 'Today') ms = isToday;
-        else if (filterStatus === 'Upcoming') ms = isUpcomingDate;
-        
-        const ma = filterAgent === 'All' || String(f.assigned_to) === filterAgent;
-        
-        if (isTeamView) {
-            // Team mode focuses on Overdue/Urgent tasks across all agents
-            return (isOverdueVal || isUrgentVal) && ma;
-        }
-
-        return ms && ma;
-    }).sort((a, b) => {
-        if (!a || !b) return 0;
-        if (sortMode === 'score') {
-            const getScore = (f) => f.lead_score || leadMap[f.lead_id]?.score || 0;
-            return getScore(b) - getScore(a);
-        }
-        if (sortMode === 'value') {
-            const getVal = (f) => {
-                const lead = leadMap[f.lead_id];
-                const budget = f.lead_budget || lead?.budget;
-                if (!budget) return 0;
-                const numeric = parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0;
-                if (String(budget).toUpperCase().includes('L')) return numeric * 100000;
-                if (String(budget).toUpperCase().includes('CR')) return numeric * 10000000;
-                return numeric;
-            };
-            return getVal(b) - getVal(a);
-        }
-        return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
-    });
+            return ms && ma;
+        }).sort((a, b) => {
+            if (!a || !b) return 0;
+            if (sortMode === 'score') {
+                const getScore = (f) => f.lead_score || leadMap[f.lead_id]?.score || 0;
+                return getScore(b) - getScore(a);
+            }
+            if (sortMode === 'value') {
+                const getVal = (f) => {
+                    const lead = leadMap[f.lead_id];
+                    const budget = f.lead_budget || lead?.budget;
+                    if (!budget) return 0;
+                    const numeric = parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0;
+                    if (String(budget).toUpperCase().includes('L')) return numeric * 100000;
+                    if (String(budget).toUpperCase().includes('CR')) return numeric * 10000000;
+                    return numeric;
+                };
+                return getVal(b) - getVal(a);
+            }
+            return new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime();
+        });
+    }, [followups, filterStatus, filterAgent, sortMode, isTeamView, leadMap]);
 
     const toggle = async (id, currentStatus) => {
         try {
@@ -138,7 +148,7 @@ export default function Followups() {
         if (!id) return;
         
         const now = new Date();
-        const updates = {};
+        const updates: any = {};
         
         if (targetCol === 'Completed') {
             updates.status = 'Completed';
@@ -268,6 +278,7 @@ export default function Followups() {
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px', paddingBottom: isMobile ? 100 : 0, overflowX: 'hidden' }}>
             <div className="premium-card shimmer-ai" style={{ 
+                display: 'none',
                 background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
                 padding: isMobile ? '16px' : '16px 28px', color: 'white', marginBottom: '16px', border: 'none',
                 borderRadius: isMobile ? '0' : '16px'
@@ -331,15 +342,15 @@ export default function Followups() {
 
             <div style={{ padding: isMobile ? '6px 10px' : '8px 16px', background: 'white', marginBottom: isMobile ? '8px' : '12px', display: 'flex', gap: isMobile ? '6px' : '8px', alignItems: 'center', borderRadius: isMobile ? '10px' : '14px', border: '1px solid #f1f5f9', flexWrap: 'wrap', overflowX: 'hidden', maxWidth: '100%' }}>
                 <div style={{ display: 'flex', background: '#f8fafc', padding: '3px', borderRadius: '10px', marginRight: isMobile ? '0' : '8px', flexShrink: 0 }}>
-                    <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
+                    <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
                         <List size={isMobile ? 12 : 14} /> {isMobile ? '' : 'LIST'}
                     </button>
                     {!isMobile && (
-                        <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8' }}>
+                        <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
                             <LayoutGrid size={14} /> KANBAN
                         </button>
                     )}
-                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : 'inherit' }}>
+                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
                         <Calendar size={isMobile ? 12 : 14} /> {isMobile ? '' : 'CALENDAR'}
                     </button>
                 </div>
@@ -410,9 +421,15 @@ export default function Followups() {
                 }}>
                     {['Overdue', 'Today', 'Upcoming', 'Completed'].map(col => {
                         const items = (filtered || []).filter(f => {
-                            const date = new Date(f.scheduled_at); const now = new Date();
                             if (col === 'Completed') return f.status === 'Completed';
                             if (f.status === 'Completed') return false;
+
+                            const scheduledAt = f.scheduled_at || f.scheduledAt;
+                            if (!scheduledAt) return false;
+
+                            const date = new Date(scheduledAt); 
+                            const now = new Date();
+                            
                             if (col === 'Overdue') return date < now && date.toDateString() !== now.toDateString();
                             if (col === 'Today') return date.toDateString() === now.toDateString();
                             if (col === 'Upcoming') return date > now && date.toDateString() !== now.toDateString();
@@ -614,6 +631,8 @@ export default function Followups() {
                                                 isTeamView={isTeamView}
                                                 agents={agents}
                                                 onReassign={reassign}
+                                                isCompact={false}
+                                                onDragStart={undefined}
                                             />
                                         );
                                     })}

@@ -84,7 +84,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColor, target, curr, dark, onClick }) => (
+const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColor, target, curr, dark, onClick }: any) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -136,7 +136,7 @@ const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColo
     </div>
 );
 
-const PriorityItem = ({ icon: Icon, color, bg, label, count, onClick, isLast }) => (
+const PriorityItem = ({ icon: Icon, color, bg, label, count, onClick, isLast }: any) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -163,7 +163,7 @@ const PriorityItem = ({ icon: Icon, color, bg, label, count, onClick, isLast }) 
     </div>
 );
 
-const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor, badgeBg, img, icon: Icon, isLast, onClick, isAi }) => (
+const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor, badgeBg, img, icon: Icon, isLast, onClick, isAi }: any) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -203,7 +203,7 @@ const TimelineItem = ({ time, timeIcon: TimeIcon, title, sub, badge, badgeColor,
     </div>
 );
 
-const ProjectChip = ({ title, img }) => (
+const ProjectChip = ({ title, img }: any) => (
     <div style={{ flex: 1 }}>
         <div style={{ width: '100%', height: '85px', borderRadius: '12px', overflow: 'hidden', marginBottom: '8px' }}>
             <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -212,7 +212,7 @@ const ProjectChip = ({ title, img }) => (
     </div>
 );
 
-const LeadListItem = ({ name, type, time, info, details, img, isAvatar, onClick, isLast }) => (
+const LeadListItem = ({ name, type, time, info, details, img, isAvatar, onClick, isLast }: any) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -240,7 +240,7 @@ const LeadListItem = ({ name, type, time, info, details, img, isAvatar, onClick,
                     {type}
                 </div>
             </div>
-            <div style={{ fontSize: '0.7rem', color: COLORS.slate500, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+            <div style={{ fontSize: '0.7rem', color: COLORS.slate400, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
                 <Clock size={12} /> {time} • {info}
             </div>
             <div style={{ fontSize: '0.7rem', color: COLORS.slate800, fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -319,7 +319,6 @@ const AcademyCard = ({ xp = 0, level = 1, certifications = 0, score = 0, onClick
         <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.15 }}>
             <GraduationCap size={120} />
         </div>
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '12px' }}>
@@ -408,7 +407,7 @@ const LeaderboardWidget = ({ data = [], currentUser }) => (
 );
 
 // --- MAIN DASHBOARD VIEW ---
-export default function AgentDashboardView({ user, data = {}, recentLeads = [], loading }) {
+export default function AgentDashboardView({ user, data = {}, recentLeads = [], loading }: any) {
     const navigate = useNavigate();
     const [trendPeriod, setTrendPeriod] = useState('Month');
     const [performancePeriod, setPerformancePeriod] = useState('This Month');
@@ -469,12 +468,13 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             background: '#f8fafc', overflowY: 'auto'
         }}>
             {/* Upper Header Segment */}
-            <div className="agent-dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '8px', gap: isMobile ? 12 : 0 }}>
+            <div className="agent-dash-header" style={{ display: 'none', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '8px', gap: isMobile ? 12 : 0 }}>
                 <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '32px', flexDirection: isMobile ? 'column' : 'row' }}>
-                    <h1 style={{ fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
-                        {getGreeting()}, {user?.name || 'Agent'} 👋
-                    </h1>
-
+                    <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
+                        <h1 style={{ fontSize: isMobile ? '1.2rem' : '1.4rem', fontWeight: 900, color: COLORS.slate950, margin: 0, letterSpacing: '-0.02em' }}>
+                            {getGreeting()}, {user?.name || 'Agent'} 👋
+                        </h1>
+                    </div>
                     {/* Quick Stats Integrated */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingLeft: isMobile ? '0' : '24px', borderLeft: isMobile ? 'none' : `1px solid ${COLORS.border}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -746,10 +746,10 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
 
                         <div className="agent-dash-perf-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '20px' }}>
                             {[
-                                { label: 'Avg. Response Time', val: `${stats.pipeline?.avg_response_time || 0} mins`, sub: stats.pipeline?.avg_response_time < 30 ? '↓ Optimal' : '↑ Needs action', color: stats.pipeline?.avg_response_time < 30 ? COLORS.green : COLORS.orange },
-                                { label: 'Deals in Pipeline', val: stats.leads?.active_leads || 0, sub: `↑ Live Pipeline`, color: COLORS.green },
-                                { label: 'Win Rate', val: `${stats.leads?.win_rate || 0}%`, sub: `Overall Performance`, color: COLORS.green },
-                                { label: 'Avg. Deal Size', val: formatRevenue(stats.pipeline?.avg_deal_size), sub: `↑ Portfolio Value`, color: COLORS.green }
+                                { label: 'Avg. Response Time', val: `${(stats as any).pipeline?.avg_response_time || 0} mins`, sub: (stats as any).pipeline?.avg_response_time < 30 ? '↓ Optimal' : '↑ Needs action', color: (stats as any).pipeline?.avg_response_time < 30 ? COLORS.green : COLORS.orange },
+                                { label: 'Deals in Pipeline', val: (stats as any).leads?.active_leads || 0, sub: `↑ Live Pipeline`, color: COLORS.green },
+                                { label: 'Win Rate', val: `${(stats as any).leads?.win_rate || 0}%`, sub: `Overall Performance`, color: COLORS.green },
+                                { label: 'Avg. Deal Size', val: formatRevenue((stats as any).pipeline?.avg_deal_size), sub: `↑ Portfolio Value`, color: COLORS.green }
                             ].map(m => (
                                 <div key={m.label} style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ fontSize: '0.7rem', fontWeight: 800, color: COLORS.slate600, marginBottom: '6px' }}>{m.label}</div>
@@ -764,7 +764,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                         <div>
                             <h4 style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.slate950, marginBottom: '12px' }}>Top Performing Projects</h4>
                             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                                {stats.top_projects && stats.top_projects.length > 0 ? stats.top_projects.map((p, i) => (
+                                {(stats as any).top_projects && (stats as any).top_projects.length > 0 ? (stats as any).top_projects.map((p: any, i: number) => (
                                     <ProjectChip 
                                         key={p.id || i}
                                         title={p.name} 
@@ -805,7 +805,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                             AI Selected <ChevronRight size={12} />
                         </div>
                     </div>
-                    <div style={{ fontSize: '0.7rem', color: COLORS.slate500, marginBottom: '16px', fontWeight: 600 }}>Top recommendations based on recent engagement score.</div>
+                    <div style={{ fontSize: '0.7rem', color: COLORS.slate400, marginBottom: '16px', fontWeight: 600 }}>Top recommendations based on recent engagement score.</div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {recentLeads && recentLeads.length > 0 ? [...recentLeads].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 4).map((lead, i) => (
                             <LeadListItem 

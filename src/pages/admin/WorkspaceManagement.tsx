@@ -153,7 +153,7 @@ export default function WorkspaceManagement() {
     return (
         <div style={{ padding: '32px', minHeight: '100vh', background: '#f8fafc' }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                 <div>
                     <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px' }}>
                         Workspace <span style={{ color: '#6366f1' }}>Control</span>

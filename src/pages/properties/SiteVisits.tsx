@@ -128,15 +128,25 @@ const STYLES = `
 export default function SiteVisits() {
     const { showToast } = useToast();
     const isMobile = useMobile();
-    const { data: visitsRaw, loading, error, refetch } = useApi(() => siteVisitsApi.list({ limit: 200 }));
-    const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 200 }));
-    const { data: projectsRaw } = useApi(() => projectsApi.list());
-    const { data: usersRaw } = useApi(() => usersApi.list());
+    const { data: rawVisits, loading, error, refetch } = useApi(() => siteVisitsApi.list({ limit: 200 }));
+    const { data: rawLeads } = useApi(() => leadsApi.list({ limit: 200 }));
+    const { data: rawProjects } = useApi(() => projectsApi.list());
+    const { data: rawUsers } = useApi(() => usersApi.list());
 
-    const visits = visitsRaw?.data || visitsRaw || [];
-    const allLeads = leadsRes?.data || [];
-    const projects = projectsRaw || [];
-    const agents = (usersRaw || []).filter(u => ['agent', 'sales_manager'].includes(u.role));
+    const visits = useMemo(() => {
+        const data = rawVisits?.data || rawVisits || [];
+        return data.map(v => ({
+            ...v,
+            scheduled_at: v.scheduled_at || v.scheduledAt // Normalize field name
+        }));
+    }, [rawVisits]);
+
+    const allLeads = useMemo(() => rawLeads?.data || rawLeads || [], [rawLeads]);
+    const projects = useMemo(() => rawProjects?.data || rawProjects || [], [rawProjects]);
+    const agents = useMemo(() => {
+        const users = rawUsers?.data || rawUsers || [];
+        return users.filter(u => ['agent', 'sales_manager', 'admin'].includes(u.role));
+    }, [rawUsers]);
 
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ lead_id: '', project_id: '', scheduled_at: '', notes: '', status: 'Scheduled', transport: 'Agent Car', assigned_to: '' });
@@ -145,7 +155,9 @@ export default function SiteVisits() {
     const [saving, setSaving] = useState(false);
     const [selectedMarker, setSelectedMarker] = useState(null);
 
-    const filtered = visits.filter(v => filterStatus === 'All' || v.status === filterStatus);
+    const filtered = useMemo(() => {
+        return visits.filter(v => filterStatus === 'All' || v.status === filterStatus);
+    }, [visits, filterStatus]);
     
     const safeDate = (dateStr) => {
         try {
@@ -199,7 +211,7 @@ export default function SiteVisits() {
         const styleEl = document.createElement('style');
         styleEl.textContent = STYLES;
         document.head.appendChild(styleEl);
-        return () => document.head.removeChild(styleEl);
+        return () => { document.head.removeChild(styleEl); };
     }, []);
 
     if (loading) return <PageLoader />;
@@ -221,7 +233,7 @@ export default function SiteVisits() {
             
             {/* 🏎️ Logistics Control Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: isMobile ? 32 : 48, flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 20 : 0 }}>
-                <div>
+                <div style={{ display: 'none' }}>
                     <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '2.2rem', fontWeight: 950, color: COLORS.slate950, letterSpacing: '-1px' }}>
                         Visit <span style={{ color: COLORS.indigo }}>Radar</span>
                     </h1>
@@ -514,7 +526,7 @@ export default function SiteVisits() {
                     }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                             <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 950 }}>Plan Mission</h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: COLORS.slate100, border: 'none', width: 40, height: 40, borderRadius: 12 }}><X size={20} /></button>
+                            <button onClick={() => setShowModal(false)} style={{ background: COLORS.slate50, border: 'none', width: 40, height: 40, borderRadius: 12 }}><X size={20} /></button>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto', paddingBottom: 24 }}>

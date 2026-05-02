@@ -109,15 +109,6 @@ export default function Inbox() {
             margin: isMobile ? '-24px -20px' : 0, /* Negate parent padding on mobile */
             background: 'white'
         }}>
-            {!isMobile && (
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 4px' }}>
-                    <div>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)', margin: '0 0 4px', letterSpacing: '-0.02em' }}>Omnichannel Inbox</h1>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Manage real-time streams from WhatsApp, Email, and SMS.</p>
-                    </div>
-                </div>
-            )}
-
             <div className="card" style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: 0, borderRadius: isMobile ? 0 : 20, border: isMobile ? 'none' : '1px solid var(--border-light)' }}>
                 {/* Sidebar */}
                 <div className={`inbox-sidebar ${isMobile && activeId ? 'hidden' : ''}`} style={{ 
@@ -128,7 +119,7 @@ export default function Inbox() {
                     background: 'var(--slate-50)' 
                 }}>
                     {isMobile && (
-                        <div style={{ padding: '24px 20px 10px', background: 'white' }}>
+                        <div style={{ display: 'none', padding: '24px 20px 10px', background: 'white' }}>
                             <h1 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--navy-900)' }}>Messages</h1>
                         </div>
                     )}

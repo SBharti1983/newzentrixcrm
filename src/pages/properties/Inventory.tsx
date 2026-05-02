@@ -252,11 +252,11 @@ export default function Inventory() {
                 padding: isMobile ? '24px 20px' : '18px 40px', color: 'white', marginBottom: isMobile ? '24px' : '32px', border: 'none'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 24 : 0 }}>
-                    <div>
+                    <div style={{ display: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                              <Box size={14} color={COLORS.cyan} strokeWidth={2.5} />
                              <span style={{ fontSize: '0.65rem', fontWeight: 900, color: COLORS.cyan, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-                                Institutional Asset Repository
+                                 Institutional Asset Repository
                              </span>
                         </div>
                         <h1 style={{ margin: 0, fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 950, letterSpacing: '-1px', lineHeight: 1.1, color: COLORS.white }}>

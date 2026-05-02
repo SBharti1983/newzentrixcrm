@@ -45,12 +45,17 @@ export function AuthProvider({ children }) {
         const features = user.features || {};
         
         // --- FEATURE GATING ---
-        if (path === '/whatsapp-marketing' && !features.whatsapp) return false;
-        if (path === '/marketing' && !features.marketing) return false;
-        if (path === '/voice-analytics' && !features.voice_telemetry) return false;
-        if (path === '/reports' && !features.custom_reports) return false;
-        if (path === '/automations' && !features.automations) return false;
-        if (path === '/lead-scoring' && !features.ai_scoring) return false;
+        // Admin role bypasses feature gating for UI consistency
+        if (user.role === 'admin' || user.role === 'superadmin') {
+            // continue to roleRules check
+        } else {
+            if (path === '/whatsapp-marketing' && !features.whatsapp) return false;
+            if (path === '/marketing' && !features.marketing) return false;
+            if (path === '/voice-analytics' && !features.voice_telemetry) return false;
+            if (path === '/reports' && !features.custom_reports) return false;
+            if (path === '/automations' && !features.automations) return false;
+            if (path === '/lead-scoring' && !features.ai_scoring) return false;
+        }
 
         const roleRules = ROLE_ACCESS[user.role];
         if (!roleRules || !Array.isArray(roleRules.pages)) return false;

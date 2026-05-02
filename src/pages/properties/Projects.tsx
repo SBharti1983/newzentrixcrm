@@ -20,7 +20,7 @@ const TYPE_ICON = { Residential: '🏢', Villa: '🏡', Luxury: '💎', Commerci
 const DEFAULT_FORM = {
     name: '', location: '', type: 'Residential', units: '', available: '',
     priceRange: '', status: 'Active', completion: '', description: '',
-    amenities: '',
+    amenities: '', rera: ''
 };
 
 export default function Projects() {
@@ -36,7 +36,7 @@ export default function Projects() {
     const [form, setForm] = useState(DEFAULT_FORM);
     const [saving, setSaving] = useState(false);
 
-    const params = {};
+    const params: Record<string, any> = {};
     if (filterStatus !== 'All') params.status = filterStatus;
     const { data: rawProjects, loading, error, refetch } = useApi(
         () => projectsApi.list(params), [filterStatus]
@@ -74,87 +74,83 @@ export default function Projects() {
         <div className="animate-fadeIn" style={{ padding: isMobile ? '16px' : '0 20px 40px', paddingBottom: isMobile ? 100 : 40 }}>
             {/* Executive Portfolio Command Center */}
             <div style={{ 
+                display: 'none',
                 background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)', 
-                padding: isMobile ? '24px 20px' : '32px 40px', 
-                borderRadius: '24px', 
-                marginBottom: isMobile ? 20 : 28,
+                padding: isMobile ? '16px' : '12px 28px', 
+                borderRadius: '20px', 
+                marginBottom: isMobile ? 12 : 16,
                 color: 'white',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: '0 30px 60px -12px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
                 border: '1px solid rgba(255,255,255,0.05)'
             }}>
                 {/* Abstract Premium Grid Background */}
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '30px 30px', opacity: 0.5 }} />
                 
-                {/* Glowing Orbs */}
-                <div style={{ position: 'absolute', top: '-10%', right: '10%', width: 300, height: 300, background: 'radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, transparent 70%)', filter: 'blur(40px)', borderRadius: '50%' }} />
-                <div style={{ position: 'absolute', bottom: '-20%', left: '5%', width: 250, height: 250, background: 'radial-gradient(circle, rgba(236, 72, 153, 0.2) 0%, transparent 70%)', filter: 'blur(40px)', borderRadius: '50%' }} />
+                {/* Glowing Orb */}
+                <div style={{ position: 'absolute', top: '-20%', right: '5%', width: 200, height: 200, background: 'radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%)', filter: 'blur(30px)', borderRadius: '50%' }} />
                 
                 <div style={{ 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: isMobile ? 'flex-start' : 'center', 
                     flexDirection: isMobile ? 'column' : 'row',
-                    gap: isMobile ? 32 : 40,
+                    gap: isMobile ? 16 : 24,
                     position: 'relative', 
                     zIndex: 1 
                 }}>
-                    <div style={{ flex: '1 1 40%' }}>
+                    <div style={{ flex: isMobile ? '1 1 100%' : '1 1 60%', display: 'none' }}>
                         <div style={{ 
-                            padding: '6px 14px', 
+                            padding: '3px 8px', 
                             background: 'rgba(255, 255, 255, 0.1)', 
                             backdropFilter: 'blur(10px)',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
                             borderRadius: '100px', 
                             display: 'inline-flex', 
                             alignItems: 'center', 
-                            gap: 8,
-                            marginBottom: 20
+                            gap: 5,
+                            marginBottom: 8
                         }}>
-                            <ShieldCheck size={14} color="#a78bfa" />
-                            <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#e2e8f0' }}>Verified Enterprise Portfolio</span>
+                            <ShieldCheck size={10} color="#a78bfa" />
+                            <span style={{ fontSize: '8px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#e2e8f0' }}>Verified Portfolio</span>
                         </div>
-                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.8rem' : '2.8rem', fontWeight: 900, letterSpacing: '-1px', color: 'white', lineHeight: 1.1 }}>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.3rem' : '1.8rem', fontWeight: 900, letterSpacing: '-0.5px', color: 'white', lineHeight: 1 }}>
                             Strategic Assets
                         </h1>
-                        <p style={{ margin: '12px 0 0', color: '#cbd5e1', fontWeight: 500, fontSize: isMobile ? '0.85rem' : '1rem', maxWidth: 480, lineHeight: 1.5 }}>
-                            Managing {projects.length} high-fidelity real estate projects with real-time inventory synchronization and AI-driven market intelligence.
+                        <p style={{ margin: '6px 0 0', color: '#cbd5e1', fontWeight: 500, fontSize: isMobile ? '0.75rem' : '0.85rem', maxWidth: 450, lineHeight: 1.3, opacity: 0.8 }}>
+                            Managing {projects.length} real estate projects with real-time inventory and AI-driven intelligence.
                         </p>
                     </div>
                     
-                    {/* The "Missing Middle" - Visual Filler */}
                     {!isMobile && (
-                        <div style={{ flex: '1 1 20%', display: 'flex', justifyContent: 'center', opacity: 0.8 }}>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 60 }}>
-                                {[40, 70, 45, 90, 65, 80, 50, 100].map((h, i) => (
-                                    <div key={i} style={{ width: 8, height: `${h}%`, background: 'linear-gradient(to top, rgba(99,102,241,0.2), #818cf8)', borderRadius: 4, transition: 'height 0.5s ease' }} />
+                        <div style={{ flex: '0 0 5%', display: 'flex', justifyContent: 'center', opacity: 0.3 }}>
+                            <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', height: 32 }}>
+                                {[40, 70, 45, 90].map((h, i) => (
+                                    <div key={i} style={{ width: 4, height: `${h}%`, background: 'rgba(255,255,255,0.4)', borderRadius: 2 }} />
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: isMobile ? 16 : 32, alignItems: 'center', flex: '1 1 40%', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'transparent' : 'rgba(15, 23, 42, 0.4)', padding: isMobile ? 0 : '24px 32px', borderRadius: '24px', border: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)' }}>
-                        <div style={{ display: 'flex', gap: 32 }}>
+                    <div style={{ display: 'flex', gap: isMobile ? 12 : 20, alignItems: 'center', flex: isMobile ? '1 1 100%' : '0 0 32%', justifyContent: isMobile ? 'flex-start' : 'flex-end', background: isMobile ? 'transparent' : 'rgba(15, 23, 42, 0.4)', padding: isMobile ? 0 : '10px 20px', borderRadius: '16px', border: isMobile ? 'none' : '1px solid rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)' }}>
+                        <div style={{ display: 'flex', gap: 20 }}>
                             {[
-                                { label: 'Absorption', value: `${Math.round((projects.reduce((s,p) => s + ((p.total_units || 0) - (p.available_units || 0)), 0) / Math.max(1, projects.reduce((s,p) => s + (p.total_units || 0), 0))) * 100)}%`, color: '#34d399', trend: '+5.2%' },
-                                { label: 'Lead Velocity', value: '1.4x', color: '#a78bfa', trend: 'Optimal' },
+                                { label: 'Absorption', value: `${Math.round((projects.reduce((s,p) => s + ((p.total_units || 0) - (p.available_units || 0)), 0) / Math.max(1, projects.reduce((s,p) => s + (p.total_units || 0), 0))) * 100)}%`, color: '#34d399' },
+                                { label: 'Velocity', value: '1.4x', color: '#a78bfa' },
                             ].map(m => (
                             <div key={m.label} style={{ textAlign: 'left' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8, letterSpacing: '0.1em' }}>{m.label}</div>
-                                <div style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: m.color, letterSpacing: '-1px', lineHeight: 1 }}>{m.value}</div>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#e2e8f0', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    <TrendingUp size={12} color={m.color} /> {m.trend}
-                                </div>
+                                <div style={{ fontSize: '8px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 2, letterSpacing: '0.05em' }}>{m.label}</div>
+                                <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 900, color: m.color, letterSpacing: '-0.3px', lineHeight: 1 }}>{m.value}</div>
                             </div>
                             ))}
                         </div>
-                        <div style={{ width: 1, height: 60, background: 'rgba(255,255,255,0.1)' }} />
+                        <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.1)' }} />
                         <button className="hover-glow" onClick={() => setShowModal(true)} style={{ 
-                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', color: '#0f172a', fontWeight: 800, height: 48, width: 48, borderRadius: '16px', border: 'none',
-                            boxShadow: '0 10px 25px rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s'
-                        }} title="New Project">
-                             <Plus size={20} strokeWidth={2.5} />
+                            background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)', color: '#0f172a', fontWeight: 800, height: 32, width: 32, borderRadius: '10px', border: 'none',
+                            boxShadow: '0 6px 15px rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s'
+                        }}>
+                             <Plus size={16} strokeWidth={3} />
                         </button>
                     </div>
                 </div>

@@ -13,13 +13,13 @@ async function getTenantByHostname(hostname: string) {
     if (isZentrixSubdomain) {
         const slug = parts[0] === 'www' ? parts[1] : parts[0];
         const { rows } = await pool.query(
-            "SELECT name, settings, logo_url, primary_color FROM tenants WHERE slug = $1",
+            "SELECT id, name, settings, logo_url, primary_color FROM tenants WHERE slug = $1",
             [slug]
         );
         tenant = rows[0];
     } else {
         const { rows } = await pool.query(
-            "SELECT name, settings, logo_url, primary_color FROM tenants WHERE settings->>'custom_domain' = $1 LIMIT 1",
+            "SELECT id, name, settings, logo_url, primary_color FROM tenants WHERE settings->>'custom_domain' = $1 LIMIT 1",
             [hostname]
         );
         tenant = rows[0];
@@ -174,12 +174,12 @@ router.post('/projects/:id/enquiry', async (req: Request, res: Response) => {
             `INSERT INTO leads (tenant_id, project_id, channel_partner_id, name, email, phone, source, stage, status)
              VALUES ((SELECT id FROM tenants WHERE slug = $1 OR settings->>'custom_domain' = $2 LIMIT 1), $3, $4, $5, $6, $7, $8, 'New Lead', 'Active')
              RETURNING *`,
-            [hostname.split('.')[0], hostname, req.params.id, cpId, name, email, phone, source || (cpId ? 'Broker Referral' : 'Public Microsite')]
+            [(hostname as string).split('.')[0], hostname as string, req.params.id, cpId, name, email, phone, source || (cpId ? 'Broker Referral' : 'Public Microsite')]
         );
 
         // 🔥 AUTOMATED DISTRIBUTION: Assign to best-performing agent
         if (leadRows[0]) {
-            await DistributionService.distributeLead(leadRows[0].id, req.params.id, tenant.id);
+            await DistributionService.distributeLead(leadRows[0].id as string, req.params.id as string, tenant.id as string);
         }
 
         res.status(201).json({ success: true, message: 'Enquiry submitted successfully' });

@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useBranding } from '../../context/BrandingContext';
 import { usePresence } from '../../context/PresenceContext';
 import { searchApi } from '../../api/client';
 import NotificationDropdown from '../notifications/NotificationDropdown';
 import HelpModal from '../modals/HelpModal';
+import { useTheme } from '../../context/ThemeContext';
+import { usePageInfo } from '../../context/PageContext';
 
 const PAGE_TITLES = {
     '/': { title: 'Dashboard', subtitle: 'Welcome back!' },
@@ -18,16 +20,33 @@ const PAGE_TITLES = {
     '/bookings': { title: 'Booking Management', subtitle: 'Track and confirm property bookings' },
     '/followups': { title: 'Follow-Up Scheduler', subtitle: 'Schedule and track all follow-ups' },
     '/site-visits': { title: 'Site Visit Planner', subtitle: 'Plan and manage property site visits' },
-    '/analytics': { title: 'Sales Analytics', subtitle: 'In-depth sales insights and performance' },
+    '/nurture-leads': { title: 'Nurture Leads', subtitle: 'Long-term follow-ups and re-engagement' },
+    '/analytics': { title: 'Sales Analytics', subtitle: 'Enterprise performance metrics and growth intelligence' },
     '/leaderboard': { title: 'Sales Leaderboard', subtitle: 'Track and celebrate top performing agents' },
+    '/team-hierarchy': { title: 'Team Governance', subtitle: 'Organizational reporting matrix' },
+    '/voice-analytics': { title: 'Voice Telemetry', subtitle: 'Precision tracking for GSM SIM-integrated dialing performance.' },
     '/admin': { title: 'Admin Controls', subtitle: 'Manage users, roles, and system settings' },
     '/payment-tracker': { title: 'Payment Tracker', subtitle: 'Track EMI and payment schedules' },
     '/agreements': { title: 'Agreements & Docs', subtitle: 'Manage contracts and documents' },
-    '/notifications': { title: 'Notifications', subtitle: 'SMS, Email & WhatsApp messaging' },
+    '/notifications': { title: 'Notification Center', subtitle: 'SMS, Email & WhatsApp messaging telemetry' },
     '/channel-partners': { title: 'Channel Partners', subtitle: 'Manage broker partnerships' },
     '/calendar': { title: 'Calendar', subtitle: 'Schedule and view events' },
     '/search': { title: 'Search Results', subtitle: 'Global exploration' },
     '/superadmin': { title: 'Network Command Center', subtitle: 'Monitoring Workspaces across Zentrix Global Network' },
+    '/lead-scoring': { title: 'Lead Score & Status', subtitle: 'Advanced qualification funnel and predictive scoring' },
+    '/command-center': { title: 'Command Center', subtitle: 'Strategic real-time intelligence' },
+    '/inbox': { title: 'Omnichannel Inbox', subtitle: 'Manage real-time streams from WhatsApp, Email, and SMS' },
+    '/whatsapp-marketing': { title: 'WhatsApp Intelligence', subtitle: 'Autonomous AI engagement and campaign broadcasting' },
+    '/marketing': { title: 'Marketing Hub', subtitle: 'Orchestrate high-conversion drip sequences and follow-up loops' },
+    '/call-records': { title: 'Voice Intelligence Hub', subtitle: 'Unified log of all client communications and voice engagements' },
+    '/academy': { title: 'Zentrix Academy', subtitle: 'AI-powered sales training and certifications' },
+    '/reports': { title: 'Custom Reports', subtitle: 'Advanced business intelligence and data exports' },
+    '/customer-portal': { title: 'Customer Portal', subtitle: 'Personalized property portfolio and document center' },
+    '/automations': { title: 'CRM Automations', subtitle: 'Automate follow-ups and repetitive tasks across your pipeline' },
+    '/automation-distribution': { title: 'Automation & Distribution', subtitle: 'Intelligent lead routing, zero-latency assignments, and automated orchestration' },
+    '/integrations': { title: 'Connectivity Matrix', subtitle: 'Architect your lead conversion pipeline by bridging ZentrixCRM with global marketing ecosystems' },
+    '/commissions': { title: 'Commission & Incentives', subtitle: 'Automated payouts and incentive tracking engine' },
+    '/billing': { title: 'Subscription & Billing', subtitle: 'Choose the right plan to scale your real estate agency' },
 };
 
 interface HeaderProps {
@@ -41,6 +60,7 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { branding } = useBranding();
+    const { pageInfo } = usePageInfo();
     const [searchVal, setSearchVal] = useState('');
     const [results, setResults] = useState({ leads: [], projects: [] });
     const [searching, setSearching] = useState(false);
@@ -48,6 +68,8 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [showThemeMenu, setShowThemeMenu] = useState(false);
+    const { theme: currentTheme, setTheme } = useTheme();
     const dropdownRef = useRef(null);
     const userMenuRef = useRef(null);
 
@@ -122,68 +144,47 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
     };
 
     return (
-        <header className={headerClass}>
+        <header className={headerClass} style={{ height: 72 }}>
             <div className="header-left">
-                <button className="toggle-btn" onClick={onToggle} aria-label="Toggle menu">
-                    <Menu size={16} />
+                <button 
+                    className="toggle-btn" 
+                    onClick={onToggle} 
+                    aria-label="Toggle menu"
+                    style={{ 
+                        width: 40, height: 40, borderRadius: 12, 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <Menu size={18} />
                 </button>
-                <div>
-                    <div className="header-title">{page.title}</div>
-                    <div className="header-breadcrumb hide-mobile">{page.subtitle}</div>
+                <div style={{ marginLeft: 8 }}>
+                    <div className="header-title" style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{pageInfo.title || page.title}</div>
+                    <div className="header-breadcrumb hide-mobile" style={{ fontSize: '0.8rem', fontWeight: 500, color: '#94a3b8', marginTop: 2 }}>{pageInfo.subtitle || page.subtitle}</div>
                 </div>
             </div>
 
             <div className="header-right">
-                {/* Real-time Collaboration Avatar Stack */}
-                {!isMobile && (
-                    <div style={{ display: 'flex', alignItems: 'center', marginRight: 24, gap: 12 }}>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            {(onlineUsers || []).filter(u => u.id !== user?.id).slice(0, 3).map((u, i) => (
-                                <div key={u.id} title={`${u.name} is active`} style={{
-                                    width: 28, height: 28, borderRadius: '50%',
-                                    background: 'var(--navy-600)', border: '2px solid white',
-                                    marginLeft: i === 0 ? 0 : -8, position: 'relative',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '0.65rem', fontWeight: 800, color: 'white',
-                                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                    zIndex: 10 - i
-                                }}>
-                                    {u.avatar || getInitials(u.name)}
-                                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-emerald)', border: '1.5px solid white' }} />
-                                </div>
-                            ))}
-                            {onlineUsers.length > 4 && (
-                                <div style={{
-                                    width: 28, height: 28, borderRadius: '50%',
-                                    background: 'var(--slate-100)', border: '2px solid white',
-                                    marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)',
-                                    zIndex: 0
-                                }}>
-                                    +{onlineUsers.length - 4}
-                                </div>
-                            )}
-                        </div>
-                        {onlineUsers.length > 1 && <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-emerald)', letterSpacing: '0.02em' }}>TEAM SYNCED</span>}
-                    </div>
-                )}
-
-                <div className="search-bar" style={{ position: 'relative' }}>
-                    {searching ? <Loader2 size={14} className="animate-spin" style={{ color: 'var(--navy-400)' }} /> : <Search size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />}
+                {/* Header right side items */}
+                <div style={{ position: 'relative', flex: 1, maxWidth: 350, margin: '0 24px' }}>
+                    {searching ? <Loader2 size={16} className="animate-spin" style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} /> : <Search size={16} style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} />}
                     <input
+                        className="search-input"
                         value={searchVal}
                         onChange={e => setSearchVal(e.target.value)}
                         placeholder={isMobile ? "Search..." : "Search leads, projects..."}
                         onFocus={(e) => {
-                            if (isMobile) e.target.style.width = '180px';
                             searchVal.trim().length >= 2 && setShowDropdown(true);
                         }}
-                        onBlur={(e) => {
-                            if (isMobile) e.target.style.width = '100px';
-                        }}
                         style={{ 
-                            width: isMobile ? '100px' : '100%',
-                            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            width: '100%',
+                            paddingLeft: 42,
+                            paddingRight: 16,
+                            borderRadius: '12px',
+                            height: '40px',
+                            fontSize: '0.9rem',
+                            outline: 'none'
                         }}
                     />
                     
@@ -295,54 +296,57 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
 
                 {!isMobile && (
                     <div style={{ 
-                        marginRight: 10, padding: '4px 12px', borderRadius: '8px', 
+                        marginRight: 16, padding: '6px 12px', borderRadius: '10px', 
                         background: '#f0fdf4', color: '#10b981', 
                         border: '1px solid #dcfce7', 
-                        fontSize: '11px', fontWeight: 800,
-                        display: 'flex', alignItems: 'center', gap: 6
+                        fontSize: '0.65rem', fontWeight: 900,
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        letterSpacing: '0.02em'
                     }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 10px #10b981' }} />
                         LIVE
                     </div>
                 )}
 
-                <div className="hide-mobile" style={{ display: 'flex', gap: 10, marginRight: 15, fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                    {['EN', 'AR', 'ES', 'ZH'].map(lang => (lang === 'EN' ? <span key={lang} style={{ color: 'var(--navy-900)', background: 'var(--slate-100)', padding: '2px 6px', borderRadius: 4 }}>{lang}</span> : null))}
+                <div className="hide-mobile" style={{ display: 'flex', gap: 10, marginRight: 20, fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>
+                    {['EN', 'AR', 'ES', 'ZH'].map(lang => (lang === 'EN' ? <span key={lang} style={{ color: 'var(--navy-900)', background: '#f1f5f9', padding: '4px 8px', borderRadius: 8, border: '1px solid #e2e8f0' }}>{lang}</span> : null))}
                 </div>
 
-                { !isMobile && (
+                {!isMobile && (
                     <button 
                         onClick={() => window.simulateInbound?.()} 
                         style={{ 
-                            marginRight: 12, padding: '6px 14px', borderRadius: '10px', 
-                            background: 'var(--navy-900)', color: 'white', border: 'none', 
-                            fontSize: '11px', fontWeight: 800, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            boxShadow: '0 4px 12px rgba(10,22,40,0.15)'
+                            marginRight: 20, padding: '10px 18px', borderRadius: '12px', 
+                            background: '#0a1628', color: 'white', border: 'none', 
+                            fontSize: '0.7rem', fontWeight: 900, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            boxShadow: '0 8px 20px rgba(10,22,40,0.2)',
+                            transition: 'all 0.3s'
                         }}
                         className="hover-lift"
                     >
-                        <Phone size={12} color="#10b981" /> SIMULATE IVR
+                        <Phone size={14} color="#10b981" /> SIMULATE IVR
                     </button>
                 )}
 
                 <button 
-                    className={`icon-btn ${showHelp ? 'active' : ''}`}
+                    className="icon-btn"
                     onClick={() => setShowHelp(true)}
                     aria-label="Help Center"
-                    style={{ marginRight: 10 }}
+                    style={{ marginRight: 12, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
-                    <HelpCircle size={16} />
+                    <HelpCircle size={18} />
                 </button>
 
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', marginRight: 16 }}>
                     <button 
-                        className={`icon-btn ${showNotifications ? 'active' : ''}`} 
+                        className="icon-btn"
                         onClick={() => setShowNotifications(!showNotifications)}
                         aria-label="Notifications"
+                        style={{ width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
                     >
-                        <Bell size={16} />
-                        <span className="notification-dot" />
+                        <Bell size={18} />
+                        <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#ef4444', borderRadius: '50%', border: '2px solid var(--surface-header, white)' }} />
                     </button>
                     {showNotifications && (
                         <NotificationDropdown onClose={() => setShowNotifications(false)} />
@@ -354,40 +358,34 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                         onClick={() => setShowUserMenu(!showUserMenu)}
                         title={user?.name || 'User Profile'}
                         style={{
-                            width: 36, height: 36,
+                            width: 40, height: 40,
                             borderRadius: '50%',
-                            background: 'linear-gradient(135deg, var(--navy-500), var(--accent-cyan))',
+                            background: '#0ea5e9',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 700, fontSize: '0.8rem', color: 'white',
+                            fontWeight: 800, fontSize: '1rem', color: 'white',
                             cursor: 'pointer', flexShrink: 0,
-                            border: '2px solid white',
-                            boxShadow: 'var(--shadow-sm)',
                             transition: 'transform 0.2s',
-                            transform: showUserMenu ? 'scale(1.05)' : 'scale(1)'
+                            transform: showUserMenu ? 'scale(1.05)' : 'scale(1)',
+                            position: 'relative'
                         }}
                     >
-                        {user?.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/')) ? (
-                            <img src={user.avatar} alt="User" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                        ) : (
-                            user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'
-                        )}
-                        
+                        {user?.name?.[0] || 'M'}
                         <div style={{ 
-                            position: 'absolute', bottom: -1, right: -1, 
+                            position: 'absolute', bottom: 0, right: 0, 
                             width: 10, height: 10, borderRadius: '50%', 
-                            background: '#10b981', border: '1.5px solid white' 
+                            background: '#10b981', border: '2px solid white' 
                         }} />
                     </div>
 
                     {showUserMenu && (
                         <div className="glass-panel animate-scaleIn" style={{
                             position: 'absolute', top: 'calc(100% + 12px)', right: 0,
-                            width: 240, background: 'white', borderRadius: 16,
+                            width: 280, background: 'var(--surface-card)', borderRadius: 16,
                             boxShadow: '0 10px 40px rgba(0,0,0,0.15)', padding: 8,
                             zIndex: 1001, border: '1px solid var(--border-light)'
                         }}>
                             <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--slate-50)', marginBottom: 4 }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-900)' }}>{user?.name || 'My Account'}</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>{user?.name || 'My Account'}</div>
                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>{user?.email}</div>
                                 <div style={{ 
                                     display: 'inline-block', marginTop: 8, padding: '2px 8px', 
@@ -411,11 +409,89 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                                 <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--navy-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy-600)' }}>
                                     <User size={16} />
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--navy-900)' }}>User Profile</div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>User Profile</div>
                                     <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Security & Preferences</div>
                                 </div>
                             </button>
+
+                            <div style={{ margin: '4px 0' }}>
+                                <button 
+                                    onClick={() => setShowThemeMenu(!showThemeMenu)}
+                                    style={{ 
+                                        display: 'flex', alignItems: 'center', gap: 10, width: '100%', 
+                                        padding: '10px 12px', border: 'none', background: 'transparent',
+                                        borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                                        transition: 'background 0.2s'
+                                    }}
+                                    className="hover-bg-slate"
+                                >
+                                    <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--navy-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--navy-600)' }}>
+                                        <Palette size={16} />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Theme</div>
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentTheme}</div>
+                                    </div>
+                                    <ChevronRight size={14} style={{ transform: showThemeMenu ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s', color: 'var(--text-muted)' }} />
+                                </button>
+
+                                {showThemeMenu && (
+                                    <div style={{ padding: '8px 8px 4px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                                        {[
+                                            { id: 'Light', label: 'Light', bg: '#ffffff', sidebar: '#ffffff', accent: '#1c1c1c', text: '#1e293b', border: '#e2e8f0' },
+                                            { id: 'Dark', label: 'Dark', bg: '#040d1a', sidebar: '#0a1628', accent: '#3b63b8', text: '#f1f5f9', border: '#162d58' },
+                                            { id: 'Classic Dark', label: 'Classic', bg: '#0a0a0a', sidebar: '#141414', accent: '#a78bfa', text: '#e4e4e7', border: '#27272a' },
+                                            { id: 'System', label: 'System', bg: 'linear-gradient(135deg, #fff 50%, #0a1628 50%)', sidebar: '', accent: '#10b981', text: '', border: '#e2e8f0' },
+                                        ].map(t => {
+                                            const isActive = currentTheme === t.id;
+                                            return (
+                                                <div 
+                                                    key={t.id}
+                                                    onClick={() => setTheme(t.id as any)}
+                                                    style={{ 
+                                                        padding: 6, borderRadius: 10, cursor: 'pointer',
+                                                        border: isActive ? '2px solid #10b981' : '2px solid var(--border-light)',
+                                                        background: 'var(--surface-card)',
+                                                        transition: 'all 0.2s ease',
+                                                        position: 'relative',
+                                                    }}
+                                                >
+                                                    {/* Mini preview swatch */}
+                                                    <div style={{ 
+                                                        height: 36, borderRadius: 6, marginBottom: 6, overflow: 'hidden',
+                                                        background: t.id === 'System' ? undefined : t.bg,
+                                                        border: `1px solid ${t.border}`,
+                                                        display: 'flex', position: 'relative'
+                                                    }}>
+                                                        {t.id === 'System' ? (
+                                                            <>
+                                                                <div style={{ flex: 1, background: '#ffffff' }} />
+                                                                <div style={{ flex: 1, background: '#0a1628' }} />
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div style={{ width: '25%', background: t.sidebar, borderRight: `1px solid ${t.border}` }} />
+                                                                <div style={{ flex: 1, padding: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                                                    <div style={{ height: 3, width: '60%', background: t.accent, borderRadius: 2 }} />
+                                                                    <div style={{ height: 2, width: '80%', background: t.border, borderRadius: 2 }} />
+                                                                    <div style={{ height: 2, width: '50%', background: t.border, borderRadius: 2 }} />
+                                                                </div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2px' }}>
+                                                        <span style={{ fontSize: '0.7rem', fontWeight: isActive ? 800 : 600, color: isActive ? '#10b981' : 'var(--text-muted)' }}>{t.label}</span>
+                                                        {isActive && <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                                        </div>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
 
                             <button 
                                 onClick={logout}

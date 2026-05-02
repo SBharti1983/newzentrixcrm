@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import ContactPreviewSidebar from '../../components/shared/ContactPreviewSidebar';
 import { dialerEvents } from '../../constants/events';
 import { useMobile } from '../../hooks/useMobile';
+import { usePageInfo } from '../../context/PageContext';
 
 const STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const STAGE_COLORS = {
@@ -64,7 +65,7 @@ const SOURCES = [
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
 // Mobile Card Component
-const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }) => {
+const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }: any) => {
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
     return (
         <div 
@@ -145,7 +146,7 @@ const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onC
 });
 
 // Optimized Memoized Row Component
-const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }) => {
+const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: any) => {
     const [hovered, setHovered] = useState(false);
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
 
@@ -248,6 +249,7 @@ export default function Leads() {
     const { showToast } = useToast();
     const { user } = useAuth();
     const isMobile = useMobile();
+    const { setPageInfo } = usePageInfo();
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [filterStage, setFilterStage] = useState('All');
@@ -295,7 +297,7 @@ export default function Leads() {
             const activePage = overridePage !== undefined ? overridePage : page;
             const activeSearch = overrideSearch !== undefined ? overrideSearch : debouncedSearch;
             
-            const p = { limit, page: activePage };
+            const p: any = { limit, page: activePage };
             if (filterStage !== 'All') p.stage = filterStage;
             if (filterSource !== 'All') p.source = filterSource;
             if (filterStatus !== 'All') p.status = filterStatus;
@@ -498,12 +500,11 @@ export default function Leads() {
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0', paddingBottom: isMobile ? 100 : 0 }}>
             {/* Header */}
+            {/* Header Actions & Stats */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
-                <div className="page-header-left">
-                    <h1 className="page-title">Lead Management</h1>
-                    <p className="page-subtitle">{leadsRes?.total || 0} total leads</p>
+                <div className="page-header-left" style={{ display: 'none' }}>
+                    <p className="page-subtitle" style={{ margin: 0, fontWeight: 700, color: 'var(--slate-500)', fontSize: '0.85rem' }}>{leadsRes?.total || 0} total leads</p>
                 </div>
-                
 
                 <div className="page-actions" style={{ marginRight: isMobile ? 0 : 20, width: isMobile ? '100%' : 'auto', display: 'flex', gap: 6 }}>
                     <input type="file" accept=".xlsx,.xls,.csv" ref={fileInputRef} style={{ display: 'none' }} onChange={handleImport} />

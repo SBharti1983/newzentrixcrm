@@ -90,8 +90,8 @@ export default function Automations() {
 
     return (
         <div className="animate-fadeIn">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <div>
+            <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <h1 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--navy-800)', margin: '0 0 4px' }}>CRM Automations</h1>
                     <p style={{ color: 'var(--text-muted)', margin: 0 }}>Automate follow-ups and repetitive tasks across your pipeline.</p>
                 </div>

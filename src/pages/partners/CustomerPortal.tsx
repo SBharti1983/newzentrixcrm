@@ -36,7 +36,7 @@ export default function CustomerPortal() {
                 position: 'relative',
                 overflow: 'hidden'
             }}>
-                <div style={{ position: 'relative', zIndex: 1, paddingBottom: 30 }}>
+                <div style={{ position: 'relative', zIndex: 1, paddingBottom: 30, display: 'none', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>

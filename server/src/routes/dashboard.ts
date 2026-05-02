@@ -40,7 +40,7 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
             }
         }
 
-        const downlineArrayStr = `{${downlineIds.join(',')}}`;
+        const downlineArrayStr = downlineIds.length > 0 ? `{${downlineIds.join(',')}}` : '{}';
 
         // 🔥 STORED PROCEDURE: Single database round-trip replaces 14 parallel queries
         const spResult = await db.execute(sql`
@@ -48,7 +48,7 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
                 ${tid}::uuid,
                 ${targetUserId}::uuid,
                 ${effectivePersonal}::boolean,
-                ${downlineArrayStr}::text::uuid[]
+                ${downlineArrayStr}::uuid[]
             ) as data
         `);
 
@@ -59,7 +59,7 @@ router.get('/', cacheResponse(300), async (req: any, res: Response) => {
             SELECT get_dashboard_supplementary(
                 ${tid}::uuid,
                 ${targetUserId}::uuid,
-                ${downlineArrayStr}::text::uuid[],
+                ${downlineArrayStr}::uuid[],
                 ${effectivePersonal}::boolean
             ) as supp_data
         `);

@@ -77,12 +77,12 @@ export default function Agreements() {
     const handleDrop = (e) => {
         e.preventDefault();
         setDragOver(false);
-        const files = Array.from(e.dataTransfer.files);
+        const files: any = Array.from(e.dataTransfer.files);
         setUploadedFiles(prev => [...prev, ...files.map(f => ({ name: f.name, size: f.size, type: f.type }))]);
     };
 
     const handleFileSelect = (e) => {
-        const files = Array.from(e.target.files);
+        const files: any = Array.from((e.target as HTMLInputElement).files || []);
         setUploadedFiles(prev => [...prev, ...files.map(f => ({ name: f.name, size: f.size, type: f.type }))]);
     };
 
@@ -159,7 +159,7 @@ export default function Agreements() {
 
     return (
         <div className="animate-fadeIn">
-            <div className="page-header">
+            <div className="page-header" style={{ display: 'none' }}>
                 <div>
                     <h1 className="page-title">Agreements & Documents</h1>
                     <p className="page-subtitle">{totalDocs} documents · {signedDocs} signed · {pendingDocs} awaiting signature</p>

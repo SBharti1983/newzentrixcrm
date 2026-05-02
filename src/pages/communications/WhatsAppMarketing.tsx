@@ -216,8 +216,8 @@ export default function WhatsAppMarketing() {
         <div className="whatsapp-war-room" style={{ padding: '32px 40px', background: '#f8fafc', minHeight: '100vh' }}>
             
             {/* 🚀 War Room Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px' }}>
-                <div>
+            <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '48px' }}>
+                <div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
                         <Flame size={20} color={COLORS.rose} strokeWidth={2.5} />
                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: COLORS.rose, textTransform: 'uppercase', letterSpacing: '0.15em' }}>

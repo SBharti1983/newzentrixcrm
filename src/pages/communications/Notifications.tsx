@@ -112,7 +112,7 @@ export default function Notifications() {
                 gap: 16,
                 borderBottom: '1px solid rgba(0,0,0,0.05)' 
             }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 8px var(--accent-emerald)', animation: 'pulse 2s infinite' }} />
                         <span style={{ fontSize: '0.65rem', fontWeight: 950, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--slate-500)' }}>Messaging Engine: Active</span>

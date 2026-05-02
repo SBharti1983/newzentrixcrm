@@ -75,6 +75,48 @@ async function migrate() {
         await client.query('ALTER TABLE tenants ADD COLUMN IF NOT EXISTS logo_icon TEXT');
         await client.query('ALTER TABLE tenants ADD COLUMN IF NOT EXISTS company_name TEXT');
 
+        // 8. Commissions Table
+        console.log('8. Creating commissions table...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS commissions (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+                entity_type TEXT NOT NULL, -- 'Internal' or 'Channel Partner'
+                entity_id UUID NOT NULL,
+                lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
+                booking_id UUID REFERENCES bookings(id) ON DELETE CASCADE,
+                deal_value NUMERIC(15,2),
+                commission_rate NUMERIC(5,2),
+                payout_amount NUMERIC(15,2),
+                status TEXT DEFAULT 'Pending',
+                paid_at TIMESTAMP WITH TIME ZONE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 9. Channel Partners Table
+        console.log('9. Creating channel_partners table...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS channel_partners (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+                name TEXT NOT NULL,
+                company TEXT,
+                email TEXT,
+                phone TEXT,
+                city TEXT,
+                rera_number TEXT,
+                commission_rate NUMERIC(5,2),
+                total_leads_referred INTEGER DEFAULT 0,
+                total_bookings INTEGER DEFAULT 0,
+                total_commission NUMERIC(15,2) DEFAULT 0,
+                status TEXT DEFAULT 'Active',
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         await client.query('COMMIT');
         console.log('\n✅ All migrations applied successfully!');
     } catch (e) {

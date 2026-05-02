@@ -105,31 +105,8 @@ export default function LeadScoreStatus() {
 
     return (
         <div className="animate-fadeIn" style={{ paddingBottom: isMobile ? 100 : 0 }}>
-            <header style={{ marginBottom: isMobile ? 24 : 32 }}>
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 16 }}>
-                    <div>
-                        <h1 style={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.02em', marginBottom: 4 }}>
-                            Lead Score & Status
-                        </h1>
-                        {!isMobile && (
-                            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
-                                Advanced qualification funnel and predictive scoring management.
-                            </p>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, width: isMobile ? '100%' : 'auto' }}>
-                        <div style={{ background: 'white', padding: '10px 16px', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 12, boxShadow: 'var(--shadow-sm)', flex: isMobile ? 1 : 'none', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-                            <TrendingUp size={18} color="var(--accent-emerald)" />
-                            <div>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Score</div>
-                                <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--navy-900)' }}>
-                                    {enrichedLeads.length ? Math.round(enrichedLeads.reduce((acc, l) => acc + l.calculatedScore, 0) / enrichedLeads.length) : 0}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <div style={{ marginBottom: isMobile ? 8 : 12 }} />
+
 
             {/* Status Grid */}
             <div style={{
@@ -280,7 +257,7 @@ export default function LeadScoreStatus() {
                             <tbody>
                                 {filteredLeads.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                                        <td colSpan={5} style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                             <div style={{ marginBottom: 12 }}><Users size={40} opacity={0.3} /></div>
                                             No leads found in this stage.
                                         </td>

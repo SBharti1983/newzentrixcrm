@@ -8,7 +8,7 @@ const STATUS_COLORS = {
     'On Hold': '#94a3b8'  // Slate
 };
 
-export default function InventoryMap({ units, onUnitClick }) {
+export default function InventoryMap({ units, onUnitClick }: { units: any[]; onUnitClick?: (u: any) => void }) {
     const [selectedProject, setSelectedProject] = useState(
         units.length > 0 ? units[0].projectId : null
     );
@@ -139,7 +139,7 @@ export default function InventoryMap({ units, onUnitClick }) {
                                                     <div style={{
                                                         position: 'absolute', bottom: -4, left: 0, right: 0, height: 4, 
                                                         background: color, opacity: 0.6, borderRadius: '0 0 12px 12px',
-                                                        transform: 'rotateX(-90deg)', origin: 'bottom'
+                                                        transform: 'rotateX(-90deg)', transformOrigin: 'bottom'
                                                     }} />
                                                 </div>
                                             );
@@ -149,7 +149,7 @@ export default function InventoryMap({ units, onUnitClick }) {
                         ))}
                     </div>
 
-                    <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginTop: 64, pt: 32, borderTop: '2px dashed var(--border-light)' }}>
+                    <div style={{ display: 'flex', gap: 32, justifyContent: 'center', marginTop: 64, paddingTop: 32, borderTop: '2px dashed var(--border-light)' }}>
                         {Object.entries(STATUS_COLORS).map(([label, color]) => (
                             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.85rem', fontWeight: 800, color: 'var(--slate-500)' }}>
                                 <div style={{ width: 14, height: 14, borderRadius: 5, background: color, boxShadow: `0 0 10px ${color}40` }} />
@@ -167,7 +167,7 @@ export default function InventoryMap({ units, onUnitClick }) {
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>Project Health</h3>
                         </div>
                         
-                        <div style={{ textAlign: 'center', mb: 32 }}>
+                        <div style={{ textAlign: 'center', marginBottom: 32 }}>
                             <div style={{ fontSize: '3.5rem', fontWeight: 950, lineHeight: 1 }}>{occupancyRate}%</div>
                             <div style={{ fontSize: '0.8rem', fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 8 }}>Occupancy rate</div>
                         </div>
@@ -189,7 +189,7 @@ export default function InventoryMap({ units, onUnitClick }) {
                     </div>
 
                     <div className="card" style={{ padding: 32, borderRadius: 32, background: 'white', border: '1px solid var(--border-light)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, mb: 16 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
                             <MapPin size={20} color="var(--accent-violet)" />
                             <h4 style={{ fontWeight: 900, margin: 0 }}>Tower Insights</h4>
                         </div>

@@ -27,17 +27,17 @@ const COLORS = {
     bg: '#f8fafc'
 };
 
-export default function TeamLeaderDashboardView({ user, data }) {
-    const navigate = useNavigate();
+const KPI_STYLE = {
+    background: '#ffffff',
+    borderRadius: '16px',
+    padding: '20px',
+    border: '1px solid #f1f5f9',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+    flex: 1
+};
 
-    const KPI_STYLE = {
-        background: '#ffffff',
-        borderRadius: '16px',
-        padding: '20px',
-        border: '1px solid #f1f5f9',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        flex: 1
-    };
+export default function TeamLeaderDashboardView({ user, data }: any) {
+    const navigate = useNavigate();
 
     // Dynamic Chart Data mapping
     const CHART_DATA = Array.isArray(data?.trends) ? data.trends.map(t => ({
@@ -74,8 +74,8 @@ export default function TeamLeaderDashboardView({ user, data }) {
         <div style={{ padding: '24px 32px', background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
             
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <div>
+            <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                <div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <h1 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: COLORS.slate950, letterSpacing: '-0.5px' }}>
                         {getGreeting()}, {user?.name || 'Squad Leader'} 👋 <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '4px 12px', background: '#eef2ff', color: COLORS.brand, borderRadius: '20px', marginLeft: '12px', verticalAlign: 'middle' }}>Team Leader Dashboard</span>
                     </h1>
@@ -316,7 +316,7 @@ export default function TeamLeaderDashboardView({ user, data }) {
 
 // --- SUB-COMPONENTS (Simplified for TL Dashboard) ---
 
-const MetricCard = ({ title, val, growth, detail, icon: Icon, color }) => (
+const MetricCard = ({ title, val, growth, detail, icon: Icon, color }: any) => (
     <div style={KPI_STYLE}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div style={{ padding: '10px', background: `${color}10`, borderRadius: '12px', color: color }}>
@@ -330,7 +330,7 @@ const MetricCard = ({ title, val, growth, detail, icon: Icon, color }) => (
     </div>
 );
 
-const PipelineMetric = ({ step, val }) => (
+const PipelineMetric = ({ step, val }: any) => (
     <div>
         <div style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate950 }}>{val}</div>
         <div style={{ fontSize: '0.65rem', fontWeight: 750, color: COLORS.slate400 }}>{step}</div>
@@ -339,7 +339,7 @@ const PipelineMetric = ({ step, val }) => (
 
 const PipelineDivider = () => <div style={{ display: 'flex', alignItems: 'center', color: '#e2e8f0' }}><ChevronRight size={16} /></div>;
 
-const InsightItem = ({ icon: Icon, color, title, desc, link }) => (
+const InsightItem = ({ icon: Icon, color, title, desc, link }: any) => (
     <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
             <Icon size={18} color={color} />
@@ -352,7 +352,7 @@ const InsightItem = ({ icon: Icon, color, title, desc, link }) => (
     </div>
 );
 
-const AgentRow = ({ name, revenue, progress, color }) => (
+const AgentRow = ({ name, revenue, progress, color, bookings }: any) => (
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ flex: 1 }}>
@@ -367,18 +367,18 @@ const AgentRow = ({ name, revenue, progress, color }) => (
     </div>
 );
 
-const DealItem = ({ project, agent, status, riskColor, reason }) => (
+const DealItem = ({ project, agent, status, riskColor, reason }: any) => (
     <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 900 }}>{project}</span>
             <span style={{ fontSize: '0.6rem', fontWeight: 900, color: riskColor }}>{status}</span>
         </div>
-        <div style={{ fontSize: '0.7rem', color: COLORS.slate500 }}>Agent: {agent}</div>
+        <div style={{ fontSize: '0.7rem', color: COLORS.slate600 }}>Agent: {agent}</div>
         <div style={{ fontSize: '0.7rem', color: COLORS.danger, fontWeight: 700, marginTop: '4px' }}>{reason}</div>
     </div>
 );
 
-const TaskCounter = ({ label, count, sub, color }) => (
+const TaskCounter = ({ label, count, sub, color }: any) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${color}10`, color: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{count}</div>
         <div>
@@ -388,7 +388,7 @@ const TaskCounter = ({ label, count, sub, color }) => (
     </div>
 );
 
-const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }) => (
+const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }: any) => (
     <div style={{ display: 'flex', gap: '12px', position: 'relative', paddingBottom: isLast ? 0 : '16px' }}>
         <div style={{ width: '45px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.slate400, paddingTop: '10px' }}>{time}</div>
         <div style={{ flex: 1, padding: '10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', gap: '10px', alignItems: 'center' }}>

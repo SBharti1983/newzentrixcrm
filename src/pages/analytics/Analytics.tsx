@@ -111,7 +111,7 @@ export default function Analytics() {
                 gap: 20, marginBottom: 32, paddingBottom: 28,
                 borderBottom: '1px solid var(--border-light)'
             }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.08)', padding: '4px 12px', borderRadius: 100 }}>
                             <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-emerald)', animation: 'livePulse 2s infinite' }} />

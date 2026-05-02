@@ -49,6 +49,10 @@ export const writerPool = new Pool({
     allowExitOnIdle: true
 });
 
+writerPool.on('error', (err, client) => {
+    console.error('❌ Unexpected error on idle writer client', err);
+});
+
 // ── READER POOL (For SELECT/Dashboards) ─────────────────────────────
 export const readerPool = new Pool({
     connectionString: finalReaderUrl,
@@ -57,6 +61,10 @@ export const readerPool = new Pool({
     connectionTimeoutMillis: 15000,
     ssl: { rejectUnauthorized: false },
     allowExitOnIdle: true
+});
+
+readerPool.on('error', (err, client) => {
+    console.error('❌ Unexpected error on idle reader client', err);
 });
 
 // ── Verification ────────────────────────────────────────────────────

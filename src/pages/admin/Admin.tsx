@@ -642,7 +642,7 @@ export default function Admin() {
             const agentIdFormatted = form.telephony_agent_id?.trim() || `${tenantPx}_${rolePx}_${namePx}_${rndCode}`;
 
             if (editingUser) {
-                const payload = { name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone, telephony_agent_id: agentIdFormatted };
+                const payload: any = { name: form.name, email: form.email, role: form.role, department: form.department, phone: form.phone, telephony_agent_id: agentIdFormatted };
                 if (form.new_password) payload.new_password = form.new_password;
                 await usersApi.update(editingUser, payload);
                 if (editingUser === currentUser.id) {
@@ -675,7 +675,8 @@ export default function Admin() {
             <div className="premium-card shimmer-ai" style={{ 
                 background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
                 padding: isMobile ? '24px' : '32px 40px', color: 'white', marginBottom: '32px', border: 'none',
-                borderRadius: isMobile ? '0' : '24px'
+                borderRadius: isMobile ? '0' : '24px',
+                display: 'none', height: 0, overflow: 'hidden'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
@@ -724,8 +725,8 @@ export default function Admin() {
                     const isActive = tab === key;
                     return (
                         <button 
-                            key={key} 
-                            onClick={() => setTab(key)}
+                            key={key as string} 
+                            onClick={() => setTab(key as string)}
                             style={{ 
                                 display: 'flex', 
                                 alignItems: 'center', 
@@ -794,7 +795,7 @@ export default function Admin() {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                                            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)', tracking: '-0.01em' }}>{u.name}</span>
+                                            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-900)', letterSpacing: '-0.01em' }}>{u.name}</span>
                                             {u.id === currentUser.id && (
                                                 <span className="badge badge-green" style={{ fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase' }}>You</span>
                                             )}
@@ -852,7 +853,7 @@ export default function Admin() {
                                 available: 0,
                                 status: 'Active',
                                 completion: ''
-                            });
+                            } as any);
                         }}>
                             <Plus size={14} /> Add Project
                         </button>
@@ -981,7 +982,7 @@ export default function Admin() {
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
                                     const val = e.target.perm.value.trim();
-                                    if (val && !(perms || []).includes(val)) {
+                                    if (val && !((perms as any[]) || []).includes(val)) {
                                         handleUpdatePermissions(role, [...(perms || []), val]);
                                         e.target.reset();
                                     }
@@ -1367,7 +1368,7 @@ function WhiteLabelPanel({ branding, updateBranding, showToast }) {
         }
     };
 
-    const Field = ({ label, name, placeholder, type = 'text', span2, helper }) => (
+    const Field = ({ label, name, placeholder, type = 'text', span2, helper }: { label: any; name: any; placeholder?: any; type?: string; span2?: any; helper?: any; }) => (
         <div className="form-group" style={span2 ? { gridColumn: 'span 2' } : {}}>
             <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6, display: 'block' }}>{label}</label>
             {type === 'color' ? (

@@ -182,8 +182,8 @@ export default function FloatingDialer() {
                                                 border: '1px solid rgba(255,255,255,0.05)', color: 'white',
                                                 fontSize: '1.2rem', fontWeight: 700, cursor: 'pointer', transition: '0.2s'
                                             }}
-                                            onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.1)'}
-                                            onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.05)'}
+                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                                         >
                                             {n}
                                         </button>

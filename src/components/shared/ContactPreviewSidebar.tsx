@@ -210,7 +210,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                             else if (a.label === 'Note' && contact.status === 'Nurture') { setActiveAction('Edit Nurture'); }
                                             else { setActiveAction(a.label); }
                                         }}>
-                                            <div className="cps-action-icon" style={{ '--ac': a.color }}><a.icon size={14} color={a.color} strokeWidth={2.5} /></div>
+                                            <div className="cps-action-icon" style={{ '--ac': a.color } as React.CSSProperties}><a.icon size={14} color={a.color} strokeWidth={2.5} /></div>
                                             <span>{a.label}</span>
                                         </button>
                                     ))}
@@ -245,20 +245,20 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                         </div>
                                     )}
                                     <button className="cps-action-btn" onClick={() => setActiveAction('Move to Nurture')} style={{ background: 'rgba(124,58,237,0.05)' }}>
-                                        <div className="cps-action-icon" style={{ '--ac': '#7c3aed' }}><TrendingUp size={14} color="#7c3aed" strokeWidth={2.5} /></div>
+                                        <div className="cps-action-icon" style={{ '--ac': '#7c3aed' } as React.CSSProperties}><TrendingUp size={14} color="#7c3aed" strokeWidth={2.5} /></div>
                                         <span style={{ color: '#7c3aed', fontWeight: 800 }}>Nurture</span>
                                     </button>
                                     <button className="cps-action-btn" onClick={() => setActiveAction('Visit')} style={{ background: 'rgba(245,158,11,0.05)' }}>
-                                        <div className="cps-action-icon" style={{ '--ac': '#f59e0b' }}><MapPin size={14} color="#f59e0b" strokeWidth={2.5} /></div>
+                                        <div className="cps-action-icon" style={{ '--ac': '#f59e0b' } as React.CSSProperties}><MapPin size={14} color="#f59e0b" strokeWidth={2.5} /></div>
                                         <span style={{ color: '#f59e0b', fontWeight: 800 }}>Visit</span>
                                     </button>
                                     <button className="cps-action-btn" onClick={() => setActiveAction('Offer')} style={{ background: 'rgba(139,92,246,0.05)' }}>
-                                        <div className="cps-action-icon" style={{ '--ac': '#8b5cf6' }}><ClipboardCheck size={14} color="#8b5cf6" strokeWidth={2.5} /></div>
+                                        <div className="cps-action-icon" style={{ '--ac': '#8b5cf6' } as React.CSSProperties}><ClipboardCheck size={14} color="#8b5cf6" strokeWidth={2.5} /></div>
                                         <span style={{ color: '#8b5cf6', fontWeight: 800 }}>Offer</span>
                                     </button>
                                     {contact.status === 'Nurture' && (
                                         <button className="cps-action-btn" onClick={() => updateStatus('Active')} style={{ background: 'rgba(16,185,129,0.05)' }}>
-                                            <div className="cps-action-icon" style={{ '--ac': '#10b981' }}><Zap size={14} color="#10b981" strokeWidth={2.5} /></div>
+                                            <div className="cps-action-icon" style={{ '--ac': '#10b981' } as React.CSSProperties}><Zap size={14} color="#10b981" strokeWidth={2.5} /></div>
                                             <span style={{ color: '#10b981', fontWeight: 800 }}>Reactivate</span>
                                         </button>
                                     )}

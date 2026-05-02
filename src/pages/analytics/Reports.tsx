@@ -392,7 +392,8 @@ export default function Reports() {
                 marginBottom: 24,
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.9), rgba(248,250,252,0.8))',
                 border: '1px solid rgba(255,255,255,0.8)',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.04)'
+                boxShadow: '0 20px 60px rgba(0,0,0,0.04)',
+                display: 'none', height: 0, overflow: 'hidden' 
             }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <div>

@@ -43,17 +43,17 @@ export default function Automation() {
 
     return (
         <div className="animate-fadeIn" style={{ padding: '0 0 40px 0', maxWidth: '1400px', margin: '0 auto' }}>
-            <header style={{ marginBottom: 40, background: 'white', padding: '32px 40px', borderRadius: '24px', boxShadow: '0 4px 24px rgba(10, 22, 40, 0.04)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h1 style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.03em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16 }}>
-                        <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(168, 85, 247, 0.25)' }}>
-                            <Zap size={28} fill="currentColor" />
-                        </div>
-                        Automation & Distribution
-                    </h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: 650, margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
-                        Intelligent lead routing, zero-latency assignments, and automated orchestration for high-performance scale.
-                    </p>
+            <header style={{ display: 'none', marginBottom: 40, background: 'white', padding: '32px 40px', borderRadius: '24px', boxShadow: '0 4px 24px rgba(10, 22, 40, 0.04)', border: '1px solid var(--border-light)', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                    <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 16px rgba(168, 85, 247, 0.25)' }}>
+                        <Zap size={28} fill="currentColor" />
+                    </div>
+                    <div style={{ visibility: 'hidden', height: 0, overflow: 'hidden' }}>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--navy-800)', margin: '0 0 8px' }}>Automation & Distribution</h1>
+                        <p style={{ color: 'var(--text-muted)', margin: 0, maxWidth: 600, fontSize: '1.1rem', lineHeight: 1.5 }}>
+                            Intelligent lead routing, zero-latency assignments, and automated orchestration for high-performance scale.
+                        </p>
+                    </div>
                 </div>
                 <button className="btn btn-primary" style={{ padding: '14px 28px', borderRadius: '14px', fontSize: '0.95rem', fontWeight: 800, background: 'var(--navy-900)', border: 'none', boxShadow: '0 8px 20px rgba(10, 22, 40, 0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Plus size={20} /> Create Workflow

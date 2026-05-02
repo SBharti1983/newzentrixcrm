@@ -14,6 +14,9 @@ import PWAInstallManager from './components/shared/PWAInstallManager';
 import ErrorBoundary from './components/feedback/ErrorBoundary';
 import { PresenceProvider, usePresence } from './context/PresenceContext';
 import { BrandingProvider, useBranding } from './context/BrandingContext';
+import { ThemeProvider } from './context/ThemeContext';
+
+import { PageProvider } from './context/PageContext';
 
 // --- Lazy Loaded Pages (domain-grouped) ---
 // Auth
@@ -275,12 +278,16 @@ function ProtectedApp() {
   );
 }
 
+
+
 export default function App() {
   return (
     <AuthProvider>
+      <ThemeProvider>
       <ToastProvider>
         <PresenceProvider>
           <BrandingProvider>
+          <PageProvider>
           <ErrorBoundary>
             <BrowserRouter>
               <Suspense fallback={<PageLoader />}>
@@ -300,9 +307,11 @@ export default function App() {
               </Suspense>
             </BrowserRouter>
           </ErrorBoundary>
+          </PageProvider>
           </BrandingProvider>
         </PresenceProvider>
       </ToastProvider>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

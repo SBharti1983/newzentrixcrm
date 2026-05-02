@@ -129,7 +129,7 @@ export default function CommandCenter() {
         <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '100px' : '0px', marginBottom: '0px', overflowX: 'hidden' }}>
             {/* Strategic Command Header */}
             <div className="command-center-header glass-panel" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 16, padding: isMobile ? '16px' : '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
+                <div style={{ display: 'none', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
                     <div className="ai-pulse" style={{ width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? '12px' : '16px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 24px rgba(99, 102, 241, 0.25)', flexShrink: 0 }}>
                         <Brain size={isMobile ? 18 : 24} />
                     </div>
@@ -330,10 +330,10 @@ export default function CommandCenter() {
                                             style={{
                                                 flex: 1, border: 'none', background: 'transparent',
                                                 padding: '8px 4px', outline: 'none', resize: 'none', height: '36px',
-                                                fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 500, color: 'var(--navy-900)'
+                                                fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 500, color: 'var(--navy-900)'
                                             }}
                                         />
-                                        <button className="btn btn-primary hover-lift" onClick={handleSend} disabled={!replyText.trim()} style={{ borderRadius: '12px', padding: isMobile ? '8px 12px' : '12px 32px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: isMobile ? '0.75rem' : '1rem', minWidth: isMobile ? 'auto' : '140px', justifyContent: 'center' }}>
+                                        <button className="btn btn-primary hover-lift" onClick={handleSend} disabled={!replyText.trim()} style={{ borderRadius: '12px', padding: isMobile ? '8px 12px' : '12px 32px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: isMobile ? '0.75rem' : '0.85rem', minWidth: isMobile ? 'auto' : '140px', justifyContent: 'center' }}>
                                             {isMobile ? <Send size={15} /> : <>Send <Send size={16} /></>}
                                         </button>
                                     </div>

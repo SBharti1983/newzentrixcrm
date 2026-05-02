@@ -52,7 +52,8 @@ export default function Customers() {
                     boxShadow: '0 10px 40px rgba(0,0,0,0.03)',
                     flexDirection: isMobile ? 'column' : 'row',
                     gap: isMobile ? 16 : 0,
-                    textAlign: isMobile ? 'center' : 'left'
+                    textAlign: isMobile ? 'center' : 'left',
+                    height: 0, overflow: 'hidden'
                 }}>
                     <div>
                         <h1 className="text-gradient-premium" style={{ margin: 0, fontSize: isMobile ? '1.8rem' : '2.2rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Client Registry</h1>

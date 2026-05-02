@@ -81,7 +81,7 @@ const AgreementGenerator: React.FC = () => {
                     >
                         <ArrowLeft size={20} />
                     </button>
-                    <div>
+                    <div style={{ display: 'none' }}>
                         <h1 className="page-title" style={{ margin: 0 }}>Booking Agreement Generator</h1>
                         <p className="page-subtitle" style={{ margin: '4px 0 0' }}>Drafting for {lead?.name || 'Customer'}</p>
                     </div>

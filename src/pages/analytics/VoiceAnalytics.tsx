@@ -148,7 +148,7 @@ export default function VoiceAnalytics() {
         <div className="page-fade-in" style={{ padding: '32px' }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: 8 }}>Voice Telemetry</h1>
                     <p style={{ color: 'var(--text-muted)', fontWeight: 500 }}>Precision tracking for GSM SIM-integrated dialing performance.</p>
                 </div>

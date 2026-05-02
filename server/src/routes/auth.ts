@@ -223,7 +223,7 @@ router.post('/login', async (req: Request, res: Response) => {
         const { accessToken, refreshToken } = signTokens(user);
         console.log(`[AUTH] Tokens generated for ${email}`);
 
-        // Store refresh token hash
+        // Store refresh token hash (non-blocking — login should succeed even if this fails)
         try {
             const refreshHash = await bcrypt.hash(refreshToken, 8);
             const expiresAt = new Date();
@@ -231,14 +231,9 @@ router.post('/login', async (req: Request, res: Response) => {
             await db.execute(sql`
                 INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES (${user.id}, ${refreshHash}, ${expiresAt.toISOString()})
             `);
-            console.log(`[AUTH] Refresh token stored for ${email}`);
         } catch (rfErr: any) {
-            console.error('[AUTH] Refresh token storage failed:', rfErr.message);
-            return res.status(500).json({ 
-                error: 'Login failed on server side', 
-                message: 'Database connection unstable. Please try again in 5 seconds.',
-                technical: rfErr.message
-            });
+            // Log but DO NOT block login — the access token is still valid
+            console.warn('[AUTH] Refresh token storage failed (non-critical):', rfErr.message);
         }
 
         res.json({

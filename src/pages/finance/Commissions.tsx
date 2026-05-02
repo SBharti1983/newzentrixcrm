@@ -62,7 +62,7 @@ export default function Commissions() {
     return (
         <div className="animate-fadeIn">
             <div className="page-header" style={{ marginBottom: 24 }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <h1 className="page-title">Commission & Incentives</h1>
                     <p className="page-subtitle">Automated payouts and incentive tracking engine.</p>
                 </div>

@@ -210,7 +210,7 @@ export default function SuperAdminDashboardView({
             `}</style>
 
             <div className="header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap' }}>
-                <div>
+                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
                     <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 800, letterSpacing: '-1px' }}>Global Command Center</h1>
                     <p style={{ margin: '4px 0 0', color: COLORS.textSecondary, fontWeight: 500 }}>System-wide infrastructure & financial oversight.</p>
                 </div>
@@ -262,9 +262,9 @@ export default function SuperAdminDashboardView({
                 marginBottom: '32px'
             }}>
                 {[
-                    { title: "Revenue (MRR)", value: `$${(stats?.mrr || 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success, bg: '#dcfce7' },
+                    { title: "Revenue (MRR)", value: `$${((stats as any)?.mrr || 0).toLocaleString()}`, icon: DollarSign, color: COLORS.success, bg: '#dcfce7' },
                     { title: "Total Tenants", value: (tenants?.length || 0).toString(), icon: Building2, color: COLORS.primary, bg: '#dbeafe' },
-                    { title: "Active Users", value: (stats?.totalUsers || 0).toLocaleString(), icon: Users, color: '#ec4899', bg: '#fce7f3' },
+                    { title: "Active Users", value: ((stats as any)?.totalUsers || 0).toLocaleString(), icon: Users, color: '#ec4899', bg: '#fce7f3' },
                     { title: "Churn Rate", value: "1.8%", icon: Activity, color: COLORS.danger, bg: '#fee2e2' },
                     { title: "Network Conv.", value: "9.4%", icon: Zap, color: '#8b5cf6', bg: '#f5f3ff' },
                     { title: "System Uptime", value: "99.9%", icon: Server, color: '#0ea5e9', bg: '#f0f9ff' }
@@ -689,7 +689,7 @@ export default function SuperAdminDashboardView({
                                     ))}
                                     {subscriptions.length === 0 && (
                                         <tr>
-                                            <td colSpan="7" style={{ padding: '80px', textAlign: 'center', color: COLORS.textSecondary }}>
+                                            <td colSpan={7} style={{ padding: '80px', textAlign: 'center', color: COLORS.textSecondary }}>
                                                 <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🧾</div>
                                                 <div style={{ fontWeight: 800, fontSize: '1.2rem', color: COLORS.textPrimary }}>No global transactions found.</div>
                                                 <p>Automated billing sequences will appear here as tenants upgrade.</p>
@@ -755,7 +755,7 @@ export default function SuperAdminDashboardView({
                                 ))}
                                 {auditLogs.length === 0 && (
                                     <tr>
-                                        <td colSpan="4" style={{ padding: '80px', textAlign: 'center' }}>
+                                        <td colSpan={4} style={{ padding: '80px', textAlign: 'center' }}>
                                             <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🕵️‍♂️</div>
                                             <div style={{ fontWeight: 800, fontSize: '1.2rem' }}>Audit ledger is currently clean.</div>
                                             <p style={{ color: COLORS.textSecondary }}>Administrative actions will be persistently recorded here.</p>

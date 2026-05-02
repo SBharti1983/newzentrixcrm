@@ -54,11 +54,12 @@ export default function Leaderboard() {
                 marginBottom: isMobile ? '24px' : '40px',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 backdropFilter: 'blur(10px)',
-                display: 'flex',
+                display: 'none',
                 justifyContent: 'space-between',
                 alignItems: isMobile ? 'flex-start' : 'center',
                 flexDirection: isMobile ? 'column' : 'row',
-                gap: '20px'
+                gap: '20px',
+                height: 0, overflow: 'hidden'
             }}>
                 <div>
                     <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--navy-900)', margin: 0, fontWeight: 950, fontSize: isMobile ? '1.25rem' : '1.8rem', textTransform: 'uppercase', letterSpacing: '-0.5px' }}>

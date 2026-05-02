@@ -1091,14 +1091,14 @@ export default function Academy() {
             )}
             {/* Enterprise Header */}
             <div style={{ 
-                display: 'flex', 
+                display: 'none', 
                 flexDirection: isMobile ? 'column' : 'row',
                 justifyContent: 'space-between', 
                 alignItems: isMobile ? 'flex-start' : 'center', 
                 marginBottom: 40,
                 gap: 24
             }}>
-                <div style={{ flex: '1', minWidth: 0 }}>
+                <div style={{ flex: '1', minWidth: 0, visibility: 'hidden', height: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'nowrap' }}>
                         <div style={{ background: 'var(--navy-900)', color: 'white', padding: '4px 12px', borderRadius: '8px', fontSize: '0.6rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
                             <GraduationCap size={12} /> Zentrix Academy
