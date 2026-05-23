@@ -4,7 +4,7 @@ import {
     BarChart2, PieChart, Activity, Calendar, Phone,
     MoreVertical, FileSpreadsheet, FileJson, User, Home
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { analyticsApi, leadsApi, usersApi, documentsApi } from '../../api/client';
@@ -29,6 +29,7 @@ export default function Reports() {
     const [activeTab, setActiveTab] = useState('templates');
     const [searchQuery, setSearchQuery] = useState('');
     const [generating, setGenerating] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState('monthly');
     
     // Filters for Report Generation
     const [agentFilter, setAgentFilter] = useState('All');
@@ -519,47 +520,58 @@ export default function Reports() {
                             {/* Templates Grid */}
                             <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
                                 {REPORT_TEMPLATES.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase())).map(template => (
-                                    <div key={template.id} className="glass-card" style={{ 
-                                        padding: isMobile ? 24 : 32, 
-                                        borderRadius: 20,
-                                        background: 'white',
-                                        border: '1px solid var(--border-light)'
-                                    }}>
+                                    <div 
+                                        key={template.id} 
+                                        onClick={() => setSelectedTemplate(template.id)}
+                                        style={{ 
+                                            padding: isMobile ? 24 : 32, 
+                                            borderRadius: 20,
+                                            background: selectedTemplate === template.id ? 'linear-gradient(135deg, #ffffff, #f9fafb)' : 'white',
+                                            border: selectedTemplate === template.id ? '2px solid var(--accent-violet)' : '1px solid var(--border-light)',
+                                            boxShadow: selectedTemplate === template.id ? '0 12px 30px rgba(99, 102, 241, 0.06)' : '0 2px 8px rgba(0,0,0,0.01)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease-in-out',
+                                            transform: selectedTemplate === template.id ? 'scale(1.01)' : 'none'
+                                        }}
+                                    >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
                                             <div style={{ 
                                                 width: 44, height: 44, borderRadius: 12, 
-                                                background: 'var(--navy-50)', color: 'var(--accent-violet)',
+                                                background: selectedTemplate === template.id ? 'rgba(99, 102, 241, 0.1)' : 'var(--navy-50)', 
+                                                color: selectedTemplate === template.id ? 'var(--accent-violet)' : 'var(--slate-500)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                             }}>
                                                 <template.icon size={20} />
                                             </div>
                                             <div>
-                                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--navy-900)', margin: 0 }}>{template.title}</h3>
-                                                <span style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontWeight: 700, textTransform: 'uppercase' }}>{template.type}</span>
+                                                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--navy-900)', margin: 0 }}>{template.title}</h3>
+                                                <span style={{ fontSize: '0.65rem', color: 'var(--slate-400)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{template.type}</span>
                                             </div>
                                         </div>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--slate-500)', margin: '0 0 20px', lineHeight: 1.5 }}>{template.description}</p>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--slate-500)', margin: '0 0 20px', lineHeight: 1.5 }}>{template.description}</p>
                                         
                                         <div style={{ display: 'flex', gap: 10 }}>
                                             <button 
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     if (template.id === 'telephony') generateTelephonyReport('pdf');
                                                     else if (template.id === 'monthly') generateMonthlyReport();
                                                     else if (template.id === 'project-wise') generateProjectReport('pdf');
                                                     else showToast('Builder online soon', 'info');
                                                 }}
                                                 className="btn btn-primary btn-sm"
-                                                style={{ flex: 1, borderRadius: 10 }}
+                                                style={{ flex: 1, borderRadius: 10, fontSize: '0.75rem', fontWeight: 800 }}
                                                 disabled={generating}
                                             >PDF</button>
                                             <button 
-                                                onClick={() => {
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     if (template.id === 'telephony') generateTelephonyReport('csv');
                                                     else if (template.id === 'project-wise') generateProjectReport('csv');
                                                     else showToast('CSV build active', 'info');
                                                 }}
                                                 className="btn btn-secondary btn-sm"
-                                                style={{ flex: 1, borderRadius: 10 }}
+                                                style={{ flex: 1, borderRadius: 10, fontSize: '0.75rem', fontWeight: 800 }}
                                                 disabled={generating}
                                             >CSV</button>
                                         </div>
@@ -568,28 +580,161 @@ export default function Reports() {
                             </div>
 
                             {/* Live Report Preview */}
-                            <div className="glass-card" style={{ marginTop: 32, padding: 32, borderRadius: 24 }}>
+                            <div className="glass-card" style={{ marginTop: 32, padding: 32, borderRadius: 24, border: '1px solid var(--border-light)', background: 'white' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <h3 style={{ margin: 0, fontWeight: 800, color: 'var(--navy-900)', fontSize: '1.2rem' }}>Live Report Preview: Lead Velocity</h3>
-                                    <div style={{ display: 'flex', gap: 8, fontSize: '0.8rem', fontWeight: 700, color: 'var(--slate-400)' }}>
-                                        <Calendar size={14} /> LAST 30 DAYS
+                                    <div>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--slate-400)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Interactive Preview</span>
+                                        <h3 style={{ margin: '4px 0 0', fontWeight: 800, color: 'var(--navy-900)', fontSize: '1.25rem' }}>
+                                            {REPORT_TEMPLATES.find(t => t.id === selectedTemplate)?.title || 'Live Report Preview'}
+                                        </h3>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, fontSize: '0.75rem', fontWeight: 800, color: 'var(--slate-400)', background: 'var(--slate-50)', padding: '6px 12px', borderRadius: 8 }}>
+                                        <Calendar size={12} /> REAL-TIME SNAPSHOT
                                     </div>
                                 </div>
-                                <div style={{ height: 260, width: '100%' }}>
+                                <div style={{ height: 280, width: '100%' }}>
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={[
-                                            { stage: 'New', time: 2.3 },
-                                            { stage: 'Contacted', time: 4.1 },
-                                            { stage: 'Site Visit', time: 7.5 },
-                                            { stage: 'Negotiation', time: 14.2 },
-                                            { stage: 'Closed', time: 5.6 }
-                                        ]}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                                            <XAxis dataKey="stage" tickLine={false} axisLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: 'var(--slate-500)' }} />
-                                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: 'var(--slate-500)' }} tickFormatter={v => `${v}d`} />
-                                            <RechartsTooltip cursor={{ fill: 'var(--slate-50)' }} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
-                                            <Bar dataKey="time" fill="var(--accent-violet)" radius={[6, 6, 0, 0]} barSize={40} />
-                                        </BarChart>
+                                        {(() => {
+                                            switch (selectedTemplate) {
+                                                case 'monthly':
+                                                    return (
+                                                        <AreaChart data={[
+                                                            { month: 'Jan', Leads: 120, Conversions: 15 },
+                                                            { month: 'Feb', Leads: 150, Conversions: 22 },
+                                                            { month: 'Mar', Leads: 220, Conversions: 34 },
+                                                            { month: 'Apr', Leads: 180, Conversions: 28 },
+                                                            { month: 'May', Leads: 270, Conversions: 45 },
+                                                            { month: 'Jun', Leads: 310, Conversions: 52 }
+                                                        ]}>
+                                                            <defs>
+                                                                <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                                                                    <stop offset="5%" stopColor="var(--accent-violet)" stopOpacity={0.25}/>
+                                                                    <stop offset="95%" stopColor="var(--accent-violet)" stopOpacity={0.0}/>
+                                                                </linearGradient>
+                                                                <linearGradient id="colorConv" x1="0" y1="0" x2="0" y2="1">
+                                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
+                                                                </linearGradient>
+                                                            </defs>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                            <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
+                                                            <Area type="monotone" name="Leads Intake" dataKey="Leads" stroke="var(--accent-violet)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorLeads)" />
+                                                            <Area type="monotone" name="Conversions (Won)" dataKey="Conversions" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorConv)" />
+                                                        </AreaChart>
+                                                    );
+                                                case 'velocity':
+                                                    return (
+                                                        <BarChart data={[
+                                                            { stage: 'New', time: 2.3 },
+                                                            { stage: 'Contacted', time: 4.1 },
+                                                            { stage: 'Site Visit', time: 7.5 },
+                                                            { stage: 'Negotiation', time: 14.2 },
+                                                            { stage: 'Closed Won', time: 5.6 }
+                                                        ]}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                            <XAxis dataKey="stage" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} tickFormatter={v => `${v}d`} />
+                                                            <RechartsTooltip cursor={{ fill: 'var(--slate-50)' }} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Bar name="Velocity (Days)" dataKey="time" radius={[6, 6, 0, 0]} barSize={40}>
+                                                                {[
+                                                                    { stage: 'New', time: 2.3, fill: '#818cf8' },
+                                                                    { stage: 'Contacted', time: 4.1, fill: '#6366f1' },
+                                                                    { stage: 'Site Visit', time: 7.5, fill: '#4f46e5' },
+                                                                    { stage: 'Negotiation', time: 14.2, fill: '#3730a3' },
+                                                                    { stage: 'Closed Won', time: 5.6, fill: '#10b981' }
+                                                                ].map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                                                                ))}
+                                                            </Bar>
+                                                        </BarChart>
+                                                    );
+                                                case 'telephony':
+                                                    return (
+                                                        <LineChart data={[
+                                                            { day: 'Mon', 'Total Calls': 85, 'Connected': 62 },
+                                                            { day: 'Tue', 'Total Calls': 96, 'Connected': 78 },
+                                                            { day: 'Wed', 'Total Calls': 120, 'Connected': 94 },
+                                                            { day: 'Thu', 'Total Calls': 110, 'Connected': 85 },
+                                                            { day: 'Fri', 'Total Calls': 130, 'Connected': 105 },
+                                                            { day: 'Sat', 'Total Calls': 45, 'Connected': 30 }
+                                                        ]}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                            <XAxis dataKey="day" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
+                                                            <Line type="monotone" dataKey="Total Calls" stroke="var(--accent-violet)" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                                                            <Line type="monotone" name="Answered Calls" stroke="#3b82f6" dataKey="Connected" strokeWidth={3} activeDot={{ r: 6 }} dot={{ r: 4 }} />
+                                                        </LineChart>
+                                                    );
+                                                case 'conversion':
+                                                    const conversionData = [
+                                                        { name: 'Website', value: 35 },
+                                                        { name: 'Referral', value: 25 },
+                                                        { name: 'Social Media', value: 20 },
+                                                        { name: 'Walk-in', value: 12 },
+                                                        { name: 'Portals', value: 8 }
+                                                    ];
+                                                    const COLORS = ['#6366f1', '#10b981', '#ec4899', '#f59e0b', '#06b6d4'];
+                                                    return (
+                                                        <PieChart>
+                                                            <Pie
+                                                                data={conversionData}
+                                                                cx="50%"
+                                                                cy="40%"
+                                                                innerRadius={55}
+                                                                outerRadius={80}
+                                                                paddingAngle={4}
+                                                                dataKey="value"
+                                                            >
+                                                                {conversionData.map((entry, index) => (
+                                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                                ))}
+                                                            </Pie>
+                                                            <RechartsTooltip formatter={(value) => `${value}%`} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Legend iconType="circle" layout="horizontal" align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 11, fontWeight: 600, paddingTop: 10 }} />
+                                                        </PieChart>
+                                                    );
+                                                case 'sales':
+                                                    return (
+                                                        <BarChart data={[
+                                                            { asset: 'Heights', 'Booked Units': 18, 'Target': 25 },
+                                                            { asset: 'Residences', 'Booked Units': 24, 'Target': 30 },
+                                                            { asset: 'Park', 'Booked Units': 32, 'Target': 40 },
+                                                            { asset: 'Villas', 'Booked Units': 8, 'Target': 12 }
+                                                        ]}>
+                                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                            <XAxis dataKey="asset" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 10 }} />
+                                                            <Bar dataKey="Booked Units" fill="var(--accent-violet)" radius={[6, 6, 0, 0]} barSize={25} />
+                                                            <Bar dataKey="Target" fill="#cbd5e1" radius={[6, 6, 0, 0]} barSize={25} />
+                                                        </BarChart>
+                                                    );
+                                                case 'project-wise':
+                                                    return (
+                                                        <BarChart data={[
+                                                            { name: 'Heights', Leads: 250 },
+                                                            { name: 'Residences', Leads: 180 },
+                                                            { name: 'Park', Leads: 320 },
+                                                            { name: 'Villas', Leads: 90 },
+                                                            { name: 'Lite', Leads: 410 }
+                                                        ]} layout="vertical">
+                                                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                                            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--slate-500)' }} />
+                                                            <RechartsTooltip contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
+                                                            <Bar dataKey="Leads" fill="#6366f1" radius={[0, 6, 6, 0]} barSize={12} />
+                                                        </BarChart>
+                                                    );
+                                                default:
+                                                    return null;
+                                            }
+                                        })()}
                                     </ResponsiveContainer>
                                 </div>
                             </div>
