@@ -57,7 +57,7 @@ function PreviewPane({ channel, resolvedBody, resolvedSubject }) {
                     }}>
                         {resolvedBody || <span style={{ color: '#aaa' }}>No content</span>}
                         <div style={{ fontSize: '0.68rem', color: '#999', textAlign: 'right', marginTop: 6 }}>
-                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
+                            {dateUtils.getNow().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ✓✓
                         </div>
                     </div>
                 </div>

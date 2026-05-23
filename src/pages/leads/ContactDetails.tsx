@@ -2,13 +2,15 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw, Volume2 } from 'lucide-react';
-import { leadsApi, zapierApi, notificationsApi, aiApi } from '../../api/client';
+import { leadsApi, zapierApi, notificationsApi, aiApi, BASE_URL, getToken } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { dialerEvents } from '../../constants/events';
 import NotificationComposer from '../../components/notifications/NotificationComposer';
 import FollowupModal from '../../components/modals/FollowupModal';
 import { useMobile } from '../../hooks/useMobile';
 import SiteVisitScheduler from '../../components/SiteVisitScheduler';
+import * as dateUtils from '../../utils/dateUtils';
+import { usePageInfo } from '../../context/PageContext';
 
 const LIFECYCLE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const LIFECYCLE_COLORS = {
@@ -64,22 +66,40 @@ export default function ContactDetails() {
     const [aiSuggestedMessage, setAiSuggestedMessage] = useState('');
     const [showSiteVisitScheduler, setShowSiteVisitScheduler] = useState(false);
     const isMobile = useMobile();
+    const { setPageInfo } = usePageInfo();
+
+    useEffect(() => {
+        if (contact) {
+            setPageInfo({ 
+                title: 'Lead Profile', 
+                subtitle: `Managing ${contact.name || 'Lead'}` 
+            });
+        }
+        return () => setPageInfo({});
+    }, [contact, setPageInfo]);
 
     const handleVoice = () => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         if (!SpeechRecognition) {
             showToast('Voice intelligence not supported in this browser', 'error');
             return;
         }
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.onstart = () => setIsListening(true);
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setNewNote(prev => prev + (prev ? ' ' : '') + transcript);
-        };
-        recognition.onend = () => setIsListening(false);
-        recognition.start();
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.onstart = () => setIsListening(true);
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setNewNote(prev => prev + (prev ? ' ' : '') + transcript);
+            };
+            recognition.onend = () => setIsListening(false);
+            recognition.onerror = () => setIsListening(false);
+            recognition.start();
+        } catch (err: any) {
+            console.error('Speech recognition error:', err);
+            showToast('Failed to start voice recognition', 'error');
+            setIsListening(false);
+        }
     };
 
     const handleSummarize = async () => {
@@ -90,11 +110,12 @@ export default function ContactDetails() {
         setSummarizing(true);
         try {
             const result = await zapierApi.summarizeCall({ transcript: newNote });
-            const summaryText = `\n\n--- AI SUMMARY ---\n${result.summary}\n\nKey Points:\n${result.keyPoints.map(p => `• ${p}`).join('\n')}\n\nAction Items:\n${result.actionItems.map(a => `• ${a}`).join('\n')}\nSentiment: ${result.sentiment}`;
+            if (!result || !result.summary) throw new Error('Empty summary returned');
+            const summaryText = `\n\n--- AI SUMMARY ---\n${result.summary}\n\nKey Points:\n${(result.keyPoints || []).map(p => `• ${p}`).join('\n')}\n\nAction Items:\n${(result.actionItems || []).map(a => `• ${a}`).join('\n')}\nSentiment: ${result.sentiment || 'Neutral'}`;
             setNewNote(prev => prev + summaryText);
             showToast('AI Summary generated!', 'success');
-        } catch (_e) {
-            showToast('Failed to generate summary', 'error');
+        } catch (err: any) {
+            showToast(err?.message || 'Failed to generate summary', 'error');
         } finally {
             setSummarizing(false);
         }
@@ -107,8 +128,8 @@ export default function ContactDetails() {
             const prompt = `Rewrite this draft professionally for ${activityType}: "${newNote}"`;
             const res = await aiApi.generatePitch({ leadId: id, prompt });
             if (res.hook) setNewNote(res.headline + '\n\n' + res.hook);
-        } catch (e) {
-            showToast("AI Generation failed", "error");
+        } catch (err: any) {
+            showToast(err?.message || "AI Generation failed", "error");
         } finally {
             setGeneratingContent(false);
         }
@@ -123,8 +144,8 @@ export default function ContactDetails() {
             });
             setAiSuggestedMessage(res.message);
             showToast('AI Draft Ready!', 'success');
-        } catch (e) {
-            showToast('Failed to generate AI suggestion', 'error');
+        } catch (err: any) {
+            showToast(err?.message || 'Failed to generate AI suggestion', 'error');
         } finally {
             setGeneratingAISuggestion(false);
         }
@@ -133,10 +154,10 @@ export default function ContactDetails() {
     const handleRecalculateScore = async () => {
         setRecalculatingScore(true);
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/leads/${id}/ai-score`, {
+            const response = await fetch(`${BASE_URL}/leads/${id}/ai-score`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Authorization': `Bearer ${getToken()}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -147,9 +168,9 @@ export default function ContactDetails() {
             } else {
                 throw new Error(data.error || 'Failed to refresh score');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Recalculate error:', err);
-            showToast("AI Refresh failed. Check connectivity.", "error");
+            showToast(err?.error || "AI Refresh failed. Check connectivity.", "error");
         } finally {
             setRecalculatingScore(false);
         }
@@ -170,9 +191,9 @@ export default function ContactDetails() {
             const data = await zapierApi.transcribeCall(formData);
             showToast(`Transcription complete! Sentiment: ${data.sentiment}`, 'success');
             loadData();
-        } catch (error) {
-            console.error('Transcription Error:', error);
-            showToast(error.message || 'Failed to process audio', 'error');
+        } catch (err: any) {
+            console.error('Transcription Error:', err);
+            showToast(err?.message || 'Failed to process audio', 'error');
         } finally {
             setUploadingAudio(false);
             e.target.value = ''; // Reset input
@@ -186,8 +207,8 @@ export default function ContactDetails() {
             setContact(data);
             const rawInteractions = Array.isArray(data.interactions) ? data.interactions.filter(i => i && i.id) : [];
             setInteractions(rawInteractions);
-        } catch (err) {
-            setError(err.error || 'Failed to load contact');
+        } catch (err: any) {
+            setError(err?.error || 'Failed to load contact');
         } finally {
             setLoading(false);
         }
@@ -216,8 +237,8 @@ export default function ContactDetails() {
             setContact(updated);
             showToast(`Lead moved to ${newStage}`, 'success');
             setShowStageMenu(false);
-        } catch (_e) {
-            showToast('Failed to update stage', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to update stage', 'error');
         } finally {
             setUpdatingStage(false);
         }
@@ -230,26 +251,25 @@ export default function ContactDetails() {
             showToast(`Lead status updated to ${newStatus}`, 'success');
             setShowActivityBox(false);
             setNewNote('');
-        } catch (err) {
-            showToast(err.error || 'Failed to update status', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to update status', 'error');
         }
     };
 
 
     const displayDates = useMemo(() => {
         if (!contact) return {};
-        const now = new Date();
         return {
-            createdAt: new Date(contact.created_at || now),
-            lastContact: contact.last_contact_at ? new Date(contact.last_contact_at) : null
+            createdAt: dateUtils.parseSafe(contact.created_at) || dateUtils.getNow(),
+            lastContact: contact.last_contact_at ? dateUtils.parseSafe(contact.last_contact_at) : null
         };
     }, [contact]);
 
     if (loading) return <PageLoader />;
-    if (error) return <PageError message={error} onRetry={() => window.location.reload()} />;
+    if (error) return <PageError message={error} onRetry={loadData} />;
     if (!contact) return <div style={{ padding: 40, textAlign: 'center' }}>Contact not found</div>;
 
-    const initial = contact.name ? contact.name[0].toUpperCase() : '?';
+    const initial = (contact.name || 'Unknown').split(' ').filter(Boolean).map(n => n[0])[0]?.toUpperCase() || '?';
 
     const handleAddNote = async () => {
         if (!newNote.trim()) return;
@@ -264,7 +284,7 @@ export default function ContactDetails() {
                 });
                 showToast(`${activityType} Message Sent successfully!`, 'success');
             } else {
-                const payload = { type: activityType, note: newNote };
+                const payload: any = { type: activityType, note: newNote };
                 if (activityType === 'Call') {
                     payload.outcome = callOutcome || 'Connected';
                     payload.duration = callDuration ? parseInt(callDuration, 10) : null;
@@ -277,15 +297,14 @@ export default function ContactDetails() {
             setJustLogged(true);
             setTimeout(() => setJustLogged(false), 10000); // Hide the suggestion after 10s
             loadData();
-        } catch (e) {
-            console.error('Send Error:', e);
-            const msg = e.message || e.error || JSON.stringify(e);
-            showToast(`Failed to process ${activityType}`, 'error');
+        } catch (err: any) {
+            console.error('Send Error:', err);
+            showToast(err?.message || err?.error || 'Failed to process activity', 'error');
         }
     };
 
     const handleDeleteInteraction = (interactionId) => {
-        console.log('[DEBUG] Opening local confirm modal for:', interactionId);
+
         setConfirmDeleteId(interactionId);
     };
 
@@ -294,7 +313,7 @@ export default function ContactDetails() {
         if (!interactionId) return;
 
         setIsDeleting(true);
-        console.log('[DEBUG] performDelete initiated for:', interactionId);
+
         
         try {
             // Optimistic update
@@ -304,10 +323,9 @@ export default function ContactDetails() {
             await leadsApi.deleteInteraction(id, interactionId);
             showToast('Interaction removed', 'success');
             loadData();
-        } catch (e) {
-            console.error('[DEBUG] Interaction delete failed:', e);
-            const msg = e.error || e.message || 'Failed to delete';
-            showToast(`Delete failed: ${msg}`, 'error');
+        } catch (err: any) {
+            console.error('[DEBUG] Interaction delete failed:', err);
+            showToast(err?.error || err?.message || 'Failed to delete', 'error');
             loadData();
         } finally {
             setIsDeleting(false);
@@ -315,7 +333,7 @@ export default function ContactDetails() {
     };
 
     const handleEditInteraction = async (interactionId) => {
-        console.log('[DEBUG] handleEditInteraction called for:', interactionId);
+
         if (!editNote.trim()) return;
         try {
             await leadsApi.updateInteraction(id, interactionId, { note: editNote });
@@ -323,9 +341,9 @@ export default function ContactDetails() {
             setEditingInteraction(null);
             setEditNote('');
             loadData();
-        } catch (e) {
-            console.error('Update error:', e);
-            showToast('Failed to update interaction', 'error');
+        } catch (err: any) {
+            console.error('Update error:', err);
+            showToast(err?.error || 'Failed to update interaction', 'error');
         }
     };
 
@@ -335,9 +353,9 @@ export default function ContactDetails() {
             const res = await zapierApi.enrichLead(id);
             setAiInsights(res.insights || res.suggestions);
             showToast('Zapier AI has enriched this record', 'success');
-        } catch (e) {
-            console.error(e);
-            showToast('Failed to enrich record', 'error');
+        } catch (err: any) {
+            console.error(err);
+            showToast(err?.error || 'Failed to enrich record', 'error');
         } finally {
             setEnriching(false);
         }
@@ -345,9 +363,8 @@ export default function ContactDetails() {
 
     const downloadTranscript = async (interactionId) => {
         try {
-            const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5051/api';
-            const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
+            const token = getToken();
+            const response = await fetch(`${BASE_URL}/telephony/transcript/${interactionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (!response.ok) throw new Error('Failed to download');
@@ -377,9 +394,9 @@ export default function ContactDetails() {
             }, 1000);
             
             showToast('Transcript downloaded!', 'success');
-        } catch (e) {
-            console.error(e);
-            showToast('Failed to download transcript', 'error');
+        } catch (err: any) {
+            console.error(err);
+            showToast(err?.message || 'Failed to download transcript', 'error');
         }
     };
 
@@ -459,7 +476,7 @@ export default function ContactDetails() {
                             borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: 6
                         }}>
                             <div style={{ fontSize: '10px', fontWeight: 900, color: '#a21caf', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <RotateCw size={12} /> Reconnect: {new Date(contact.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                <RotateCw size={12} /> Reconnect: {dateUtils.parseSafe(contact.reconnect_date) ? dateUtils.parseSafe(contact.reconnect_date)!.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Pending'}
                             </div>
                             <div style={{ fontSize: '12px', fontWeight: 700, color: '#701a75' }}>
                                 Reason: {contact.nurture_reason}
@@ -1069,7 +1086,7 @@ export default function ContactDetails() {
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
                                                             <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
-                                                            <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{new Date(item.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</div>
+                                                            <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{dateUtils.parseSafe(item.date)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) || '—'}</div>
                                                         </div>
                                                         <div style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{item.note || 'Interaction logged.'}</div>
                                                     </div>
@@ -1449,7 +1466,7 @@ export default function ContactDetails() {
                                                     <div>
                                                         <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)' }}>{item.type} Interaction</div>
                                                         <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>
-                                                            {item.agent_name || 'System Interaction'} • {new Date(item.date).toLocaleDateString()} at {new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {item.agent_name || 'System Interaction'} • {dateUtils.parseSafe(item.date)?.toLocaleDateString() || '—'} at {dateUtils.parseSafe(item.date)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '—'}
                                                         </div>
                                                         {(item.outcome || item.duration) && (
                                                             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -1554,8 +1571,11 @@ export default function ContactDetails() {
                                                                             <source src={item.recording_url} type="audio/mp4" />
                                                                         </audio>
                                                                         {(() => {
-                                                                            const expireDate = new Date(new Date(item.date).getTime() + 30 * 24 * 60 * 60 * 1000);
-                                                                            const diffDays = Math.ceil((expireDate - new Date()) / (1000 * 60 * 60 * 24));
+                                                                            const itemDate = dateUtils.parseSafe(item.date);
+                                                                            if (!itemDate) return null;
+                                                                            const expireDate = dateUtils.getNow();
+                                                                            expireDate.setTime(itemDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                                                                            const diffDays = Math.ceil((expireDate.getTime() - dateUtils.getNow().getTime()) / (1000 * 60 * 60 * 24));
                                                                             if (diffDays > 0) {
                                                                                 return (
                                                                                     <div style={{ fontSize: '9px', fontWeight: 800, color: diffDays <= 5 ? '#ef4444' : '#f59e0b', display: 'flex', alignItems: 'center', gap: 4 }}>

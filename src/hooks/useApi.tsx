@@ -13,22 +13,27 @@ export function useApi(apiFn, deps = []) {
     const apiFnRef = useRef(apiFn);
     apiFnRef.current = apiFn;
 
+    const lastRequestId = useRef(0);
+
     const fetch = useCallback(async () => {
+        const requestId = ++lastRequestId.current;
         setLoading(true);
         setError(null);
         try {
             const result = await apiFnRef.current();
-            if (mountedRef.current) setData(result);
+            if (mountedRef.current && requestId === lastRequestId.current) {
+                setData(result);
+            }
         } catch (err) {
-            if (mountedRef.current) {
-                // Ensure error is always a string to prevent React rendering crashes
+            if (mountedRef.current && requestId === lastRequestId.current) {
                 const errMsg = err?.error || err?.message || 'Failed to load data';
                 setError(typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg));
             }
         } finally {
-            if (mountedRef.current) setLoading(false);
+            if (mountedRef.current && requestId === lastRequestId.current) {
+                setLoading(false);
+            }
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, deps);
 
     useEffect(() => {

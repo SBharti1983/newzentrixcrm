@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -30,10 +31,10 @@ function buildEvents(followups, siteVisits) {
     // Follow-ups from API
     (followups || []).forEach(f => {
         const dateStr = f.scheduled_at
-            ? new Date(f.scheduled_at).toISOString().split('T')[0]
+            ? dateUtils.formatSafeDateISO(f.scheduled_at)
             : f.date;
         const timeStr = f.scheduled_at
-            ? new Date(f.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+            ? dateUtils.formatSafeTime(f.scheduled_at)
             : f.time;
         addEvent(dateStr, {
             id: `fu-${f.id}`, type: f.type || 'Call',
@@ -48,10 +49,10 @@ function buildEvents(followups, siteVisits) {
     // Site Visits from API
     (siteVisits || []).forEach(v => {
         const dateStr = v.scheduled_at
-            ? new Date(v.scheduled_at).toISOString().split('T')[0]
+            ? dateUtils.formatSafeDateISO(v.scheduled_at)
             : v.date;
         const timeStr = v.scheduled_at
-            ? new Date(v.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+            ? dateUtils.formatSafeTime(v.scheduled_at)
             : v.time;
         addEvent(dateStr, {
             id: `sv-${v.id}`, type: 'Site Visit',
@@ -68,11 +69,17 @@ function buildEvents(followups, siteVisits) {
 }
 
 function daysInMonth(year, month) {
-    return new Date(year, month + 1, 0).getDate();
+    const d = dateUtils.getNow();
+    d.setFullYear(year, month + 1, 0);
+    d.setHours(0, 0, 0, 0);
+    return d.getDate();
 }
 
 function firstWeekday(year, month) {
-    return new Date(year, month, 1).getDay();
+    const d = dateUtils.getNow();
+    d.setFullYear(year, month, 1);
+    d.setHours(0, 0, 0, 0);
+    return d.getDay();
 }
 
 function toDateStr(year, month, day) {
@@ -86,7 +93,7 @@ export default function CalendarPage() {
     const followups = fuRes?.data || fuRes || [];
     const siteVisits = svRes?.data || svRes || [];
 
-    const now = new Date();
+    const now = dateUtils.getNow();
     const [year, setYear] = useState(now.getFullYear());
     const [month, setMonth] = useState(now.getMonth());
     const [selectedDate, setSelectedDate] = useState(null);
@@ -99,8 +106,12 @@ export default function CalendarPage() {
     const { showToast } = useToast();
 
     const generateICS = (event) => {
-        const start = new Date(event.scheduled_at || event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
-        const end = new Date(new Date(event.scheduled_at || event.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const d = dateUtils.parseSafe(event.scheduled_at || event.date);
+        if (!d) return '';
+        const start = d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const endD = dateUtils.getNow();
+        endD.setTime(d.getTime() + 3600000);
+        const end = endD.toISOString().replace(/-|:|\.\d\d\d/g, "");
         return [
             "BEGIN:VCALENDAR", "VERSION:2.0", "BEGIN:VEVENT",
             `SUMMARY:${event.title} [Zentrix CRM]`,
@@ -111,8 +122,12 @@ export default function CalendarPage() {
     };
 
     const addToGoogle = (event) => {
-        const start = new Date(event.scheduled_at || event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
-        const end = new Date(new Date(event.scheduled_at || event.date).getTime() + 3600000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const d = dateUtils.parseSafe(event.scheduled_at || event.date);
+        if (!d) return;
+        const start = d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        const endD = dateUtils.getNow();
+        endD.setTime(d.getTime() + 3600000);
+        const end = endD.toISOString().replace(/-|:|\.\d\d\d/g, "");
         const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${start}/${end}&details=${encodeURIComponent(event.note || "")}`;
         window.open(url, "_blank");
     };
@@ -155,8 +170,8 @@ export default function CalendarPage() {
             }
             showToast(`Rescheduled ${draggingEvent.title} to ${dateStr}`, 'success');
             refetchAll();
-        } catch (err) {
-            showToast('Failed to reschedule activity', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to reschedule activity', 'error');
         } finally {
             setDraggingEvent(null);
             setDragOverDate(null);
@@ -192,7 +207,7 @@ export default function CalendarPage() {
     const overdueCount = filteredAllEvents.filter(e => e.date < today && e.status !== 'Completed').length;
 
     return (
-        <div className="animate-fadeIn" style={{ padding: isMobile ? '16px 12px' : '24px', paddingBottom: isMobile ? 100 : 0 }}>
+        <div className="animate-fadeIn" style={{ padding: isMobile ? '0 12px 100px' : '0 24px 24px', paddingTop: isMobile ? '16px' : '0' }}>
             {/* Header */}
             <div className="page-header" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16 }}>
                 <div>
@@ -466,7 +481,7 @@ export default function CalendarPage() {
                         <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 10, color: 'var(--navy-700)' }}>⚡ Overdue</div>
                         {filteredAllEvents.filter(e => e.date < today && e.status !== 'Completed').slice(0, 4).map((e, i) => {
                             const ec = EVENT_TYPE[e.type] || EVENT_TYPE.Meeting;
-                            const daysDue = Math.floor((new Date(today).getTime() - new Date(e.date).getTime()) / 86400000);
+                            const daysDue = Math.floor(dateUtils.getDiffInDays(e.date, today));
                             return (
                                 <div key={i} style={{
                                     display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0',

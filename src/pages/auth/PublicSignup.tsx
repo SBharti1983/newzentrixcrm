@@ -17,7 +17,7 @@ export default function PublicSignup() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
     const [result, setResult] = useState(null);
 
-    const firstName = formData.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const firstName = (formData.name || '').split(' ')[0].toLowerCase().replace(/[^a-z0-9]+/g, '');
     const suggestedSlug = firstName || 'yourname';
 
     const handleSignup = async (e) => {
@@ -27,8 +27,8 @@ export default function PublicSignup() {
             const apiRes = await axios.post('/api/onboarding/signup', formData);
             setResult(apiRes.data);
             setStep(2);
-        } catch (err) {
-            alert(err.response?.data?.error || 'Signup failed');
+        } catch (err: any) {
+            alert(err?.response?.data?.error || err?.error || 'Signup failed');
         } finally {
             setLoading(false);
         }

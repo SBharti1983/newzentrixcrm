@@ -14,6 +14,7 @@ import { analyticsApi, leadsApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as dateUtils from '../../utils/dateUtils';
 
 const COLORS = ['#00b4d8', '#0077b6', '#90e0ef', '#03045e'];
 
@@ -29,14 +30,14 @@ export default function VoiceAnalytics() {
         showToast(`Preparing ${format.toUpperCase()} audit...`, 'info');
         try {
             const data = await leadsApi.exportCalls({ range: '30days' });
-            const now = new Date();
+            const now = dateUtils.getNow();
             const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
             const filename = `Zentrix_Voice_Audit_${timestamp}`;
 
             if (format === 'csv') {
                 const headers = ['Date', 'Agent', 'Lead', 'Lead Phone', 'Duration', 'Outcome', 'Note'];
                 const rows = (data || []).map(c => [
-                    new Date(c.date).toLocaleString(),
+                    dateUtils.formatCustom(c.date, {}),
                     c.agent_name,
                     c.lead_name,
                     c.lead_phone,
@@ -62,7 +63,7 @@ export default function VoiceAnalytics() {
                 try {
                     await leadsApi.generatePhysicalReport(csvContent, `${filename}.csv`);
                     showToast(`FILE SAVED TO: Windows Downloads folder`, 'success');
-                } catch (err) {
+                } catch (err: any) {
                     console.warn('Physical save skip:', err);
                 }
             } else {
@@ -78,11 +79,11 @@ export default function VoiceAnalytics() {
                 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                doc.text(`Zentrix Real-time Telemetry Hub | ${new Date().toLocaleString()}`, 20, 34);
+                doc.text(`Zentrix Real-time Telemetry Hub | ${dateUtils.getNow().toLocaleString()}`, 20, 34);
 
                 const headers = [['Date', 'Agent', 'Lead', 'Duration', 'Outcome', 'Note']];
                 const rows = (data || []).map(c => [
-                    new Date(c.date).toLocaleString(),
+                    dateUtils.formatCustom(c.date, {}),
                     c.agent_name,
                     c.lead_name,
                     c.duration + 's',
@@ -118,14 +119,14 @@ export default function VoiceAnalytics() {
                     status: 'Final',
                     notes: `Voice Telemetry Audit: 30-day snapshot`
                 });
-            } catch (err) {
+            } catch (err: any) {
                 console.warn('Failed to log export metadata:', err);
             }
 
             showToast('Audit exported and saved to history!', 'success');
-        } catch (err) {
-            console.error(err);
-            showToast('Failed to export audit', 'error');
+        } catch (err: any) {
+            console.error('Audit Export Error:', err);
+            showToast('Failed to export audit telemetry', 'error');
         }
     };
 
@@ -296,7 +297,7 @@ export default function VoiceAnalytics() {
                                     </div>
                                 </td>
                                 <td style={{ padding: '20px 0', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                    {agent.lastCall ? new Date(agent.lastCall).toLocaleString([], { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'No Activity'}
+                                    {agent.lastCall ? dateUtils.formatCustom(agent.lastCall, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'No Activity'}
                                 </td>
                                 <td style={{ padding: '20px 0', fontWeight: 700 }}>
                                     {Math.floor(agent.talkTime / 60)}m {Math.round(agent.talkTime % 60)}s

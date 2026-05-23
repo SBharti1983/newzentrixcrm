@@ -11,8 +11,8 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 const defaultApiUrl = window.location.hostname === 'localhost' ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
 export let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
-console.log('[API MODE] Host:', typeof window !== 'undefined' ? window.location.hostname : 'ssr', '| Target:', BASE_URL);
-console.log('[API DEBUG] Base URL Mode:', isLocal ? 'Local' : 'Remote', '| Resolved:', BASE_URL);
+// API base URL configuration removed for production hardening
+
 
 // For public endpoints (doesn't require auth token)
 const PUBLIC_BASE_URL = BASE_URL;
@@ -86,8 +86,8 @@ async function api(path: string, options: any = {}) {
         }
 
         return res.json();
-    } catch (e) {
-        if (e.message === 'Failed to fetch') {
+    } catch (e: any) {
+        if (e?.message === 'Failed to fetch') {
             const diag = `Network Error (Failed to fetch). Target: ${fullUrl}. Check if your backend is alive and CORS is allowed.`;
             console.error(diag);
             throw new Error(diag);
@@ -245,17 +245,18 @@ export const zapierApi = {
 
 export const marketingApi = {
     getDrips: () => api('/marketing/drips'),
-    createDrip: (data) => api('/marketing/drips', { method: 'POST', body: data }),
-    enrollLeads: (id, leadIds) => api(`/marketing/drips/${id}/enroll`, { method: 'POST', body: { leadIds } }),
-    getAnalytics: (id) => api(`/marketing/drips/${id}/analytics`),
+    createDrip: (data: any) => api('/marketing/drips', { method: 'POST', body: data }),
+    enrollLeads: (id: string | number, leadIds: (string | number)[]) => api(`/marketing/drips/${id}/enroll`, { method: 'POST', body: { leadIds } }),
+    getAnalytics: (id: string | number) => api(`/marketing/drips/${id}/analytics`),
     
     // WhatsApp Broadcasts
     getBroadcasts: () => api('/marketing/broadcasts'),
-    createBroadcast: (data) => api('/marketing/broadcasts', { method: 'POST', body: data }),
+    createBroadcast: (data: any) => api('/marketing/broadcasts', { method: 'POST', body: data }),
+    generateCampaignTemplate: (data: any) => api('/marketing/generate-campaign-template', { method: 'POST', body: data }),
     
     // Chatbot
     getChatbot: () => api('/marketing/chatbot'),
-    updateChatbot: (data) => api('/marketing/chatbot', { method: 'PATCH', body: data }),
+    updateChatbot: (data: any) => api('/marketing/chatbot', { method: 'PATCH', body: data }),
 };
 
 export const automationApi = {
@@ -354,6 +355,7 @@ export const academyApi = {
     judgeBattle: (data) => api('/academy/battle/judge', { method: 'POST', body: data }),
     initializeLeadSimulation: (leadId) => api('/academy/simulate/lead-init', { method: 'POST', body: { leadId } }),
     calibrateVoice: (formData) => api('/academy/calibrate', { method: 'POST', body: formData }),
+    getManagementStats: () => api('/academy/management-stats'),
 };
 
 // ─── Super Admin ──────────────────────────────────────────────────

@@ -194,7 +194,7 @@ export default function Automation() {
                                             {log.lead} → <span style={{ fontWeight: 700, color: 'var(--navy-700)' }}>{log.agent}</span>
                                         </div>
                                         <div style={{ fontSize: '0.65rem', color: 'var(--slate-400)', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 800, textTransform: 'uppercase' }}>
-                                            <Clock size={10} /> {new Date(log.time).toLocaleTimeString()}
+                                            <Clock size={10} /> {dateUtils.parseSafe(log.time)?.toLocaleTimeString() || '—'}
                                         </div>
                                     </div>
                                 </div>

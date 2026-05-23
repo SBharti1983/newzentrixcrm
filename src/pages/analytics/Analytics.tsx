@@ -8,10 +8,11 @@ import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { analyticsApi, leadsApi } from '../../api/client';
 import { TrendingUp, Users, Home, Sparkles, Zap, MessageSquare, ArrowUpRight, Activity } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const PIE_COLORS = ['var(--navy-600)', 'var(--accent-cyan)', 'var(--accent-emerald)', 'var(--accent-violet)', 'var(--accent-rose)'];
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
         <div style={{
@@ -55,8 +56,8 @@ export default function Analytics() {
         if (lead.last_contact_at) score += 15;
         if (lead.budget) score += 20;
         if (lead.budget?.includes('Cr')) score += 15;
-        if (new Date() - new Date(lead.created_at) < 7 * 86400000) score += 10;
-        if (lead.last_contact_at && (new Date() - new Date(lead.last_contact_at)) / 86400000 > 7) score -= 10;
+        if (dateUtils.getDiffInDays(lead.created_at) < 7) score += 10;
+        if (lead.last_contact_at && dateUtils.getDiffInDays(lead.last_contact_at) > 7) score -= 10;
         if (['Negotiation', 'Won'].includes(lead.stage)) score += 20;
         return Math.max(0, Math.min(score, 100));
     }, []);

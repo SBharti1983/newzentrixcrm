@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { superAdminApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 const COLORS = {
     bg: '#F8FAFC',
@@ -136,8 +137,8 @@ export default function SuperAdminDashboardView({
         try {
             await superAdminApi.nudgeTenant(tenantId);
             showToast('Recovery nudge dispatched to workspace admin.', 'success');
-        } catch (err) {
-            showToast('Failed to dispatch nudge. Verify node owner phone/email.', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to dispatch nudge. Verify node owner phone/email.', 'error');
         } finally {
             setNudgingId(null);
         }
@@ -160,8 +161,8 @@ export default function SuperAdminDashboardView({
             showToast('Manual payment successfully synchronized with global ledger.', 'success');
             setShowAddSub(false);
             if (onReload) onReload();
-        } catch (err) {
-            showToast('Failed to record transaction. Please verify node connectivity.', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to record transaction. Please verify node connectivity.', 'error');
         } finally {
             setSubLoading(false);
         }
@@ -607,7 +608,7 @@ export default function SuperAdminDashboardView({
                                             status: 'pending',
                                             gateway: 'N/A',
                                             gateway_sub_id: 'OVERDUE',
-                                            created_at: new Date().toISOString()
+                                            created_at: dateUtils.getNow().toISOString()
                                         }))
                                     ])
                                     .filter(s => {
@@ -683,7 +684,7 @@ export default function SuperAdminDashboardView({
                                                 )}
                                             </td>
                                             <td style={{ padding: '10px 12px', fontSize: '0.75rem', fontWeight: 600, color: COLORS.textSecondary }}>
-                                                {sub.status === 'pending' ? 'ACTION REQUIRED' : new Date(sub.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                {sub.status === 'pending' ? 'ACTION REQUIRED' : dateUtils.parseSafe(sub.created_at) ? dateUtils.parseSafe(sub.created_at)!.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                                             </td>
                                         </tr>
                                     ))}
@@ -749,7 +750,7 @@ export default function SuperAdminDashboardView({
                                             </div>
                                         </td>
                                         <td style={{ padding: '16px 24px', textAlign: 'right', fontSize: '0.8rem', fontWeight: 600, color: COLORS.primary }}>
-                                            {new Date(log.created_at).toLocaleString()}
+                                            {dateUtils.parseSafe(log.created_at) ? dateUtils.parseSafe(log.created_at)!.toLocaleString() : '—'}
                                         </td>
                                     </tr>
                                 ))}

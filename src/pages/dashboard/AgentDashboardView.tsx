@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
 import AIDailyBriefing from '../../components/AIDailyBriefing';
+import * as dateUtils from '../../utils/dateUtils';
 
 // --- DEMO DATA ---
 const YEARLY_TREND = [
@@ -51,16 +52,20 @@ const COLORS = {
     cyan: '#06b6d4',
     slate950: '#0f172a',
     slate900: '#1e293b',
-    slate700: '#334155',
-    slate600: '#475569',
-    slate400: '#94a3b8',
+    slate800: '#334155',
+    slate700: '#475569',
+    slate600: '#64748b',
+    slate500: '#94a3b8',
+    slate400: '#cbd5e1',
+    slate200: '#e2e8f0',
+    slate100: '#f1f5f9',
     slate50: '#f8fafc',
     border: '#f1f5f9'
 };
 
 // --- SUB-COMPONENTS ---
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
             <div style={{ 
@@ -84,7 +89,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColor, target, curr, dark, onClick }: any) => (
+const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColor, target, curr, dark, onClick, loading }: any) => (
     <div 
         onClick={onClick}
         style={{ 
@@ -94,10 +99,20 @@ const KPI = ({ title, value, perc, isUp, icon: Icon, color, sparkData, sparkColo
             boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
             display: 'flex', flexDirection: 'column', gap: '4px',
             cursor: onClick ? 'pointer' : 'default',
-            transition: 'transform 0.2s, box-shadow 0.2s'
+            transition: 'transform 0.2s, box-shadow 0.2s',
+            position: 'relative',
+            overflow: 'hidden',
+            opacity: loading ? 0.7 : 1
         }}
         className={onClick ? 'hover-lift' : ''}
     >
+        {loading && (
+            <div style={{ 
+                position: 'absolute', top: 0, left: 0, right: 0, height: '2px', 
+                background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+                animation: 'skeletonPulse 1.5s infinite linear'
+            }} />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: dark ? '#cbd5e1' : COLORS.slate600 }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, background: `${color}15`, color: color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {Icon && <Icon size={14} />}
@@ -330,7 +345,7 @@ const AcademyCard = ({ xp = 0, level = 1, certifications = 0, score = 0, onClick
                 </div>
             </div>
             <div style={{ background: 'rgba(255,255,255,0.2)', color: 'white', padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 900 }}>
-                {(parseInt(xp)||0).toLocaleString()} XP
+                {(parseInt(String(xp))||0).toLocaleString()} XP
             </div>
         </div>
 
@@ -455,7 +470,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
     ], []);
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
+        const hour = dateUtils.getNow().getHours();
         if (hour < 12) return 'Good morning';
         if (hour < 17) return 'Good afternoon';
         return 'Good evening';
@@ -464,9 +479,15 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
     return (
         <div style={{ 
             height: '100%', display: 'flex', flexDirection: 'column', 
-            gap: '16px', padding: '16px 20px', fontFamily: '"Inter", sans-serif',
+            gap: '16px', padding: '0 20px 20px', paddingTop: 0, fontFamily: '"Inter", sans-serif',
             background: '#f8fafc', overflowY: 'auto'
         }}>
+            <style>{`
+                @keyframes skeletonPulse {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
+            `}</style>
             {/* Upper Header Segment */}
             <div className="agent-dash-header" style={{ display: 'none', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '8px', gap: isMobile ? 12 : 0 }}>
                 <div style={{ display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '32px', flexDirection: isMobile ? 'column' : 'row' }}>
@@ -574,12 +595,12 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
             </div>
             {/* KPI Cards Row */}
             <div className="agent-dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(6, 1fr)', gap: '12px' }}>
-                <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} />
-                <KPI onClick={() => navigate('/pipeline')} title="Pipeline Value" value={formatCurrency(kpiData.pipelineValue)} perc={`${kpiData.totalLeads} Active`} isUp icon={Briefcase} color={COLORS.orange} sparkData={sparkLines[1]} sparkColor={COLORS.orange} />
-                <KPI onClick={() => navigate('/followups')} title="Follow-ups Due" value={kpiData.followups} perc="Pending" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" />
-                <KPI onClick={() => navigate('/site-visits')} title="Site Visits" value={kpiData.siteVisits} perc="Completed" isUp icon={MapPin} color={COLORS.cyan} sparkData={sparkLines[3]} sparkColor={COLORS.cyan} />
-                <KPI onClick={() => navigate('/bookings')} title="Bookings" value={kpiData.won} target={0} curr={kpiData.won} icon={CalendarCheck} color={COLORS.blue} />
-                <KPI onClick={() => navigate('/analytics')} title="Revenue" value={formatCurrency(kpiData.revenue)} perc={`${kpiData.winRate}% Win Rate`} isUp sparkData={sparkLines[4]} sparkColor={COLORS.blue} />
+                <KPI onClick={() => navigate('/leads')} title="Total Leads" value={kpiData.totalLeads} perc={`${leads.new_this_month || 0} New`} isUp icon={Users} color={COLORS.blue} sparkData={sparkLines[0]} sparkColor={COLORS.blue} loading={loading} />
+                <KPI onClick={() => navigate('/pipeline')} title="Pipeline Value" value={formatCurrency(kpiData.pipelineValue)} perc={`${kpiData.totalLeads} Active`} isUp icon={Briefcase} color={COLORS.orange} sparkData={sparkLines[1]} sparkColor={COLORS.orange} loading={loading} />
+                <KPI onClick={() => navigate('/followups')} title="Follow-ups Due" value={kpiData.followups} perc="Pending" isUp icon={Calendar} color="#8b5cf6" sparkData={sparkLines[2]} sparkColor="#8b5cf6" loading={loading} />
+                <KPI onClick={() => navigate('/site-visits')} title="Site Visits" value={kpiData.siteVisits} perc="Completed" isUp icon={MapPin} color={COLORS.cyan} sparkData={sparkLines[3]} sparkColor={COLORS.cyan} loading={loading} />
+                <KPI onClick={() => navigate('/bookings')} title="Bookings" value={kpiData.won} target={0} curr={kpiData.won} icon={CalendarCheck} color={COLORS.blue} loading={loading} />
+                <KPI onClick={() => navigate('/analytics')} title="Revenue" value={formatCurrency(kpiData.revenue)} perc={`${kpiData.winRate}% Win Rate`} isUp sparkData={sparkLines[4]} sparkColor={COLORS.blue} loading={loading} />
             </div>
 
             {/* Main Content Grid */}
@@ -717,7 +738,7 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
                                 badge="Upcoming" 
                                 badgeColor={COLORS.blue} 
                                 badgeBg="#eff6ff" 
-                                time={new Date(f.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} 
+                                time={dateUtils.formatCustom(f.scheduled_at, { hour: 'numeric', minute: '2-digit' })} 
                                 key={f.id}
                             />
                         )) : (

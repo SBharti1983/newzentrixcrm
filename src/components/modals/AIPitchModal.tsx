@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Send, Copy, RefreshCw, CheckCircle2, MessageSquare } from 'lucide-react';
+import { X, Sparkles, Send, Copy, RefreshCw, CheckCircle2, MessageSquare, AlertTriangle } from 'lucide-react';
 import { aiApi, notificationsApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 

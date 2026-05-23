@@ -61,3 +61,77 @@ export interface HealthResponse {
   db_error?: string;
   redis_error?: string;
 }
+export interface TeamLeaderStats {
+  leads: {
+    active_leads: number;
+    total?: number;
+    [key: string]: any;
+  };
+  bookings: {
+    total: number;
+    total_value: number;
+    [key: string]: any;
+  };
+  members: MemberPerformance[];
+  telephony_stats?: {
+    calls_today: number;
+    [key: string]: any;
+  };
+  site_visits?: number;
+  trends?: Array<{
+    name: string;
+    leads: string | number;
+  }>;
+  active_deals?: Array<{
+    project_name: string;
+    agent_name: string;
+    status: string;
+    total_amount: number | string;
+  }>;
+  upcoming_followups?: Array<{
+    id: string | number;
+    scheduled_at: string;
+    type: string;
+    agent_name: string;
+    lead_name: string;
+  }>;
+}
+
+export interface MemberPerformance {
+  id: string;
+  name: string;
+  total_value: number;
+  bookings: number;
+  leads?: number;
+}
+
+export interface Lead {
+  id: string | number;
+  name: string;
+  email?: string;
+  phone: string;
+  status: string;
+  stage: string;
+  source: string;
+  project_name?: string;
+  property_type?: string;
+  score?: number;
+  last_contact_at?: string;
+  nurture_due_at?: string;
+  created_at?: string;
+  updated_at?: string;
+  agent_name?: string;
+  assigned_to?: string;
+  budget_min?: number;
+  budget_max?: number;
+}
+
+export interface Interaction {
+  id: string | number;
+  lead_id: string | number;
+  type: string;
+  note: string;
+  date: string;
+  agent_name?: string;
+}
+

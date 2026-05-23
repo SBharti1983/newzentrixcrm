@@ -14,6 +14,7 @@ import {
     Home, Handshake, Layout, Users, Table, RotateCw
 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const STAGE_CONFIG = {
     'New Lead': { color: '#3b82f6', bg: '#eff6ff', accent: '#3b82f6', icon: '🆕', lucide: Home },
@@ -62,7 +63,7 @@ function scorePriority(score) {
 }
 
 function daysSince(dateStr) {
-    return Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+    return Math.floor(dateUtils.getDiffInDays(dateStr));
 }
 
 function parseBudgetL(budget) {
@@ -83,7 +84,7 @@ const PIPELINE_STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Sched
 
 const DEFAULT_LEAD = {
     name: '', email: '', phone: '', city: '', source: 'Website',
-    stage: 'New Lead', status: 'Active', budget: '', property_type: '3BHK',
+    stage: 'New Lead', status: 'Active', budget: '', property_type: '',
     project_id: '', assigned_to: '', notes: '', score: 60,
 };
 
@@ -155,7 +156,7 @@ export default function Pipeline() {
         try {
             await leadsApi.update(dragging, { stage });
             refetch();
-        } catch { showToast('Failed to move lead', 'error'); }
+        } catch (err: any) { showToast('Failed to move lead', 'error'); }
         setDragging(null); setDragOver(null);
     };
     const onDragEnd = () => { setDragging(null); setDragOver(null); };
@@ -178,7 +179,7 @@ export default function Pipeline() {
             await leadsApi.create(addForm);
             showToast('Lead added!', 'success');
             refetch();
-        } catch (err) { showToast(err.error || 'Failed to add lead', 'error'); }
+        } catch (err: any) { showToast(err?.error || 'Failed to add lead', 'error'); }
         setShowAddModal(null);
         setAddForm(DEFAULT_LEAD);
     };
@@ -193,7 +194,7 @@ export default function Pipeline() {
             await leadsApi.update(lead.id, { stage: next });
             setSelectedLead(prev => prev ? { ...prev, stage: next } : null);
             refetch();
-        } catch { showToast('Failed to update stage', 'error'); }
+        } catch (err: any) { showToast('Failed to update stage', 'error'); }
     };
 
     if (loading && !leadsRes) return <PageLoader />;
@@ -1035,7 +1036,7 @@ export default function Pipeline() {
                                                                         setSelectedLead(prev => ({ ...prev, stage: s }));
                                                                         setShowStagePicker(null);
                                                                         refetch();
-                                                                    } catch { showToast('Failed', 'error'); }
+                                                                    } catch (err: any) { showToast(err?.error || 'Failed to update lead', 'error'); }
                                                                 }}
                                                                 style={{
                                                                     padding: '10px 8px',
@@ -1069,14 +1070,14 @@ export default function Pipeline() {
                                         <button className="btn btn-danger btn-sm" style={{ fontSize: '0.78rem', flex: 1, height: 42, fontWeight: 900 }}
                                             onClick={async () => {
                                                 try { await leadsApi.update(l.id, { stage: 'Lost' }); setSelectedLead(null); refetch(); }
-                                                catch { showToast('Failed', 'error'); }
+                                                catch (err: any) { showToast(err?.error || 'Failed to update lead', 'error'); }
                                             }}>
                                             ❌ Mark Lost
                                         </button>
                                         <button className="btn btn-success btn-sm" style={{ fontSize: '0.78rem', flex: 1.5, height: 42, fontWeight: 900 }}
                                             onClick={async () => {
                                                 try { await leadsApi.update(l.id, { stage: 'Won' }); setSelectedLead(null); refetch(); }
-                                                catch { showToast('Failed', 'error'); }
+                                                catch (err: any) { showToast(err?.error || 'Failed to update lead', 'error'); }
                                             }}>
                                             🏆 Mark Won
                                         </button>
@@ -1111,7 +1112,7 @@ export default function Pipeline() {
                                         { icon: '🏠', label: 'Property', value: l.property_type },
                                         { icon: '🏢', label: 'Project', value: l.project_name },
                                         { icon: '📍', label: 'City', value: l.city },
-                                        { icon: '📅', label: 'Last Contact', value: l.last_contact_at ? new Date(l.last_contact_at).toLocaleDateString('en-IN') : '—' },
+                                        { icon: '📅', label: 'Last Contact', value: l.last_contact_at ? dateUtils.formatSafeDateISO(l.last_contact_at) : '—' },
                                         { icon: '📣', label: 'Source', value: l.source },
                                         { icon: '👤', label: 'Agent', value: l.agent_name || '—' },
                                         { icon: '📊', label: 'Stage', value: l.stage },
@@ -1157,7 +1158,7 @@ export default function Pipeline() {
                                                 <div key={s} style={{ display: 'flex', alignItems: 'center', flex: isLast ? 0 : 1 }}>
                                                     <button onClick={async () => {
                                                         try { await leadsApi.update(l.id, { stage: s }); setSelectedLead(prev => ({ ...prev, stage: s })); refetch(); }
-                                                        catch { showToast('Failed', 'error'); }
+                                                        catch (err: any) { showToast(err?.error || 'Failed to move lead', 'error'); }
                                                     }} title={s} style={{
                                                         width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                                                         background: active ? sc.accent : done ? 'var(--accent-emerald)' : 'var(--slate-100)',

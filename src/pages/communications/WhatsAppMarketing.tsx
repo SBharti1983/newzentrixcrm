@@ -10,6 +10,7 @@ import { marketingApi, leadsApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { useApi } from '../../hooks/useApi';
 import axios from 'axios';
+import * as dateUtils from '../../utils/dateUtils';
 
 const COLORS = {
     indigo: '#6366f1',
@@ -22,9 +23,11 @@ const COLORS = {
     slate900: '#0a1628',
     slate800: '#1e293b',
     slate700: '#334155',
+    slate600: '#475569',
     slate500: '#64748b',
     slate400: '#94a3b8',
     slate200: '#e2e8f0',
+    slate100: '#f1f5f9',
     slate50: '#f8fafc',
     white: '#ffffff',
     glass: 'rgba(255, 255, 255, 0.82)',
@@ -112,7 +115,7 @@ export default function WhatsAppMarketing() {
     
     // Broadcast State
     const [broadcastForm, setBroadcastForm] = useState({ name: '', message_body: '', segment: 'All' });
-    const { data: broadcasts, refresh: refreshBroadcasts } = useApi(marketingApi.getBroadcasts);
+    const { data: broadcasts, refetch: refreshBroadcasts } = useApi(marketingApi.getBroadcasts);
     const { data: leadsRes } = useApi(() => leadsApi.list({ limit: 1000 }));
     const leads = leadsRes?.data || [];
 
@@ -128,8 +131,11 @@ export default function WhatsAppMarketing() {
         const styleEl = document.createElement('style');
         styleEl.textContent = STYLES;
         document.head.appendChild(styleEl);
-        marketingApi.getChatbot().then(setChatbot).catch(console.error);
-        return () => document.head.removeChild(styleEl);
+        marketingApi.getChatbot().then(setChatbot).catch(err => {
+            console.error(err);
+            showToast('Failed to load chatbot configuration', 'error');
+        });
+        return () => { document.head.removeChild(styleEl); };
     }, []);
 
     const [isAIPersonalized, setIsAIPersonalized] = useState(false);
@@ -151,8 +157,12 @@ export default function WhatsAppMarketing() {
         } else if (broadcastForm.segment === 'Hot Leads (Score > 80)') {
             targetLeads = targetLeads.filter(l => l.score > 80);
         } else if (broadcastForm.segment === 'Cold Leads (No action > 7 days)') {
-            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-            targetLeads = targetLeads.filter(l => new Date(l.updated_at || l.created_at) < sevenDaysAgo);
+            const sevenDaysAgo = dateUtils.getNow();
+            sevenDaysAgo.setTime(sevenDaysAgo.getTime() - 7 * 24 * 60 * 60 * 1000);
+            targetLeads = targetLeads.filter(l => {
+                const updated = dateUtils.parseSafe(l.updated_at || l.created_at);
+                return updated && updated < sevenDaysAgo;
+            });
         }
 
         if (targetLeads.length === 0) {
@@ -177,8 +187,8 @@ export default function WhatsAppMarketing() {
             setIsCreating(false);
             setBroadcastForm({ name: '', message_body: '', segment: 'All' });
             refreshBroadcasts();
-        } catch (_err) {
-            showToast('Failed to send broadcast', 'error');
+        } catch (err: any) {
+            showToast(err?.error || err?.message || 'Failed to send broadcast', 'error');
         }
     };
 
@@ -188,8 +198,8 @@ export default function WhatsAppMarketing() {
             const res = await marketingApi.updateChatbot(updates);
             setChatbot(res);
             showToast('Chatbot settings updated', 'success');
-        } catch (_err) {
-            showToast('Update failed', 'error');
+        } catch (err: any) {
+            showToast(err?.error || err?.message || 'Update failed', 'error');
         } finally {
             setSavingBot(false);
         }
@@ -430,7 +440,7 @@ export default function WhatsAppMarketing() {
                                                     {b.status}
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '24px 28px', color: COLORS.slate400, fontWeight: 600 }}>{new Date(b.sent_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                                            <td style={{ padding: '24px 28px', color: COLORS.slate400, fontWeight: 600 }}>{dateUtils.parseSafe(b.sent_at)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) || '—'}</td>
                                             <td style={{ padding: '24px 28px' }}><button style={{ background: `${COLORS.slate100}`, border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer' }}><ChevronRight size={18} /></button></td>
                                         </tr>
                                     ))}

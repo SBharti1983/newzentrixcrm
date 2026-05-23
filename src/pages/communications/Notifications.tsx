@@ -46,7 +46,7 @@ export default function Notifications() {
         email: n.recipient,
         template: n.subject || 'Custom',
         preview: (n.body || '').substring(0, 120),
-        sentAt: n.sent_at ? new Date(n.sent_at).toLocaleString('en-IN', { hour12: false }).slice(0, 16) : '—',
+        sentAt: n.sent_at && dateUtils.parseSafe(n.sent_at) ? dateUtils.parseSafe(n.sent_at)!.toLocaleString('en-IN', { hour12: false }).slice(0, 16) : '—',
         sentBy: n.sent_by_name || '—',
     }));
     const stats = apiData?.stats || {};

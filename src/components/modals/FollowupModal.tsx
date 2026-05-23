@@ -36,7 +36,7 @@ export default function FollowupModal({ onClose, onScheduled, leadId, leadName, 
         try {
             await followupsApi.create({
                 ...form,
-                scheduled_at: new Date(form.scheduled_at).toISOString()
+                scheduled_at: dateUtils.parseSafe(form.scheduled_at)?.toISOString() || dateUtils.getNow().toISOString()
             });
             showToast('Next follow-up scheduled successfully!', 'success');
             if (onScheduled) onScheduled();

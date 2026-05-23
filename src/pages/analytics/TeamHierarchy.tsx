@@ -138,7 +138,7 @@ const TreeNode = ({ user, allUsers, depth = 0, onEdit, isLast = false, parentLin
                     >
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom right, rgba(255,255,255,0.25), transparent)', pointerEvents: 'none' }} />
                         <span style={{ position: 'relative', zIndex: 1 }}>
-                            {user.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                            {(user.name || 'User').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
                         </span>
                     </div>
                 </div>
@@ -231,8 +231,9 @@ export default function TeamHierarchy() {
         try {
             const data = await usersApi.list();
             setUsers(data);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to fetch team members:', err);
+            showToast('Governance data fetch failed', 'error');
         } finally {
             setLoading(false);
         }
@@ -250,8 +251,8 @@ export default function TeamHierarchy() {
             showToast('Governance settings synchronized', 'success');
             setShowEditModal(false);
             fetchUsers();
-        } catch (err) {
-            showToast(err.error || 'Sync failed', 'error');
+        } catch (err: any) {
+            showToast(err.error || 'Governance sync failed', 'error');
         } finally {
             setSaving(false);
         }

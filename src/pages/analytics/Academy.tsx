@@ -137,6 +137,8 @@ export default function Academy() {
     const isSimulatorActiveRef = useRef(false);
     const isAITalkingRef = useRef(false);
     const recognitionRef = useRef(null);
+    const chunksRef = useRef([]);
+    const streamRef = useRef(null);
 
     // Sync ref with state
     useEffect(() => {
@@ -163,7 +165,7 @@ export default function Academy() {
             // Safety: if we think we are listening but haven't had a result in 10s, force reset
             // This handles cases where SpeechRecognition hangs
             if (isHandsFreeRef.current && isSimulatorActiveRef.current && !isReallyTalking && !isListeningRef.current) {
-                console.log('[Voice] Heartbeat: Reviving mic...');
+
                 startListening();
             }
         }, 1500);
@@ -185,7 +187,7 @@ export default function Academy() {
 
             recorder.start();
             recorderRef.current = recorder;
-            setIsRecordingSample(true);
+            setIsRecordingSim(true);
             setRecordingTime(0);
 
             timerRef.current = setInterval(() => {
@@ -199,8 +201,8 @@ export default function Academy() {
             }, 1000);
 
             showToast('Speak naturally for 30 seconds...', 'info');
-        } catch (err) {
-            showToast('Microphone access denied', 'error');
+        } catch (err: any) {
+            showToast('Microphone access denied: Please check hardware permissions.', 'error');
         }
     };
 
@@ -209,7 +211,7 @@ export default function Academy() {
             recorderRef.current.stop();
         }
         clearInterval(timerRef.current);
-        setIsRecordingSample(false);
+        setIsRecordingSim(false);
     };
 
     const handleUploadSample = async () => {
@@ -223,8 +225,8 @@ export default function Academy() {
             const res = await academyApi.calibrateVoice(formData);
             showToast('Persona calibration complete!', 'success');
             setSimReport(res); 
-        } catch (err) {
-            showToast('Calibration failed', 'error');
+        } catch (err: any) {
+            showToast('Calibration failed: Unable to process voice sample.', 'error');
         } finally {
             setIsAnalyzing(false);
         }
@@ -273,7 +275,9 @@ export default function Academy() {
                         const { mission } = await academyApi.getBattleMission(scenarioId);
                         setBattleMission(mission);
                         setSimTranscripts(prev => [...prev, { type: 'bot', text: `[SECRET MISSION] ${mission}` }]);
-                    } catch (err) { console.error('Mission failed'); }
+                    } catch (err: any) { 
+                        console.warn('Mission fetching skipped:', err); 
+                    }
                 }
             });
 
@@ -441,7 +445,7 @@ export default function Academy() {
             recognition.interimResults = true;
 
             recognition.onstart = () => {
-                console.log('[Voice] Recognition started in:', recognition.lang);
+
                 setIsListening(true);
                 isListeningRef.current = true;
             };
@@ -476,7 +480,7 @@ export default function Academy() {
                 
                 // Aggressive restart for "Infinite Duplex" - NO DELAY
                 if (isHandsFreeRef.current && isSimulatorActiveRef.current && !isAITalkingRef.current) {
-                    console.log('[Voice] Autorestart triggered');
+
                     startListening();
                 }
             };
@@ -503,9 +507,9 @@ export default function Academy() {
 
             recognitionRef.current = recognition;
             return recognition;
-        } catch (e) {
+        } catch (e: any) {
             console.error('[Voice] SpeechRecognition not supported:', e);
-            showToast('Voice recognition not available in this browser.', 'error');
+            showToast('Voice recognition not available in this browser. Please use Chrome or Edge.', 'error');
             return null;
         }
     };
@@ -537,20 +541,20 @@ export default function Academy() {
                 recognition.lang = langMap[simLanguage] || 'en-US';
                 try {
                     recognition.start();
-                } catch (startErr) {
+                } catch (startErr: any) {
                     console.warn('[Voice] Internal Start Collision:', startErr.message);
                     // If already started, just sync the state
                     setIsListening(true);
                     isListeningRef.current = true;
                 }
             }
-        } catch (e) {
+        } catch (e: any) {
             if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
                 showToast('Microphone access blocked. Please re-allow in settings.', 'error');
                 setIsHandsFree(false);
                 isHandsFreeRef.current = false;
             } else if (e.name === 'NotReadableError' || e.message?.includes('could not start')) {
-                showToast('System Mic Error: Please close other recording apps or the Screen Recorder.', 'error');
+                showToast('System Mic Error: Please close other recording apps.', 'error');
             } else {
                 console.error('[Voice] Mic Hijack Error:', e);
             }
@@ -568,7 +572,7 @@ export default function Academy() {
     const toggleListening = () => {
         // If we are in an error state or recognition is null, force a full reset
         if (!recognitionRef.current || (!isListening && isHandsFree)) {
-            console.log('[Voice] Force Resetting Mic Engine...');
+
             window.speechSynthesis.cancel();
             if (recognitionRef.current) {
                 try { recognitionRef.current.abort(); } catch(e) {}
@@ -601,8 +605,8 @@ export default function Academy() {
                 buyerName: battleRole === 'buyer' ? user.name : 'Colleague'
             });
             setBattleAdjudication(result);
-        } catch (err) {
-            showToast('Failed to adjudicate battle', 'error');
+        } catch (err: any) {
+            showToast('Failed to adjudicate battle: Analysis engine offline.', 'error');
         } finally {
             setIsAnalyzing(false);
         }
@@ -613,14 +617,14 @@ export default function Academy() {
         try {
             const res = await copilotApi.ask({ question: prompt, context: 'Real Estate Sales Simulation' });
             return res.answer || res.text;
-        } catch (err) {
+        } catch (err: any) {
             console.error('AI Logic Bridge Error:', err);
             return 'Stay professional and focus on the client\'s ROI.';
         }
     };
 
-    const processAgentInput = async (text) => {
-        if (!text.trim()) return;
+    const processAgentInput = async (text, audioBlob = null) => {
+        if (!text.trim() && !audioBlob) return;
         
         // Add agent message to local transcript immediately
         const currentTranscripts = [...simTranscripts, { type: 'agent', text }];
@@ -658,11 +662,11 @@ export default function Academy() {
                 });
                 speakResponse(response.text);
             }
-        } catch (err) {
+        } catch (err: any) {
             setIsAITalking(false);
             const errorMsg = err.message || (typeof err === 'object' ? JSON.stringify(err) : 'Unknown Error');
             setDebugLog(`[AI ERROR] ${errorMsg}`);
-            showToast(`AI Error: ${errorMsg}`, 'error');
+            showToast(`AI Simulator Error: ${errorMsg}`, 'error');
             
             // Fallback to a static response if API fails
             setTimeout(() => {
@@ -686,9 +690,9 @@ export default function Academy() {
 
                 Response style: Direct, tactical, under 15 words.
             `;
-            const tip = await generateAIResponse(prompt, false);
+            const tip = await generateAIResponse(prompt);
             setCoachTip(tip);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Whisper failed:', err);
         } finally {
             setIsGeneratingTip(false);
@@ -730,8 +734,9 @@ export default function Academy() {
                     refetchModules();
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to analyze simulation:', err);
+            showToast('Intelligence analysis failed', 'warning');
         } finally {
             setIsAnalyzing(false);
         }
@@ -746,9 +751,9 @@ export default function Academy() {
             });
             setPitchDraft(data.draft);
             addToast({ type: 'success', title: 'Pitch Generated', message: 'A tailored follow-up is ready for you.' });
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to generate pitch:', err);
-            addToast({ type: 'error', title: 'Error', message: 'Could not generate pitch draft.' });
+            addToast({ type: 'error', title: 'Error', message: 'Could not generate pitch draft. Logic engine busy.' });
         } finally {
             setIsGeneratingPitch(false);
         }
@@ -772,7 +777,7 @@ export default function Academy() {
         utterance.onend = () => {
             setIsAITalking(false);
             isAITalkingRef.current = false;
-            console.log('[Voice] AI finished talking');
+
             if (isHandsFreeRef.current && isSimulatorActiveRef.current) {
                 startListening();
             }
@@ -848,8 +853,9 @@ export default function Academy() {
             setSimTranscripts([{ type: 'bot', text: data.initialGreeting || `Hello, looking forward to our meeting.` }]);
             if (isVoiceEnabled) speakResponse(data.initialGreeting || `Hello, looking forward to our meeting.`);
 
-        } catch (err) {
-            showToast('Failed to initialize lead simulation', 'error');
+        } catch (err: any) {
+            console.error('Lead Sim Init Error:', err);
+            showToast('Failed to initialize lead simulation: Scenario engine offline.', 'error');
         } finally {
             setIsInitializingSim(false);
             setShowLeadSim(false);
@@ -866,8 +872,9 @@ export default function Academy() {
         try {
             const res = await leadsApi.list({ q: val, limit: 5 });
             setLeads(res.data || []);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Lead search error:', err);
+            showToast('Lead intelligence lookup failed.', 'warning');
         } finally {
             setIsSearchingLeads(false);
         }
@@ -947,8 +954,9 @@ export default function Academy() {
             setShowUpload(false);
             setUploadForm({ title: '', description: '', category: 'Real Estate Mastery', type: 'Video', xp_points: 100, duration: '10-15m', instructor: user?.name, file: null });
             refetchModules();
-        } catch (err) {
-            showToast(err.error || 'Failed to upload material', 'error');
+        } catch (err: any) {
+            console.error('Upload Error:', err);
+            showToast(err.error || 'Failed to upload training material.', 'error');
         } finally {
             setIsUploading(false);
         }
@@ -970,7 +978,7 @@ export default function Academy() {
             
             addToast({ type: 'success', title: 'Battle Card Created', message: `Automatically generated hooks for ${module.title}.` });
             refetchBattleCards();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to generate battle card:', err);
             addToast({ type: 'error', title: 'Generation Failed', message: 'AI could not distill this module into a battle card.' });
         } finally {
@@ -985,7 +993,7 @@ export default function Academy() {
                 showToast('Module Completed! +XP Earned', 'success');
                 refetchModules();
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Progress update failed', err);
         }
     };
@@ -1002,8 +1010,9 @@ export default function Academy() {
             await academyApi.deleteModule(moduleId);
             showToast('Material removed successfully', 'success');
             refetchModules();
-        } catch (err) {
-            showToast('Failed to delete', 'error');
+        } catch (err: any) {
+            console.error('Delete Module Error:', err);
+            showToast('Failed to remove material from library.', 'error');
         }
     };
 
@@ -1026,8 +1035,9 @@ export default function Academy() {
             setEditingCard(null);
             setCardForm({ project_name: '', usp: '', objections: [{q:'', a:''}], target_audience: '' });
             refetchBattleCards();
-        } catch (err) {
-            showToast('Failed to save battle card', 'error');
+        } catch (err: any) {
+            console.error('Battle Card Save Error:', err);
+            showToast('Failed to save battle card data.', 'error');
         }
     };
 
@@ -1037,8 +1047,9 @@ export default function Academy() {
             await academyApi.deleteBattleCard(id);
             showToast('Battle card removed', 'success');
             refetchBattleCards();
-        } catch (err) {
-            showToast('Failed to delete', 'error');
+        } catch (err: any) {
+            console.error('Delete Battle Card Error:', err);
+            showToast('Failed to remove battle card.', 'error');
         }
     };
 
@@ -1065,7 +1076,7 @@ export default function Academy() {
                         <div style={{ position: 'relative', width: 100, height: 100, margin: '0 auto 24px' }}>
                             <div className="avatar-talking" style={{ position: 'absolute', inset: -10, borderRadius: '50%', border: `2px solid ${COLORS.purple}` }} />
                             <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: COLORS.navy, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem', fontWeight: 900, position: 'relative', zIndex: 1, overflow: 'hidden', border: '4px solid #0f172a' }}>
-                                {pendingChallenge.fromUser.avatar ? <img src={pendingChallenge.fromUser.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : pendingChallenge.fromUser.name.charAt(0)}
+                                {pendingChallenge.fromUser.avatar ? <img src={pendingChallenge.fromUser.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (pendingChallenge.fromUser.name?.charAt(0) || 'U')}
                             </div>
                         </div>
                         <h2 style={{ color: 'white', fontSize: '1.8rem', fontWeight: 950, marginBottom: 8, letterSpacing: '-0.02em' }}>Agent Challenge!</h2>
@@ -1202,7 +1213,7 @@ export default function Academy() {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: COLORS.navy, textTransform: 'uppercase', marginBottom: 8 }}>XP Points</label>
-                                    <input type="number" className="input" value={uploadForm.xp_points} onChange={e => setUploadForm({...uploadForm, xp_points: e.target.value})} />
+                                    <input type="number" className="input" value={uploadForm.xp_points} onChange={e => setUploadForm({...uploadForm, xp_points: parseInt(e.target.value) || 0})} />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 900, color: COLORS.navy, textTransform: 'uppercase', marginBottom: 8 }}>Duration</label>
@@ -1676,34 +1687,34 @@ export default function Academy() {
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 950, color: COLORS.navy, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 20 }}>3. Reference Voice Sample</label>
                                 <div style={{ 
-                                    padding: 40, border: `2px dashed ${isRecordingSample ? COLORS.rose : COLORS.border}`, borderRadius: '24px', textAlign: 'center',
-                                    background: isRecordingSample ? 'rgba(244, 63, 94, 0.02)' : 'rgba(248, 250, 252, 0.5)', cursor: 'default'
+                                    padding: 40, border: `2px dashed ${isRecordingSim ? COLORS.rose : COLORS.border}`, borderRadius: '24px', textAlign: 'center',
+                                    background: isRecordingSim ? 'rgba(244, 63, 94, 0.02)' : 'rgba(248, 250, 252, 0.5)', cursor: 'default'
                                 }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: isRecordingSample ? COLORS.rose : COLORS.navy, boxShadow: '0 10px 20px rgba(0,0,0,0.05)', position: 'relative' }}>
-                                        <Mic size={28} className={isRecordingSample ? 'animate-pulse' : ''} />
-                                        {isRecordingSample && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `2px solid ${COLORS.rose}`, animation: 'ping 1s infinite' }} />}
+                                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: isRecordingSim ? COLORS.rose : COLORS.navy, boxShadow: '0 10px 20px rgba(0,0,0,0.05)', position: 'relative' }}>
+                                        <Mic size={28} className={isRecordingSim ? 'animate-pulse' : ''} />
+                                        {isRecordingSim && <div style={{ position: 'absolute', inset: -4, borderRadius: '50%', border: `2px solid ${COLORS.rose}`, animation: 'ping 1s infinite' }} />}
                                     </div>
                                     <h4 style={{ margin: '0 0 4px 0', fontSize: '1rem', fontWeight: 900 }}>
-                                        {isRecordingSample ? `Recording... (${30 - recordingTime}s left)` : recordedBlob ? 'Sample Ready' : 'Record 30s Sales Pitch'}
+                                        {isRecordingSim ? `Recording... (${30 - recordingTime}s left)` : recordedBlob ? 'Sample Ready' : 'Record 30s Sales Pitch'}
                                     </h4>
                                     <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                        {isRecordingSample ? 'Pitch your favourite project now.' : 'Let the AI analyze your natural inflection.'}
+                                        {isRecordingSim ? 'Pitch your favourite project now.' : 'Let the AI analyze your natural inflection.'}
                                     </p>
                                     
                                     <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 24 }}>
-                                        {!isRecordingSample && !recordedBlob && (
+                                        {!isRecordingSim && !recordedBlob && (
                                             <button 
                                                 onClick={handleStartRecording}
                                                 style={{ padding: '12px 24px', borderRadius: '12px', background: COLORS.navy, color: 'white', border: 'none', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
                                             >Start Recording</button>
                                         )}
-                                        {isRecordingSample && (
+                                        {isRecordingSim && (
                                             <button 
                                                 onClick={handleStopRecording}
                                                 style={{ padding: '12px 24px', borderRadius: '12px', background: COLORS.rose, color: 'white', border: 'none', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer' }}
                                             >Stop Now</button>
                                         )}
-                                        {recordedBlob && !isRecordingSample && (
+                                        {recordedBlob && !isRecordingSim && (
                                             <>
                                                 <button 
                                                     onClick={() => { setRecordedBlob(null); setRecordingTime(0); }}
@@ -1862,7 +1873,7 @@ export default function Academy() {
                                     onlineUsers.filter(u => u.id !== user?.id).map(onlineUser => (
                                         <div key={onlineUser.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, background: '#f8fafc', borderRadius: 16, border: '1px solid #f1f5f9' }}>
                                             <div style={{ width: 40, height: 40, borderRadius: '50%', background: COLORS.navy, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800 }}>
-                                                {onlineUser.avatar ? <img src={onlineUser.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : onlineUser.name.charAt(0)}
+                                                {onlineUser.avatar ? <img src={onlineUser.avatar} style={{ width: '100%', height: '100%', borderRadius: '50%' }} /> : (onlineUser.name?.charAt(0) || 'U')}
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontSize: '0.85rem', fontWeight: 800, color: COLORS.navy }}>{onlineUser.name}</div>
@@ -2073,9 +2084,9 @@ export default function Academy() {
                                                     if (recorderRef.current && recorderRef.current.state !== 'inactive') {
                                                         recorderRef.current.onstop = async () => {
                                                             const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                                                            processAgentInput('', blob);
+                                                            processAgentInput('', blob as any);
                                                             chunksRef.current = [];
-                                                            streamRef.current?.getTracks().forEach(t => t.stop());
+                                                            (streamRef.current as any)?.getTracks().forEach(t => t.stop());
                                                         };
                                                         recorderRef.current.stop();
                                                         setIsRecordingSim(false);
@@ -2094,7 +2105,7 @@ export default function Academy() {
                                                         setIsRecordingSim(true);
                                                         setRecordingTime(0);
                                                         timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
-                                                    } catch (e) { showToast('Mic Access Denied', 'error'); }
+                                                    } catch (e: any) { showToast('Mic Access Denied: Hardware permissions required.', 'error'); }
                                                 }
                                             } else {
                                                 toggleListening();
@@ -2267,7 +2278,7 @@ export default function Academy() {
                             </div>
 
                             <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '32px', padding: 60, border: '1px dashed rgba(255,255,255,0.1)' }}>
-                                {isRecordingSample ? (
+                                {isRecordingSim ? (
                                     <div className="animate-pulse">
                                         <div style={{ fontSize: '3.5rem', fontWeight: 950, color: COLORS.rose, marginBottom: 16 }}>
                                             0:{recordingTime < 10 ? `0${recordingTime}` : recordingTime}
@@ -2601,7 +2612,7 @@ export default function Academy() {
                                     }}
                                     className="hover-lift"
                                 >
-                                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: COLORS.purple, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.75rem' }}>{l.name.charAt(0)}</div>
+                                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: COLORS.purple, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.75rem' }}>{(l.name?.charAt(0) || 'L')}</div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontWeight: 800, fontSize: '0.9rem' }}>{l.name}</div>
                                         <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)' }}>{l.stage} • {l.project_name || 'No Project'}</div>

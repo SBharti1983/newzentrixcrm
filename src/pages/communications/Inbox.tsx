@@ -4,6 +4,7 @@ import { useMobile } from '../../hooks/useMobile';
 import { notificationsApi } from '../../api/client';
 import { PageLoader } from '../../components/feedback/Feedback';
 import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 export default function Inbox() {
     const isMobile = useMobile();
@@ -163,7 +164,7 @@ export default function Inbox() {
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                                         <span style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.85rem' }}>{c.name}</span>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{new Date(c.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{dateUtils.parseSafe(c.time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</span>
                                     </div>
                                     <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                         {c.last_msg}
@@ -248,7 +249,7 @@ export default function Inbox() {
                                         }}>
                                             <div style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{m.body}</div>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginTop: 6, fontSize: '0.65rem', color: m.sent_by ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)' }}>
-                                                {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {dateUtils.parseSafe(m.sent_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}
                                                 {m.sent_by && (m.status === 'Delivered' ? <CheckCheck size={12} style={{ color: 'var(--accent-teal)' }} /> : <Check size={12} />)}
                                             </div>
                                         </div>

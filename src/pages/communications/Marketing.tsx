@@ -22,7 +22,7 @@ export default function Marketing() {
         name: '',
         description: '',
         steps: [
-            { delay_days: 0, delay_hours: 0, channel: 'Email', subject: 'Welcome!', body: 'Thank you for your interest...' }
+            { delay_days: 0, delay_hours: 0, channel: 'Email', subject: 'Welcome!', body: 'Thank you for your interest...', is_ab_test: false, subject_b: '', body_b: '' }
         ]
     });
 
@@ -41,7 +41,7 @@ export default function Marketing() {
     const addStep = () => {
         setNewDrip(prev => ({
             ...prev,
-            steps: [...prev.steps, { delay_days: 1, delay_hours: 0, channel: 'WhatsApp', subject: '', body: 'Checking in about your property search...' }]
+            steps: [...prev.steps, { delay_days: 1, delay_hours: 0, channel: 'WhatsApp', subject: '', body: 'Checking in about your property search...', is_ab_test: false, subject_b: '', body_b: '' }]
         }));
     };
 
@@ -62,7 +62,7 @@ export default function Marketing() {
             await marketingApi.createDrip(newDrip);
             showToast('Automation engine deployed!', 'success');
             setShowCreate(false);
-            setNewDrip({ name: '', description: '', steps: [{ delay_days: 0, delay_hours: 0, channel: 'Email', subject: 'Welcome!', body: '' }] });
+            setNewDrip({ name: '', description: '', steps: [{ delay_days: 0, delay_hours: 0, channel: 'Email', subject: 'Welcome!', body: '', is_ab_test: false, subject_b: '', body_b: '' }] });
             refetch();
         } catch (_e) {
             showToast('Failed to deploy automation', 'error');
@@ -194,7 +194,7 @@ export default function Marketing() {
                                 ))}
                                 {drips?.length === 0 && (
                                     <tr>
-                                        <td colSpan="5" style={{ padding: '60px 40px', textAlign: 'center' }}>
+                                        <td colSpan={5} style={{ padding: '60px 40px', textAlign: 'center' }}>
                                             <div style={{ width: 64, height: 64, borderRadius: '20px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#94a3b8' }}>
                                                 <Zap size={28} />
                                             </div>

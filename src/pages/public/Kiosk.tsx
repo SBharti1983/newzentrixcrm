@@ -53,7 +53,7 @@ export default function Kiosk() {
                     <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
                         <CheckCircle size={40} style={{ color: 'var(--accent-emerald)' }} />
                     </div>
-                    <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--navy-900)', marginBottom: 12 }}>Welcome, {form.name.split(' ')[0]}!</h1>
+                    <h1 style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--navy-900)', marginBottom: 12 }}>Welcome, {(form.name || 'Guest').split(' ')[0]}!</h1>
                     <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', marginBottom: 32 }}>
                         Your registration is complete. <strong style={{ color: 'var(--navy-800)' }}>{agentName}</strong> will be with you shortly to show you around.
                     </p>

@@ -6,9 +6,10 @@ import {
     ChevronRight, LogOut, Bell, Handshake, CreditCard,
     FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy, RotateCw
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
-import { useBranding } from '../../context/BrandingContext';
-import { leadsApi, bookingsApi, followupsApi, notificationsApi } from '../../api/client';
+import { useAuth } from '../hooks/useAuth';
+import { useBranding } from '../context/BrandingContext';
+import { ROLE_ACCESS } from '../constants/access';
+import { leadsApi, bookingsApi, followupsApi, notificationsApi } from '../api/client';
 
 const NAV_SECTIONS = [
     {
@@ -92,7 +93,7 @@ const NAV_SECTIONS = [
     },
 ];
 
-const ROLE_LABELS: Record<string, string> = {
+const ROLE_LABELS = {
     superadmin: 'Super Admin',
     admin: 'Admin',
     sales_manager: 'Manager',
@@ -101,7 +102,7 @@ const ROLE_LABELS: Record<string, string> = {
     customer: 'Customer',
 };
 
-const ROLE_COLORS: Record<string, { color: string, bg: string }> = {
+const ROLE_COLORS = {
     superadmin: { color: '#f43f5e', bg: 'rgba(244,63,94,0.15)' },
     admin: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
     sales_manager: { color: '#0070f3', bg: 'rgba(0,112,243,0.1)' },
@@ -110,28 +111,20 @@ const ROLE_COLORS: Record<string, { color: string, bg: string }> = {
     customer: { color: '#64748b', bg: 'rgba(100,116,139,0.15)' },
 };
 
-interface SidebarProps {
-    collapsed: boolean;
-    isMobile: boolean;
-    mobileOpen: boolean;
-    onToggle: () => void;
-    onLogout: () => void;
-    onNavigate?: () => void;
-}
-
-export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onLogout, onNavigate }: SidebarProps) {
+export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onLogout, onNavigate }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const { user, canAccess, refreshUser }: any = useAuth();
-    const { branding }: any = useBranding();
-    const roleColors = user ? (ROLE_COLORS[user.role] || ROLE_COLORS.agent) : ROLE_COLORS.agent;
-    const [realLeadCount, setRealLeadCount] = useState<number | null>(null);
-    const [realBookingCount, setRealBookingCount] = useState<number | null>(null);
-    const [realFollowupCount, setRealFollowupCount] = useState<number | null>(null);
-    const [realInboxCount, setRealInboxCount] = useState<number | null>(null);
+    const { user, canAccess, refreshUser } = useAuth();
+    const { branding } = useBranding();
+    const roleColors = user ? ROLE_COLORS[user.role] : ROLE_COLORS.agent;
+    const [realLeadCount, setRealLeadCount] = useState(null);
+    const [realBookingCount, setRealBookingCount] = useState(null);
+    const [realFollowupCount, setRealFollowupCount] = useState(null);
+    const [realInboxCount, setRealInboxCount] = useState(null);
 
     const isMainDomain = window.location.hostname === 'zentrixcrm.com' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
+    // Auto-sync user profile & features on mount to reflect latest administrative changes (e.g. premium activations)
     useEffect(() => {
         refreshUser();
     }, []);
@@ -162,9 +155,11 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
     const filteredSections = NAV_SECTIONS.map(section => ({
         ...section,
         items: section.items.filter(item => {
+            // Superadmin has a special top-level dashboard
             if (item.path === '/superadmin' && !isMainDomain) return false;
             return canAccess(item.path);
         }).map(item => {
+            // Personalize Dashboard label for Super Admins
             if (item.path === '/' && user?.role === 'superadmin') {
                 return { ...item, label: 'Network Command Center', icon: Zap };
             }
@@ -172,20 +167,22 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
         }),
     })).filter(section => section.items.length > 0);
 
+    // Add Workspace Control for Super Admins at the bottom if not already in NAV_SECTIONS
     if (user?.role === 'superadmin') {
         filteredSections.push({
             label: 'System Infrastructure',
             items: [
-                { path: '/workspace-management', label: 'Workspace Control', icon: Building2 } as any
+                { path: '/workspace-management', label: 'Workspace Control', icon: Building2 }
             ]
         });
     }
 
-    const handleNav = (path: string) => {
+    const handleNav = (path) => {
         navigate(path);
-        if (onNavigate) onNavigate();
+        if (onNavigate) onNavigate(); // close sidebar on mobile
     };
 
+    // On mobile: show/hide via class; on desktop: normal collapsed logic
     const sidebarClass = [
         'sidebar',
         collapsed && !isMobile ? 'collapsed' : '',
@@ -195,13 +192,14 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
 
     return (
         <nav className={sidebarClass}>
+            {/* Logo + mobile close button */}
             <div className="sidebar-logo">
-                {branding?.logo_url ? (
+                {branding.logo_url ? (
                     <img src={branding.logo_url} alt={branding.company_name} style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'contain' }} />
                 ) : (
-                    <div className="sidebar-logo-icon">{branding?.logo_icon || 'Z'}</div>
+                    <div className="sidebar-logo-icon">{branding.logo_icon || 'Z'}</div>
                 )}
-                <span className="sidebar-logo-text">{branding?.company_name || 'Zentrix CRM'}</span>
+                <span className="sidebar-logo-text">{branding.company_name || 'Zentrix CRM'}</span>
                 {isMobile && (
                     <button className="mobile-close-btn" onClick={onToggle} aria-label="Close menu">
                         <X size={20} />
@@ -209,6 +207,7 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                 )}
             </div>
 
+            {/* Role badge (when expanded) */}
             {!collapsed && user && (
                 <div style={{
                     margin: '0 12px 12px', padding: '6px 10px',
@@ -226,11 +225,12 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                 </div>
             )}
 
+            {/* Navigation */}
             <div className="sidebar-nav">
                 {filteredSections.map(section => (
                     <div key={section.label}>
                         <div className="nav-section-label">{section.label}</div>
-                        {section.items.map(({ path, label, icon: Icon, badge }: any) => {
+                        {section.items.map(({ path, label, icon: Icon, badge }) => {
                             let displayBadge = badge;
                             if (label === 'Leads' && realLeadCount !== null) displayBadge = realLeadCount;
                             if (label === 'Follow-Ups' && realFollowupCount !== null) displayBadge = realFollowupCount;
@@ -252,6 +252,7 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                     </div>
                 ))}
 
+                {/* Public Enquiry Form link */}
                 {!collapsed && (
                     <div style={{ padding: '8px 12px 0' }}>
                         <div className="nav-section-label">Public</div>
@@ -267,14 +268,16 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                 )}
             </div>
 
+            {/* Footer */}
             <div className="sidebar-footer">
                 <div className="sidebar-user" onClick={() => handleNav('/admin')}>
-                    <div className="sidebar-avatar">{user?.name ? user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) : '??'}</div>
+                    <div className="sidebar-avatar">{user?.name ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??'}</div>
                     <div className="sidebar-user-info">
                         <div className="sidebar-user-name">{user?.name || 'User'}</div>
                         <div className="sidebar-user-role">{ROLE_LABELS[user?.role] || '—'}</div>
                     </div>
                 </div>
+                {/* Logout */}
                 {!collapsed && (
                     <button onClick={onLogout} style={{
                         display: 'flex', alignItems: 'center', gap: 8, width: '100%',
@@ -291,6 +294,7 @@ export default function Sidebar({ collapsed, isMobile, mobileOpen, onToggle, onL
                 )}
             </div>
 
+            {/* Collapse toggle — desktop only */}
             {!isMobile && (
                 <button onClick={onToggle} style={{
                     position: 'absolute', right: '-14px', top: '78px',

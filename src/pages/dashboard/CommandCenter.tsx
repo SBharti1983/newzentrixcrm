@@ -126,35 +126,7 @@ export default function CommandCenter() {
     };
 
     return (
-        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '100px' : '0px', marginBottom: '0px', overflowX: 'hidden' }}>
-            {/* Strategic Command Header */}
-            <div className="command-center-header glass-panel" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 12 : 16, padding: isMobile ? '16px' : '20px' }}>
-                <div style={{ display: 'none', alignItems: 'center', gap: isMobile ? 12 : 16 }}>
-                    <div className="ai-pulse" style={{ width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? '12px' : '16px', background: 'linear-gradient(135deg, #6366f1, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', boxShadow: '0 8px 24px rgba(99, 102, 241, 0.25)', flexShrink: 0 }}>
-                        <Brain size={isMobile ? 18 : 24} />
-                    </div>
-                    <div>
-                        <h2 className="text-gradient-premium" style={{ margin: 0, fontSize: isMobile ? '18px' : '22px', fontWeight: 900, letterSpacing: '-0.03em' }}>Strategic Command</h2>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: isMobile ? 2 : 4 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-emerald)', boxShadow: '0 0 8px var(--accent-emerald)' }} />
-                            <span style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Systems Nominal</span>
-                        </div>
-                    </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 20, width: isMobile ? '100%' : 'auto', justifyContent: isMobile ? 'space-between' : 'flex-end' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', padding: isMobile ? '6px 12px' : '8px 16px', borderRadius: '12px', border: '1px solid #eef2f6' }}>
-                        <Clock size={14} style={{ color: 'var(--accent-cyan)' }} />
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--navy-800)' }}>Sync: 2m</span>
-                    </div>
-                    <button onClick={handleSimulateInbound} style={{ 
-                        padding: isMobile ? '8px 14px' : '10px 18px', borderRadius: '12px', background: 'white', color: 'var(--navy-900)', 
-                        border: '1.5px solid #e2e8f0', fontSize: isMobile ? '11px' : '12px', fontWeight: 800, display: 'flex', alignItems: 'center', 
-                        gap: 8, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                    }} className="hover-lift">
-                        <Phone size={14} color="#6366f1" /> {isMobile ? 'Simulate' : 'Simulate IVR Call'}
-                    </button>
-                </div>
-            </div>
+        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '100px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: 0 }}>
 
             <div className="command-center-grid">
                 {/* Left Panel: Conversations List */}
@@ -302,7 +274,7 @@ export default function CommandCenter() {
                                                 )}
                                                 <p style={{ margin: 0, fontSize: isMobile ? '0.85rem' : '0.95rem', lineHeight: 1.5, fontWeight: 500, color: 'inherit', whiteSpace: 'pre-wrap' }}>{m.body}</p>
                                                 <div style={{ textAlign: 'right', marginTop: 8, fontSize: '0.6rem', opacity: m.sent_by ? 0.9 : 0.6, fontWeight: 700, color: 'inherit' }}>
-                                                    {new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {dateUtils.parseSafe(m.sent_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '—'}
                                                 </div>
                                             </div>
                                         </div>
@@ -313,7 +285,7 @@ export default function CommandCenter() {
                                 </div>
 
                                 <div style={{ padding: isMobile ? '12px' : '24px', background: 'white', borderTop: '1px solid var(--border-light)' }}>
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: isMobile ? '8px' : '12px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', transition: 'all 0.2s', padding: isMobile ? '4px 8px' : '8px 12px' }} tabIndex="0" onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-violet)'} onBlur={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
+                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: isMobile ? '8px' : '12px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', transition: 'all 0.2s', padding: isMobile ? '4px 8px' : '8px 12px' }} tabIndex={0} onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-violet)'} onBlur={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
                                         <button 
                                             className="btn hover-lift" 
                                             style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1))', color: 'var(--accent-violet)', fontWeight: 800, padding: isMobile ? '8px' : '12px', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
@@ -345,17 +317,17 @@ export default function CommandCenter() {
 
                 {/* Right Panel: AI Intelligence */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
-                    <div className="card" style={{ padding: '32px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 12px 30px -10px rgba(0,0,0,0.05)' }}>
+                    <div className="card" style={{ padding: '12px 32px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 12px 30px -10px rgba(0,0,0,0.05)' }}>
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4)' }} />
                         <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.02, transform: 'rotate(-15deg)' }}>
                             <TrendingUp size={160} />
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                             <div className="ai-pulse" style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-violet)', boxShadow: '0 0 12px var(--accent-violet)' }} />
                             <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Conversion Index</h4>
                         </div>
-                        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingBottom: '16px' }}>
-                            <div style={{ fontSize: '5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.08em', textShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>{intel?.closingProbability || 0}<span style={{ fontSize: '2.5rem', opacity: 0.5 }}>%</span></div>
+                        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingBottom: '4px' }}>
+                            <div style={{ fontSize: '4.5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.08em', textShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>{intel?.closingProbability || 0}<span style={{ fontSize: '2rem', opacity: 0.5 }}>%</span></div>
                         </div>
                     </div>
 
@@ -407,7 +379,7 @@ export default function CommandCenter() {
 
                         <div style={{ padding: '28px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(15, 23, 42, 0.5)' }}>
                             <button className="btn hover-lift" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15))', color: '#e0e7ff', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center' }}>
-                                <Sparkles size={16} style={{ marginRight: 8, color: '#c084fc' }} /> Generate Neural Pitch
+                                <Sparkles size={16} style={{ marginRight: 8, color: '#c084fc' }} /> Generate Smart Pitch
                             </button>
                             
                             <div style={{ padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>

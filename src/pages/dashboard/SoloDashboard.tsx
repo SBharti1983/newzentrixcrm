@@ -17,6 +17,7 @@ const COLORS = {
     card: '#FFFFFF',
     border: '#E2E8F0',
     text: '#0F172A',
+    textPrimary: '#0F172A',
     textSecondary: '#64748B'
 };
 
@@ -52,7 +53,7 @@ export default function SoloDashboard() {
     );
 
     return (
-        <div style={{ padding: '32px', maxWidth: '1600px', margin: '0 auto' }}>
+        <div style={{ padding: isMobile ? '0 16px 16px' : '0 32px 32px', paddingTop: 0, background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
             {/* Executive Summary */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px' }}>
                 <div style={{ display: 'none' }}>

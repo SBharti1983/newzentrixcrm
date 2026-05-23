@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { 
     Home, Users, BarChart3, Bell, LogOut, ChevronRight, 
@@ -160,7 +161,7 @@ export default function BrokerPortal() {
                                                 <td style={{ padding: '20px 32px' }}>
                                                     <span className={`badge ${l.stage === 'Won' ? 'badge-green' : 'badge-blue'}`} style={{ fontWeight: 900, fontSize: '0.7rem' }}>{l.stage}</span>
                                                 </td>
-                                                <td style={{ padding: '20px 32px', textAlign: 'right', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>{new Date(l.created_at).toLocaleDateString('en-IN')}</td>
+                                                <td style={{ padding: '20px 32px', textAlign: 'right', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600 }}>{dateUtils.formatSafeDate(l.created_at)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -231,7 +232,7 @@ export default function BrokerPortal() {
                                     ))}
                                     {commissions.length === 0 && (
                                         <tr>
-                                            <td colSpan="5" style={{ padding: '80px', textAlign: 'center', color: '#94a3b8' }}>
+                                            <td colSpan={5} style={{ padding: '80px', textAlign: 'center', color: '#94a3b8' }}>
                                                 <IndianRupee size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
                                                 <div style={{ fontWeight: 800 }}>No payout records found yet.</div>
                                                 <div style={{ fontSize: '0.85rem' }}>Earnings appear here once your referred bookings are confirmed.</div>
@@ -286,7 +287,7 @@ export default function BrokerPortal() {
                             </div>
                             <div className="form-group">
                                 <label>Internal Notes</label>
-                                <textarea rows="3" value={newLead.notes} onChange={e => setNewLead({...newLead, notes: e.target.value})} placeholder="Tell us more about the customer's requirements..." />
+                                <textarea rows={3} value={newLead.notes} onChange={e => setNewLead({...newLead, notes: e.target.value})} placeholder="Tell us more about the customer's requirements..." />
                             </div>
                             <button className="btn btn-primary" type="submit" style={{ marginTop: 8, height: 48, fontWeight: 800 }}>Submit for Verification</button>
                         </form>

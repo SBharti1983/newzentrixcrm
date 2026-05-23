@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
 import LeaderboardWidget from '../../components/dashboard/LeaderboardWidget';
+import * as dateUtils from '../../utils/dateUtils';
 
 const COLORS = {
     brand: '#6366f1',
@@ -61,7 +62,7 @@ export default function ManagerDashboardView({ user, data }: any) {
 
     
     const getGreeting = () => {
-        const hour = new Date().getHours();
+        const hour = dateUtils.getNow().getHours();
         if (hour < 12) return 'Good morning';
         if (hour < 17) return 'Good afternoon';
         return 'Good evening';
@@ -83,7 +84,7 @@ export default function ManagerDashboardView({ user, data }: any) {
     };
 
     return (
-        <div style={{ padding: isMobile ? '16px' : '24px 32px', background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
+        <div style={{ padding: isMobile ? '0 16px 16px' : '0 32px 32px', paddingTop: 0, background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
             
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: isMobile ? '20px' : '32px', gap: isMobile ? 12 : 0 }}>
@@ -271,7 +272,10 @@ export default function ManagerDashboardView({ user, data }: any) {
                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: COLORS.slate600, background: COLORS.slate100, padding: '4px 12px', borderRadius: '8px' }}>Today <ChevronDown size={12} /></div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <TaskCounter label="Follow-ups" count={upcomingFollowups.length} sub={`${upcomingFollowups.filter(f => new Date(f.scheduled_at) < new Date()).length} overdue`} color={COLORS.success} />
+                        <TaskCounter label="Follow-ups" count={upcomingFollowups.length} sub={`${upcomingFollowups.filter(f => {
+                            const d = dateUtils.parseSafe(f.scheduled_at);
+                            return d && d < dateUtils.getNow();
+                        }).length} overdue`} color={COLORS.success} />
                         <TaskCounter label="Site Visits" count={stats.site_visits || 0} sub="Scheduled" color={COLORS.brand} />
                         <TaskCounter label="New Leads" count={leadsStat.new_this_month || 0} sub="Unprocessed" color="#2dd4bf" />
                         <TaskCounter label="Pipeline Val" count={formatRevenue(pipeline.value)} sub="Active" color="#fbbf24" />
@@ -288,7 +292,7 @@ export default function ManagerDashboardView({ user, data }: any) {
                         {upcomingFollowups.slice(0, 3).map((f, idx) => (
                             <ActivityEntry 
                                 key={f.id}
-                                time={new Date(f.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                time={dateUtils.parseSafe(f.scheduled_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '--:--'} 
                                 icon={f.type === 'Call' ? Phone : Layout} 
                                 title={f.type} 
                                 sub={`${f.agent_name} • ${f.lead_name}`} 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import { useApi } from '../../hooks/useApi';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { channelPartnersApi, projectsApi, leadsApi } from '../../api/client';
@@ -60,7 +61,7 @@ function StarRating({ rating }) {
 }
 
 // ─── Mini Stat ─────────────────────────────────────────────────────
-function MiniStat({ label, value, color }) {
+function MiniStat({ label, value, color = 'var(--navy-600)' }) {
     return (
         <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '1.1rem', fontWeight: 800, color: color || 'var(--navy-600)' }}>{value}</div>
@@ -228,7 +229,7 @@ export default function ChannelPartners() {
                                 </select>
                                 <select className="form-control" style={{ flex: 1 }} value={filterCity} onChange={e => setFilterCity(e.target.value)}>
                                     <option value="All">All Cities</option>
-                                    {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                                    {cities.map((c: any) => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -340,7 +341,7 @@ export default function ChannelPartners() {
                                         {partnerLeads.map(l => (
                                             <div key={l.id} style={{ padding: 12, border: '1px solid var(--border-light)', borderRadius: 8 }}>
                                                 <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{l.name}</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{l.stage} · {new Date(l.created_at).toLocaleDateString()}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{l.stage} · {dateUtils.formatSafeDate(l.created_at)}</div>
                                             </div>
                                         ))}
                                     </div>

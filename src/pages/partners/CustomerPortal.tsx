@@ -42,7 +42,7 @@ export default function CustomerPortal() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                 <div style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em' }}>ZENTRIX EXCLUSIVE</div>
                             </div>
-                            <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em', color: 'white' }}>Welcome back, {customerData.name.split(' ')[0]}</h1>
+                            <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: '0 0 4px', letterSpacing: '-0.02em', color: 'white' }}>Welcome back, {(customerData.name || 'Member').split(' ')[0]}</h1>
                             <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.9)', margin: '0 0 8px', display: 'flex', gap: 12 }}>
                                 <span>📧 {user?.email || 'customer@example.com'}</span>
                                 <span>📱 +91 98765 43210</span>

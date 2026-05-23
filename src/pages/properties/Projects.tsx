@@ -7,6 +7,7 @@ import { useApi } from '../../hooks/useApi';
 import { projectsApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
+import * as dateUtils from '../../utils/dateUtils';
 
 const STATUS_BADGE = {
     Active: 'badge-green',
@@ -326,7 +327,7 @@ export default function Projects() {
                                     { label: 'Total units', value: viewProject.total_units, sub: 'Inventory Size' },
                                     { label: 'Available', value: viewProject.available_units, sub: 'Active Supply', color: 'var(--accent-emerald)' },
                                     { label: 'Entry Ticket', value: viewProject.price_range?.split('–')[0], sub: 'Market Value' },
-                                    { label: 'Maturity', value: viewProject.possession_date ? new Date(viewProject.possession_date).getFullYear() : '2026', sub: 'Completion' }
+                                    { label: 'Maturity', value: dateUtils.parseSafe(viewProject.possession_date)?.getFullYear() || '2026', sub: 'Completion' }
                                 ].map(s => (
                                     <div key={s.label} style={{ background: '#f8fafc', padding: isMobile ? '16px' : '24px', borderRadius: '24px', border: '1px solid #f1f5f9' }}>
                                         <div style={{ fontSize: '9px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 4 }}>{s.label}</div>

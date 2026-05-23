@@ -19,7 +19,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                 message: 'A new lead "John Doe" has been assigned to you.',
                 type: 'lead',
                 is_read: false,
-                created_at: new Date().toISOString()
+                created_at: dateUtils.getNow().toISOString()
             },
             {
                 id: '2',
@@ -27,7 +27,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                 message: 'Site visit for "Silver Oaks" project is scheduled for tomorrow at 10 AM.',
                 type: 'task',
                 is_read: false,
-                created_at: new Date(Date.now() - 3600000).toISOString()
+                created_at: (() => { const d = dateUtils.getNow(); d.setTime(d.getTime() - 3600000); return d.toISOString(); })()
             },
             {
                 id: '3',
@@ -35,7 +35,7 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
                 message: 'Booking #BK-902 payment of ₹5,00,000 has been verified.',
                 type: 'success',
                 is_read: true,
-                created_at: new Date(Date.now() - 86400000).toISOString()
+                created_at: (() => { const d = dateUtils.getNow(); d.setTime(d.getTime() - 86400000); return d.toISOString(); })()
             }
         ];
 
@@ -92,8 +92,9 @@ export default function NotificationDropdown({ onClose }: NotificationDropdownPr
     };
 
     const formatTime = (dateStr) => {
-        const date = new Date(dateStr);
-        const now = new Date();
+        const date = dateUtils.parseSafe(dateStr);
+        if (!date) return 'Just now';
+        const now = dateUtils.getNow();
         const diff = (now.getTime() - date.getTime()) / 1000;
         if (diff < 60) return 'Just now';
         if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;

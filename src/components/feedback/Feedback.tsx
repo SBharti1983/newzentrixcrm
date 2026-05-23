@@ -1,5 +1,5 @@
 /** Spinner component — reusable across pages */
-export function PageLoader() {
+export function PageLoader({ message = "Loading..." }: any) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 300, gap: 16 }}>
             <div style={{
@@ -8,13 +8,13 @@ export function PageLoader() {
                 borderTopColor: 'var(--navy-500)',
                 animation: 'spin 0.7s linear infinite',
             }} />
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>Loading...</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 500 }}>{message}</div>
         </div>
     );
 }
 
 /** Error banner */
-export function PageError({ message, onRetry }) {
+export function PageError({ message, onRetry }: any) {
     return (
         <div style={{
             padding: 32, textAlign: 'center', borderRadius: 16,

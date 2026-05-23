@@ -133,7 +133,7 @@ export default function Dashboard() {
         if (user?.role === 'agent') setPersonalMode(true);
     }, [user?.role]);
 
-    if (loading) return <PageLoader />;
+    if (loading && !data) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
 
     if (user?.role === 'superadmin') {
@@ -145,7 +145,7 @@ export default function Dashboard() {
     } else if (user?.role === 'admin') {
         dashboardView = <AdminDashboardView user={user} data={stats} />;
     } else if (user?.role === 'team_leader') {
-        dashboardView = <TeamLeaderDashboardView user={user} data={stats} />;
+        dashboardView = <TeamLeaderDashboardView user={user} data={stats} loading={loading} />;
     } else if (personalMode) {
         dashboardView = (
             <div className="animate-fadeIn" style={{ background: '#f8fafc', padding: '24px', minHeight: '100vh', margin: '-24px' }}>

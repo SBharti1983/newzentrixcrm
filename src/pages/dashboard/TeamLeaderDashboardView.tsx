@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -7,8 +7,17 @@ import {
 import { 
     TrendingUp, Users, Target, Activity, Clock, ChevronDown, 
     Bell, Search, Plus, MapPin, Phone, MessageSquare, 
-    ChevronRight, CheckCircle, AlertCircle, Layout, Crown, Award, Zap
+    ChevronRight, CheckCircle, AlertCircle, Layout, Crown, Award, Zap, LucideIcon
 } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
+import { User } from '../../types/auth';
+import { TeamLeaderStats, MemberPerformance } from '../../types/api';
+
+interface TeamLeaderDashboardViewProps {
+    user: User | null;
+    data: TeamLeaderStats | null;
+    loading?: boolean;
+}
 
 const COLORS = {
     brand: '#6366f1',
@@ -36,42 +45,47 @@ const KPI_STYLE = {
     flex: 1
 };
 
-export default function TeamLeaderDashboardView({ user, data }: any) {
+export default function TeamLeaderDashboardView({ user, data, loading }: TeamLeaderDashboardViewProps) {
     const navigate = useNavigate();
 
     // Dynamic Chart Data mapping
-    const CHART_DATA = Array.isArray(data?.trends) ? data.trends.map(t => ({
-        name: t.name,
-        thisMonth: parseInt(t.leads) || 0,
-        lastMonth: Math.floor((parseInt(t.leads) || 0) * 0.8)
-    })) : [
-      { name: 'May 1', thisMonth: 4, lastMonth: 3 },
-      { name: 'May 6', thisMonth: 6, lastMonth: 5 },
-      { name: 'May 11', thisMonth: 5, lastMonth: 7 },
-      { name: 'May 16', thisMonth: 8, lastMonth: 6 },
-      { name: 'May 21', thisMonth: 9, lastMonth: 8 },
-      { name: 'May 26', thisMonth: 11, lastMonth: 9 },
-      { name: 'May 31', thisMonth: 14, lastMonth: 10 },
-    ];
-    const stats = data || {};
-    const members = stats.members || [];
-    const team_stats = stats.leads || {};
+    const chartData = useMemo(() => {
+        if (data?.trends) return data.trends.map(t => ({
+            name: t.name,
+            thisMonth: parseInt(String(t.leads)) || 0,
+            lastMonth: Math.floor((parseInt(String(t.leads)) || 0) * 0.8)
+        }));
+        // Fallback demo data
+        return [
+            { name: 'Mon', thisMonth: 4, lastMonth: 3 },
+            { name: 'Tue', thisMonth: 6, lastMonth: 5 },
+            { name: 'Wed', thisMonth: 5, lastMonth: 7 },
+            { name: 'Thu', thisMonth: 8, lastMonth: 6 },
+            { name: 'Fri', thisMonth: 9, lastMonth: 8 },
+            { name: 'Sat', thisMonth: 11, lastMonth: 9 },
+            { name: 'Sun', thisMonth: 14, lastMonth: 10 },
+        ];
+    }, [data?.trends]);
+
+    const members = data?.members || [];
 
     const getGreeting = () => {
-        const hour = new Date().getHours();
+        const hour = dateUtils.getNow().getHours();
         if (hour < 12) return 'Good morning';
         if (hour < 17) return 'Good afternoon';
         return 'Good evening';
     };
 
-    const formatRevenue = (v) => {
+    const formatRevenue = (v: number | string | undefined) => {
         if (!v) return '₹0';
-        const cr = Number(v) / 10000000;
-        return cr >= 1 ? `₹${cr.toFixed(1)}Cr` : `₹${(Number(v)/100000).toFixed(1)}L`;
+        const val = typeof v === 'string' ? parseFloat(v.replace(/[^0-9.]/g, '')) : v;
+        if (isNaN(val)) return '₹0';
+        const cr = val / 10000000;
+        return cr >= 1 ? `₹${cr.toFixed(1)}Cr` : `₹${(val / 100000).toFixed(1)}L`;
     };
 
     return (
-        <div style={{ padding: '24px 32px', background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
+        <div style={{ padding: isMobile ? '0 16px 16px' : '0 32px 32px', paddingTop: 0, background: COLORS.bg, minHeight: '100vh', fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif' }}>
             
             {/* Header */}
             <div style={{ display: 'none', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
@@ -108,12 +122,12 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
 
             {/* KPI Metrics */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                <MetricCard title="Squad Revenue" val={formatRevenue(stats.bookings?.total_value || 0)} growth="+ 22.4%" icon={Layout} color="#6366f1" />
-                <MetricCard title="Squad Bookings" val={stats.bookings?.total || 0} growth="+ 12%" icon={Award} color="#8b5cf6" />
-                <MetricCard title="Active Leads" val={stats.leads?.active_leads || 0} growth="+ 8.4%" icon={Users} color="#3b82f6" />
-                <MetricCard title="Lead Velocity" val="High" growth="Optimal" icon={TrendingUp} color="#10b981" />
-                <MetricCard title="Active Agents" val={`${members.length} Agents`} detail="All squads online" icon={Users} color="#6366f1" />
-                <MetricCard title="Market Index" val="92.4" growth="+ 3.2%" icon={Target} color="#06b6d4" />
+                <MetricCard title="Squad Revenue" val={formatRevenue(data?.bookings?.total_value)} growth="+ 22.4%" icon={Layout} color="#6366f1" loading={loading} />
+                <MetricCard title="Squad Bookings" val={data?.bookings?.total ?? 0} growth="+ 12%" icon={Award} color="#8b5cf6" loading={loading} />
+                <MetricCard title="Active Leads" val={data?.leads?.active_leads ?? 0} growth="+ 8.4%" icon={Users} color="#3b82f6" loading={loading} />
+                <MetricCard title="Lead Velocity" val="High" growth="Optimal" icon={TrendingUp} color="#10b981" loading={loading} />
+                <MetricCard title="Active Agents" val={`${members.length} Agents`} detail="All squads online" icon={Users} color="#6366f1" loading={loading} />
+                <MetricCard title="Market Index" val="92.4" growth="+ 3.2%" icon={Target} color="#06b6d4" loading={loading} />
             </div>
 
             {/* Main Content Areas */}
@@ -127,18 +141,18 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                     </div>
                     
                     <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
-                        <PipelineMetric step="Leads" val={stats.leads?.active_leads || 0} />
+                        <PipelineMetric step="Leads" val={data?.leads?.active_leads ?? 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Calls" val={stats.telephony_stats?.calls_today || 0} />
+                        <PipelineMetric step="Calls" val={data?.telephony_stats?.calls_today ?? 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Visits" val={stats.site_visits || 0} />
+                        <PipelineMetric step="Visits" val={data?.site_visits ?? 0} />
                         <PipelineDivider />
-                        <PipelineMetric step="Bookings" val={stats.bookings?.total || 0} />
+                        <PipelineMetric step="Bookings" val={data?.bookings?.total ?? 0} />
                     </div>
 
                     <div style={{ height: '240px' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={CHART_DATA}>
+                            <AreaChart data={chartData}>
                                 <defs>
                                     <linearGradient id="colorBrand" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor={COLORS.brand} stopOpacity={0.1}/><stop offset="95%" stopColor={COLORS.brand} stopOpacity={0}/></linearGradient>
                                 </defs>
@@ -213,7 +227,7 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: COLORS.slate950 }}>Squad Risk Radar</h3>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {(stats.active_deals || []).slice(0, 3).map((deal, i) => (
+                        {(data?.active_deals || []).slice(0, 3).map((deal, i) => (
                              <DealItem 
                                 key={i}
                                 project={deal.project_name} 
@@ -223,7 +237,7 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                                 reason={formatRevenue(deal.total_amount)} 
                             />
                         ))}
-                         {(!stats.active_deals || stats.active_deals.length === 0) && (
+                         {(!data?.active_deals || data?.active_deals.length === 0) && (
                             <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>Squad performance is optimal.</div>
                         )}
                     </div>
@@ -247,18 +261,18 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: COLORS.slate950 }}>Squad Agenda</h3>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                        {(stats.upcoming_followups || []).slice(0, 3).map((f, idx) => (
+                        {(data?.upcoming_followups || []).slice(0, 3).map((f, idx) => (
                             <ActivityEntry 
                                 key={f.id}
-                                time={new Date(f.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} 
+                                time={dateUtils.parseSafe(f.scheduled_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '00:00'} 
                                 icon={f.type === 'Call' ? Phone : Layout} 
                                 title={f.type} 
                                 sub={`${f.agent_name} • ${f.lead_name}`} 
                                 action="Review"
-                                isLast={idx === Math.min((stats.upcoming_followups || []).length, 3) - 1}
+                                isLast={idx === Math.min((data?.upcoming_followups || []).length, 3) - 1}
                             />
                         ))}
-                        {(!stats.upcoming_followups || stats.upcoming_followups.length === 0) && (
+                        {(!data?.upcoming_followups || data?.upcoming_followups.length === 0) && (
                             <div style={{ textAlign: 'center', padding: '20px', color: COLORS.slate400, fontSize: '0.8rem' }}>No upcoming activities.</div>
                         )}
                     </div>
@@ -278,7 +292,7 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                                 <img src={`https://ui-avatars.com/api/?name=${members[1]?.name || 'Agent'}&background=random`} style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid #e2e8f0', marginBottom: '6px' }} />
                                 <div style={{ position: 'absolute', top: -10, left: 12, width: 20, height: 20, background: '#cbd5e1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 800 }}>2</div>
                             </div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{members[1]?.name?.split(' ')[0] || '-'}</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{(members[1]?.name || 'Agent').split(' ')[0]}</div>
                         </div>
                         {/* 1st */}
                         <div style={{ textAlign: 'center' }}>
@@ -287,7 +301,7 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                                 <img src={`https://ui-avatars.com/api/?name=${members[0]?.name || 'Leader'}&background=random`} style={{ width: 56, height: 56, borderRadius: '50%', border: '4px solid #fbbf24', marginBottom: '6px' }} />
                                 <div style={{ position: 'absolute', top: -8, left: 24, width: 24, height: 24, background: '#fbbf24', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px', fontWeight: 800 }}>1</div>
                             </div>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{members[0]?.name?.split(' ')[0] || '-'}</div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 800 }}>{(members[0]?.name || 'Agent').split(' ')[0]}</div>
                         </div>
                         {/* 3rd */}
                         <div style={{ textAlign: 'center' }}>
@@ -295,7 +309,7 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
                                 <img src={`https://ui-avatars.com/api/?name=${members[2]?.name || 'Agent'}&background=random`} style={{ width: 44, height: 44, borderRadius: '50%', border: '3px solid #e2e8f0', marginBottom: '6px' }} />
                                 <div style={{ position: 'absolute', top: -10, left: 12, width: 20, height: 20, background: '#f59e0b90', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 800 }}>3</div>
                             </div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{members[2]?.name?.split(' ')[0] || '-'}</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 800 }}>{(members[2]?.name || 'Agent').split(' ')[0]}</div>
                         </div>
                     </div>
                     
@@ -309,6 +323,10 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
                 * { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+                @keyframes skeletonPulse {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(100%); }
+                }
             `}</style>
         </div>
     );
@@ -316,8 +334,31 @@ export default function TeamLeaderDashboardView({ user, data }: any) {
 
 // --- SUB-COMPONENTS (Simplified for TL Dashboard) ---
 
-const MetricCard = ({ title, val, growth, detail, icon: Icon, color }: any) => (
-    <div style={KPI_STYLE}>
+interface MetricCardProps {
+    title: string;
+    val: string | number;
+    growth?: string;
+    detail?: string;
+    icon: LucideIcon;
+    color: string;
+    loading?: boolean;
+}
+
+const MetricCard = ({ title, val, growth, detail, icon: Icon, color, loading }: MetricCardProps) => (
+    <div style={{ 
+        ...KPI_STYLE, 
+        position: 'relative', 
+        overflow: 'hidden',
+        opacity: loading ? 0.7 : 1,
+        transition: 'opacity 0.3s ease'
+    }}>
+        {loading && (
+            <div style={{ 
+                position: 'absolute', top: 0, left: 0, right: 0, height: '2px', 
+                background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+                animation: 'skeletonPulse 1.5s infinite linear'
+            }} />
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
             <div style={{ padding: '10px', background: `${color}10`, borderRadius: '12px', color: color }}>
                 {Icon && <Icon size={20} />}
@@ -330,7 +371,12 @@ const MetricCard = ({ title, val, growth, detail, icon: Icon, color }: any) => (
     </div>
 );
 
-const PipelineMetric = ({ step, val }: any) => (
+interface PipelineMetricProps {
+    step: string;
+    val: number | string;
+}
+
+const PipelineMetric = ({ step, val }: PipelineMetricProps) => (
     <div>
         <div style={{ fontSize: '1rem', fontWeight: 900, color: COLORS.slate950 }}>{val}</div>
         <div style={{ fontSize: '0.65rem', fontWeight: 750, color: COLORS.slate400 }}>{step}</div>
@@ -339,7 +385,15 @@ const PipelineMetric = ({ step, val }: any) => (
 
 const PipelineDivider = () => <div style={{ display: 'flex', alignItems: 'center', color: '#e2e8f0' }}><ChevronRight size={16} /></div>;
 
-const InsightItem = ({ icon: Icon, color, title, desc, link }: any) => (
+interface InsightItemProps {
+    icon: LucideIcon;
+    color: string;
+    title: string;
+    desc: string;
+    link?: string;
+}
+
+const InsightItem = ({ icon: Icon, color, title, desc, link }: InsightItemProps) => (
     <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', gap: '10px' }}>
             <Icon size={18} color={color} />
@@ -352,7 +406,15 @@ const InsightItem = ({ icon: Icon, color, title, desc, link }: any) => (
     </div>
 );
 
-const AgentRow = ({ name, revenue, progress, color, bookings }: any) => (
+interface AgentRowProps {
+    name: string;
+    revenue: string;
+    progress: number;
+    color: string;
+    bookings: number;
+}
+
+const AgentRow = ({ name, revenue, progress, color, bookings }: AgentRowProps) => (
 
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ flex: 1 }}>
@@ -367,7 +429,15 @@ const AgentRow = ({ name, revenue, progress, color, bookings }: any) => (
     </div>
 );
 
-const DealItem = ({ project, agent, status, riskColor, reason }: any) => (
+interface DealItemProps {
+    project: string;
+    agent: string;
+    status: string;
+    riskColor: string;
+    reason: string;
+}
+
+const DealItem = ({ project, agent, status, riskColor, reason }: DealItemProps) => (
     <div style={{ padding: '10px', background: '#fff', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 900 }}>{project}</span>
@@ -378,7 +448,14 @@ const DealItem = ({ project, agent, status, riskColor, reason }: any) => (
     </div>
 );
 
-const TaskCounter = ({ label, count, sub, color }: any) => (
+interface TaskCounterProps {
+    label: string;
+    count: number;
+    sub: string;
+    color: string;
+}
+
+const TaskCounter = ({ label, count, sub, color }: TaskCounterProps) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${color}10`, color: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>{count}</div>
         <div>
@@ -388,7 +465,16 @@ const TaskCounter = ({ label, count, sub, color }: any) => (
     </div>
 );
 
-const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }: any) => (
+interface ActivityEntryProps {
+    time: string;
+    icon: LucideIcon;
+    title: string;
+    sub: string;
+    action: string;
+    isLast: boolean;
+}
+
+const ActivityEntry = ({ time, icon: Icon, title, sub, action, isLast }: ActivityEntryProps) => (
     <div style={{ display: 'flex', gap: '12px', position: 'relative', paddingBottom: isLast ? 0 : '16px' }}>
         <div style={{ width: '45px', fontSize: '0.65rem', fontWeight: 800, color: COLORS.slate400, paddingTop: '10px' }}>{time}</div>
         <div style={{ flex: 1, padding: '10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', gap: '10px', alignItems: 'center' }}>

@@ -220,7 +220,7 @@ export default function Leaderboard() {
                                     </tr>
                                 ))}{leaderboard.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" style={{ textAlign: 'center', padding: '60px' }}>
+                                        <td colSpan={7} style={{ textAlign: 'center', padding: '60px' }}>
                                             <Award size={48} color="var(--border-light)" style={{ marginBottom: '16px' }} />
                                             <div style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>No performance data available for the selected period</div>
                                         </td>

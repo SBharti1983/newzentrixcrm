@@ -4,6 +4,7 @@ import { useBranding } from '../../context/BrandingContext';
 import { authApi } from '../../api/client';
 import { Eye, EyeOff, Lock, Mail, TrendingUp, Users, Building2, ArrowRight, Shield, Zap, BarChart3, CheckCircle2, Phone } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const getSubdomain = () => {
     const host = window.location.hostname;
@@ -167,7 +168,7 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [loginError, setLoginError] = useState('');
     const [showPwd, setShowPwd] = useState(false);
-    const formRef = useRef();
+    const formRef = useRef(null);
     const [mounted, setMounted] = useState(false);
 
     const PRIMARY_COLOR = branding?.primary_color || '#6366f1';
@@ -212,9 +213,9 @@ export default function Login() {
         try {
             const success = await login(email, password, subdomain);
             // login navigates on success via context user state change
-        } catch (err) {
+        } catch (err: any) {
             // Check for error property which is standard for our backend responses
-            const msg = err.error || err.message || 'Authentication failed. Please check your credentials.';
+            const msg = err?.error || err?.message || 'Authentication failed. Please check your credentials.';
             setLoginError(msg);
         } finally {
             setLoading(false);
@@ -553,7 +554,7 @@ export default function Login() {
                             fontWeight: 600, letterSpacing: '0.02em'
                         }}>
                             Enterprise-Grade Security Shield Active<br />
-                            © {new Date().getFullYear()} {tenantName}. All rights reserved.
+                            © {dateUtils.getNow().getFullYear()} {tenantName}. All rights reserved.
                         </p>
                     </div>
                 </div>

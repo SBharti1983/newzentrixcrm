@@ -34,7 +34,7 @@ const PAGE_TITLES = {
     '/search': { title: 'Search Results', subtitle: 'Global exploration' },
     '/superadmin': { title: 'Network Command Center', subtitle: 'Monitoring Workspaces across Zentrix Global Network' },
     '/lead-scoring': { title: 'Lead Score & Status', subtitle: 'Advanced qualification funnel and predictive scoring' },
-    '/command-center': { title: 'Command Center', subtitle: 'Strategic real-time intelligence' },
+    '/command-center': { title: 'Pipeline Command', subtitle: 'CRM Engine Active' },
     '/inbox': { title: 'Omnichannel Inbox', subtitle: 'Manage real-time streams from WhatsApp, Email, and SMS' },
     '/whatsapp-marketing': { title: 'WhatsApp Intelligence', subtitle: 'Autonomous AI engagement and campaign broadcasting' },
     '/marketing': { title: 'Marketing Hub', subtitle: 'Orchestrate high-conversion drip sequences and follow-up loops' },
@@ -312,22 +312,6 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     {['EN', 'AR', 'ES', 'ZH'].map(lang => (lang === 'EN' ? <span key={lang} style={{ color: 'var(--navy-900)', background: '#f1f5f9', padding: '4px 8px', borderRadius: 8, border: '1px solid #e2e8f0' }}>{lang}</span> : null))}
                 </div>
 
-                {!isMobile && (
-                    <button 
-                        onClick={() => window.simulateInbound?.()} 
-                        style={{ 
-                            marginRight: 20, padding: '10px 18px', borderRadius: '12px', 
-                            background: '#0a1628', color: 'white', border: 'none', 
-                            fontSize: '0.7rem', fontWeight: 900, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 8,
-                            boxShadow: '0 8px 20px rgba(10,22,40,0.2)',
-                            transition: 'all 0.3s'
-                        }}
-                        className="hover-lift"
-                    >
-                        <Phone size={14} color="#10b981" /> SIMULATE IVR
-                    </button>
-                )}
 
                 <button 
                     className="icon-btn"

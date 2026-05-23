@@ -113,6 +113,12 @@ router.get('/:id/inventory', async (req: any, res: Response) => {
     try {
         const { status, type, limit = 200, offset = 0 } = req.query;
         
+        // UUID Validation to prevent 500 error on invalid IDs (like '1')
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(req.params.id)) {
+            return res.json([]);
+        }
+
         const conditions = [
             eq(inventory.projectId, req.params.id),
             eq(inventory.tenantId, req.tenantId)

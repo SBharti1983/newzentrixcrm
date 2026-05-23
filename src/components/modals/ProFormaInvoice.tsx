@@ -54,7 +54,7 @@ export default function ProFormaInvoice({ booking, plan, onClose }) {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#6366f1', marginBottom: 4 }}>PRO-FORMA</div>
-                            <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Date: {new Date().toLocaleDateString('en-IN')}</div>
+                            <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Date: {dateUtils.getNow().toLocaleDateString('en-IN')}</div>
                             <div style={{ fontSize: '0.9rem', color: '#64748b' }}>Ref: PF-{booking.id}-{Math.floor(Math.random() * 9000) + 1000}</div>
                         </div>
                     </div>
@@ -111,7 +111,7 @@ export default function ProFormaInvoice({ booking, plan, onClose }) {
                             </tbody>
                             <tfoot>
                                 <tr style={{ borderTop: '2px solid #1e293b' }}>
-                                    <td colSpan="2" style={{ padding: '20px 10px', fontWeight: 800 }}>GRAND TOTAL</td>
+                                    <td colSpan={2} style={{ padding: '20px 10px', fontWeight: 800 }}>GRAND TOTAL</td>
                                     <td style={{ padding: '20px 10px', textAlign: 'right', fontWeight: 800 }}>100%</td>
                                     <td style={{ padding: '20px 10px', textAlign: 'right', fontWeight: 900, fontSize: '1.2rem', color: '#6366f1' }}>{formatCurrency(total)}</td>
                                 </tr>

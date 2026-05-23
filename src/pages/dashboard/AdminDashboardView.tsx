@@ -35,7 +35,7 @@ export default function AdminDashboardView({ user, data }) {
     };
 
     return (
-        <div style={{ padding: isMobile ? '16px' : '40px', minHeight: '100vh', background: 'var(--surface-bg)', fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif', transition: 'background 0.3s ease' }}>
+        <div style={{ padding: isMobile ? '0 16px 16px' : '0 40px 40px', minHeight: '100vh', background: 'var(--surface-bg)', fontFamily: '"Inter", "Plus Jakarta Sans", sans-serif', transition: 'background 0.3s ease' }}>
             <style>{`
                 @keyframes pulse-ai {
                     0% { transform: scale(1); opacity: 1; }
@@ -70,18 +70,8 @@ export default function AdminDashboardView({ user, data }) {
                 }
             `}</style>
 
-            {/* Premium Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', marginBottom: '32px', gap: isMobile ? 16 : 0 }}>
-                <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
-                    <h1 style={{ margin: 0, fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
-                        Executive <span style={{ color: '#10b981' }}>Intelligence</span>
-                    </h1>
-                    <p style={{ margin: '8px 0 0', color: 'var(--text-muted)', fontSize: '1.1rem', fontWeight: 500 }}>Corporate performance & AI behavioral auditing</p>
-                </div>
-                <div style={{ padding: '8px 16px', background: 'var(--surface-card)', border: '1px solid var(--border-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Clock size={14} />
-                    <span style={{ fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem' }}>FY 2025–26</span>
-                </div>
+            {/* Premium Header - Subheader hidden as per Global Header Only standard */}
+            <div style={{ display: 'none', height: 0, overflow: 'hidden' }}>
             </div>
 
             {/* KPI Cards */}

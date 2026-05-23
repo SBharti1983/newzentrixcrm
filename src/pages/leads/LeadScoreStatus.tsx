@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const LEAD_STATUSES = [
     { id: 'New Lead', label: 'New Lead', icon: Home, color: '#3b82f6', bg: '#eff6ff', description: 'Freshly imported leads' },
@@ -307,7 +308,7 @@ export default function LeadScoreStatus() {
                                                             <MapPin size={10} /> {lead.stage.includes('Site Visit') || lead.calculatedScore > 80 ? 'Visit Done' : 'No Visit'}
                                                         </div>
                                                         <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                                                            {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString() : 'Never'}
+                                                            {lead.last_contact_at ? dateUtils.formatSafeDateISO(lead.last_contact_at) : 'Never'}
                                                         </div>
                                                     </div>
                                                 </td>

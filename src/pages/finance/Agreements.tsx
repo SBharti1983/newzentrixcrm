@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import {
     FileText, Upload, Download, Eye, CheckCircle, Clock, X, Plus,
     AlertTriangle, Search, Filter, FolderOpen, Shield, FileBadge,
@@ -60,7 +61,7 @@ export default function Agreements() {
     const totalDocs = agreements.length;
     const signedDocs = agreements.filter(a => (a.status || '').includes('Signed')).length;
     const pendingDocs = agreements.filter(a => (a.status || '').includes('Pending')).length;
-    const expiringDocs = agreements.filter(a => a.expires_at && new Date(a.expires_at) <= new Date(Date.now() + 30 * 86400000)).length;
+    const expiringDocs = agreements.filter(a => a.expires_at && (dateUtils.parseSafe(a.expires_at)?.getTime() || 0) <= Date.now() + 30 * 86400000).length;
 
     const filtered = agreements.filter(a => {
         const docType = a.type || a.docType || '';

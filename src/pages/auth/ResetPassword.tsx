@@ -55,8 +55,8 @@ export default function ResetPassword() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
             setDone(true);
-        } catch (err) {
-            setError(err.message || 'Failed to reset password');
+        } catch (err: any) {
+            setError(err?.message || 'Failed to reset password');
         } finally {
             setLoading(false);
         }

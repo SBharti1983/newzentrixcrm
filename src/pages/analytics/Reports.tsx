@@ -11,6 +11,7 @@ import { analyticsApi, leadsApi, usersApi, documentsApi } from '../../api/client
 import { useApi } from '../../hooks/useApi';
 import { useToast } from '../../hooks/useToast';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 // Mock report templates
 const REPORT_TEMPLATES = [
@@ -50,11 +51,11 @@ export default function Reports() {
             // 2. Initialize PDF
             const doc = new jsPDF();
             const pageWidth = doc.internal.pageSize.getWidth();
-            const dateStr = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+            const dateStr = dateUtils.getNow().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
             // Styling colors
-            const NAVY = [10, 22, 40];
-            const ACCENT = [59, 99, 184];
+            const NAVY: [number, number, number] = [10, 22, 40];
+            const ACCENT: [number, number, number] = [59, 99, 184];
 
             // ─── Header ───────────────────────────────────────────
             doc.setFillColor(...NAVY);
@@ -93,17 +94,17 @@ export default function Reports() {
                 theme: 'plain',
                 styles: { fontSize: 11, cellPadding: 5, font: 'helvetica' },
                 columnStyles: {
-                    0: { fontStyle: 'bold', textColor: [100, 100, 100], width: 40 },
-                    1: { fontStyle: 'bold', fontSize: 13, textColor: NAVY, width: 50 },
-                    2: { fontStyle: 'bold', textColor: [100, 100, 100], width: 40 },
-                    3: { fontStyle: 'bold', fontSize: 13, textColor: NAVY, width: 50 }
+                    0: { fontStyle: 'bold', textColor: [100, 100, 100], cellWidth: 40 },
+                    1: { fontStyle: 'bold', fontSize: 13, textColor: NAVY, cellWidth: 50 },
+                    2: { fontStyle: 'bold', textColor: [100, 100, 100], cellWidth: 40 },
+                    3: { fontStyle: 'bold', fontSize: 13, textColor: NAVY, cellWidth: 50 }
                 }
             });
 
             // ─── Agent Performance Table ──────────────────────────
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('Agent Performance Matrix', 20, doc.lastAutoTable.finalY + 20);
+            doc.text('Agent Performance Matrix', 20, (doc as any).lastAutoTable.finalY + 20);
 
             const agentRows = agentPerf.map(agent => [
                 agent.name,
@@ -114,7 +115,7 @@ export default function Reports() {
             ]);
 
             autoTable(doc, {
-                startY: doc.lastAutoTable.finalY + 25,
+                startY: (doc as any).lastAutoTable.finalY + 25,
                 head: [['Sales Agent', 'Assigned', 'Won', 'Conv %', 'Revenue Generated']],
                 body: agentRows.length ? agentRows : [['No data', '0', '0', '0%', '₹0']],
                 headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -123,7 +124,7 @@ export default function Reports() {
             });
 
             // ─── Insights Section ─────────────────────────────────
-            const startY = doc.lastAutoTable.finalY + 20;
+            const startY = (doc as any).lastAutoTable.finalY + 20;
             doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
             doc.text('AI-Generated Insights', 20, startY);
@@ -140,7 +141,7 @@ export default function Reports() {
             doc.text(insights, 20, startY + 10);
 
             // ─── Footer ───────────────────────────────────────────
-            const totalPages = doc.internal.getNumberOfPages();
+            const totalPages = doc.getNumberOfPages();
             for (let i = 1; i <= totalPages; i++) {
                 doc.setPage(i);
                 doc.setFontSize(8);
@@ -149,7 +150,7 @@ export default function Reports() {
             }
 
             // 3. Save
-            const now = new Date();
+            const now = dateUtils.getNow();
             const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
             const finalName = `Zentrix_Performance_Report_${timestamp}.pdf`;
             
@@ -173,9 +174,9 @@ export default function Reports() {
             });
 
             showToast('Report exported and saved to history!', 'success');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Report Generation Error:', err);
-            showToast('Failed to generate report', 'error');
+            showToast('Failed to generate monthly report', 'error');
         } finally {
             setGenerating(false);
         }
@@ -198,7 +199,7 @@ export default function Reports() {
                 return;
             }
 
-            const now = new Date();
+            const now = dateUtils.getNow();
             const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
             const filename = `Zentrix_Audit_Log_${timestamp}`;
 
@@ -212,7 +213,7 @@ export default function Reports() {
                     c.duration || '0:00',
                     c.lead_name,
                     c.lead_phone,
-                    new Date(c.date).toLocaleString('en-IN'),
+                    dateUtils.formatCustom(c.date, {}),
                     c.outcome || 'Connected'
                 ]);
 
@@ -232,7 +233,7 @@ export default function Reports() {
                 try {
                     await leadsApi.generatePhysicalReport(csvContent, `${filename}.csv`);
                     showToast(`FILE SAVED TO: ZentrixCRM/server/exports/${filename}.csv`, 'success');
-                } catch (err) {
+                } catch (err: any) {
                     console.warn('Physical save skip:', err);
                 }
                 
@@ -240,7 +241,7 @@ export default function Reports() {
             } else {
                 const doc = new jsPDF('landscape');
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const NAVY = [10, 22, 40];
+                const NAVY: [number, number, number] = [10, 22, 40];
 
                 doc.setFillColor(...NAVY);
                 doc.rect(0, 0, pageWidth, 40, 'F');
@@ -251,7 +252,7 @@ export default function Reports() {
                 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                doc.text(`Zentrix Telephony Engine | Generated on ${new Date().toLocaleString()}`, 20, 30);
+                doc.text(`Zentrix Telephony Engine | Generated on ${dateUtils.getNow().toLocaleString()}`, 20, 30);
 
                 const headers = [['Agent ID', 'Agent Name', 'Agent Phone Number', 'Designation', 'Call Duration', 'Lead Name', 'Lead Phone Number', 'Call Made On', 'Call Disposition']];
                 const rows = calls.map(c => [
@@ -262,7 +263,7 @@ export default function Reports() {
                     c.duration || '0:00',
                     c.lead_name,
                     c.lead_phone,
-                    new Date(c.date).toLocaleString('en-IN'),
+                    dateUtils.formatCustom(c.date, {}),
                     c.outcome || 'Connected'
                 ]);
 
@@ -287,9 +288,9 @@ export default function Reports() {
             });
 
             showToast('Report exported and saved to history!', 'success');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Telephony Report Error:', err);
-            showToast('Failed to generate report', 'error');
+            showToast('Failed to generate telephony audit', 'error');
         } finally {
             setGenerating(false);
         }
@@ -303,7 +304,7 @@ export default function Reports() {
             const res = await analyticsApi.get({ range: 'thisyear' });
             const projects = res.revenueByProject || [];
             
-            const now = new Date();
+            const now = dateUtils.getNow();
             const timestamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
             const filename = `Zentrix_Project_Pulse_${timestamp}`;
 
@@ -333,7 +334,7 @@ export default function Reports() {
             } else {
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const NAVY = [10, 22, 40];
+                const NAVY: [number, number, number] = [10, 22, 40];
 
                 doc.setFillColor(...NAVY);
                 doc.rect(0, 0, pageWidth, 40, 'F');
@@ -344,7 +345,7 @@ export default function Reports() {
                 
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
-                doc.text(`Zentrix Real Estate Analytics | Generated on ${new Date().toLocaleString()}`, 20, 34);
+                doc.text(`Zentrix Real Estate Analytics | Generated on ${dateUtils.getNow().toLocaleString()}`, 20, 34);
 
                 const headers = [['Project Asset', 'Unit Bookings', 'Revenue Contribution (Cr)', 'Inventory Status']];
                 const rows = projects.map(p => [
@@ -375,9 +376,9 @@ export default function Reports() {
             });
 
             showToast('Project report finalized!', 'success');
-        } catch (err) {
-            console.error(err);
-            showToast('Failed to compile project report', 'error');
+        } catch (err: any) {
+            console.error('Project Report Error:', err);
+            showToast('Failed to compile project-wise intelligence', 'error');
         } finally {
             setGenerating(false);
         }
@@ -609,7 +610,7 @@ export default function Reports() {
 }
 
 function ExportCenter() {
-    const { data: list, loading, refresh } = useApi(() => documentsApi.list({ type: 'Report' }));
+    const { data: list, loading, refetch } = useApi(() => documentsApi.list({ type: 'Report' }));
 
     if (loading) return <div>Loading export history...</div>;
 
@@ -617,7 +618,7 @@ function ExportCenter() {
         <div className="animate-fadeIn">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <h3 style={{ margin: 0, fontWeight: 800, color: 'var(--navy-900)' }}>Global Export Center</h3>
-                <button onClick={refresh} className="btn btn-sm btn-secondary">Refresh History</button>
+                <button onClick={refetch} className="btn btn-sm btn-secondary">Refresh History</button>
             </div>
 
             <div className="glass-card" style={{ padding: 0, borderRadius: 24, overflow: 'hidden' }}>
@@ -632,7 +633,7 @@ function ExportCenter() {
                     </thead>
                     <tbody>
                         {!list || list.length === 0 ? (
-                            <tr><td colSpan="4" style={{ padding: 40, textAlign: 'center', color: 'var(--slate-400)' }}>No historical reports found. Generate one to see it here.</td></tr>
+                            <tr><td colSpan={4} style={{ padding: 40, textAlign: 'center', color: 'var(--slate-400)' }}>No historical reports found. Generate one to see it here.</td></tr>
                         ) : list.map((r, i) => (
                             <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                 <td style={{ padding: '16px 24px' }}>
@@ -642,7 +643,7 @@ function ExportCenter() {
                                     </div>
                                 </td>
                                 <td style={{ padding: '16px 24px', fontSize: '0.85rem', color: 'var(--slate-500)' }}>
-                                    {new Date(r.created_at).toLocaleString()}
+                                    {dateUtils.formatCustom(r.created_at, {}) || 'N/A'}
                                 </td>
                                 <td style={{ padding: '16px 24px', fontSize: '0.85rem' }}>
                                     <span style={{ padding: '4px 10px', background: 'var(--navy-50)', borderRadius: 6, fontWeight: 600 }}>{r.notes || 'General Audit'}</span>

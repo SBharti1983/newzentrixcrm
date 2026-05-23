@@ -8,6 +8,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 export default function CallRecords() {
     const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function CallRecords() {
     // Prepare chart data (Group calls by date)
     const chartData = (calls || [])
         .reduce((acc, call) => {
-            const date = new Date(call.date).toISOString().split('T')[0];
+            const date = dateUtils.parseSafe(call.date)?.toISOString().split('T')[0] || '';
             const existing = acc.find(d => d.date === date);
             if (existing) {
                 existing.count += 1;
@@ -68,7 +69,7 @@ export default function CallRecords() {
             }
             return acc;
         }, [])
-        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .sort((a, b) => (dateUtils.parseSafe(a.date)?.getTime() || 0) - (dateUtils.parseSafe(b.date)?.getTime() || 0))
         .slice(-14); // Last 14 days
 
     const generatePDFReport = async () => {
@@ -79,7 +80,7 @@ export default function CallRecords() {
         
         try {
             const doc = new jsPDF();
-            const now = new Date();
+            const now = dateUtils.getNow();
             const dateStr = now.toLocaleDateString('en-IN');
             
             // --- Premium Header ---
@@ -116,8 +117,8 @@ export default function CallRecords() {
             // --- Data Table ---
             const tableColumn = ["Date", "Lead", "Phone", "Agent", "Duration", "Outcome", "Sentiment"];
             const tableRows = filteredCalls.map(c => {
-                const d = new Date(c.date);
-                const validDate = isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('en-IN');
+                const d = dateUtils.parseSafe(c.date);
+                const validDate = (!d || isNaN(d.getTime())) ? 'N/A' : d.toLocaleDateString('en-IN');
                 return [
                     validDate,
                     c.lead_name || 'Anonymous',
@@ -140,7 +141,7 @@ export default function CallRecords() {
             });
 
             // --- Footer ---
-            const pageCount = doc.internal.getNumberOfPages();
+            const pageCount = doc.getNumberOfPages();
             for(let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
                 doc.setFontSize(8);
@@ -189,8 +190,8 @@ export default function CallRecords() {
         try {
             const headers = ['Date', 'Lead Name', 'Phone', 'Agent', 'Duration', 'Outcome', 'Sentiment', 'Notes'];
             const rows = filteredCalls.map(c => {
-                const d = new Date(c.date);
-                const dateStr = isNaN(d.getTime()) ? 'N/A' : d.toLocaleString('en-IN');
+                const d = dateUtils.parseSafe(c.date);
+                const dateStr = (!d || isNaN(d.getTime())) ? 'N/A' : d.toLocaleString('en-IN');
                 return [
                     dateStr,
                     c.lead_name || '',
@@ -213,7 +214,7 @@ export default function CallRecords() {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             
-            const filename = `telephony_audit_${new Date().toISOString().split('T')[0]}.csv`;
+            const filename = `telephony_audit_${dateUtils.getNow().toISOString().split('T')[0]}.csv`;
             link.setAttribute('href', url);
             link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
@@ -403,7 +404,7 @@ export default function CallRecords() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
                                 <XAxis
                                     dataKey="date"
-                                    tickFormatter={(val) => new Date(val).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                    tickFormatter={(val) => dateUtils.parseSafe(val)?.toLocaleDateString([], { month: 'short', day: 'numeric' }) || val}
                                     tick={{ fontSize: 10, fontWeight: 600, fill: 'var(--text-muted)' }}
                                     axisLine={false}
                                     tickLine={false}
@@ -411,7 +412,7 @@ export default function CallRecords() {
                                 <YAxis tick={{ fontSize: 10, fontWeight: 600, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                                 <Tooltip
                                     contentStyle={{ borderRadius: 12, border: 'none', boxShadow: 'var(--shadow-lg)', fontSize: 11, fontWeight: 700 }}
-                                    labelFormatter={(val) => new Date(val).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
+                                    labelFormatter={(val) => dateUtils.parseSafe(val)?.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) || val}
                                 />
                                 <Area type="monotone" dataKey="count" name="Call Volume" stroke="var(--accent-cyan)" strokeWidth={3} fill="url(#callGrad)" />
                             </AreaChart>
@@ -433,7 +434,7 @@ export default function CallRecords() {
                                 style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--border-medium)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)', outline: 'none', background: 'var(--slate-50)' }}
                             >
                                 <option value="All">Global Consensus (All)</option>
-                                {outcomes.map(o => <option key={o} value={o}>{o}</option>)}
+                                {outcomes.map((o: any) => <option key={o} value={o}>{o}</option>)}
                             </select>
                         </div>
 
@@ -510,7 +511,7 @@ export default function CallRecords() {
                             <tbody className="divide-y divide-slate-100">
                                 {slicedCalls.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-20 text-center">
+                                        <td colSpan={7} className="px-6 py-20 text-center">
                                             <div style={{ opacity: 0.5, marginBottom: 12 }}><Phone size={48} style={{ margin: '0 auto' }} /></div>
                                             <div style={{ fontWeight: 700, color: 'var(--text-muted)' }}>No communication records found</div>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>Refine your filters to find specific logs</div>
@@ -528,8 +529,8 @@ export default function CallRecords() {
                                                     <Calendar size={16} />
                                                 </div>
                                                 <div>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-900)' }}>{new Date(call.date).toLocaleDateString()}</div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{new Date(call.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--navy-900)' }}>{dateUtils.parseSafe(call.date)?.toLocaleDateString() || ''}</div>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}>{dateUtils.parseSafe(call.date)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || ''}</div>
                                                 </div>
                                             </div>
                                         </td>

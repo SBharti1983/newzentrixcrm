@@ -185,7 +185,7 @@ export default function Commissions() {
                                     <label className="form-label">Total Deal Value (Contractual)</label>
                                     <div style={{ position: 'relative' }}>
                                         <IndianRupee size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                        <input type="number" className="form-input" style={{ paddingLeft: 36 }} value={calc.bookingValue} onChange={e => setCalc({...calc, bookingValue: e.target.value})} />
+                                        <input type="number" className="form-input" style={{ paddingLeft: 36 }} value={calc.bookingValue} onChange={e => setCalc({...calc, bookingValue: parseFloat(e.target.value) || 0})} />
                                     </div>
                                     <div className="text-xs mt-1 font-bold text-primary">{formatCurrency(calc.bookingValue)}</div>
                                 </div>
@@ -195,14 +195,14 @@ export default function Commissions() {
                                         <label className="form-label">Base Rate (%)</label>
                                         <div style={{ position: 'relative' }}>
                                             <Percent size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                                            <input type="number" step="0.1" className="form-input" value={calc.baseRate} onChange={e => setCalc({...calc, baseRate: e.target.value})} />
+                                            <input type="number" step="0.1" className="form-input" value={calc.baseRate} onChange={e => setCalc({...calc, baseRate: parseFloat(e.target.value) || 0})} />
                                         </div>
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Active Bonus (%)</label>
                                         <div style={{ position: 'relative' }}>
                                             <Zap size={14} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--accent-amber)' }} />
-                                            <input type="number" step="0.1" className="form-input" value={calc.incentiveRate} onChange={e => setCalc({...calc, incentiveRate: e.target.value})} />
+                                            <input type="number" step="0.1" className="form-input" value={calc.incentiveRate} onChange={e => setCalc({...calc, incentiveRate: parseFloat(e.target.value) || 0})} />
                                         </div>
                                     </div>
                                 </div>

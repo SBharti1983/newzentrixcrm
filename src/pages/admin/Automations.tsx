@@ -19,11 +19,12 @@ export default function Automations() {
     const [submitting, setSubmitting] = useState(false);
 
     // Form State
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<any>({
         name: '',
         trigger_type: 'lead_create',
         action_type: 'send_client_message',
-        action_config: { channel: 'Email', subject: 'Next Steps', body: 'Hello {name}, thank you for your interest...', delay_days: 1 }
+        trigger_config: { from_stage: '', to_stage: '' },
+        action_config: { channel: 'Email', subject: 'Next Steps', body: 'Hello {name}, thank you for your interest...', delay_days: 1, message: '', task_type: 'Call' }
     });
 
     const loadLogs = useCallback(async () => {
@@ -167,13 +168,13 @@ export default function Automations() {
                                 </thead>
                                 <tbody>
                                     {workflows.length === 0 ? (
-                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No workflows found. Create your first one!</td></tr>
+                                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No workflows found. Create your first one!</td></tr>
                                     ) : (
                                         workflows.map(w => (
                                             <tr key={w.id}>
                                                 <td style={{ padding: '16px 24px' }}>
                                                     <div style={{ fontWeight: 700, color: 'var(--navy-900)' }}>{w.name}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Created {new Date(w.created_at).toLocaleDateString()}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Created {dateUtils.parseSafe(w.created_at)?.toLocaleDateString() || '—'}</div>
                                                 </td>
                                                 <td>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -226,14 +227,14 @@ export default function Automations() {
                             </thead>
                             <tbody>
                                 {logsLoading ? (
-                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: 40 }}>Loading logs...</td></tr>
+                                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40 }}>Loading logs...</td></tr>
                                 ) : logs.length === 0 ? (
-                                    <tr><td colSpan="5" style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No execution history yet.</td></tr>
+                                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No execution history yet.</td></tr>
                                 ) : (
                                     logs.map(log => (
                                         <tr key={log.id}>
                                             <td style={{ padding: '16px 24px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                                                {new Date(log.created_at).toLocaleString()}
+                                                {dateUtils.parseSafe(log.created_at)?.toLocaleString() || '—'}
                                             </td>
                                             <td style={{ fontWeight: 700 }}>{log.workflow_name}</td>
                                             <td style={{ fontSize: '0.85rem' }}>{log.lead_name || 'System'}</td>
@@ -333,7 +334,7 @@ export default function Automations() {
                                             <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>MESSAGE TEMPLATE (Variables: {'{{name}}'}, {'{{stage}}'})</div>
                                             <textarea 
                                                 className="form-control" 
-                                                rows="3" 
+                                                rows={3} 
                                                 placeholder="Hi {{name}}, thanks for your interest in Zentrix Projects! Our team will contact you soon."
                                                 onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, message: e.target.value } })}
                                                 style={{ fontSize: '0.85rem' }}
@@ -345,7 +346,7 @@ export default function Automations() {
                                         <div style={{ marginTop: 12 }}>
                                             <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6 }}>EMAIL SUBJECT</div>
                                             <input className="form-control" placeholder="Subject" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, subject: e.target.value } })} style={{ marginBottom: 8 }} />
-                                            <textarea className="form-control" placeholder="Email Body" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, body: e.target.value } })} rows="3" />
+                                            <textarea className="form-control" placeholder="Email Body" onChange={e => setFormData({ ...formData, action_config: { ...formData.action_config, body: e.target.value } })} rows={3} />
                                         </div>
                                     )}
 

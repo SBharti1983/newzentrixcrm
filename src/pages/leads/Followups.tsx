@@ -5,50 +5,51 @@ import { followupsApi, leadsApi, usersApi, marketingApi } from '../../api/client
 import { useToast } from '../../hooks/useToast';
 import { 
     Plus, X, CheckCircle, Clock, AlertCircle, Calendar, Send, Phone, FileText, 
-    LayoutGrid, List, Sparkles, Zap, TrendingUp, ShieldCheck, Filter, ChevronRight, BarChart2, History, Users
+    LayoutGrid, List, Sparkles, Zap, TrendingUp, ShieldCheck, Filter, ChevronRight, BarChart2, History, Users, RotateCw
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { dialerEvents } from '../../constants/events';
 import NotificationComposer from '../../components/notifications/NotificationComposer';
 import { useMobile } from '../../hooks/useMobile';
-import { usePageInfo } from '../../context/PageContext';
 
 const TYPE_ICON = { Call: '📞', Email: '📧', WhatsApp: '💬', 'Site Visit': '🏠', Meeting: '🤝' };
 
 function isOverdue(date) { return new Date(date) < new Date() && date; }
 function isUrgent(date) {
     if (!date) return false;
-    const diff = new Date().getTime() - new Date(date).getTime();
+    const diff = new Date() - new Date(date);
     return diff > 7200000; 
 }
 
 export default function Followups() {
-    const { data: rawFollowups, loading, error, refetch } = useApi(followupsApi.list);
-    const followups = useMemo(() => {
-        const raw = (rawFollowups?.data || rawFollowups || []);
-        return raw.map(f => ({
-            ...f,
-            scheduled_at: f.scheduled_at || f.scheduledAt // Normalize field name
-        }));
-    }, [rawFollowups]);
-    
-    const { data: rawAgents = [] } = useApi(usersApi.list);
-    const agents = useMemo(() => (rawAgents?.data || rawAgents || []), [rawAgents]);
-
-    const { data: rawLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
-    const allLeads = useMemo(() => (rawLeads?.data || rawLeads || []), [rawLeads]);
-
+    const { data: followups = [], loading, error, refetch } = useApi(followupsApi.list);
+    const { data: agents = [] } = useApi(usersApi.list);
+    const { data: allLeads = [] } = useApi(() => leadsApi.list({ limit: 1000 }));
     const { data: drips = [] } = useApi(marketingApi.getDrips);
     const isMobile = useMobile();
-    const { setPageInfo } = usePageInfo();
     const { showToast } = useToast();
 
     // Map leads for quick attribute lookup (score/budget)
     const leadMap = useMemo(() => {
         const map = {};
-        allLeads.forEach(l => { map[l.id] = l; });
+        const data = allLeads?.data || allLeads || [];
+        data.forEach(l => { map[l.id] = l; });
         return map;
     }, [allLeads]);
+
+    // Normalize followups data
+    const normalizedFollowups = useMemo(() => {
+        const data = followups?.data || followups || [];
+        return data.map(f => ({
+            ...f,
+            scheduled_at: f.scheduled_at || f.scheduledAt,
+            lead_id: f.lead_id || f.leadId,
+            lead_name: f.lead_name || f.leadName,
+            lead_phone: f.lead_phone || f.leadPhone,
+            assigned_to: f.assigned_to || f.assignedTo,
+            assigned_name: f.assigned_name || f.assignedName
+        }));
+    }, [followups]);
 
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ lead_id: '', type: 'Call', scheduled_at: '', priority: 'High', notes: '', status: 'Pending', mode: 'single', drip_id: '' });
@@ -58,16 +59,15 @@ export default function Followups() {
     const [viewMode, setViewMode] = useState('list'); 
     const [notifyTarget, setNotifyTarget] = useState(null);
 
-    // Reset viewMode to 'list' on mobile
+    // Reset viewMode to 'list' on mobile if somehow initialized/left in kanban/calendar
     useEffect(() => {
         if (isMobile && (viewMode === 'kanban')) {
             setViewMode('list');
         }
     }, [isMobile, viewMode]);
-
     const [saving, setSaving] = useState(false);
     const [previewLead, setPreviewLead] = useState(null);
-    const [hoverContext, setHoverContext] = useState(null); 
+    const [hoverContext, setHoverContext] = useState(null); // { x, y, lead }
     const [isTeamView, setIsTeamView] = useState(false);
     const { user } = useAuth();
     const canManageTeam = user?.role === 'admin' || user?.role === 'sales_manager';
@@ -78,57 +78,61 @@ export default function Followups() {
             return;
         }
         const rect = e.currentTarget.getBoundingClientRect();
-        setHoverContext({ x: rect.left, y: rect.top, lead });
+        setHoverContext({
+            x: rect.left,
+            y: rect.top,
+            lead
+        });
     };
 
-    const filtered = useMemo(() => {
-        return (followups || []).filter(f => {
-            if (!f) return false;
-            const now = new Date();
-            const scheduledDate = f.scheduled_at ? new Date(f.scheduled_at) : null;
-            
-            const isToday = scheduledDate && scheduledDate.toDateString() === now.toDateString();
-            const isUpcomingDate = scheduledDate && scheduledDate > now && !isToday;
-            const isOverdueVal = scheduledDate && scheduledDate < now && !isToday && f.status !== 'Completed';
-            const isUrgentVal = f.scheduled_at && isUrgent(f.scheduled_at) && f.status !== 'Completed';
 
-            let ms = false;
-            if (filterStatus === 'All') ms = true;
-            else if (filterStatus === 'Pending') ms = f.status === 'Pending';
-            else if (filterStatus === 'Completed') ms = f.status === 'Completed';
-            else if (filterStatus === 'Critical') ms = isUrgentVal;
-            else if (filterStatus === 'Overdue') ms = isOverdueVal;
-            else if (filterStatus === 'Today') ms = isToday;
-            else if (filterStatus === 'Upcoming') ms = isUpcomingDate;
-            
-            const ma = filterAgent === 'All' || String(f.assigned_to) === String(filterAgent);
-            
-            if (isTeamView) {
-                return (isOverdueVal || isUrgentVal) && ma;
-            }
 
-            return ms && ma;
-        }).sort((a, b) => {
-            if (!a || !b) return 0;
-            if (sortMode === 'score') {
-                const getScore = (f) => f.lead_score || leadMap[f.lead_id]?.score || 0;
-                return getScore(b) - getScore(a);
-            }
-            if (sortMode === 'value') {
-                const getVal = (f) => {
-                    const lead = leadMap[f.lead_id];
-                    const budget = f.lead_budget || lead?.budget;
-                    if (!budget) return 0;
-                    const numeric = parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0;
-                    if (String(budget).toUpperCase().includes('L')) return numeric * 100000;
-                    if (String(budget).toUpperCase().includes('CR')) return numeric * 10000000;
-                    return numeric;
-                };
-                return getVal(b) - getVal(a);
-            }
-            return new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime();
-        });
-    }, [followups, filterStatus, filterAgent, sortMode, isTeamView, leadMap]);
+    const filtered = (normalizedFollowups || []).filter(f => {
+        if (!f || !f.scheduled_at) return false;
+        const now = new Date();
+        const scheduledDate = new Date(f.scheduled_at);
+        const isToday = scheduledDate.toDateString() === now.toDateString();
+        const isUpcomingDate = scheduledDate > now && !isToday;
+        const isOverdueVal = scheduledDate < now && !isToday && f.status !== 'Completed';
+        const isUrgentVal = isUrgent(f.scheduled_at) && f.status !== 'Completed';
+
+        let ms = false;
+        if (filterStatus === 'All') ms = true;
+        else if (filterStatus === 'Pending') ms = f.status === 'Pending';
+        else if (filterStatus === 'Completed') ms = f.status === 'Completed';
+        else if (filterStatus === 'Critical') ms = isUrgentVal;
+        else if (filterStatus === 'Overdue') ms = isOverdueVal;
+        else if (filterStatus === 'Today') ms = isToday;
+        else if (filterStatus === 'Upcoming') ms = isUpcomingDate;
+        
+        const ma = filterAgent === 'All' || String(f.assigned_to) === filterAgent;
+        
+        if (isTeamView) {
+            // Team mode focuses on Overdue/Urgent tasks across all agents
+            return (isOverdueVal || isUrgentVal) && ma;
+        }
+
+        return ms && ma;
+    }).sort((a, b) => {
+        if (!a || !b) return 0;
+        if (sortMode === 'score') {
+            const getScore = (f) => f.lead_score || leadMap[f.lead_id]?.score || 0;
+            return getScore(b) - getScore(a);
+        }
+        if (sortMode === 'value') {
+            const getVal = (f) => {
+                const lead = leadMap[f.lead_id];
+                const budget = f.lead_budget || lead?.budget;
+                if (!budget) return 0;
+                const numeric = parseFloat(String(budget).replace(/[^0-9.]/g, '')) || 0;
+                if (String(budget).toUpperCase().includes('L')) return numeric * 100000;
+                if (String(budget).toUpperCase().includes('CR')) return numeric * 10000000;
+                return numeric;
+            };
+            return getVal(b) - getVal(a);
+        }
+        return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
+    });
 
     const toggle = async (id, currentStatus) => {
         try {
@@ -148,7 +152,7 @@ export default function Followups() {
         if (!id) return;
         
         const now = new Date();
-        const updates: any = {};
+        const updates = {};
         
         if (targetCol === 'Completed') {
             updates.status = 'Completed';
@@ -270,141 +274,116 @@ export default function Followups() {
     if (loading) return <PageLoader />;
     if (error) return <PageError message={error} onRetry={refetch} />;
 
-    const pending = (followups || []).filter(f => f.status === 'Pending').length;
-    const completed = (followups || []).filter(f => f.status === 'Completed').length;
-    const overdue = (followups || []).filter(f => f.status === 'Pending' && new Date(f.scheduled_at) < new Date()).length;
-    const highPriority = (followups || []).filter(f => f.priority === 'High' && f.status === 'Pending').length;
+    const pending = (normalizedFollowups || []).filter(f => f.status === 'Pending').length;
+    const completed = (normalizedFollowups || []).filter(f => f.status === 'Completed').length;
+    const overdue = (normalizedFollowups || []).filter(f => f.status === 'Pending' && new Date(f.scheduled_at) < new Date()).length;
+    const highPriority = (normalizedFollowups || []).filter(f => f.priority === 'High' && f.status === 'Pending').length;
 
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '0' : '0 20px', paddingBottom: isMobile ? 100 : 0, overflowX: 'hidden' }}>
-            <div className="premium-card shimmer-ai" style={{ 
-                display: 'none',
-                background: `linear-gradient(135deg, #0f172a 0%, #1e293b 100%)`, 
-                padding: isMobile ? '16px' : '16px 28px', color: 'white', marginBottom: '16px', border: 'none',
-                borderRadius: isMobile ? '0' : '16px'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                             <Clock size={13} color="#fbbf24" strokeWidth={2.5} />
-                             <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
-                                Outreach Intelligence
-                             </span>
-                        </div>
-                        <h1 style={{ margin: 0, fontSize: isMobile ? '1.2rem' : '1.5rem', fontWeight: 950, letterSpacing: '-0.5px', lineHeight: 1, color: 'white' }}>
-                            Follow-Up <span style={{ color: '#fbbf24' }}>Queue</span>
-                        </h1>
-                        <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem', fontWeight: 600, maxWidth: '500px' }}>
-                            Managing {pending} active threads and {overdue} overdue actions.
-                        </p>
+            {/* Standardized Enterprise Header with Expanded Metrics */}
+            <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
+                <div className="page-header-left" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: '-0.02em' }}>
+                            {pending}
+                        </span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            pending
+                        </span>
+                    </div>
+                    
+                    <div style={{ width: 1, height: 16, background: 'var(--border-medium)', opacity: 0.5 }}></div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f43f5e', letterSpacing: '-0.02em' }}>
+                            {overdue}
+                        </span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            overdue
+                        </span>
                     </div>
 
-                    {!isMobile && (
-                        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>PENDING</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>OVERDUE</div>
-                            </div>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
-                                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>DONE</div>
-                            </div>
-                            <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)', height: '32px' }} />
-                                <button onClick={() => setShowModal(true)} style={{ background: 'white', color: '#0f172a', border: 'none', padding: '8px 18px', borderRadius: '10px', fontWeight: 900, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Plus size={16} strokeWidth={3} /> NEW TASK
+                    <div style={{ width: 1, height: 16, background: 'var(--border-medium)', opacity: 0.5 }}></div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#10b981', letterSpacing: '-0.02em' }}>
+                            {completed}
+                        </span>
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            done
+                        </span>
+                    </div>
+                </div>
+
+                <div className="page-actions" style={{ marginRight: isMobile ? 0 : 20, width: isMobile ? '100%' : 'auto', display: 'flex', gap: 6 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => refetch()} title="Refresh Data" style={{ flex: isMobile ? 1 : 'none' }}>
+                        <RotateCw size={14} /> Refresh
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={() => setShowModal(true)} style={{ flex: isMobile ? 1 : 'none' }}>
+                        <Plus size={15} /> New Task
+                    </button>
+                </div>
+            </div>
+
+            {/* Standardized Filters Cluster */}
+            <div className="card mb-2" style={{ padding: isMobile ? '12px' : '8px 12px', borderRadius: 12 }}>
+                <div style={{ 
+                    display: 'flex', 
+                    gap: 12, 
+                    alignItems: isMobile ? 'stretch' : 'center', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    flexWrap: 'wrap'
+                }}>
+                    {/* View Switcher */}
+                    <div style={{ display: 'flex', background: '#f8fafc', padding: '3px', borderRadius: '10px', flexShrink: 0 }}>
+                        <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : '0.7rem', fontWeight: 700 }}>
+                            <List size={14} /> {isMobile ? '' : 'LIST'}
+                        </button>
+                        {!isMobile && (
+                            <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8', fontSize: '0.7rem', fontWeight: 700 }}>
+                                <LayoutGrid size={14} /> KANBAN
                             </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Mobile Mini Stats Row */}
-                {isMobile && (
-                    <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
-                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#fbbf24' }}>{pending}</div>
-                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Pending</div>
-                        </div>
-                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#f43f5e' }}>{overdue}</div>
-                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Overdue</div>
-                        </div>
-                        <div style={{ flex: 1, textAlign: 'center', background: 'rgba(255,255,255,0.08)', padding: '8px 0', borderRadius: 10 }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: 950, color: '#10b981' }}>{completed}</div>
-                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Done</div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <div style={{ padding: isMobile ? '6px 10px' : '8px 16px', background: 'white', marginBottom: isMobile ? '8px' : '12px', display: 'flex', gap: isMobile ? '6px' : '8px', alignItems: 'center', borderRadius: isMobile ? '10px' : '14px', border: '1px solid #f1f5f9', flexWrap: 'wrap', overflowX: 'hidden', maxWidth: '100%' }}>
-                <div style={{ display: 'flex', background: '#f8fafc', padding: '3px', borderRadius: '10px', marginRight: isMobile ? '0' : '8px', flexShrink: 0 }}>
-                    <button onClick={() => setViewMode('list')} style={{ border: 'none', background: viewMode === 'list' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'list' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
-                        <List size={isMobile ? 12 : 14} /> {isMobile ? '' : 'LIST'}
-                    </button>
-                    {!isMobile && (
-                        <button onClick={() => setViewMode('kanban')} style={{ border: 'none', background: viewMode === 'kanban' ? 'white' : 'transparent', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'kanban' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
-                            <LayoutGrid size={14} /> KANBAN
+                        )}
+                        <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: isMobile ? '0.65rem' : '0.7rem', fontWeight: 700 }}>
+                            <Calendar size={14} /> {isMobile ? '' : 'CALENDAR'}
                         </button>
-                    )}
-                    <button onClick={() => setViewMode('calendar')} style={{ border: 'none', background: viewMode === 'calendar' ? 'white' : 'transparent', padding: isMobile ? '5px 8px' : '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: viewMode === 'calendar' ? '#0f172a' : '#94a3b8', fontSize: '0.68rem', fontWeight: 900 }}>
-                        <Calendar size={isMobile ? 12 : 14} /> {isMobile ? '' : 'CALENDAR'}
-                    </button>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none', flex: isMobile ? '1 1 100%' : 'none', order: isMobile ? 1 : 0 }}>
-                    {['All', 'Today', 'Upcoming', 'Overdue', 'Completed'].map(s => (
-                        <button key={s} onClick={() => setFilterStatus(s)} style={{
-                            padding: isMobile ? '5px 10px' : '6px 14px', borderRadius: '12px', border: '1px solid',
-                            background: filterStatus === s ? 'var(--navy-600)' : 'white',
-                            color: filterStatus === s ? 'white' : 'var(--slate-600)',
-                            borderColor: filterStatus === s ? 'var(--navy-600)' : 'var(--border-medium)',
-                            fontSize: isMobile ? '0.68rem' : '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s'
-                        }}>{s}</button>
-                    ))}
-                </div>
-                {canManageTeam && !isMobile && (
-                    <>
-                        <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
-                            style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '7px 12px', borderRadius: '12px' }}>
-                            <option value="All">All Agents</option>
-                            {(agents || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                        </select>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9' }}>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
-                            <div 
-                                onClick={() => setIsTeamView(!isTeamView)}
-                                style={{ width: '32px', height: '18px', background: isTeamView ? '#3b82f6' : '#cbd5e1', borderRadius: '20px', cursor: 'pointer', position: 'relative', transition: 'all 0.3s' }}
-                            >
-                                <div style={{ position: 'absolute', top: '2px', left: isTeamView ? '16px' : '2px', width: '14px', height: '14px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
+                    </div>
+
+                    {/* Status Filters */}
+                    <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                        {['All', 'Today', 'Upcoming', 'Overdue', 'Completed'].map(s => (
+                            <button key={s} onClick={() => setFilterStatus(s)} style={{
+                                padding: isMobile ? '5px 10px' : '6px 14px', borderRadius: '12px', border: '1px solid',
+                                background: filterStatus === s ? 'var(--navy-600)' : 'white',
+                                color: filterStatus === s ? 'white' : 'var(--slate-600)',
+                                borderColor: filterStatus === s ? 'var(--navy-600)' : 'var(--border-medium)',
+                                fontSize: isMobile ? '0.68rem' : '0.75rem', fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', transition: 'all 0.2s'
+                            }}>{s}</button>
+                        ))}
+                    </div>
+
+                    {canManageTeam && !isMobile && (
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <select className="form-control" value={filterAgent} onChange={e => setFilterAgent(e.target.value)}
+                                style={{ width: 'auto', minWidth: '130px', fontSize: '0.8rem', padding: '7px 12px', borderRadius: '12px', height: '36px' }}>
+                                <option value="All">All Agents</option>
+                                {(agents || []).map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                            </select>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 12px', background: isTeamView ? '#eff6ff' : '#f8fafc', borderRadius: '10px', border: isTeamView ? '1px solid #bfdbfe' : '1px solid #f1f5f9', height: '36px' }}>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: isTeamView ? '#3b82f6' : '#64748b' }}>TEAM MODE</span>
+                                <div 
+                                    onClick={() => setIsTeamView(!isTeamView)}
+                                    style={{ width: '32px', height: '18px', background: isTeamView ? '#3b82f6' : '#cbd5e1', borderRadius: '20px', cursor: 'pointer', position: 'relative', transition: 'all 0.3s' }}
+                                >
+                                    <div style={{ position: 'absolute', top: '2px', left: isTeamView ? '16px' : '2px', width: '14px', height: '14px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
+                                </div>
                             </div>
                         </div>
-                    </>
-                )}
-
-                {!isMobile && (
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-                        <button 
-                            onClick={() => {
-                                if (sortMode === 'time') setSortMode('score');
-                                else if (sortMode === 'score') setSortMode('value');
-                                else setSortMode('time');
-                            }} 
-                            style={{ 
-                                border: '1px solid #e2e8f0', 
-                                background: sortMode !== 'time' ? '#0f172a' : 'white', 
-                                color: sortMode !== 'time' ? 'white' : '#64748b', 
-                                padding: '6px 14px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', minWidth: '150px', justifyContent: 'center' 
-                            }}
-                        >
-                            {sortMode === 'time' ? <Clock size={12} /> : sortMode === 'score' ? <Sparkles size={12} /> : <TrendingUp size={12} />}
-                            {sortMode === 'time' ? 'SORT: TIME' : sortMode === 'score' ? 'WIN PROBABILITY' : 'DEAL VALUE'}
-                        </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
+
 
             {viewMode === 'kanban' ? (
                 <div style={{ 
@@ -421,15 +400,9 @@ export default function Followups() {
                 }}>
                     {['Overdue', 'Today', 'Upcoming', 'Completed'].map(col => {
                         const items = (filtered || []).filter(f => {
+                            const date = new Date(f.scheduled_at); const now = new Date();
                             if (col === 'Completed') return f.status === 'Completed';
                             if (f.status === 'Completed') return false;
-
-                            const scheduledAt = f.scheduled_at || f.scheduledAt;
-                            if (!scheduledAt) return false;
-
-                            const date = new Date(scheduledAt); 
-                            const now = new Date();
-                            
                             if (col === 'Overdue') return date < now && date.toDateString() !== now.toDateString();
                             if (col === 'Today') return date.toDateString() === now.toDateString();
                             if (col === 'Upcoming') return date > now && date.toDateString() !== now.toDateString();
@@ -631,8 +604,6 @@ export default function Followups() {
                                                 isTeamView={isTeamView}
                                                 agents={agents}
                                                 onReassign={reassign}
-                                                isCompact={false}
-                                                onDragStart={undefined}
                                             />
                                         );
                                     })}
@@ -644,9 +615,11 @@ export default function Followups() {
             )}
 
             {showModal && (
-                <div className="modal-overlay" onClick={() => setShowModal(false)}>
-                    <div className="modal" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header"><h3>Schedule Follow-Up</h3></div>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowModal(false)}>
+                    <div style={{ background: 'white', width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>Schedule Follow-Up</h3>
+                        </div>
                         <div className="modal-body">
                             <label style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Orchestration Mode</label>
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
@@ -712,9 +685,9 @@ export default function Followups() {
                                 )}
                             </div>
                         </div>
-                        <div className="modal-footer">
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                             <button className="btn btn-ghost" onClick={() => setShowModal(false)} style={{ fontWeight: 700 }}>Discard</button>
-                            <button className="btn btn-primary" onClick={save} disabled={saving} style={{ padding: '10px 24px', borderRadius: '10px', background: form.mode === 'sequence' ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : undefined, border: 'none' }}>
+                            <button className="btn btn-primary" onClick={save} disabled={saving} style={{ padding: '10px 24px', borderRadius: '12px', background: form.mode === 'sequence' ? 'linear-gradient(135deg, #3b82f6, #6366f1)' : undefined, border: 'none', fontWeight: 900 }}>
                                 {saving ? 'Deploying...' : form.mode === 'sequence' ? 'Deploy Smart Sequence 🚀' : 'Schedule Single Task'}
                             </button>
                         </div>

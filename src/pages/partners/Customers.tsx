@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import { useApi } from '../../hooks/useApi';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { customersApi } from '../../api/client';
@@ -207,7 +208,7 @@ export default function Customers() {
                                     {(selected.name || '?')[0]}
                                 </div>
                                 <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{selected.name}</h2>
-                                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginTop: 4 }}>{selected.segment} · Partner since {selected.join_date ? new Date(selected.join_date).getFullYear() : '2024'}</p>
+                                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', marginTop: 4 }}>{selected.segment} · Partner since {dateUtils.parseSafe(selected.join_date)?.getFullYear() || '2024'}</p>
                                 
                                 <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
                                     <button className="btn btn-white btn-sm" style={{ borderRadius: 10, padding: '8px 16px', fontWeight: 700 }} onClick={() => dialerEvents.call(selected.id, selected.phone, selected.name)}><Phone size={14} /> Call Now</button>

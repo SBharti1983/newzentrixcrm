@@ -5,8 +5,11 @@ import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { leadsApi, notificationsApi } from '../../api/client';
 import { Search, Filter, Phone, Edit2, Users, Calendar, RotateCw, AlertCircle, Clock, ArrowRight, Sparkles, TrendingUp, Menu, Wand2 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 import { useToast } from '../../hooks/useToast';
 import ContactPreviewSidebar from '../../components/shared/ContactPreviewSidebar';
+import { Lead } from '../../types/api';
+
 
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
@@ -21,7 +24,8 @@ export default function NurtureLeads() {
     const isMobile = useMobile();
     const [draftingId, setDraftingId] = useState(null);
 
-    const generateAIDraft = async (lead) => {
+    const generateAIDraft = async (lead: Lead) => {
+
         try {
             setDraftingId(lead.id);
             const res = await notificationsApi.nurtureDraft({ lead_id: lead.id, channel: 'WhatsApp' });
@@ -29,8 +33,8 @@ export default function NurtureLeads() {
                 await navigator.clipboard.writeText(res.draft);
                 showToast('AI Smart-Draft copied to clipboard!', 'success');
             }
-        } catch (err) {
-            showToast('Failed to generate AI draft', 'error');
+        } catch (err: any) {
+            showToast(err?.message || 'Failed to generate AI draft', 'error');
         } finally {
             setDraftingId(null);
         }
@@ -43,7 +47,8 @@ export default function NurtureLeads() {
     }, []);
 
     const params = useMemo(() => {
-        const p: any = { limit, page, status: 'Nurture' };
+        const p: Record<string, string | number> = { limit, page, status: 'Nurture' };
+
         if (search.trim()) p.q = search.trim();
         if (filterType === 'Due Today') p.nurture_due = 'true';
         else if (filterType === 'Overdue') p.nurture_overdue = 'true';
@@ -62,8 +67,8 @@ export default function NurtureLeads() {
             await leadsApi.update(id, { status: 'Active' });
             showToast('Lead moved back to Active Pipeline', 'success');
             refetch();
-        } catch (err) {
-            showToast(err.error || 'Failed to reactivate lead', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to reactivate lead', 'error');
         }
     };
 
@@ -77,7 +82,7 @@ export default function NurtureLeads() {
         let totalDays = 0;
         let ready = 0;
         leads.forEach(l => {
-            const days = l.created_at ? Math.floor((Date.now() - new Date(l.created_at).getTime()) / 86400000) : 0;
+            const days = l.created_at ? Math.floor(dateUtils.getDiffInDays(l.created_at)) : 0;
             totalDays += days;
             if (days >= 14) ready++;
         });
@@ -127,32 +132,35 @@ export default function NurtureLeads() {
                             key={i}
                             onClick={isClickable ? () => setFilterType(card.id) : undefined}
                             style={{
-                                padding: isMobile ? '12px 10px' : '20px', borderRadius: 16, background: 'white',
+                                padding: isMobile ? '10px 8px' : '10px 16px', borderRadius: 14, background: 'white',
                                 border: `1px solid ${isActive ? card.color : 'var(--border-light)'}`,
-                                boxShadow: isActive ? `0 4px 16px ${card.color}15` : '0 1px 4px rgba(0,0,0,0.03)',
+                                boxShadow: isActive ? `0 4px 12px ${card.color}12` : '0 1px 3px rgba(0,0,0,0.02)',
                                 cursor: isClickable ? 'pointer' : 'default',
                                 transition: 'all 0.25s ease',
                                 transform: isActive ? 'translateY(-1px)' : 'none',
-                                textAlign: isMobile ? 'center' : 'left'
+                                textAlign: isMobile ? 'center' : 'left',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center'
                             }}
                         >
                             <div style={{ 
                                 display: 'flex', 
                                 justifyContent: isMobile ? 'center' : 'space-between', 
                                 alignItems: 'center', 
-                                marginBottom: isMobile ? 8 : 12 
+                                marginBottom: 4
                             }}>
-                                <div style={{ width: isMobile ? 30 : 38, height: isMobile ? 30 : 38, borderRadius: 10, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <card.icon size={isMobile ? 14 : 18} color={card.color} />
+                                <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: 8, background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <card.icon size={isMobile ? 12 : 14} color={card.color} />
                                 </div>
-                                {!isMobile && isActive && <div style={{ width: 8, height: 8, borderRadius: '50%', background: card.color }} />}
+                                {!isMobile && isActive && <div style={{ width: 6, height: 6, borderRadius: '50%', background: card.color }} />}
                             </div>
-                            <div style={{ fontSize: isMobile ? '1.2rem' : '1.8rem', fontWeight: 950, color: isActive ? card.color : 'var(--navy-900)', letterSpacing: '-0.04em', lineHeight: 1 }}>{card.value}</div>
-                            <div style={{ fontSize: isMobile ? '0.55rem' : '0.72rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: isMobile ? 4 : 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.label}</div>
-                            {!isMobile && <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--slate-400)', marginTop: 2 }}>{card.sub}</div>}
+                            <div style={{ fontSize: isMobile ? '1.1rem' : '1.3rem', fontWeight: 950, color: isActive ? card.color : 'var(--navy-900)', letterSpacing: '-0.03em', lineHeight: 1 }}>{card.value}</div>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{card.label}</div>
                         </div>
                     );
                 })}
+
             </div>
 
             {/* ─── Search & Filter Bar ─── */}
@@ -193,7 +201,8 @@ export default function NurtureLeads() {
                 isMobile ? (
                     /* Mobile Card View */
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {leads.map((lead: any) => (
+                        {leads.map((lead: Lead) => (
+
                             <MobileNurtureCard 
                                 key={lead.id} 
                                 lead={lead} 
@@ -229,8 +238,8 @@ export default function NurtureLeads() {
                             </thead>
                             <tbody>
                                 {leads.map((lead, i) => {
-                                    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date).getTime() < new Date().setHours(0,0,0,0);
-                                    const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
+                                    const isOverdue = lead.reconnect_date && dateUtils.isOverdue(lead.reconnect_date) && !dateUtils.isSameDay(lead.reconnect_date);
+                                    const isDueToday = lead.reconnect_date && dateUtils.isSameDay(lead.reconnect_date);
 
                                     const lcReason = (lead.nurture_reason || '').toLowerCase();
                                     let pillCol = '#6366f1'; let pillBg = '#eef2ff';
@@ -300,8 +309,8 @@ export default function NurtureLeads() {
                                                             fontSize: '0.8rem', fontWeight: 800, whiteSpace: 'nowrap',
                                                             color: isOverdue ? '#dc2626' : 'var(--navy-900)'
                                                         }}>
-                                                            {lead.reconnect_date && !isNaN(new Date(lead.reconnect_date).getTime())
-                                                                ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                                            {lead.reconnect_date && dateUtils.parseSafe(lead.reconnect_date)
+                                                                ? dateUtils.formatCustom(lead.reconnect_date, { day: '2-digit', month: 'short', year: 'numeric' })
                                                                 : 'Not Scheduled'}
                                                         </div>
                                                         <div style={{
@@ -447,9 +456,10 @@ export default function NurtureLeads() {
     );
 }
 
-function MobileNurtureCard({ lead, onReactivate, onClick, onEdit, draftingId, generateAIDraft }: any) {
-    const isOverdue = lead.reconnect_date && new Date(lead.reconnect_date).getTime() < new Date().setHours(0,0,0,0);
-    const isDueToday = lead.reconnect_date && new Date(lead.reconnect_date).toDateString() === new Date().toDateString();
+function MobileNurtureCard({ lead, onReactivate, onClick, onEdit, draftingId, generateAIDraft }: { lead: Lead, onReactivate: () => void, onClick: () => void, onEdit: () => void, draftingId: string | number | null, generateAIDraft: (lead: Lead) => void }) {
+
+    const isOverdue = lead.reconnect_date && dateUtils.isOverdue(lead.reconnect_date) && !dateUtils.isSameDay(lead.reconnect_date);
+    const isDueToday = lead.reconnect_date && dateUtils.isSameDay(lead.reconnect_date);
 
     const lcReason = (lead.nurture_reason || '').toLowerCase();
     let pillCol = '#6366f1'; let pillBg = '#eef2ff';
@@ -515,7 +525,7 @@ function MobileNurtureCard({ lead, onReactivate, onClick, onEdit, draftingId, ge
                             fontSize: '0.8rem', fontWeight: 900,
                             color: isOverdue ? '#dc2626' : 'var(--navy-900)'
                         }}>
-                            {lead.reconnect_date ? new Date(lead.reconnect_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'TBD'}
+                            {lead.reconnect_date && dateUtils.parseSafe(lead.reconnect_date) ? dateUtils.formatCustom(lead.reconnect_date, { day: '2-digit', month: 'short' }) : 'TBD'}
                         </span>
                     </div>
                 </div>

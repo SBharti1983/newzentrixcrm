@@ -17,7 +17,7 @@ export default function WorkspaceManagement() {
     
     // Form and Editing State
     const [editingTenant, setEditingTenant] = useState(null);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<any>({
         name: '', slug: '', plan: 'pro', max_users: 10, max_leads: 500,
         logo_url: '', primary_color: '#6366f1', custom_domain: ''
     });
@@ -53,7 +53,7 @@ export default function WorkspaceManagement() {
                 const tenant = data.find(t => t.id === editId);
                 if (tenant) handleOpenEdit(tenant);
             }
-        } catch (_err) {
+        } catch (err: any) {
             addToast({ type: 'error', title: 'Fetch Failed', message: 'Could not load workspaces.' });
         } finally {
             setLoading(false);
@@ -76,7 +76,7 @@ export default function WorkspaceManagement() {
             max_leads: tenant.max_leads,
             logo_url: tenant.logo_url || '',
             primary_color: tenant.primary_color || '#6366f1',
-            custom_domain: tenant.settings?.custom_domain || ''
+            custom_domain: (tenant as any).settings?.custom_domain || ''
         });
         setIsModalOpen(true);
     };
@@ -89,7 +89,7 @@ export default function WorkspaceManagement() {
             delete payload.custom_domain;
 
             if (editingTenant) {
-                payload.settings = { ...(editingTenant.settings || {}), custom_domain: cd };
+                payload.settings = { ...((editingTenant as any).settings || {}), custom_domain: cd };
                 await superAdminApi.updateTenant(editingTenant.id, payload);
                 addToast({ type: 'success', title: 'Profile Updated', message: `${formData.name} configurations refreshed.` });
             } else {
@@ -104,7 +104,7 @@ export default function WorkspaceManagement() {
             }
             setIsModalOpen(false);
             fetchTenants();
-        } catch (err) {
+        } catch (err: any) {
             addToast({ type: 'error', title: 'Transaction Failed', message: err?.error || 'Infrastructure error occurred.' });
         }
     };
@@ -120,7 +120,7 @@ export default function WorkspaceManagement() {
             setTenantToDelete(null);
             setDeleteConfirmText('');
             fetchTenants();
-        } catch (_err) {
+        } catch (err: any) {
             addToast({ type: 'error', title: 'Decommission Failed', message: 'Database integrity lock or unauthorized.' });
         } finally {
             setLoading(false);
@@ -138,7 +138,7 @@ export default function WorkspaceManagement() {
             await superAdminApi.updateTenant(tenant.id, { is_active: !tenant.is_active });
             addToast({ type: 'info', title: 'Node State Changed', message: `${tenant.name} is now ${!tenant.is_active ? 'Online' : 'Offline'}.` });
             fetchTenants();
-        } catch (_err) {
+        } catch (err: any) {
             addToast({ type: 'error', title: 'Toggle Failed', message: 'Could not switch node state.' });
         }
     };
@@ -240,7 +240,7 @@ export default function WorkspaceManagement() {
                                             <div>
                                                 <div style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{t.name}</div>
                                                 <div style={{ fontSize: '0.75rem', color: '#6366f1', fontWeight: 700 }}>
-                                                    {t.settings?.custom_domain || `${t.slug}.zentrixcrm.com`}
+                                                    {(t as any).settings?.custom_domain || `${t.slug}.zentrixcrm.com`}
                                                 </div>
                                             </div>
                                         </div>

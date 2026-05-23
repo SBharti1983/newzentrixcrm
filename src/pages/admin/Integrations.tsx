@@ -36,7 +36,7 @@ export default function Integrations() {
             await integrationsApi.setup({
                 provider: selectedProvider.id,
                 api_key: apiKey,
-                config: { updated_at: new Date() }
+                config: { updated_at: dateUtils.getNow() }
             });
             showToast(`${selectedProvider.name} integration updated!`, 'success');
             setSelectedProvider(null);
@@ -305,7 +305,7 @@ export default function Integrations() {
                         <tbody>
                             {logs?.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '120px 0' }}>
+                                    <td colSpan={5} style={{ textAlign: 'center', padding: '120px 0' }}>
                                         <div style={{ width: 80, height: 80, background: 'var(--slate-50)', borderRadius: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--slate-200)' }}>
                                             <Zap size={40} />
                                         </div>
@@ -337,7 +337,7 @@ export default function Integrations() {
                                                 </div>
                                             </td>
                                             <td style={{ padding: '24px', fontSize: '14px', color: 'var(--slate-500)', fontWeight: 600, borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9' }}>
-                                                {new Date(log.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                {dateUtils.parseSafe(log.created_at)?.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) || '—'}
                                             </td>
                                             <td style={{ padding: '24px', borderTop: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9' }}>
                                                 <span style={{

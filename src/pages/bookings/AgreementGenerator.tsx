@@ -22,7 +22,7 @@ const AgreementGenerator: React.FC = () => {
     const [agreementContent, setAgreementContent] = useState('');
     const [step, setStep] = useState(1); // 1: Form, 2: Preview
 
-    const { data: lead, loading: leadLoading, error: leadError } = useApi(() => leadId ? leadsApi.get(leadId) : null, [leadId]);
+    const { data: lead, loading: leadLoading, error: leadError, refetch } = useApi(() => leadId ? leadsApi.get(leadId) : null, [leadId]);
     const { data: projectsData, loading: projLoading } = useApi(() => projectsApi.list());
     const projects = projectsData || [];
     
@@ -67,7 +67,7 @@ const AgreementGenerator: React.FC = () => {
     };
 
     if (leadLoading || projLoading) return <PageLoader />;
-    if (leadError) return <PageError message={leadError} />;
+    if (leadError) return <PageError message={leadError} onRetry={refetch} />;
 
     return (
         <div className="animate-fadeIn" style={{ padding: '0 20px', paddingBottom: '100px' }}>

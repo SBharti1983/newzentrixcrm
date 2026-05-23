@@ -7,6 +7,8 @@ import { dialerEvents } from '../../constants/events';
 import { X, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, ChevronDown, Sparkles, ExternalLink, MessageSquare, TrendingUp, ShieldCheck, Zap, Target, MapPin, DollarSign, ThumbsUp, ThumbsDown, Copy, Settings, Clock, ArrowRight, RotateCw, ClipboardCheck } from 'lucide-react';
 import { usePresence } from '../../context/PresenceContext';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 const STAGE_CONFIG = {
     'New': { color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', icon: ShieldCheck },
@@ -31,6 +33,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
     const { data: contact, loading, error, refetch } = useApi(() => leadsApi.get(contactId), [contactId]);
     const { user: currentUser } = useAuth();
     const { trackPage, viewers } = usePresence();
+    const { showToast } = useToast();
     const [activeAction, setActiveAction] = useState(null);
     const [noteContent, setNoteContent] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -49,7 +52,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
     const activeViewers = (viewers[contactPath] || []).filter(u => u.id !== currentUser?.id);
 
     const updateStage = async (newStage) => {
-        try { await leadsApi.update(contactId, { stage: newStage }); refetch(); setShowStagePicker(false); } catch (e) { console.error(e); }
+        try { await leadsApi.update(contactId, { stage: newStage }); refetch(); setShowStagePicker(false); } catch (e) { showToast('Failed to update stage', 'error'); }
     };
 
     const updateStatus = async (newStatus, extras = {}) => {
@@ -57,7 +60,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
             await leadsApi.update(contactId, { status: newStatus, ...extras });
             refetch();
             setActiveAction(null);
-        } catch (e) { console.error(e); }
+        } catch (e) { showToast('Failed to update status', 'error'); }
     };
 
     const [mounted, setMounted] = useState(false);
@@ -149,7 +152,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                             marginTop: 8, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 4 
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '11px', fontWeight: 800, color: '#a21caf' }}>
-                                                <RotateCw size={12} /> RECONNECT ON {new Date(contact.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase()}
+                                                <RotateCw size={12} /> RECONNECT ON {dateUtils.parseSafe(contact.reconnect_date) ? dateUtils.parseSafe(contact.reconnect_date)!.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }).toUpperCase() : 'TBD'}
                                             </div>
                                             <div style={{ fontSize: '12px', color: '#701a75', fontWeight: 500 }}>
                                                 Reason: {contact.nurture_reason || 'Follow up'}
@@ -305,8 +308,8 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                     )}
                                     <button id="cps-save-btn" disabled={!noteContent.trim() || isSaving} className="cps-save-btn" onClick={async () => {
                                         setIsSaving(true);
-                                        try { await leadsApi.addInteraction(contact.id, { type: activeAction, note: noteContent, date: dueDate || new Date().toISOString() }); setNoteContent(''); setDueDate(''); setActiveAction(null); refetch(); }
-                                        catch (e) { console.error(e); } finally { setIsSaving(false); }
+                                        try { await leadsApi.addInteraction(contact.id, { type: activeAction, note: noteContent, date: dueDate || dateUtils.getNow().toISOString() }); setNoteContent(''); setDueDate(''); setActiveAction(null); refetch(); }
+                                        catch (e) { showToast('Failed to save', 'error'); } finally { setIsSaving(false); }
                                     }}>{isSaving ? 'Saving...' : `Save ${activeAction}`}</button>
                                 </div>
                             )}
@@ -344,7 +347,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                     </div>
                                     <div className="cps-intel-body">
                                         {Array.isArray(contact.interactions) && contact.interactions.length > 0 ? (
-                                            <p>Showing <strong style={{ color: 'var(--accent-emerald)' }}>high intent</strong>. Last activity: <strong>{contact.interactions[0].type}</strong> on {new Date(contact.interactions[0].date).toLocaleDateString()}.</p>
+                                            <p>Showing <strong style={{ color: 'var(--accent-emerald)' }}>high intent</strong>. Last activity: <strong>{contact.interactions[0].type}</strong> on {dateUtils.formatSafeDateISO(contact.interactions[0].date) || 'Unknown'}.</p>
                                         ) : (
                                             <p>No activities logged for <strong>{contact.name}</strong>. Initial discovery call recommended.</p>
                                         )}
@@ -381,7 +384,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                                                     <span style={{ fontSize: '11px', fontWeight: 800, color: f.priority === 'High' ? '#ef4444' : '#64748b' }}>{f.type.toUpperCase()}</span>
                                                     <span style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', background: '#f0fdf4', padding: '2px 6px', borderRadius: '6px' }}>
-                                                        {new Date(f.scheduled_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                        {dateUtils.parseSafe(f.scheduled_at) ? dateUtils.parseSafe(f.scheduled_at)!.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'TBD'}
                                                     </span>
                                                 </div>
                                                 <div style={{ fontSize: '12px', color: '#1e293b', fontWeight: 600 }}>{f.note || 'Follow up required'}</div>
@@ -415,7 +418,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                                 <div className="cps-tl-content">
                                                     <div className="cps-tl-header">
                                                         <span className="cps-tl-type">{it.type}</span>
-                                                        <span className="cps-tl-time">{new Date(it.date).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}</span>
+                                                        <span className="cps-tl-time">{dateUtils.parseSafe(it.date) ? dateUtils.parseSafe(it.date)!.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—'}</span>
                                                     </div>
                                                     <div className="cps-tl-agent">by {it.agent_name || 'System'}</div>
                                                     {it.note && <div className="cps-tl-note">{it.note}</div>}

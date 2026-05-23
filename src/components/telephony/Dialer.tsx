@@ -88,7 +88,7 @@ export default function Dialer() {
                 setCallState(prev => {
                     if (prev === 'ringing') return 'idle';
                     if (prev === 'active') {
-                        console.log('[DIALER] Active incoming call ended');
+
                         return 'completed';
                     }
                     return prev;
@@ -99,7 +99,7 @@ export default function Dialer() {
         const outCallRef = ref(database, `agents/${sid}/outgoing_call`);
         const unsubOut = onValue(outCallRef, (snapshot) => {
             const data = snapshot.val();
-            console.log('[DIALER] Outgoing node update:', data);
+
             
             if (data && data.status === 'ringing') {
                 setCallState(prev => (prev === 'dialing' ? 'active' : prev));
@@ -108,11 +108,11 @@ export default function Dialer() {
             if (!snapshot.exists()) {
                 setCallState(prev => {
                     if (prev === 'active') {
-                        console.log('[DIALER] Active call ended via Handset');
+
                         return 'completed';
                     }
                     if (prev === 'dialing') {
-                        console.log('[DIALER] Dial request cleared/failed before pickup');
+
                         return 'idle';
                     }
                     return prev;
@@ -124,7 +124,7 @@ export default function Dialer() {
         const unsubDisp = onValue(dispRef, (snapshot) => {
             const data = snapshot.val();
             if (data && data.timestamp > Date.now() - 30000) { // Within 30 secs
-                console.log('[DIALER] Handset Disposition Detected:', data.outcome);
+
                 // We use a ref for handleHangup to avoid dependency issues
                 if (handleHangupRef.current) {
                     handleHangupRef.current(data.outcome);

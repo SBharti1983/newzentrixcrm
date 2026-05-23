@@ -74,7 +74,7 @@ export default function Admin() {
     const [tab, setTab] = useState('users');
     const [showModal, setShowModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [form, setForm] = useState(DEFAULT_FORM);
+    const [form, setForm] = useState<any>(DEFAULT_FORM);
     const [saving, setSaving] = useState(false);
     const [userSearch, setUserSearch] = useState('');
 
@@ -138,8 +138,8 @@ export default function Admin() {
                 });
                 showToast('Recording policy saved & pushed to all handsets!', 'success');
                 setBridgeConfig(prev => ({ ...prev, bridge_number: localBridge.trim(), recording_enabled: localRecEnabled, recording_mode: localMode }));
-            } catch (err) {
-                showToast(err.error || 'Failed to save recording policy', 'error');
+            } catch (err: any) {
+                showToast(err?.error || 'Failed to save recording policy', 'error');
             } finally {
                 setConfigSaving(false);
             }
@@ -403,8 +403,8 @@ export default function Admin() {
                 await telephonyApi.broadcastAlert({ text: alertText });
                 showToast('Flash Alert pushed to all Android devices!', 'success');
                 setAlertText('');
-            } catch (err) {
-                showToast('Failed to broadcast alert', 'error');
+            } catch (err: any) {
+                showToast(err?.error || 'Failed to broadcast alert', 'error');
             } finally { setSending(false); }
         };
 
@@ -485,13 +485,13 @@ export default function Admin() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredReport.length === 0 ? (<tr><td colSpan="5" style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No matching active users found.</td></tr>) : (
+                            {filteredReport.length === 0 ? (<tr><td colSpan={5} style={{ textAlign: 'center', color: '#64748b', padding: '40px' }}>No matching active users found.</td></tr>) : (
                                 filteredReport.map(r => (
                                     <tr key={r.id}>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                 <div style={{ width: 36, height: 36, background: 'var(--navy-100)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 900, color: 'var(--navy-600)' }}>
-                                                    {r.name.charAt(0)}
+                                                    {(r.name || '?').charAt(0)}
                                                 </div>
                                                 <div>
                                                     <div style={{ fontWeight: 800, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -584,8 +584,8 @@ export default function Admin() {
             showToast('Setting updated', 'success');
             setEditingSetting(null);
             refetchSettings();
-        } catch (err) {
-            showToast(err.error || 'Failed to update setting', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to update setting', 'error');
         } finally {
             setSaving(false);
         }
@@ -604,8 +604,8 @@ export default function Admin() {
                 firebaseProjectId: systemSettings.firebase_project_id
             });
             showToast('Config pushed to all handsets successfully!', 'success');
-        } catch (err) {
-            showToast(err.error || 'Failed to push configuration', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to push configuration', 'error');
         } finally {
             setSaving(false);
         }
@@ -619,8 +619,8 @@ export default function Admin() {
             await settingsApi.update({ role_permissions: updated });
             showToast(`Permissions for ${ROLE_LABELS[role]} updated!`, 'success');
             refetchSettings();
-        } catch (err) {
-            showToast(err.error || 'Failed to update permissions', 'error');
+        } catch (err: any) {
+            showToast(err?.error || 'Failed to update permissions', 'error');
         } finally {
             setSaving(false);
         }
@@ -633,9 +633,9 @@ export default function Admin() {
         setSaving(true);
         try {
             // Enforce scaling naming convention for handset association: Tenant_Role_Name_Code
-            const tenantPx = (currentUser.tenantSlug || 'ZN').toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const tenantPx = (currentUser?.tenantSlug || 'ZN').toUpperCase().replace(/[^A-Z0-9]/g, '');
             const rolePx = form.role === 'agent' ? 'AGT' : form.role === 'sales_manager' ? 'MGR' : 'ADM';
-            const namePx = form.name.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+            const namePx = (form.name || 'User').split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
             const rndCode = Math.floor(100 + Math.random() * 900);
             
             // Only update if it's currently empty to prevent breaking existing phone hookups
@@ -653,7 +653,7 @@ export default function Admin() {
             }
             showToast(editingUser ? 'User updated!' : 'User added!', 'success');
             setShowModal(false); refetchUsers();
-        } catch (err) { showToast(err.error || 'Failed', 'error'); } finally { setSaving(false); }
+        } catch (err: any) { showToast(err?.error || 'Failed to save user', 'error'); } finally { setSaving(false); }
     };
     const deleteUser = async (id) => {
         if (id === currentUser.id) { showToast('Cannot delete yourself', 'error'); return; }
@@ -662,7 +662,7 @@ export default function Admin() {
             await usersApi.update(id, { is_active: false });
             showToast('User deactivated successfully', 'success');
             refetchUsers();
-        } catch (err) {
+        } catch (err: any) {
             showToast(err?.error || err?.message || 'Failed to deactivate user', 'error');
         }
     };
@@ -790,7 +790,7 @@ export default function Admin() {
                                         position: 'relative'
                                     }}>
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.15), transparent)', borderRadius: '12px' }} />
-                                        {u.avatar || u.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+                                        {(u.avatar || (u.name || '??').split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase())}
                                         <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#10b981', border: '3px solid white' }} />
                                     </div>
                                     <div style={{ flex: 1 }}>
@@ -896,7 +896,7 @@ export default function Admin() {
                                                         units: p.total_units || 0,
                                                         available: p.available_units || 0,
                                                         status: p.status || 'Active',
-                                                        completion: p.possession_date ? new Date(p.possession_date).toISOString().split('T')[0] : ''
+                                                        completion: p.possession_date && dateUtils.parseSafe(p.possession_date) ? dateUtils.parseSafe(p.possession_date)!.toISOString().split('T')[0] : ''
                                                     });
                                                 }}
                                             >
@@ -983,7 +983,7 @@ export default function Admin() {
                                     e.preventDefault();
                                     const val = e.target.perm.value.trim();
                                     if (val && !((perms as any[]) || []).includes(val)) {
-                                        handleUpdatePermissions(role, [...(perms || []), val]);
+                                        handleUpdatePermissions(role, [...((perms as any[]) || []), val]);
                                         e.target.reset();
                                     }
                                 }} style={{ display: 'flex', gap: 8 }}>

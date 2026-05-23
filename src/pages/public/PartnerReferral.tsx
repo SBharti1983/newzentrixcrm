@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import { useParams } from 'react-router-dom';
 import { referralsApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
@@ -38,8 +39,8 @@ export default function PartnerReferral() {
                 ]);
                 setPartner(pData);
                 setProjects(projectsRes || []);
-            } catch (err) {
-                console.error(err);
+            } catch (err: any) {
+                console.error('Partner Info Load Error:', err);
                 setError(err.error || 'Invalid referral link or partner no longer active.');
             } finally {
                 setLoading(false);
@@ -59,7 +60,7 @@ export default function PartnerReferral() {
             await referralsApi.submit({ ...form, partner_id: partnerId });
             setSubmitted(true);
             showToast('Referral submitted successfully!', 'success');
-        } catch (err) {
+        } catch (err: any) {
             showToast(err.error || 'Submission failed. Please try again.', 'error');
         } finally {
             setSubmitting(false);
@@ -336,7 +337,7 @@ export default function PartnerReferral() {
 
             {/* Footer */}
             <div className="mt-auto py-8 text-center text-slate-400 text-xs font-medium">
-                © {new Date().getFullYear()} ZentrixCRM Referral Ecosystem. All Leads Encrypted &amp; Secure.
+                © {dateUtils.getNow().getFullYear()} ZentrixCRM Referral Ecosystem. All Leads Encrypted &amp; Secure.
             </div>
         </div>
     );

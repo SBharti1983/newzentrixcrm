@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import * as dateUtils from '../../utils/dateUtils';
 import {
     CreditCard, CheckCircle, Clock, AlertTriangle, ChevronDown, ChevronUp,
     Plus, X, Download, Search, Filter, TrendingUp, IndianRupee, Calendar,
@@ -58,7 +59,7 @@ export default function PaymentTracker() {
     const [showMarkModal, setShowMarkModal] = useState(false);
     const [selectedInstallment, setSelectedInstallment] = useState(null);
     const [receiptNote, setReceiptNote] = useState('');
-    const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+    const [paymentDate, setPaymentDate] = useState(dateUtils.getNow().toISOString().split('T')[0]);
     const [activeTab, setActiveTab] = useState('tracker');
 
     const installments = allInstRaw;
@@ -102,7 +103,7 @@ export default function PaymentTracker() {
             });
             showToast('Payment recorded!', 'success');
             refetch();
-        } catch (err) { showToast(err.error || 'Failed to record payment', 'error'); }
+        } catch (err: any) { showToast(err?.error || 'Failed to record payment', 'error'); }
         setShowMarkModal(false);
         setSelectedInstallment(null);
         setReceiptNote('');
@@ -112,16 +113,15 @@ export default function PaymentTracker() {
         const matchStatus = filterStatus === 'All' || i.status === filterStatus;
         const matchQ = !searchQ || (i.customerName || '').toLowerCase().includes(searchQ.toLowerCase());
         return matchStatus && matchQ;
-    }).sort((a, b) => new Date(a.due_date || a.dueDate) - new Date(b.due_date || b.dueDate));
+    }).sort((a, b) => (dateUtils.parseSafe(a.due_date || a.dueDate)?.getTime() || 0) - (dateUtils.parseSafe(b.due_date || b.dueDate)?.getTime() || 0));
 
     const [now] = useState(() => Date.now());
     const { overdueCount, upcomingCount } = useMemo(() => {
         const nextWeekMs = now + 7 * 86400000;
         return {
-            overdueCount: installments.filter(i => i.status === 'Overdue').length,
             upcomingCount: installments.filter(i =>
                 i.status === 'Upcoming' &&
-                new Date(i.due_date || i.dueDate).getTime() <= nextWeekMs
+                (dateUtils.parseSafe(i.due_date || i.dueDate)?.getTime() || 0) <= nextWeekMs
             ).length
         };
     }, [installments, now]);
@@ -339,8 +339,8 @@ export default function PaymentTracker() {
                                                             <div style={{ flex: 1 }}>
                                                                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: 2 }}>{inst.milestone_name || inst.milestone || `Installment ${idx + 1}`}</div>
                                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                    Due: {inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}
-                                                                    {(inst.paid_date || inst.paidDate) && <span style={{ color: 'var(--accent-emerald)', marginLeft: 8 }}>· Paid: {inst.paid_date ? new Date(inst.paid_date).toLocaleDateString('en-IN') : inst.paidDate}</span>}
+                                                                    Due: {inst.due_date ? dateUtils.formatSafeDate(inst.due_date) : inst.dueDate}
+                                                                    {(inst.paid_date || inst.paidDate) && <span style={{ color: 'var(--accent-emerald)', marginLeft: 8 }}>· Paid: {inst.paid_date ? dateUtils.formatSafeDate(inst.paid_date) : inst.paidDate}</span>}
                                                                 </div>
                                                             </div>
                                                             <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--navy-600)', minWidth: 80, textAlign: 'right' }}>
@@ -400,7 +400,7 @@ export default function PaymentTracker() {
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--slate-50)', padding: '8px 12px', borderRadius: 12 }}>
                                         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                                            Due: {inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}
+                                            Due: {inst.due_date ? dateUtils.formatSafeDate(inst.due_date) : inst.dueDate}
                                         </div>
                                         {inst.status !== 'Paid' && (
                                             <button className="btn btn-primary btn-sm" onClick={() => { setSelectedInstallment(inst); setShowMarkModal(true); }}>Collect</button>
@@ -429,8 +429,8 @@ export default function PaymentTracker() {
                                                     <td style={{ padding: '12px 14px', fontWeight: 700 }}>{inst.customerName}</td>
                                                     <td style={{ padding: '12px 14px', color: 'var(--text-secondary)' }}>{inst.projectName} ({inst.unitNo})</td>
                                                     <td style={{ padding: '12px 14px' }}>{inst.milestone_name || inst.milestone}</td>
-                                                    <td style={{ padding: '12px 14px' }}>{inst.due_date ? new Date(inst.due_date).toLocaleDateString('en-IN') : inst.dueDate}</td>
-                                                    <td style={{ padding: '12px 14px' }}>{inst.paid_date ? new Date(inst.paid_date).toLocaleDateString('en-IN') : '—'}</td>
+                                                    <td style={{ padding: '12px 14px' }}>{inst.due_date ? dateUtils.formatSafeDate(inst.due_date) : inst.dueDate}</td>
+                                                    <td style={{ padding: '12px 14px' }}>{inst.paid_date ? dateUtils.formatSafeDate(inst.paid_date) : '—'}</td>
                                                     <td style={{ padding: '12px 14px', fontWeight: 800 }}>{formatCr(inst.amount)}</td>
                                                     <td style={{ padding: '12px 14px' }}><span className={`badge ${sc.badge}`}>{inst.status}</span></td>
                                                     <td style={{ padding: '12px 14px' }}>

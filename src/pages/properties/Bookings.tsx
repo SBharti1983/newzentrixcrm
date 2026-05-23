@@ -12,6 +12,7 @@ import { dialerEvents } from '../../constants/events';
 import { useNavigate } from 'react-router-dom';
 import { useMobile } from '../../hooks/useMobile';
 import { Download } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ProFormaInvoice from '../../components/modals/ProFormaInvoice';
@@ -76,7 +77,7 @@ const PAYMENT_PLANS = [
 const DEFAULT_FORM = {
     customerName: '', projectId: '1', unitNo: '',
     amount: '', tokenAmount: '', paymentPlan: 'Construction Linked',
-    agent: '3', status: 'In Process', bookingDate: new Date().toISOString().split('T')[0],
+    agent: '3', status: 'In Process', bookingDate: dateUtils.getNow().toISOString().split('T')[0],
     tokenMode: 'Cheque', tokenRef: '', notes: '',
     leadId: '',
 };
@@ -136,18 +137,18 @@ export default function Bookings() {
             });
             showToast('Booking created!', 'success');
             setShowModal(false); setForm(DEFAULT_FORM); setStep(1); refetch();
-        } catch (err) { showToast(err.error || 'Failed to create booking', 'error'); }
+        } catch (err: any) { showToast(err?.error || 'Failed to create booking', 'error'); }
         finally { setSaving(false); }
     };
 
     const confirmBooking = async (id) => {
         try { await bookingsApi.update(id, { status: 'Confirmed' }); refetch(); }
-        catch { showToast('Failed to confirm', 'error'); }
+        catch (err: any) { showToast('Failed to confirm', 'error'); }
     };
 
     const cancelBooking = async (id) => {
         try { await bookingsApi.update(id, { status: 'Cancelled' }); refetch(); }
-        catch { showToast('Failed to cancel', 'error'); }
+        catch (err: any) { showToast('Failed to cancel', 'error'); }
     };
 
     const downloadReceipt = (b) => {
@@ -175,7 +176,7 @@ export default function Bookings() {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.text(`Name: ${b.customer_name || b.customerName}`, 15, 65);
-            doc.text(`Date of Booking: ${b.booking_date || b.bookingDate || new Date().toLocaleDateString()}`, 15, 72);
+            doc.text(`Date of Booking: ${b.booking_date || b.bookingDate || dateUtils.getNow().toLocaleDateString()}`, 15, 72);
 
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
@@ -203,7 +204,7 @@ export default function Bookings() {
             // Footer
             doc.setFontSize(9);
             doc.setTextColor(150, 150, 150);
-            const finalY = doc.lastAutoTable.finalY || 130;
+            const finalY = (doc as any).lastAutoTable.finalY || 130;
             doc.text('This is an electronically generated document. No physical signature is required.', 15, finalY + 20);
 
             doc.save(`Receipt_${b.unit_no || b.unitNo}_${(b.customer_name || b.customerName).replace(/\s+/g, '_')}.pdf`);
