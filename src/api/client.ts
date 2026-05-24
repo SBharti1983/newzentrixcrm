@@ -4,11 +4,14 @@
  */
 
 const isProd = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.PROD : false;
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const isLocal = window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1' || 
+                window.location.hostname.startsWith('10.') || 
+                window.location.hostname.startsWith('192.168.');
 
 // In dev mode or on localhost, use relative '/api' so requests go through the Vite proxy.
 // In production (non-localhost), use the full Railway backend URL.
-const defaultApiUrl = window.location.hostname === 'localhost' ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
+const defaultApiUrl = isLocal ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
 export let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
 // API base URL configuration removed for production hardening
