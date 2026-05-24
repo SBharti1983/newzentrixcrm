@@ -55,7 +55,7 @@ router.get('/', async (req: any, res: Response) => {
 // POST /api/followups
 router.post('/', async (req: any, res: Response) => {
     try {
-        const { lead_id, assigned_to, type, priority, scheduled_at, note } = req.body;
+        const { lead_id, assigned_to, type, priority, scheduled_at, note, notes } = req.body;
         if (!lead_id || !scheduled_at) return res.status(400).json({ error: 'lead_id and scheduled_at required' });
         
         const newFollowup = await db.insert(followups).values({
@@ -65,7 +65,7 @@ router.post('/', async (req: any, res: Response) => {
             type: type || 'Call',
             priority: priority || 'Medium',
             scheduledAt: scheduled_at,
-            note: note || null
+            note: note || notes || null
         }).returning();
 
         // Update lead's last contact time
