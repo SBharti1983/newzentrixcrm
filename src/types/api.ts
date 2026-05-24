@@ -124,6 +124,9 @@ export interface Lead {
   assigned_to?: string;
   budget_min?: number;
   budget_max?: number;
+  nurture_reason?: string;
+  reconnect_date?: string;
+  [key: string]: any;
 }
 
 export interface Interaction {

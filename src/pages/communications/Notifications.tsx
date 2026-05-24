@@ -6,6 +6,7 @@ import { notificationsApi } from '../../api/client';
 import NotificationComposer from '../../components/notifications/NotificationComposer';
 import { useMobile } from '../../hooks/useMobile';
 import { Plus, Send, Search, Smartphone, Mail, MessageSquare, CheckCircle, Clock, XCircle, BarChart2 } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
 
 const STATUS_STYLE = {
     delivered: { label: 'Delivered', color: '#10b981', bg: 'rgba(16,185,129,0.1)', icon: <CheckCircle size={12} /> },

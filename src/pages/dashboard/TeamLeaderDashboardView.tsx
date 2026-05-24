@@ -12,6 +12,7 @@ import {
 import * as dateUtils from '../../utils/dateUtils';
 import { User } from '../../types/auth';
 import { TeamLeaderStats, MemberPerformance } from '../../types/api';
+import { useMobile } from '../../hooks/useMobile';
 
 interface TeamLeaderDashboardViewProps {
     user: User | null;
@@ -47,6 +48,7 @@ const KPI_STYLE = {
 
 export default function TeamLeaderDashboardView({ user, data, loading }: TeamLeaderDashboardViewProps) {
     const navigate = useNavigate();
+    const isMobile = useMobile();
 
     // Dynamic Chart Data mapping
     const chartData = useMemo(() => {

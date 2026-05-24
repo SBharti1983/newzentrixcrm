@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, X, Check, ExternalLink, Info, AlertTriangle, CheckCircle2, MessageSquare, UserPlus, Calendar } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
 
 interface NotificationDropdownProps {
     onClose: () => void;

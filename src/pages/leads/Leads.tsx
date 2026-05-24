@@ -63,8 +63,18 @@ const SOURCES = [
 ];
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
+interface MobileLeadCardProps {
+    lead: any;
+    isSelected: boolean;
+    onSelect: (id: any) => void;
+    onDelete: (id: any) => void;
+    onEdit: (lead: any) => void;
+    onCall: (id: any, phone: any, name: any) => void;
+    onNavigate: (id: any) => void;
+}
+
 // Mobile Card Component
-const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }) => {
+const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }: MobileLeadCardProps) => {
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
     return (
         <div 
@@ -144,8 +154,20 @@ const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onC
     );
 });
 
+interface LeadRowProps {
+    lead: any;
+    isSelected: boolean;
+    filterNurtureDue: boolean;
+    onSelect: (id: any) => void;
+    onPreview: (id: any) => void;
+    onDelete: (id: any) => void;
+    onEdit: (lead: any) => void;
+    onCall: (id: any, phone: any, name: any) => void;
+    onNavigate: (id: any) => void;
+}
+
 // Optimized Memoized Row Component
-const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }) => {
+const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: LeadRowProps) => {
     const [hovered, setHovered] = useState(false);
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
 
@@ -295,7 +317,7 @@ export default function Leads() {
             const activePage = overridePage !== undefined ? overridePage : page;
             const activeSearch = overrideSearch !== undefined ? overrideSearch : debouncedSearch;
             
-            const p = { limit, page: activePage };
+            const p: any = { limit, page: activePage };
             if (filterStage !== 'All') p.stage = filterStage;
             if (filterSource !== 'All') p.source = filterSource;
             if (filterStatus !== 'All') p.status = filterStatus;

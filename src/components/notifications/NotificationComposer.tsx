@@ -4,6 +4,7 @@ import { leadsApi, customersApi, notificationsApi, copilotApi } from '../../api/
 import { useApi } from '../../hooks/useApi';
 import { X, Send, ChevronDown, Smartphone, Mail, MessageSquare, Zap, Copy, Eye } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 // ─── Resolve template variables ─────────────────────────────────────────────
 function resolveVars(text, vars) {

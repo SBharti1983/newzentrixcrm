@@ -4,7 +4,7 @@ import {
     BarChart2, PieChart, Activity, Calendar, Phone,
     MoreVertical, FileSpreadsheet, FileJson, User, Home
 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, LineChart, Line, PieChart as RechartsPieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { analyticsApi, leadsApi, usersApi, documentsApi } from '../../api/client';
@@ -680,7 +680,7 @@ export default function Reports() {
                                                     ];
                                                     const COLORS = ['#6366f1', '#10b981', '#ec4899', '#f59e0b', '#06b6d4'];
                                                     return (
-                                                        <PieChart>
+                                                        <RechartsPieChart>
                                                             <Pie
                                                                 data={conversionData}
                                                                 cx="50%"
@@ -696,7 +696,7 @@ export default function Reports() {
                                                             </Pie>
                                                             <RechartsTooltip formatter={(value) => `${value}%`} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }} />
                                                             <Legend iconType="circle" layout="horizontal" align="center" verticalAlign="bottom" wrapperStyle={{ fontSize: 11, fontWeight: 600, paddingTop: 10 }} />
-                                                        </PieChart>
+                                                        </RechartsPieChart>
                                                     );
                                                 case 'sales':
                                                     return (

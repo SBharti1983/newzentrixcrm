@@ -3,6 +3,7 @@ import { followupsApi, usersApi } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
 import { useToast } from '../../hooks/useToast';
 import { X, Calendar, Clock, AlertCircle, Plus } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
 
 interface FollowupModalProps {
     onClose: () => void;

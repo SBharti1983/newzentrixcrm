@@ -8,6 +8,7 @@ import {
     Plus, CheckCircle2, AlertCircle, Copy, Clock, Filter, Zap, RefreshCw, Brain
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import * as dateUtils from '../../utils/dateUtils';
 
 const PROVIDERS = [
     { id: 'whatsapp', name: 'WhatsApp', icon: MessageCircle, color: '#25D366', desc: 'Sync leads from WhatsApp Business messages via WhatAPI.' },

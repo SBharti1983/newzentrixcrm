@@ -7,6 +7,7 @@ import { useToast } from '../../hooks/useToast';
 import { Plus, Edit2, Trash2, X, Shield, Users, Building2, Settings, Smartphone, Zap, Phone, Radio, Search, Palette } from 'lucide-react';
 import { useBranding } from '../../context/BrandingContext';
 import { useMobile } from '../../hooks/useMobile';
+import * as dateUtils from '../../utils/dateUtils';
 
 const ROLE_LABELS = {
     superadmin: 'Super Administrator',

@@ -6,6 +6,15 @@
 
 export * from './auth';
 export * from './leads';
-export * from './api';
+export type {
+  ApiRequestOptions,
+  ApiError,
+  PaginatedResponse,
+  DashboardData,
+  AnalyticsData,
+  HealthResponse,
+  TeamLeaderStats,
+  MemberPerformance
+} from './api';
 export * from './projects';
 export * from './common';

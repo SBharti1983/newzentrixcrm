@@ -119,6 +119,7 @@ export default function PaymentTracker() {
     const { overdueCount, upcomingCount } = useMemo(() => {
         const nextWeekMs = now + 7 * 86400000;
         return {
+            overdueCount: installments.filter(i => i.status === 'Overdue').length,
             upcomingCount: installments.filter(i =>
                 i.status === 'Upcoming' &&
                 (dateUtils.parseSafe(i.due_date || i.dueDate)?.getTime() || 0) <= nextWeekMs

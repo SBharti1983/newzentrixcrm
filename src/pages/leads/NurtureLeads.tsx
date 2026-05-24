@@ -263,7 +263,7 @@ export default function NurtureLeads() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                     <div style={{
                                                         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                                                        background: `hsl(${(lead.id || '0').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
+                                                        background: `hsl(${String(lead.id).split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
                                                         color: 'white', fontWeight: 800, fontSize: '0.85rem',
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                     }}>{lead.name?.[0]}</div>
@@ -487,7 +487,7 @@ function MobileNurtureCard({ lead, onReactivate, onClick, onEdit, draftingId, ge
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                     <div style={{
                         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                        background: `hsl(${(lead.id || '0').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
+                        background: `hsl(${String(lead.id).split('').reduce((a,c) => a + c.charCodeAt(0), 0) % 360}, 55%, 50%)`,
                         color: 'white', fontWeight: 900, fontSize: '0.9rem',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>{lead.name?.[0]}</div>

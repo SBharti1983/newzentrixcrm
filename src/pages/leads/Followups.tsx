@@ -17,7 +17,7 @@ const TYPE_ICON = { Call: '📞', Email: '📧', WhatsApp: '💬', 'Site Visit':
 function isOverdue(date) { return new Date(date) < new Date() && date; }
 function isUrgent(date) {
     if (!date) return false;
-    const diff = new Date() - new Date(date);
+    const diff = new Date().getTime() - new Date(date).getTime();
     return diff > 7200000; 
 }
 
@@ -131,7 +131,7 @@ export default function Followups() {
             };
             return getVal(b) - getVal(a);
         }
-        return new Date(a.scheduled_at || 0) - new Date(b.scheduled_at || 0);
+        return new Date(a.scheduled_at || 0).getTime() - new Date(b.scheduled_at || 0).getTime();
     });
 
     const toggle = async (id, currentStatus) => {
@@ -152,7 +152,7 @@ export default function Followups() {
         if (!id) return;
         
         const now = new Date();
-        const updates = {};
+        const updates: any = {};
         
         if (targetCol === 'Completed') {
             updates.status = 'Completed';
@@ -778,7 +778,26 @@ function QuickViewTooltip({ context }) {
     );
 }
 
-function FollowupCard({ f, isCompact, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart, onHover, isTeamView, agents, onReassign }) {
+interface FollowupCardProps {
+    f: any;
+    isCompact?: boolean;
+    isHighValue: boolean;
+    leadDetails: any;
+    onToggle: (id: any, currentStatus: any) => void;
+    onDial: (id: any, phone: any, name: any) => void;
+    onNotify: (target: any) => void;
+    onDownload: (id: any, name: any) => void;
+    onDelete: (id: any) => void;
+    onPreview: (lead: any) => void;
+    urgent: boolean;
+    onDragStart?: (e: any) => void;
+    onHover: (e: any, lead?: any) => void;
+    isTeamView: boolean;
+    agents: any[];
+    onReassign: (taskId: any, newAgentId: any) => void;
+}
+
+function FollowupCard({ f, isCompact = false, isHighValue, leadDetails, onToggle, onDial, onNotify, onDownload, onDelete, onPreview, urgent, onDragStart, onHover, isTeamView, agents, onReassign }: FollowupCardProps) {
     if (!f) return null;
     const date = new Date(f.scheduled_at || Date.now());
     const day = date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });

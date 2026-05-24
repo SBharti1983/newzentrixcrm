@@ -1,4 +1,5 @@
 import { X, Printer, Download } from 'lucide-react';
+import * as dateUtils from '../../utils/dateUtils';
 
 export default function ProFormaInvoice({ booking, plan, onClose }) {
     if (!booking || !plan) return null;

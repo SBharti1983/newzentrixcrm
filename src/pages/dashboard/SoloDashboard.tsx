@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { dashboardApi, leadsApi } from '../../api/client';
 import { usePresence } from '../../context/PresenceContext';
+import { useMobile } from '../../hooks/useMobile';
 
 const COLORS = {
     primary: '#6366F1',
@@ -22,6 +23,7 @@ const COLORS = {
 };
 
 export default function SoloDashboard() {
+    const isMobile = useMobile();
     const [stats, setStats] = useState(null);
     const [recentLeads, setRecentLeads] = useState([]);
     const [loading, setLoading] = useState(true);

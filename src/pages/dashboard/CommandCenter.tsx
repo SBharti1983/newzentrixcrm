@@ -11,6 +11,7 @@ import { leadsApi, notificationsApi, dashboardApi } from '../../api/client';
 import { PageLoader } from '../../components/feedback/Feedback';
 import { useToast } from '../../hooks/useToast';
 import AIPitchModal from '../../components/modals/AIPitchModal';
+import * as dateUtils from '../../utils/dateUtils';
 
 export default function CommandCenter() {
     const { addToast } = useToast();

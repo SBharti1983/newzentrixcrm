@@ -153,6 +153,8 @@ export const leads = pgTable("leads", {
 			foreignColumns: [tenants.id],
 			name: "leads_tenant_id_fkey"
 		}).onDelete("cascade"),
+	index("idx_leads_tenant_created").on(table.tenantId, table.createdAt),
+	index("idx_leads_assigned_to").on(table.assignedTo),
 ]);
 
 export const interactions = pgTable("interactions", {
@@ -191,6 +193,8 @@ export const interactions = pgTable("interactions", {
 			foreignColumns: [users.id],
 			name: "interactions_user_id_fkey"
 		}).onDelete("set null"),
+	index("idx_interactions_lead_id").on(table.leadId),
+	index("idx_interactions_tenant_id").on(table.tenantId),
 ]);
 
 export const simulationReports = pgTable("simulation_reports", {
