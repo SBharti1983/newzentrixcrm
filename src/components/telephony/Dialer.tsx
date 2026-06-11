@@ -9,7 +9,7 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { useAuth } from '../../hooks/useAuth';
 import { useApi } from '../../hooks/useApi';
-import { leadsApi } from '../../api/client';
+import { leadsApi, BASE_URL } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { dialerEvents } from '../../constants/events';
 import { useMobile } from '../../hooks/useMobile';
@@ -75,7 +75,7 @@ export default function Dialer() {
                     if (prev === 'idle') {
                         setIsOpen(true);
                         setIsMinimized(false);
-                        fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/leads/search?q=${num}`, {
+                        fetch(`${BASE_URL}/leads/search?q=${num}`, {
                             headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
                         }).then(res => res.json()).then(leadData => {
                             if (leadData && leadData.length > 0) setActiveLead(leadData[0]);
@@ -153,7 +153,7 @@ export default function Dialer() {
             if (!agentId) return showToast('No Agent ID', 'error');
             const sid = agentId;
             const makeCallRef = ref(database, `agents/${sid}/outgoing_call`);
-            const logRes = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/initiate`, {
+            const logRes = await fetch(`${BASE_URL}/calls/initiate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` },
                 body: JSON.stringify({ leadId: lead?.id, phoneNumber: phoneToDial, method: 'GSM' })
@@ -185,7 +185,7 @@ export default function Dialer() {
 
         const iid = activeInteractionId;
         const lid = activeLead?.id;
-        const apiUrl = import.meta.env.VITE_API_URL || '/api';
+        const apiUrl = BASE_URL;
 
         if (iid) {
             try {

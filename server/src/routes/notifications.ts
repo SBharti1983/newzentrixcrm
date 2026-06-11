@@ -4,6 +4,8 @@ import { authenticateToken } from '../middleware/auth';
 import { PUBLIC_KEY } from '../utils/push';
 import { sendEmail } from '../utils/email';
 import { sendWhatsappMessage } from '../utils/whatsapp';
+import CircuitBreaker from 'opossum';
+import { logger } from '../utils/logger';
 let twilio: any = null;
 try { const mod = 'twil' + 'io'; twilio = require(mod); } catch { /* twilio not installed, SMS disabled */ }
 import fs from 'fs';
@@ -123,7 +125,7 @@ router.get('/', async (req: any, res: Response) => {
 });
 
 // ─── Actual send helpers ─────────────
-async function sendSMS({ to, body }: { to: string, body: string }) {
+const _sendSMS = async ({ to, body }: { to: string, body: string }) => {
     if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN)
         throw new Error('Twilio SMS not configured');
 
@@ -133,6 +135,21 @@ async function sendSMS({ to, body }: { to: string, body: string }) {
         from: process.env.TWILIO_PHONE_NUMBER,
         to,
     });
+};
+
+const smsBreaker = new CircuitBreaker(_sendSMS, {
+    timeout: 10000,                // 10s execution timeout
+    errorThresholdPercentage: 50,  // Trip if 50% of attempts fail
+    resetTimeout: 30000            // Try to close again after 30s
+});
+
+smsBreaker.fallback((err: any) => {
+    logger.warn(`[TWILIO CIRCUIT BREAKER] Twilio SMS sending bypassed (circuit breaker active): ${err?.message || 'Breaker open'}`);
+    throw new Error(err?.message || 'Twilio SMS circuit breaker is active');
+});
+
+async function sendSMS({ to, body }: { to: string, body: string }) {
+    return smsBreaker.fire({ to, body });
 }
 
 // ─── POST /api/notifications/send — log + (optionally) send ───────

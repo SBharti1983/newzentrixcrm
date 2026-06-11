@@ -36,6 +36,7 @@
     "@google/genai": "^1.42.0",
     "@google/generative-ai": "^0.24.1",
     "@sentry/node": "^10.50.0",
+    "@socket.io/redis-adapter": "^8.3.0",
     "@types/node": "^25.6.0",
     "axios": "^1.15.0",
     "bcryptjs": "^3.0.3",
@@ -51,9 +52,11 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.1",
+    "opossum": "^9.0.0",
     "pdfkit": "^0.18.0",
     "pg": "^8.18.0",
     "postgres": "^3.4.9",
+    "rate-limit-redis": "^5.0.0",
     "razorpay": "^2.9.6",
     "redis": "^5.12.1",
     "socket.io": "^4.8.3",
@@ -63,6 +66,7 @@
     "tsx": "^4.21.0",
     "typescript": "^6.0.3",
     "web-push": "^3.6.7",
+    "winston": "^3.19.0",
     "xlsx": "^0.18.5"
   }
 }

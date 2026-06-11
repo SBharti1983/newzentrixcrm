@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Lock, CheckCircle, ArrowLeft } from 'lucide-react';
-
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api');
+import { BASE_URL } from '../../api/client';
 
 export default function ResetPassword() {
     const navigate = useNavigate();

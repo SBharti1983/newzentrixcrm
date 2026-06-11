@@ -1,184 +1,209 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import https from 'https';
 import http from 'http';
+import CircuitBreaker from 'opossum';
+import { logger } from './logger';
 
 // Initialize Gemini with the proper official SDK
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
 
 /**
- * Common function to interact with Gemini
- * @param {string} prompt 
- * @param {boolean} isJson - Whether we expect a JSON response
- * @returns {Promise<any>}
+ * Reusable mock fallback responses for AI failures or tripped circuit breakers.
  */
-export async function generateAIResponse(prompt: string, isJson: boolean = true, customKey: string | null = null): Promise<any> {
+function getAIFallbackResponse(prompt: string, isJson: boolean): any {
+    logger.info('⚠️ [AI FALLBACK] Activating Safe Mock Fallback Mode to prevent crash...');
+    if (isJson) {
+        const promptStr = prompt.toLowerCase();
+        if (promptStr.includes('headline') || promptStr.includes('hook') || promptStr.includes('pitch')) {
+            return {
+                headline: "Zentrix Premium Residency - Luxury Living Redefined",
+                hook: "Experience unmatched luxury in the city's most coveted location.",
+                value_propositions: [
+                    "Sleek architectural design with high-density premium amenities",
+                    "Zero-maintenance smart home integration inside all flats",
+                    "Flexible custom payment structures with high resale yields"
+                ],
+                cta: "Schedule an exclusive preview tour today!"
+            };
+        }
+        if (promptStr.includes('briefing') || promptStr.includes('call list')) {
+            return [
+                { id: "1", reason: "Hot Lead: Peak buyer sentiment", action: "Call regarding custom 3BHK pricing options" },
+                { id: "2", reason: "Follow-up Overdue: Site visit pending", action: "Send WhatsApp brochure for Zentrix Heights" }
+            ];
+        }
+        return {
+            message: "This is a premium fallback assistant draft. [Gemini Free Tier Quota Limit Reached]"
+        };
+    }
+    return "Welcome to Zentrix Realty. We would love to share exclusive floorplans and payment schedules. Let's set up a quick call.";
+}
+
+/**
+ * Common function to interact with Gemini
+ */
+const _generateAIResponse = async (prompt: string, isJson: boolean = true, customKey: string | null = null): Promise<any> => {
     const aiKey = (customKey || process.env.GEMINI_API_KEY || '').trim();
     if (!aiKey) {
         throw new Error('GEMINI_API_KEY is not configured');
     }
     const localGenAI = new GoogleGenerativeAI(aiKey);
 
-    try {
-        let finalPrompt = prompt;
-        if (isJson) {
-            finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
-        }
-
-        // Using Gemini 2.5 Flash as the primary engine for high-speed sales training simulations.
-        const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
-        let lastError = null;
-
-        for (const modelName of modelsToTry) {
-            let attempts = 0;
-            const maxAttempts = 2; // Retry once if it's a transient error
-
-            while (attempts < maxAttempts) {
-                try {
-                    attempts++;
-                    const model = localGenAI.getGenerativeModel({ 
-                        model: modelName,
-                        generationConfig: { temperature: 0.7, topP: 0.8, topK: 40 },
-                        safetySettings: [
-                            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-                            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-                            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-                            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
-                        ]
-                    });
-                    const result = await model.generateContent(finalPrompt);
-                    const response = result.response;
-                    let text = response.text();
-                    
-                    if (isJson) {
-                        // Extract JSON block if AI wrapped it in triple backticks
-                        const jsonMatch = text.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) {
-                            text = jsonMatch[0];
-                        }
-                        return JSON.parse(text);
-                    }
-                    return text;
-                } catch (err) {
-                    lastError = err;
-                    console.warn(`[AI] Attempt ${attempts} with ${modelName} failed:`, err.message);
-                    
-                    // If transient (503/429) and we have attempts left, wait and retry
-                    if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
-                        await new Promise(r => setTimeout(r, 2000)); // Wait 2s
-                        continue;
-                    }
-                    
-                    // If definitive 404 or exhausted retries, try next model in the list
-                    break; 
-                }
-            }
-        }
-        throw lastError || new Error('All Gemini models failed');
-    } catch (err: any) {
-        console.error('[AI] Pipeline failure (e.g. Quota Exceeded or Deprecated Model):', err.message || err);
-        
-        // ── Safe Fallback Mode for Quota limits or API key errors ──
-        console.log('⚠️ [AI FALLBACK] Activating Safe Mock Fallback Mode to prevent crash...');
-        if (isJson) {
-            const promptStr = prompt.toLowerCase();
-            if (promptStr.includes('headline') || promptStr.includes('hook') || promptStr.includes('pitch')) {
-                return {
-                    headline: "Zentrix Premium Residency - Luxury Living Redefined",
-                    hook: "Experience unmatched luxury in the city's most coveted location.",
-                    value_propositions: [
-                        "Sleek architectural design with high-density premium amenities",
-                        "Zero-maintenance smart home integration inside all flats",
-                        "Flexible custom payment structures with high resale yields"
-                    ],
-                    cta: "Schedule an exclusive preview tour today!"
-                };
-            }
-            if (promptStr.includes('briefing') || promptStr.includes('call list')) {
-                return [
-                    { id: "1", reason: "Hot Lead: Peak buyer sentiment", action: "Call regarding custom 3BHK pricing options" },
-                    { id: "2", reason: "Follow-up Overdue: Site visit pending", action: "Send WhatsApp brochure for Zentrix Heights" }
-                ];
-            }
-            return {
-                message: "This is a premium fallback assistant draft. [Gemini Free Tier Quota Limit Reached]"
-            };
-        }
-        return "Welcome to Zentrix Realty. We would love to share exclusive floorplans and payment schedules. Let's set up a quick call.";
+    let finalPrompt = prompt;
+    if (isJson) {
+        finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
     }
-}
+
+    // Using Gemini 2.5 Flash as the primary engine for high-speed sales training simulations.
+    const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+        let attempts = 0;
+        const maxAttempts = 2; // Retry once if it's a transient error
+
+        while (attempts < maxAttempts) {
+            try {
+                attempts++;
+                const model = localGenAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { temperature: 0.7, topP: 0.8, topK: 40 },
+                    safetySettings: [
+                        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
+                    ]
+                });
+                const result = await model.generateContent(finalPrompt);
+                const response = result.response;
+                let text = response.text();
+                
+                if (isJson) {
+                    // Extract JSON block if AI wrapped it in triple backticks
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        text = jsonMatch[0];
+                    }
+                    return JSON.parse(text);
+                }
+                return text;
+            } catch (err: any) {
+                lastError = err;
+                logger.warn(`[AI] Attempt ${attempts} with ${modelName} failed: ${err.message}`);
+                
+                // If transient (503/429) and we have attempts left, wait and retry
+                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 2000)); // Wait 2s
+                    continue;
+                }
+                
+                // If definitive 404 or exhausted retries, try next model in the list
+                break; 
+            }
+        }
+    }
+    throw lastError || new Error('All Gemini models failed');
+};
+
+// Instantiate the AI Circuit Breaker
+const aiBreaker = new CircuitBreaker(_generateAIResponse, {
+    timeout: 20000,                // 20s execution timeout
+    errorThresholdPercentage: 50,  // Trip if 50% fail
+    resetTimeout: 30000            // Try to close again after 30s
+});
+
+aiBreaker.fallback((err: any, args: any[]) => {
+    const prompt = args[0] || '';
+    const isJson = args[1] !== false; // defaults to true
+    logger.warn(`[AI CIRCUIT BREAKER] Gemini API call bypassed (circuit breaker active): ${err?.message || 'Breaker open'}`);
+    return getAIFallbackResponse(prompt, isJson);
+});
+
+// Export the wrapper function
+export const generateAIResponse = (prompt: string, isJson: boolean = true, customKey: string | null = null): Promise<any> => {
+    return aiBreaker.fire(prompt, isJson, customKey);
+};
 
 /**
  * Processes audio (transcription + summary)
- * @param {string} prompt - The analysis prompt
- * @param {string} base64Audio - The audio data
- * @param {string} mimeType - e.g. 'audio/mp4'
- * @param {boolean} isJson - Whether to parse as JSON
- * @returns {Promise<any>}
  */
-export async function generateAudioTranscription(prompt: string, base64Audio: string, mimeType: string, isJson: boolean = true, customKey: string | null = null): Promise<any> {
+const _generateAudioTranscription = async (prompt: string, base64Audio: string, mimeType: string, isJson: boolean = true, customKey: string | null = null): Promise<any> => {
     const aiKey = customKey || process.env.GEMINI_API_KEY;
     if (!aiKey) {
         throw new Error('GEMINI_API_KEY is not configured');
     }
     const localGenAI = new GoogleGenerativeAI(aiKey);
 
-    try {
-        let finalPrompt = prompt;
-        if (isJson) {
-            finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
-        }
+    let finalPrompt = prompt;
+    if (isJson) {
+        finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON structured as requested. No formatting tags.";
+    }
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest", "gemini-1.5-flash", "gemini-1.5-pro"];
-        let lastError = null;
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest", "gemini-pro-latest", "gemini-1.5-flash", "gemini-1.5-pro"];
+    let lastError = null;
 
-        for (const modelName of modelsToTry) {
-            let attempts = 0;
-            const maxAttempts = 2;
+    for (const modelName of modelsToTry) {
+        let attempts = 0;
+        const maxAttempts = 2;
 
-            while (attempts < maxAttempts) {
-                try {
-                    attempts++;
-                    const model = localGenAI.getGenerativeModel({ 
-                        model: modelName,
-                        generationConfig: { temperature: 0 }
-                    });
-                    
-                    const result = await model.generateContent([
-                        { inlineData: { data: base64Audio, mimeType: mimeType } },
-                        { text: finalPrompt }
-                    ]);
+        while (attempts < maxAttempts) {
+            try {
+                attempts++;
+                const model = localGenAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { temperature: 0 }
+                });
+                
+                const result = await model.generateContent([
+                    { inlineData: { data: base64Audio, mimeType: mimeType } },
+                    { text: finalPrompt }
+                ]);
 
-                    const response = result.response;
-                    let text = response.text();
+                const response = result.response;
+                let text = response.text();
 
-                    if (isJson) {
-                        text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            console.error('[AI-Audio] JSON Parse Error:', e, 'Raw:', text);
-                            throw new Error('AI returned invalid JSON');
-                        }
+                if (isJson) {
+                    text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        logger.error(`[AI-Audio] JSON Parse Error: ${e} Raw: ${text}`);
+                        throw new Error('AI returned invalid JSON');
                     }
-                    return text;
-                } catch (err) {
-                    lastError = err;
-                    console.warn(`[AI-Audio] Attempt ${attempts} with ${modelName} failed:`, err.message);
-                    
-                    if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
-                        await new Promise(r => setTimeout(r, 2000));
-                        continue;
-                    }
-                    break;
                 }
+                return text;
+            } catch (err: any) {
+                lastError = err;
+                logger.warn(`[AI-Audio] Attempt ${attempts} with ${modelName} failed: ${err.message}`);
+                
+                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                    await new Promise(r => setTimeout(r, 2000));
+                    continue;
+                }
+                break;
             }
         }
-        throw lastError;
-    } catch (err) {
-        console.error('[AI-Audio] Pipeline failure:', err);
-        throw err;
     }
-}
+    throw lastError || new Error('All Gemini models failed to process audio');
+};
+
+// Instantiate the Audio Transcription Circuit Breaker
+const audioBreaker = new CircuitBreaker(_generateAudioTranscription, {
+    timeout: 60000,                // 60s execution timeout (audio operations can be slow)
+    errorThresholdPercentage: 50,  // Trip if 50% fail
+    resetTimeout: 30000            // Try to close again after 30s
+});
+
+audioBreaker.fallback((err: any) => {
+    logger.warn(`[AUDIO CIRCUIT BREAKER] Audio transcription bypassed (circuit breaker active): ${err?.message || 'Breaker open'}`);
+    return "Audio transcription service is currently offline. Please try again shortly.";
+});
+
+// Export the wrapper function
+export const generateAudioTranscription = (prompt: string, base64Audio: string, mimeType: string, isJson: boolean = true, customKey: string | null = null): Promise<any> => {
+    return audioBreaker.fire(prompt, base64Audio, mimeType, isJson, customKey);
+};
 
 /**
  * Downloads audio from a URL (e.g. Firebase Storage) and transcribes via Gemini.

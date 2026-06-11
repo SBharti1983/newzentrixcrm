@@ -18,11 +18,16 @@ export const PresenceProvider = ({ children }) => {
         if (!token) return;
 
         // In dev mode, connect to the Vite dev server's origin (socket.io is proxied).
-        // In production, connect to the backend origin directly.
+        // In production, connect to the correct active backend origin directly.
         const isProd = import.meta.env.PROD;
-        const baseUrl = isProd 
-            ? 'https://zentrixcrm-production-cd2d.up.railway.app'
-            : window.location.origin;
+        let baseUrl = window.location.origin;
+        if (isProd) {
+            if (import.meta.env.VITE_API_URL) {
+                baseUrl = import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
+            } else {
+                baseUrl = 'https://zentrixcrmindia-production.up.railway.app';
+            }
+        }
 
         const newSocket = io(baseUrl, {
             auth: { token },

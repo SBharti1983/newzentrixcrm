@@ -10,7 +10,7 @@ import {
     PieChart, Pie, Cell
 } from 'recharts';
 import { useApi } from '../../hooks/useApi';
-import { analyticsApi, leadsApi } from '../../api/client';
+import { analyticsApi, leadsApi, BASE_URL } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -20,7 +20,7 @@ const COLORS = ['#00b4d8', '#0077b6', '#90e0ef', '#03045e'];
 
 export default function VoiceAnalytics() {
     const { showToast } = useToast();
-    const { data: stats, loading } = useApi(() => fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/stats`, {
+    const { data: stats, loading } = useApi(() => fetch(`${BASE_URL}/calls/stats`, {
         headers: { 'Authorization': `Bearer ${sessionStorage.getItem('zentrix_token')}` }
     }).then(r => r.json()));
 

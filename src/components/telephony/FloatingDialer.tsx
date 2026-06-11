@@ -5,7 +5,7 @@ import {
     Maximize2, Minimize2, CheckCircle2, MessageSquare, Clock
 } from 'lucide-react';
 import { useApi } from '../../hooks/useApi';
-import { leadsApi } from '../../api/client';
+import { leadsApi, BASE_URL } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 
 export default function FloatingDialer() {
@@ -42,7 +42,7 @@ export default function FloatingDialer() {
 
         try {
             // Initiate SIM-integrated calling logic (triggers socket command on server)
-            const res = await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/initiate`, {
+            const res = await fetch(`${BASE_URL}/calls/initiate`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function FloatingDialer() {
         setCallState('finishing');
         
         try {
-            await fetch(`${import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api')}/calls/${activeInteractionId}`, {
+            await fetch(`${BASE_URL}/calls/${activeInteractionId}`, {
                 method: 'PATCH',
                 headers: { 
                     'Content-Type': 'application/json',

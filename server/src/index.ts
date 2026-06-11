@@ -13,7 +13,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import automationService from './services/automationService';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -27,11 +26,12 @@ const server = http.createServer(app);
 // Essential for Rate Limiting behind proxies (Railway, Heroku, etc)
 app.set('trust proxy', 1);
 
-// Global request logger — THE FIRST MIDDLEWARE
-app.use((req, res, next) => {
-    console.log(`[HTTP] ${req.method} ${req.url} - ${new Date().toISOString()}`);
-    next();
-});
+import { loggerContextMiddleware, requestLoggerMiddleware } from './middleware/loggerMiddleware';
+import { logger } from './utils/logger';
+
+// ─── Observability & Request Context Middleware ───
+app.use(loggerContextMiddleware);
+app.use(requestLoggerMiddleware);
 import { Server } from 'socket.io';
 
 // Extend Express Request type to include socket.io
@@ -67,6 +67,9 @@ const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
+
+import { setupSocketAdapter } from './utils/socketAdapter';
+setupSocketAdapter(io);
 
 // Attach socket.io to req object so routes can broadcast
 app.use((req, res, next) => {
@@ -206,8 +209,10 @@ app.use(morgan(isProduction ? 'combined' : 'dev'));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5000 });
-app.use('/api/', limiter);
+import { globalLimiter, authLimiter } from './middleware/rateLimiter';
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/', globalLimiter);
 
 // ─── Security: Input Sanitization ────────────────────────────────
 import { sanitizeMiddleware } from './middleware/sanitize';
@@ -374,8 +379,8 @@ app.use((err, req, res, _next) => {
 
 const PORT = process.env.PORT || 4000;
 server.listen(PORT as number, '0.0.0.0', () => {
-    console.log(`ZentrixCRM API Cluster Ready on Port ${PORT}`);
-    console.log(`📖 API Docs: http://localhost:${PORT}/api/docs`);
+    logger.info(`ZentrixCRM API Cluster Ready on Port ${PORT}`);
+    logger.info(`📖 API Docs: http://localhost:${PORT}/api/docs`);
     automationService.startBackgroundWorker(io);
     
     // Start 30-day recording retention auto-cleanup
@@ -384,9 +389,9 @@ server.listen(PORT as number, '0.0.0.0', () => {
 
 // Prevent Node.js from crashing entirely on unhandled stream errors (e.g. pg ECONNRESET)
 process.on('uncaughtException', (err: any) => {
-    console.error('🔥 [FATAL] Uncaught Exception:', err);
+    logger.error(`🔥 [FATAL] Uncaught Exception: ${err.message}`, { stack: err.stack });
     if (err.code === 'ECONNRESET' || err.message?.includes('ECONNRESET')) {
-        console.warn('⚠️ Suppressed ECONNRESET network error (database connection drop).');
+        logger.warn('⚠️ Suppressed ECONNRESET network error (database connection drop).');
         return;
     }
     // For other errors, it's safer to exit, but we'll try to keep the server alive in dev

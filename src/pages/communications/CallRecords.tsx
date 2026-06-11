@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useApi } from '../../hooks/useApi';
-import { leadsApi, usersApi } from '../../api/client';
+import { leadsApi, usersApi, BASE_URL } from '../../api/client';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { Phone, Download, Search, Calendar, User, Clock, FileText, ExternalLink, CheckCircle2, TrendingUp, Filter, BarChart3, Play, Pause, X, Mic, AudioLines, ShieldAlert, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -258,8 +258,7 @@ export default function CallRecords() {
     const downloadTranscript = async (interactionId, leadName) => {
         try {
             const token = sessionStorage.getItem('zentrix_token');
-            const apiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://zentrixcrm-production-cd2d.up.railway.app/api' : '/api');
-            const response = await fetch(`${apiUrl}/telephony/transcript/${interactionId}`, {
+            const response = await fetch(`${BASE_URL}/telephony/transcript/${interactionId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             

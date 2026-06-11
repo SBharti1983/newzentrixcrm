@@ -9,9 +9,10 @@ const isLocal = window.location.hostname === 'localhost' ||
                 window.location.hostname.startsWith('10.') || 
                 window.location.hostname.startsWith('192.168.');
 
-// In dev mode or on localhost, use relative '/api' so requests go through the Vite proxy.
-// In production (non-localhost), use the full Railway backend URL.
-const defaultApiUrl = isLocal ? '/api' : 'https://zentrixcrmindia-production.up.railway.app/api';
+// In both local development (Vite proxy) and production (Vercel proxy),
+// we use relative '/api' so that requests are proxied server-side.
+// This resolves local DNS resolution blocks on *.up.railway.app and eliminates CORS issues.
+const defaultApiUrl = '/api';
 export let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
 BASE_URL = BASE_URL.replace(/\/$/, '');
 // API base URL configuration removed for production hardening
