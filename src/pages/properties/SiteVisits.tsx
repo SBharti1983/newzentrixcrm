@@ -185,7 +185,7 @@ export default function SiteVisits() {
     };
 
     const { isLoaded } = useLoadScript({
-        googleMapsApiKey: 'DUMMY_KEY_FOR_DEMO_REPLACE_IN_PRODUCTION',
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
     });
 
     const markers = useMemo(() => {
