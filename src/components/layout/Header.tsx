@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2, ChevronRight } from 'lucide-react';
+import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2, ChevronRight, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useBranding } from '../../context/BrandingContext';
 import { usePresence } from '../../context/PresenceContext';
@@ -173,7 +173,7 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                         className="search-input"
                         value={searchVal}
                         onChange={e => setSearchVal(e.target.value)}
-                        placeholder={isMobile ? "Search..." : "Search leads, projects..."}
+                        placeholder={isMobile ? "Search..." : "Search leads, projects, contacts..."}
                         onFocus={(e) => {
                             searchVal.trim().length >= 2 && setShowDropdown(true);
                         }}
@@ -308,6 +308,28 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     </div>
                 )}
 
+                {!isMobile && location.pathname === '/' && (
+                    <div style={{
+                        marginRight: 16,
+                        padding: '6px 14px',
+                        borderRadius: '10px',
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: '#475569',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                    }}>
+                        <Calendar size={13} style={{ color: '#64748b' }} />
+                        <span>Today, 20 May 2024</span>
+                        <ChevronRight size={13} style={{ transform: 'rotate(90deg)', color: '#94a3b8' }} />
+                    </div>
+                )}
+
                 <div className="hide-mobile" style={{ display: 'flex', gap: 10, marginRight: 20, fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>
                     {['EN', 'AR', 'ES', 'ZH'].map(lang => (lang === 'EN' ? <span key={lang} style={{ color: 'var(--navy-900)', background: '#f1f5f9', padding: '4px 8px', borderRadius: 8, border: '1px solid #e2e8f0' }}>{lang}</span> : null))}
                 </div>
@@ -330,7 +352,14 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                         style={{ width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
                     >
                         <Bell size={18} />
-                        <span style={{ position: 'absolute', top: 8, right: 8, width: 8, height: 8, background: '#ef4444', borderRadius: '50%', border: '2px solid var(--surface-header, white)' }} />
+                        <span style={{ 
+                            position: 'absolute', top: 4, right: 4, 
+                            background: '#ef4444', color: 'white', 
+                            borderRadius: '50%', fontSize: '0.62rem', 
+                            fontWeight: 900, width: 14, height: 14, 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            border: '2px solid white' 
+                        }}>5</span>
                     </button>
                     {showNotifications && (
                         <NotificationDropdown onClose={() => setShowNotifications(false)} />
@@ -353,7 +382,7 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                             position: 'relative'
                         }}
                     >
-                        {user?.name?.[0] || 'M'}
+                        {getInitials(user?.name) || 'MA'}
                         <div style={{ 
                             position: 'absolute', bottom: 0, right: 0, 
                             width: 10, height: 10, borderRadius: '50%', 

@@ -50,32 +50,29 @@ const FunnelSegment = ({ label, count, percentage, color, clipPath, width }: {
   width: string;
 }) => {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '38px', margin: '2px 0' }}>
-      <div style={{ width: '55%', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+    <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '36px', margin: '4px 0' }}>
+      <div style={{ width: '45%', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
         <div style={{
           width: width,
           height: '100%',
           background: color,
           clipPath: clipPath,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          fontWeight: 800,
-          fontSize: '0.75rem',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
-        }}>
-          {label}
-        </div>
+          boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+        }} />
       </div>
-      <div style={{ width: '45%', paddingLeft: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ width: '25%', paddingLeft: '12px', fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
+        {label}
+      </div>
+      <div style={{ width: '30%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontWeight: 800, fontSize: '0.82rem', color: '#0f172a' }}>
           {Number(count).toLocaleString()}
         </span>
-        {percentage && (
-          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+        {percentage ? (
+          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, minWidth: '40px', textAlign: 'right' }}>
             {percentage}
           </span>
+        ) : (
+          <span style={{ minWidth: '40px' }} />
         )}
       </div>
     </div>
@@ -298,11 +295,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   // Grouped Stacked Bar chart for projects inventory
   const inventoryChartData = [
     { name: 'Green Vista', sold: 180, available: 150, hold: 20 },
-    { name: 'Sunrise', sold: 140, available: 120, hold: 15 },
+    { name: 'Sunrise Residency', sold: 140, available: 120, hold: 15 },
     { name: 'Maple Heights', sold: 110, available: 90, hold: 12 },
-    { name: 'Skyline', sold: 90, available: 110, hold: 10 },
-    { name: 'Riverfront', sold: 120, available: 130, hold: 8 },
-    { name: 'Lakeview', sold: 100, available: 80, hold: 14 },
+    { name: 'Skyline Towers', sold: 90, available: 110, hold: 10 },
+    { name: 'Riverfront Phase 2', sold: 120, available: 130, hold: 8 },
+    { name: 'Lakeview Apartments', sold: 100, available: 80, hold: 14 },
     { name: 'Orchard Estate', sold: 80, available: 95, hold: 6 }
   ];
 
