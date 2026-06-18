@@ -190,8 +190,13 @@ export default function SiteVisits() {
 
     const markers = useMemo(() => {
         return filtered.map(v => {
-            const offsetLat = ((v.id * 17) % 100) / 1000 - 0.05;
-            const offsetLng = ((v.id * 23) % 100) / 1000 - 0.05;
+            let hash = 0;
+            const idStr = String(v.id || '');
+            for (let i = 0; i < idStr.length; i++) {
+                hash = idStr.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const offsetLat = ((Math.abs(hash) * 17) % 100) / 1000 - 0.05;
+            const offsetLng = ((Math.abs(hash) * 23) % 100) / 1000 - 0.05;
             return {
                 ...v,
                 lat: centerMumbai.lat + offsetLat,

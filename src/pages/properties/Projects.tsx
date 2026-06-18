@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Building2, MapPin, Home, X, Info, TrendingUp, Sparkles, ArrowRight, ExternalLink, Activity, Target, Zap, Clock, ShieldCheck, Globe, Eye, MoreHorizontal, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -43,10 +43,25 @@ export default function Projects() {
         () => projectsApi.list(params), [filterStatus]
     );
 
-    const projects = (rawProjects || []).filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.location.toLowerCase().includes(search.toLowerCase())
-    );
+    const normalizedProjects = useMemo(() => {
+        const data = rawProjects?.data || rawProjects || [];
+        if (!Array.isArray(data)) return [];
+        return data.map(p => ({
+            ...p,
+            total_units: p.total_units ?? p.totalUnits ?? 0,
+            available_units: p.available_units ?? p.availableUnits ?? 0,
+            price_range: p.price_range || p.priceRange || '',
+            possession_date: p.possession_date || p.possessionDate,
+            rera_number: p.rera_number || p.reraNumber,
+        }));
+    }, [rawProjects]);
+
+    const projects = useMemo(() => {
+        return (normalizedProjects || []).filter(p =>
+            p.name?.toLowerCase().includes(search.toLowerCase()) ||
+            p.location?.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [normalizedProjects, search]);
 
     const saveProject = async () => {
         if (!form.name || !form.location) return;

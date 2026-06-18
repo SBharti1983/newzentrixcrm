@@ -115,13 +115,22 @@ export default function FollowupModal({ onClose, onScheduled, leadId, leadName, 
                     </div>
                 </div>
 
-                <div className="modal-footer" style={{ borderTop: '1px solid #f1f5f9', padding: '16px 24px', background: '#fcfdfe', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }}>
-                    <button className="btn btn-secondary" onClick={onClose} style={{ borderRadius: '14px', fontWeight: 800 }}>Cancel</button>
+                <div className="modal-footer" style={{ 
+                    borderTop: '1px solid #f1f5f9', 
+                    padding: '16px 24px', 
+                    background: '#fcfdfe', 
+                    borderBottomLeftRadius: '24px', 
+                    borderBottomRightRadius: '24px',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '12px'
+                }}>
+                    <button className="btn btn-secondary" onClick={onClose} style={{ borderRadius: '14px', fontWeight: 800, padding: '10px 20px' }}>Cancel</button>
                     <button 
                         className="btn btn-primary" 
                         onClick={handleSave} 
                         disabled={saving}
-                        style={{ background: 'var(--navy-900)', borderRadius: '14px', fontWeight: 900, padding: '0 24px' }}
+                        style={{ background: 'var(--navy-900)', borderRadius: '14px', fontWeight: 900, padding: '10px 24px' }}
                     >
                         {saving ? 'Scheduling...' : 'Schedule Follow-Up'}
                     </button>
