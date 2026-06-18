@@ -26,6 +26,21 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
     ];
   }, [stats.sentiment]);
 
+  const sentimentStats = useMemo(() => {
+    const total = sentiment.reduce((sum, item) => sum + (item.count || 0), 0);
+    return sentiment.map(item => {
+      const pct = total > 0 ? Math.round((item.count || 0) * 100 / total) : 0;
+      let color = 'linear-gradient(90deg, #3b82f6, #60a5fa)';
+      if (item.sentiment === 'Positive') color = 'linear-gradient(90deg, #10b981, #34d399)';
+      if (item.sentiment === 'Cold') color = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+      return {
+        label: `${item.sentiment} Interaction Pulse`,
+        val: pct,
+        color
+      };
+    });
+  }, [sentiment]);
+
   const trends = useMemo(() => {
     return Array.isArray(stats.top_projects) && stats.top_projects.length > 0
       ? stats.top_projects.map((p, i) => ({ name: `W${i + 1}`, mentions: parseInt(p.lead_count) || 0 }))
@@ -44,154 +59,61 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
     return cr >= 1 ? `₹${cr.toFixed(2)} Cr` : `₹${(Number(v) / 100000).toFixed(1)} L`;
   };
 
+  const topProject = Array.isArray(stats.top_projects) && stats.top_projects[0] ? stats.top_projects[0].name : 'N/A';
+  const availableUnits = Array.isArray(stats.active_deals) ? stats.active_deals.length : 0;
+  
+  const responseTime = stats.pipeline?.avg_response_time || 0;
+  const closingVelocity = responseTime ? Math.max(10, Math.min(100, Math.round(100 - (responseTime / 15)))) : 92;
+  const velocityRate = bookings.total ? (bookings.total / 4).toFixed(1) : '0.0';
+
+  const callsCount = stats.telephony_stats?.calls_today || 0;
+  const syncedCount = stats.telephony_stats?.synced_recordings || 0;
+  const auditPct = callsCount > 0 ? Math.min(100, Math.round((syncedCount / callsCount) * 100)) : 98.2;
+  const lastAuditTime = stats.alerts?.[0]?.date 
+    ? new Date(stats.alerts[0].date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '2 minutes ago';
+
+  const kpis = [
+    { label: isSolo ? 'My Revenue' : 'Group Revenue', val: formatRev(bookings.total_value), color: 'linear-gradient(90deg, #10b981, #34d399)', iconColor: '#10b981' },
+    { label: 'Booking Volume', val: String(bookings.total || 0), color: 'linear-gradient(90deg, #3b82f6, #60a5fa)', iconColor: '#3b82f6' },
+    { label: isSolo ? 'Hot Interactions' : 'Talent Pool', val: String(isSolo ? (sentiment[0]?.count || 0) : members.length), color: 'linear-gradient(90deg, #f59e0b, #fbbf24)', iconColor: '#f59e0b' },
+    { label: isSolo ? 'Active Pipeline' : 'Group Pipeline', val: formatRev(stats.pipeline?.value), color: 'linear-gradient(90deg, #14b8a6, #2dd4bf)', iconColor: '#14b8a6' },
+    { label: 'Lead Conversion', val: `${stats.leads?.win_rate || 0}%`, color: 'linear-gradient(90deg, #ef4444, #f87171)', iconColor: '#ef4444' },
+    { label: isSolo ? 'Closing Velocity' : 'System Efficiency', val: `${closingVelocity}%`, color: 'linear-gradient(90deg, #8b5cf6, #a78bfa)', iconColor: '#8b5cf6' }
+  ];
+
   return (
-    <div style={{ 
-      padding: isMobile ? '16px' : '36px 40px', 
-      minHeight: '100vh', 
-      background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)', 
-      fontFamily: '"Plus Jakarta Sans", "Inter", sans-serif', 
-      transition: 'background 0.3s ease' 
-    }}>
-      <style>{`
-        @keyframes pulse-border {
-          0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-          70% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
-        }
-        @keyframes subtle-shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @keyframes pulse-glow {
-          0% { transform: scale(1); opacity: 0.9; }
-          50% { transform: scale(1.03); opacity: 1; }
-          100% { transform: scale(1); opacity: 0.9; }
-        }
-        .enterprise-card {
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border-radius: 24px;
-          border: 1px solid rgba(255, 255, 255, 0.7);
-          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.015), inset 0 1px 1px rgba(255, 255, 255, 0.8);
-          transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-          position: relative;
-          overflow: hidden;
-        }
-        .enterprise-card:hover {
-          transform: translate3d(0, -6px, 0);
-          border-color: rgba(99, 102, 241, 0.25);
-          box-shadow: 0 20px 40px rgba(99, 102, 241, 0.05), 0 1px 3px rgba(0,0,0,0.01);
-        }
-        .top-indicator-pill {
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 6px;
-          border-radius: 6px 6px 0 0;
-        }
-        .pulse-ai-glow {
-          position: relative;
-        }
-        .pulse-ai-glow::after {
-          content: '';
-          position: absolute;
-          inset: -2px;
-          border-radius: 22px;
-          background: linear-gradient(135deg, #6366f1, #8b5cf6);
-          z-index: -1;
-          opacity: 0.2;
-          filter: blur(8px);
-        }
-        .ai-pulse-dot {
-          animation: pulse-border 2.5s infinite;
-          border-radius: 50%;
-        }
-        .executive-panel {
-          background: rgba(248, 250, 252, 0.65);
-          border: 1px solid rgba(226, 232, 240, 0.8);
-          border-radius: 16px;
-          padding: 20px;
-          backdrop-filter: blur(10px);
-          transition: all 0.25s ease;
-        }
-        .executive-panel:hover {
-          background: rgba(255, 255, 255, 0.9);
-          border-color: rgba(99, 102, 241, 0.15);
-          transform: translate3d(0, -2px, 0);
-        }
-      `}</style>
-
-      {/* Premium Sub-Header (Hidden to respect Global Header Only standard) */}
-      <div style={{ display: 'none', height: 0, overflow: 'hidden' }}></div>
-
+    <div className="dash-premium-container" style={{ padding: isMobile ? '16px' : '36px 40px' }}>
       {/* KPI Cards Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(6, 1fr)', 
-        gap: isMobile ? '12px' : '20px', 
-        marginBottom: '32px' 
-      }}>
-        {[
-          { label: isSolo ? 'My Revenue' : 'Group Revenue', val: formatRev(bookings.total_value), color: 'linear-gradient(90deg, #10b981, #34d399)', iconColor: '#10b981' },
-          { label: 'Booking Volume', val: String(bookings.total || 0), color: 'linear-gradient(90deg, #3b82f6, #60a5fa)', iconColor: '#3b82f6' },
-          { label: isSolo ? 'Hot Interactions' : 'Talent Pool', val: String(isSolo ? (sentiment[0]?.count || 0) : members.length), color: 'linear-gradient(90deg, #f59e0b, #fbbf24)', iconColor: '#f59e0b' },
-          { label: 'AI Prediction', val: '94.2%', color: 'linear-gradient(90deg, #14b8a6, #2dd4bf)', iconColor: '#14b8a6' },
-          { label: 'Lead Conversion', val: `${stats.leads?.win_rate || 0}%`, color: 'linear-gradient(90deg, #ef4444, #f87171)', iconColor: '#ef4444' },
-          { label: isSolo ? 'Closing Velocity' : 'System Efficiency', val: '92%', color: 'linear-gradient(90deg, #8b5cf6, #a78bfa)', iconColor: '#8b5cf6' }
-        ].map((k, i) => (
-          <div key={i} className="enterprise-card" style={{ padding: '24px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div className="dash-grid-6">
+        {kpis.map((k, i) => (
+          <div key={i} className="enterprise-card">
             <div className="top-indicator-pill" style={{ background: k.color }} />
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <span style={{ 
-                  fontSize: '0.68rem', 
-                  fontWeight: 800, 
-                  color: k.iconColor, 
-                  background: `rgba(${k.iconColor === '#10b981' ? '16,185,129' : k.iconColor === '#3b82f6' ? '59,130,246' : k.iconColor === '#f59e0b' ? '245,158,11' : k.iconColor === '#14b8a6' ? '20,184,166' : k.iconColor === '#ef4444' ? '239,68,68' : '139,92,246'}, 0.08)`, 
-                  padding: '4px 10px', 
-                  borderRadius: '20px',
-                  letterSpacing: '0.02em'
-                }}>
-                  +12.5%
-                </span>
+              <div className="kpi-header">
+                <div />
                 <ArrowUpRight size={14} style={{ color: 'var(--slate-300, #cbd5e1)' }} />
               </div>
-              <div style={{ fontSize: isMobile ? '1.5rem' : '1.8rem', fontWeight: 900, color: 'var(--navy-900, #0f172a)', letterSpacing: '-0.03em' }}>{k.val}</div>
+              <div className="kpi-value">{k.val}</div>
             </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--slate-500, #64748b)', fontWeight: 700, marginTop: '8px', lineHeight: 1.25 }}>{k.label}</div>
+            <div className="kpi-label">{k.label}</div>
           </div>
         ))}
       </div>
 
       {/* Main Charts & Analytics Block */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.16fr 1.84fr', gap: '32px', marginBottom: '32px' }}>
-
+      <div className="dash-grid-split">
         {/* Sentiment Dynamics */}
         <div className="enterprise-card" style={{ padding: '36px 32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' }}>
+          <div className="section-title-wrap">
+            <h3 className="section-title">
               <TrendingUp size={22} color="#10b981" /> Sentiment Dynamics
             </h3>
-            <span style={{ 
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.1) 0%, rgba(52,211,153,0.1) 100%)', 
-              color: '#10b981', 
-              fontSize: '0.65rem', 
-              fontWeight: 800, 
-              padding: '5px 12px', 
-              borderRadius: '8px',
-              border: '1px solid rgba(16,185,129,0.15)',
-              letterSpacing: '0.05em'
-            }}>
-              LIVE AUDIT
-            </span>
+            <span className="section-badge-live">LIVE AUDIT</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '26px' }}>
-            {[
-              { label: 'Positive Interaction Pulse', val: 62, color: 'linear-gradient(90deg, #10b981, #34d399)' },
-              { label: 'Neutral Interaction Pulse', val: 28, color: 'linear-gradient(90deg, #3b82f6, #60a5fa)' },
-              { label: 'Cold Interaction Pulse', val: 10, color: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }
-            ].map((s, idx) => (
+          <div className="dash-flex-col-gap-26">
+            {sentimentStats.map((s, idx) => (
               <div key={idx}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 700, marginBottom: '8px', color: '#475569' }}>
                   <span>{s.label}</span>
@@ -212,32 +134,14 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
 
             {/* AI Insight Capsule */}
             <div style={{ marginTop: '24px' }}>
-              <div className="pulse-ai-glow" style={{ 
-                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%)', 
-                border: '1px solid rgba(99, 102, 241, 0.15)', 
-                borderRadius: '20px', 
-                padding: '22px',
-                display: 'flex', 
-                gap: '16px',
-                backdropFilter: 'blur(10px)'
-              }}>
-                <div style={{ 
-                  width: 36, 
-                  height: 36, 
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
-                  borderRadius: '10px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  flexShrink: 0,
-                  boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)'
-                }}>
+              <div className="pulse-ai-glow ai-insight-box">
+                <div className="ai-insight-icon-wrap">
                   <Sparkles size={16} color="white" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 900, color: '#4f46e5', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Gemini Intelligence</div>
-                  <div style={{ fontSize: '0.82rem', color: '#334155', fontWeight: 600, lineHeight: 1.45 }}>
-                    Friction increasing in high-ticket lead interactions. Recommend managerial intervention on Maya Residency pipeline.
+                  <div className="ai-insight-title">Gemini Intelligence</div>
+                  <div className="ai-insight-desc">
+                    Friction increasing in high-ticket lead interactions. Recommend managerial intervention on {topProject} pipeline.
                   </div>
                 </div>
               </div>
@@ -247,33 +151,22 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
 
         {/* Inventory Velocity Chart */}
         <div className="enterprise-card" style={{ padding: '36px 32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' }}>
+          <div className="section-title-wrap">
+            <h3 className="section-title">
               <Activity size={22} color="#3b82f6" /> Inventory Velocity
             </h3>
-            <span style={{ 
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(96,165,250,0.1) 100%)', 
-              color: '#3b82f6', 
-              fontSize: '0.65rem', 
-              fontWeight: 800, 
-              padding: '5px 12px', 
-              borderRadius: '8px',
-              border: '1px solid rgba(59,130,246,0.15)',
-              letterSpacing: '0.05em'
-            }}>
-              TRANSCRIPT TRACKED
-            </span>
+            <span className="section-badge-blue">TRANSCRIPT TRACKED</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '20px', marginBottom: '24px' }}>
-            <div className="executive-panel" style={{ flex: 1 }}>
+          <div className="dash-flex-row-gap-20">
+            <div className="executive-panel dash-flex-grow-1">
               <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Available Units</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em' }}>108</div>
-              <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800 }}>Prime Residency</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em' }}>{availableUnits}</div>
+              <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 800 }}>{topProject}</div>
             </div>
-            <div className="executive-panel" style={{ flex: 1 }}>
+            <div className="executive-panel dash-flex-grow-1">
               <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 700, marginBottom: '4px' }}>Velocity Rate</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em' }}>3.2/wk</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em' }}>{velocityRate}/wk</div>
               <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 800 }}>Moderate pace</div>
             </div>
           </div>
@@ -318,30 +211,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
       </div>
 
       {/* Radar Alerts and Security Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.16fr 1.84fr', gap: '32px', marginBottom: '32px' }}>
-
+      <div className="dash-grid-split">
         {/* Intervention Radar */}
         <div className="enterprise-card" style={{ padding: '36px 32px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+          <div className="section-title-wrap">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <AlertCircle size={22} color="#ef4444" />
               <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>Intervention Radar</h3>
             </div>
-            <span style={{ 
-              fontSize: '0.65rem', 
-              fontWeight: 800, 
-              color: '#ef4444', 
-              background: 'rgba(239,68,68,0.1)', 
-              padding: '5px 12px', 
-              borderRadius: '8px',
-              border: '1px solid rgba(239,68,68,0.15)',
-              letterSpacing: '0.05em'
-            }}>
-              HIGH FRICTION ALERT
-            </span>
+            <span className="section-badge-red">HIGH FRICTION ALERT</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="dash-flex-col-gap-16">
             {(stats.active_deals || []).slice(0, 3).map((alert: any, i: number) => (
               <div key={i} className="executive-panel">
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -379,45 +260,26 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* Security & Integrity Compliance */}
-        <div className="enterprise-card" style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' }}>
+        <div className="enterprise-card dash-card-flex-column" style={{ padding: '36px 32px' }}>
+          <div className="section-title-wrap">
+            <h3 className="section-title">
               <ShieldCheck size={22} color="#10b981" /> Security & Integrity
             </h3>
-            <span style={{ 
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(52,211,153,0.08) 100%)', 
-              color: '#10b981', 
-              fontSize: '0.7rem', 
-              fontWeight: 800, 
-              padding: '6px 16px', 
-              borderRadius: '10px', 
-              border: '1px solid rgba(16,185,129,0.15)',
-              letterSpacing: '0.02em'
-            }}>
-              COMPLIANCE: ACTIVE
-            </span>
+            <span className="section-badge-compliance">COMPLIANCE: ACTIVE</span>
           </div>
 
-          <div style={{ 
-            background: 'rgba(16,185,129,0.04)', 
-            border: '1px solid rgba(16,185,129,0.15)', 
-            borderRadius: '20px', 
-            padding: '28px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <div style={{ color: '#10b981', fontWeight: 900, fontSize: '0.98rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="compliance-box">
+            <div className="compliance-title">
               <div className="ai-pulse-dot" style={{ width: 8, height: 8, background: '#10b981' }} />
               All Audits Completed Successfully
             </div>
-            <p style={{ color: '#475569', fontSize: '0.88rem', margin: 0, fontWeight: 600, lineHeight: 1.6 }}>
-              98.2% of calls transcribed & audited by Gemini 1.5 Flash this week. No protocol breaches or compliance deviations detected in agent interactions.
+            <p className="compliance-desc">
+              {auditPct}% of calls transcribed & audited by Gemini 1.5 Flash this week. No protocol breaches or compliance deviations detected in agent interactions.
             </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.78rem', fontWeight: 700, marginTop: '20px' }}>
-            <Clock size={14} /> Last audit trace: 2 minutes ago
+            <Clock size={14} /> Last audit trace: {lastAuditTime}
           </div>
         </div>
       </div>

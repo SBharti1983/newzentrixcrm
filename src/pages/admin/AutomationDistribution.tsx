@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useApi } from '../../hooks/useApi';
-import { automationApi } from '../../api/client';
+import { automationApi, settingsApi } from '../../api/client';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import {
     Zap, Users, Bell, Settings, Plus,
@@ -24,6 +24,25 @@ export default function Automation() {
         useCallback(() => automationApi.getLogs(), []),
         []
     );
+
+    const { data: settings, refetch: refetchSettings } = useApi(
+        useCallback(() => settingsApi.get(), []),
+        []
+    );
+    const [savingSettings, setSavingSettings] = useState(false);
+
+    const handleUpdateReassign = async (value) => {
+        setSavingSettings(true);
+        try {
+            await settingsApi.update({ lead_auto_reassign_mins: value ? parseInt(value) : null });
+            showToast('Auto-reassignment timeframe updated', 'success');
+            refetchSettings();
+        } catch (_err) {
+            showToast('Failed to update reassignment setting', 'error');
+        } finally {
+            setSavingSettings(false);
+        }
+    };
 
     const toggleRule = async (id, currentStatus) => {
         setUpdatingId(id);
@@ -168,6 +187,62 @@ export default function Automation() {
                                 <div style={{ marginTop: 16, height: 6, width: '100%', background: 'var(--slate-100)', borderRadius: 3, overflow: 'hidden' }}>
                                     <div style={{ width: '84%', height: '100%', background: 'var(--accent-amber)' }} />
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Auto-Reassignment Settings Panel */}
+                    <div className="card animate-fadeIn" style={{
+                        padding: '28px',
+                        background: 'white',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '24px',
+                        boxShadow: '0 10px 30px rgba(10, 22, 40, 0.03)',
+                        marginTop: '24px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                                <div style={{ width: 48, height: 48, borderRadius: '14px', background: 'rgba(139, 92, 246, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-violet)' }}>
+                                    <Clock size={22} />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, color: 'var(--navy-950)' }}>Lead Auto-Reassignment Timeout</h3>
+                                    <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                        Automatically reassign a lead to the next active agent if the current assignee does not place a call in time.
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <select
+                                    className="form-control"
+                                    value={settings?.lead_auto_reassign_mins || ''}
+                                    disabled={savingSettings}
+                                    onChange={(e) => handleUpdateReassign(e.target.value)}
+                                    style={{
+                                        minWidth: '180px',
+                                        height: '42px',
+                                        borderRadius: '12px',
+                                        border: '1.5px solid var(--border-medium)',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 700,
+                                        padding: '0 12px',
+                                        outline: 'none',
+                                        background: '#fafafa',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <option value="">🚫 Disabled (No reassignment)</option>
+                                    <option value="1">⏱️ 1 minute (For testing)</option>
+                                    <option value="5">⏱️ 5 minutes</option>
+                                    <option value="15">⏱️ 15 minutes</option>
+                                    <option value="30">⏱️ 30 minutes</option>
+                                    <option value="60">⏱️ 1 hour</option>
+                                    <option value="120">⏱️ 2 hours</option>
+                                    <option value="1440">⏱️ 24 hours</option>
+                                </select>
                             </div>
                         </div>
                     </div>

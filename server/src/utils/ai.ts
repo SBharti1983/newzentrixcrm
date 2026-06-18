@@ -113,11 +113,14 @@ const aiBreaker = new CircuitBreaker(_generateAIResponse, {
     resetTimeout: 30000            // Try to close again after 30s
 });
 
-aiBreaker.fallback((err: any, args: any[]) => {
-    const prompt = args[0] || '';
-    const isJson = args[1] !== false; // defaults to true
+aiBreaker.fallback((...args: any[]) => {
+    const prompt = args[0];
+    const isJson = args[1];
+    const err = args[args.length - 1];
+    const promptStr = typeof prompt === 'string' ? prompt : '';
+    const isJsonVal = isJson !== false;
     logger.warn(`[AI CIRCUIT BREAKER] Gemini API call bypassed (circuit breaker active): ${err?.message || 'Breaker open'}`);
-    return getAIFallbackResponse(prompt, isJson);
+    return getAIFallbackResponse(promptStr, isJsonVal);
 });
 
 // Export the wrapper function
@@ -195,7 +198,8 @@ const audioBreaker = new CircuitBreaker(_generateAudioTranscription, {
     resetTimeout: 30000            // Try to close again after 30s
 });
 
-audioBreaker.fallback((err: any) => {
+audioBreaker.fallback((...args: any[]) => {
+    const err = args[args.length - 1];
     logger.warn(`[AUDIO CIRCUIT BREAKER] Audio transcription bypassed (circuit breaker active): ${err?.message || 'Breaker open'}`);
     return "Audio transcription service is currently offline. Please try again shortly.";
 });

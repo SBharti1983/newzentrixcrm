@@ -209,6 +209,7 @@ export const followupsApi = {
 export const siteVisitsApi = {
     list: (params = {}) => api('/site-visits?' + new URLSearchParams(params)),
     create: (data) => api('/site-visits', { method: 'POST', body: data }),
+    schedule: (data) => api('/site-visits/schedule', { method: 'POST', body: data }),
     update: (id, data) => api(`/site-visits/${id}`, { method: 'PATCH', body: data }),
 };
 

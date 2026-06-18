@@ -790,8 +790,9 @@ router.delete('/:id', async (req: any, res: Response) => {
 router.get('/:id/followups', async (req: any, res: Response) => {
     try {
         const { rows } = await pool.query(
-            `SELECT f.*, u.name as agent_name FROM followups f
+            `SELECT f.*, u.name as agent_name, creator.name as assigned_by_name FROM followups f
              LEFT JOIN users u ON f.assigned_to = u.id
+             LEFT JOIN users creator ON f.assigned_by = creator.id
              WHERE f.lead_id = $1 AND f.tenant_id = $2 ORDER BY f.scheduled_at DESC`,
             [req.params.id, req.tenantId]
         );

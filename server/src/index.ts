@@ -100,9 +100,70 @@ const presence = {
     tenantViewers: {}
 };
 
+// Redis presence helpers
+const setRedisPresence = async (tenantId: string, userId: string, data: any) => {
+    if (redis.client && redis.client.isReady) {
+        try {
+            await redis.client.hSet(`tenant:${tenantId}:presence`, userId, JSON.stringify(data));
+        } catch (err) {
+            console.error('[Redis Presence Error hSet]', err);
+        }
+    }
+};
+
+const delRedisPresence = async (tenantId: string, userId: string) => {
+    if (redis.client && redis.client.isReady) {
+        try {
+            await redis.client.hDel(`tenant:${tenantId}:presence`, userId);
+        } catch (err) {
+            console.error('[Redis Presence Error hDel]', err);
+        }
+    }
+};
+
+const getTenantPresence = async (tenantId: string) => {
+    if (redis.client && redis.client.isReady) {
+        try {
+            const data = await redis.client.hGetAll(`tenant:${tenantId}:presence`);
+            const onlineUsers: any[] = [];
+            const viewers: Record<string, any[]> = {};
+            if (data) {
+                for (const [uid, val] of Object.entries(data)) {
+                    try {
+                        const parsed = JSON.parse(val);
+                        onlineUsers.push(parsed.user);
+                        if (parsed.currentPath) {
+                            if (!viewers[parsed.currentPath]) viewers[parsed.currentPath] = [];
+                            viewers[parsed.currentPath].push(parsed.user);
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                }
+            }
+            return { onlineUsers, viewers };
+        } catch (err) {
+            console.error('[Redis Presence Error hGetAll]', err);
+        }
+    }
+    // Fallback to in-memory presence
+    const onlineUsers = Array.from(presence.users.values())
+        .filter(u => u.tenantId === tenantId)
+        .map(u => u.user);
+    const viewers: Record<string, any[]> = {};
+    presence.users.forEach((data) => {
+        if (data.currentPath && data.tenantId === tenantId) {
+            if (!viewers[data.currentPath]) viewers[data.currentPath] = [];
+            viewers[data.currentPath].push(data.user);
+        }
+    });
+    return { onlineUsers, viewers };
+};
+
 io.on('connection', (socket: any) => {
     const { tenantId, id: user_id, name, avatar } = socket.user;
     socket.join(`tenant_${tenantId}`);
+    socket.join(`user_${user_id}`);
     
     presence.users.set(user_id, { 
         socketId: socket.id, 
@@ -111,30 +172,47 @@ io.on('connection', (socket: any) => {
         currentPath: null 
     });
 
-    const broadcastPresence = () => {
-        const tenantUsers = Array.from(presence.users.values())
-            .filter(u => u.tenantId === tenantId)
-            .map(u => u.user);
-        const viewers = {};
-        presence.users.forEach((data, uid) => {
-            if (data.currentPath && data.tenantId === tenantId) {
-                if (!viewers[data.currentPath]) viewers[data.currentPath] = [];
-                viewers[data.currentPath].push(data.user);
-            }
-        });
-        io.to(`tenant_${tenantId}`).emit('presence_update', { onlineUsers: tenantUsers, viewers });
+    const broadcastPresence = async () => {
+        try {
+            const { onlineUsers, viewers } = await getTenantPresence(tenantId);
+            io.to(`tenant_${tenantId}`).emit('presence_update', { onlineUsers, viewers });
+        } catch (err) {
+            console.error('[Presence Broadcast Error]', err);
+        }
     };
 
-    broadcastPresence();
+    // Initialize presence in background
+    setRedisPresence(tenantId, user_id, {
+        user: { id: user_id, name, avatar },
+        currentPath: null
+    }).then(() => broadcastPresence());
 
     socket.on('page_view', ({ path }) => {
         const userData = presence.users.get(user_id);
-        if (userData) { userData.currentPath = path; broadcastPresence(); }
+        if (userData) { 
+            userData.currentPath = path; 
+        }
+        setRedisPresence(tenantId, user_id, {
+            user: { id: user_id, name, avatar },
+            currentPath: path
+        }).then(() => broadcastPresence());
     });
 
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         presence.users.delete(user_id);
-        broadcastPresence();
+        
+        try {
+            // Check if there are any remaining sockets for this user across all cluster instances
+            const remainingSockets = await io.in(`user_${user_id}`).fetchSockets();
+            if (remainingSockets.length === 0) {
+                // No other tabs/connections from this user remain, so remove from Redis presence
+                await delRedisPresence(tenantId, user_id);
+            }
+        } catch (err) {
+            console.error('[Disconnect Presence Error]', err);
+        }
+        
+        await broadcastPresence();
     });
 
     // --- Academy Dual Roleplay Events ---

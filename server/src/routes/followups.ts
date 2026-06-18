@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { db, followups, leads, users } from '../db';
-import { eq, and, gte, lte, desc } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, aliasedTable } from 'drizzle-orm';
 import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
@@ -19,6 +19,7 @@ router.get('/', async (req: any, res: Response) => {
         if (date_to) conditions.push(lte(followups.scheduledAt, date_to as string));
         if (req.user.role === 'agent') conditions.push(eq(followups.assignedTo, req.user.id));
 
+        const creator = aliasedTable(users, 'creator');
         const results = await db.select({
             id: followups.id,
             tenantId: followups.tenantId,
@@ -29,17 +30,20 @@ router.get('/', async (req: any, res: Response) => {
             scheduledAt: followups.scheduledAt,
             status: followups.status,
             note: followups.note,
+            notes: followups.note,
             outcome: followups.outcome,
             createdAt: followups.createdAt,
             lead_name: leads.name,
             lead_phone: leads.phone,
             lead_stage: leads.stage,
             agent_name: users.name,
-            avatar: users.avatar
+            avatar: users.avatar,
+            assigned_by_name: creator.name
         })
         .from(followups)
         .leftJoin(leads, eq(followups.leadId, leads.id))
         .leftJoin(users, eq(followups.assignedTo, users.id))
+        .leftJoin(creator, eq(followups.assignedBy, creator.id))
         .where(and(...conditions))
         .orderBy(desc(followups.scheduledAt))
         .limit(Number(limit))
@@ -65,7 +69,9 @@ router.post('/', async (req: any, res: Response) => {
             type: type || 'Call',
             priority: priority || 'Medium',
             scheduledAt: scheduled_at,
-            note: note || notes || null
+            note: note || notes || null,
+            notes: note || notes || null,
+            assignedBy: req.user.id
         }).returning();
 
         // Update lead's last contact time

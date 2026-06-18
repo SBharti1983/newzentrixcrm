@@ -47,7 +47,8 @@ export default function Followups() {
             lead_name: f.lead_name || f.leadName,
             lead_phone: f.lead_phone || f.leadPhone,
             assigned_to: f.assigned_to || f.assignedTo,
-            assigned_name: f.assigned_name || f.assignedName
+            assigned_name: f.assigned_name || f.assignedName || f.agent_name || f.agentName || 'System Auto',
+            assigned_by_name: f.assigned_by_name || f.assignedByName
         }));
     }, [followups]);
 
@@ -58,6 +59,7 @@ export default function Followups() {
     const [sortMode, setSortMode] = useState('time'); 
     const [viewMode, setViewMode] = useState('list'); 
     const [notifyTarget, setNotifyTarget] = useState(null);
+    const [calendarDayDialog, setCalendarDayDialog] = useState<{ date: string; tasks: any[] } | null>(null);
 
     // Reset viewMode to 'list' on mobile if somehow initialized/left in kanban/calendar
     useEffect(() => {
@@ -470,6 +472,7 @@ export default function Followups() {
                     {isMobile && <div style={{ minWidth: '20px', flexShrink: 0 }} />}
                 </div>
             ) : viewMode === 'calendar' ? (
+                <>
                 <div className="calendar-view animate-fadeIn" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '1px', background: 'var(--border-light)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                         <div key={day} style={{ background: '#f8fafc', padding: '12px 4px', textAlign: 'center', fontSize: '0.75rem', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase' }}>{isMobile ? day.charAt(0) : day}</div>
@@ -490,38 +493,63 @@ export default function Followups() {
                             const dateStr = new Date(currentYear, currentMonth, d).toDateString();
                             const dayTasks = (filtered || []).filter(f => new Date(f.scheduled_at).toDateString() === dateStr);
                             const isToday = now.toDateString() === dateStr;
+                            const hasTasks = dayTasks.length > 0;
 
                             days.push(
-                                <div key={`day-${d}`} style={{ 
-                                    background: isToday ? '#eff6ff' : 'white', 
-                                    minHeight: isMobile ? '80px' : '120px', 
-                                    padding: isMobile ? '4px' : '8px', 
-                                    display: 'flex', flexDirection: 'column', 
-                                    transition: 'background 0.2s', borderTop: '1px solid var(--border-light)', borderLeft: '1px solid var(--border-light)'
-                                }}>
+                                <div 
+                                    key={`day-${d}`} 
+                                    onClick={() => hasTasks && setCalendarDayDialog({ date: dateStr, tasks: dayTasks })}
+                                    style={{ 
+                                        background: isToday ? '#eff6ff' : 'white', 
+                                        minHeight: isMobile ? '80px' : '120px', 
+                                        padding: isMobile ? '4px' : '8px', 
+                                        display: 'flex', flexDirection: 'column', 
+                                        transition: 'all 0.2s', 
+                                        borderTop: '1px solid var(--border-light)', 
+                                        borderLeft: '1px solid var(--border-light)',
+                                        cursor: hasTasks ? 'pointer' : 'default'
+                                    }}
+                                    className={hasTasks ? 'hover-lift' : ''}
+                                >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                         <span style={{ fontSize: '0.85rem', fontWeight: 900, color: isToday ? '#3b82f6' : 'var(--navy-900)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'white' : 'transparent', boxShadow: isToday ? '0 2px 4px rgba(59,130,246,0.15)' : 'none' }}>{d}</span>
-                                        {dayTasks.length > 0 && !isMobile && <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'white', background: '#fbbf24', padding: '2px 6px', borderRadius: '8px' }}>{dayTasks.length}</span>}
-                                        {dayTasks.length > 0 && isMobile && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24' }}></div>}
+                                        {hasTasks && !isMobile && <span style={{ fontSize: '0.6rem', fontWeight: 800, color: 'white', background: '#fbbf24', padding: '2px 6px', borderRadius: '8px' }}>{dayTasks.length}</span>}
+                                        {hasTasks && isMobile && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24' }}></div>}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflowY: 'auto', flex: 1, scrollbarWidth: 'none' }}>
                                         {dayTasks.slice(0, isMobile ? 1 : 3).map(f => {
                                             const lead = leadMap[f.lead_id];
                                             const isDone = f.status === 'Completed';
                                             return (
-                                                <div key={f.id} style={{ 
-                                                    fontSize: '0.65rem', padding: '4px 6px', borderRadius: '6px', 
-                                                    background: isDone ? '#ecfdf5' : 'var(--slate-50)', 
-                                                    border: `1px solid ${isDone ? '#a7f3d0' : '#e2e8f0'}`, 
-                                                    color: isDone ? '#059669' : 'var(--navy-600)', 
-                                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 800 
-                                                }}>
+                                                <div 
+                                                    key={f.id} 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (hasTasks) setCalendarDayDialog({ date: dateStr, tasks: dayTasks });
+                                                    }}
+                                                    style={{ 
+                                                        fontSize: '0.65rem', padding: '4px 6px', borderRadius: '6px', 
+                                                        background: isDone ? '#ecfdf5' : 'var(--slate-50)', 
+                                                        border: `1.5px solid ${isDone ? '#a7f3d0' : '#e2e8f0'}`, 
+                                                        color: isDone ? '#059669' : 'var(--navy-600)', 
+                                                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 800,
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
                                                     {isMobile ? TYPE_ICON[f.type] : `${lead?.name?.split(' ')[0] || 'Unk.'} - ${TYPE_ICON[f.type] || f.type}`}
                                                 </div>
                                             )
                                         })}
                                         {dayTasks.length > (isMobile ? 1 : 3) && (
-                                            <div style={{ fontSize: '0.6rem', fontWeight: 900, color: '#94a3b8', textAlign: 'center', marginTop: '2px' }}>+{dayTasks.length - (isMobile ? 1 : 3)} more</div>
+                                            <div 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (hasTasks) setCalendarDayDialog({ date: dateStr, tasks: dayTasks });
+                                                }}
+                                                style={{ fontSize: '0.6rem', fontWeight: 900, color: '#94a3b8', textAlign: 'center', marginTop: '2px', cursor: 'pointer' }}
+                                            >
+                                                +{dayTasks.length - (isMobile ? 1 : 3)} more
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -530,6 +558,222 @@ export default function Followups() {
                         return days;
                     })()}
                 </div>
+
+                {/* Calendar Day Detail Dialog */}
+                {calendarDayDialog && (
+                    <div 
+                        style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '16px' : '0' }}
+                        onClick={() => setCalendarDayDialog(null)}
+                    >
+                        <div 
+                            onClick={e => e.stopPropagation()}
+                            className="animate-fadeIn"
+                            style={{ 
+                                background: 'white', 
+                                width: '100%', 
+                                maxWidth: isMobile ? '100%' : '520px', 
+                                maxHeight: '85vh',
+                                borderRadius: isMobile ? '24px' : '28px', 
+                                boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.3)',
+                                overflow: 'hidden',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}
+                        >
+                            {/* Dialog Header */}
+                            <div style={{ 
+                                padding: isMobile ? '20px' : '24px 28px', 
+                                borderBottom: '1px solid #f1f5f9',
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                background: 'linear-gradient(135deg, #f8fafc, #f0f4ff)',
+                                flexShrink: 0
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Follow-ups</div>
+                                    <h3 style={{ margin: 0, fontSize: isMobile ? '1.1rem' : '1.25rem', fontWeight: 950, color: 'var(--navy-900)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <Calendar size={20} color="#3b82f6" />
+                                        {new Date(calendarDayDialog.date).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                    </h3>
+                                    <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 700, marginTop: '4px' }}>
+                                        {calendarDayDialog.tasks.length} task{calendarDayDialog.tasks.length !== 1 ? 's' : ''} · 
+                                        {calendarDayDialog.tasks.filter(t => t.status === 'Completed').length} completed · 
+                                        {calendarDayDialog.tasks.filter(t => t.status !== 'Completed').length} pending
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setCalendarDayDialog(null)}
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}
+                                >
+                                    <X size={18} color="#64748b" />
+                                </button>
+                            </div>
+
+                            {/* Dialog Body - Scrollable */}
+                            <div style={{ padding: isMobile ? '16px' : '20px 28px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {calendarDayDialog.tasks.map(f => {
+                                    const lead = leadMap[f.lead_id];
+                                    const isDone = f.status === 'Completed';
+                                    const taskTime = new Date(f.scheduled_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+                                    const isOverdueTask = new Date(f.scheduled_at) < new Date() && !isDone;
+                                    const priorityColors = { High: { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' }, Medium: { bg: '#fffbeb', text: '#d97706', border: '#fde68a' }, Low: { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' } };
+                                    const pColor = priorityColors[f.priority] || priorityColors.Medium;
+
+                                    return (
+                                        <div 
+                                            key={f.id}
+                                            style={{
+                                                padding: isMobile ? '14px' : '16px 20px',
+                                                borderRadius: '16px',
+                                                background: isDone ? '#f0fdf4' : (isOverdueTask ? '#fff7ed' : 'white'),
+                                                border: `1.5px solid ${isDone ? '#a7f3d0' : (isOverdueTask ? '#fed7aa' : '#f1f5f9')}`,
+                                                transition: 'all 0.2s',
+                                                opacity: isDone ? 0.75 : 1
+                                            }}
+                                        >
+                                            {/* Task Header */}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                                                    <div style={{ 
+                                                        width: '40px', height: '40px', borderRadius: '14px', 
+                                                        background: isDone ? '#dcfce7' : '#f0f4ff', 
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                                        fontSize: '1.1rem', flexShrink: 0 
+                                                    }}>
+                                                        {TYPE_ICON[f.type] || '📋'}
+                                                    </div>
+                                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                                        <div style={{ 
+                                                            fontSize: '0.95rem', fontWeight: 900, color: 'var(--navy-900)',
+                                                            textDecoration: isDone ? 'line-through' : 'none',
+                                                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {f.lead_name || f.leadName || 'Unknown Lead'}
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginTop: '3px', flexWrap: 'wrap' }}>
+                                                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#64748b' }}>{f.type}</span>
+                                                            <span style={{ width: '3px', height: '3px', borderRadius: '50%', background: '#cbd5e1' }}></span>
+                                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                                <Clock size={10} /> {taskTime}
+                                                            </span>
+                                                            <span style={{ 
+                                                                fontSize: '0.6rem', fontWeight: 900, 
+                                                                padding: '2px 7px', borderRadius: '6px',
+                                                                background: pColor.bg, color: pColor.text, border: `1px solid ${pColor.border}`,
+                                                                textTransform: 'uppercase', letterSpacing: '0.03em'
+                                                            }}>
+                                                                {f.priority}
+                                                            </span>
+                                                            {isDone && (
+                                                                <span style={{ fontSize: '0.6rem', fontWeight: 900, padding: '2px 7px', borderRadius: '6px', background: '#dcfce7', color: '#16a34a', border: '1px solid #bbf7d0', textTransform: 'uppercase' }}>Done</span>
+                                                            )}
+                                                            {isOverdueTask && (
+                                                                <span style={{ fontSize: '0.6rem', fontWeight: 900, padding: '2px 7px', borderRadius: '6px', background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', textTransform: 'uppercase' }}>Overdue</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Notes */}
+                                            {(f.notes || f.note) && (
+                                                <div style={{ 
+                                                    fontSize: '0.8rem', color: '#475569', fontWeight: 600, lineHeight: 1.5,
+                                                    padding: '10px 12px', background: '#f8fafc', borderRadius: '10px',
+                                                    marginBottom: '10px', borderLeft: '3px solid #e2e8f0'
+                                                }}>
+                                                    {f.notes || f.note}
+                                                </div>
+                                            )}
+
+                                            {/* Agent + Lead Info */}
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '10px' }}>
+                                                {(f.assigned_name || f.assignedName) && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.55rem', fontWeight: 950, color: '#64748b' }}>
+                                                            {(f.assigned_name || f.assignedName)?.charAt(0)}
+                                                        </div>
+                                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b' }}>{f.assigned_name || f.assignedName}</span>
+                                                    </div>
+                                                )}
+                                                {f.assigned_by_name && (
+                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(139, 92, 246, 0.08)', padding: '2px 8px', borderRadius: '6px' }}>
+                                                         <span style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-violet)' }}>By: {f.assigned_by_name}</span>
+                                                     </div>
+                                                 )}
+                                                {lead?.phone && (
+                                                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#94a3b8' }}>📱 {lead.phone}</span>
+                                                )}
+                                                {lead?.score > 0 && (
+                                                    <span style={{ fontSize: '0.65rem', fontWeight: 900, padding: '2px 6px', borderRadius: '6px', background: lead.score > 70 ? '#ecfdf5' : '#f8fafc', color: lead.score > 70 ? '#059669' : '#64748b', border: '1px solid #e2e8f0' }}>Score: {lead.score}%</span>
+                                                )}
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                <button 
+                                                    onClick={() => toggle(f.id, f.status)}
+                                                    style={{ 
+                                                        flex: 1, minWidth: '80px', padding: '8px 12px', borderRadius: '10px', border: 'none', 
+                                                        background: isDone ? '#f1f5f9' : '#0f172a', 
+                                                        color: isDone ? '#64748b' : 'white', 
+                                                        fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <CheckCircle size={13} /> {isDone ? 'Undo' : 'Mark Done'}
+                                                </button>
+                                                {!isDone && (
+                                                    <>
+                                                        <button 
+                                                            onClick={() => { dialerEvents.call(f.lead_id || f.leadId, f.lead_phone || lead?.phone, f.lead_name || f.leadName); setCalendarDayDialog(null); }}
+                                                            style={{ 
+                                                                padding: '8px 12px', borderRadius: '10px', border: 'none', 
+                                                                background: '#10b981', color: 'white', 
+                                                                fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center', gap: '5px',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <Phone size={13} /> Call
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => { setNotifyTarget({ id: f.lead_id || f.leadId, name: f.lead_name || f.leadName, phone: f.lead_phone || lead?.phone }); setCalendarDayDialog(null); }}
+                                                            style={{ 
+                                                                padding: '8px 12px', borderRadius: '10px', border: 'none',
+                                                                background: '#3b82f6', color: 'white',
+                                                                fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center', gap: '5px',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <Send size={13} /> Message
+                                                        </button>
+                                                    </>
+                                                )}
+                                                <button 
+                                                    onClick={() => { setPreviewLead(f.lead_id || f.leadId); setCalendarDayDialog(null); }}
+                                                    style={{ 
+                                                        padding: '8px 12px', borderRadius: '10px', 
+                                                        border: '1px solid #e2e8f0', background: 'white', color: '#64748b',
+                                                        fontSize: '0.72rem', fontWeight: 800, cursor: 'pointer',
+                                                        display: 'flex', alignItems: 'center', gap: '5px',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    <ChevronRight size={13} /> View Lead
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                </>
             ) : (
                 <div className="timeline-view" style={{ position: 'relative', paddingLeft: isMobile ? '12px' : '32px' }}>
                     {/* Vertical Timeline Thread */}
@@ -904,8 +1148,13 @@ function FollowupCard({ f, isCompact = false, isHighValue, leadDetails, onToggle
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>ORCHESTRATION NOTES</div>
                     <div style={{ fontSize: '0.8rem', color: '#334155', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {f.notes || (isCompact ? 'No briefing shared yet...' : 'Awaiting task briefing...')}
+                        {f.notes || f.note || (isCompact ? 'No briefing shared yet...' : 'Awaiting task briefing...')}
                     </div>
+                    {f.assigned_by_name && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--accent-violet)', fontWeight: 800, marginTop: '3px' }}>
+                            Assigned by: {f.assigned_by_name}
+                        </div>
+                    )}
                 </div>
 
                 {/* Owner Column (Only in List View) */}

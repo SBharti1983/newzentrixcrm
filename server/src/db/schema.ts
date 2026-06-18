@@ -132,6 +132,7 @@ export const leads = pgTable("leads", {
 	aiSummary: text("ai_summary"),
 	aiNextAction: text("ai_next_action"),
 	aiScore: integer("ai_score"),
+	assignedAt: timestamp("assigned_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [
 	foreignKey({
 			columns: [table.assignedTo],
@@ -363,7 +364,13 @@ export const followups = pgTable("followups", {
 	isAiGenerated: boolean("is_ai_generated").default(false),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).default(sql`CURRENT_TIMESTAMP`),
 	notes: text(),
+	assignedBy: uuid("assigned_by"),
 }, (table) => [
+	foreignKey({
+			columns: [table.assignedBy],
+			foreignColumns: [users.id],
+			name: "followups_assigned_by_fkey"
+		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.assignedTo],
 			foreignColumns: [users.id],

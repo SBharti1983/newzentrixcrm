@@ -102,7 +102,7 @@ export const globalLimiter = rateLimit({
 // Strict Auth rate limiter (Brute-force protection): max 5 attempts per 15 minutes
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test' ? 1000 : 5,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many login or registration attempts. Please try again after 15 minutes.' },

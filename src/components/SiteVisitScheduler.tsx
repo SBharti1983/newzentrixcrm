@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Calendar, Clock, MapPin, User, Car, MessageSquare, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { projectsApi, usersApi, siteVisitsApi } from '../api/client';
 
 interface SiteVisitSchedulerProps {
     lead: any;
@@ -16,7 +16,7 @@ const SiteVisitScheduler: React.FC<SiteVisitSchedulerProps> = ({ lead, onSuccess
     const [scheduled, setScheduled] = useState(false);
 
     const [formData, setFormData] = useState({
-        project_id: lead.projectId || '',
+        project_id: lead.project_id || lead.projectId || '',
         scheduled_at: '',
         transport: 'Self',
         assigned_agent: '',
@@ -30,12 +30,12 @@ const SiteVisitScheduler: React.FC<SiteVisitSchedulerProps> = ({ lead, onSuccess
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [projRes, agentRes] = await Promise.all([
-                axios.get('/api/projects'),
-                axios.get('/api/users')
+            const [projData, agentData] = await Promise.all([
+                projectsApi.list(),
+                usersApi.list()
             ]);
-            setProjects(projRes.data || []);
-            setAgents(agentRes.data?.filter((u: any) => u.role !== 'superadmin') || []);
+            setProjects(Array.isArray(projData) ? projData : []);
+            setAgents(Array.isArray(agentData) ? agentData.filter((u: any) => u.role !== 'superadmin') : []);
         } catch (error) {
             console.error('Failed to fetch data:', error);
             toast.error('Failed to load scheduler dependencies');
@@ -53,7 +53,7 @@ const SiteVisitScheduler: React.FC<SiteVisitSchedulerProps> = ({ lead, onSuccess
 
         try {
             setSubmitting(true);
-            await axios.post('/api/site-visits/schedule', {
+            await siteVisitsApi.schedule({
                 lead_id: lead.id,
                 ...formData
             });
@@ -61,7 +61,7 @@ const SiteVisitScheduler: React.FC<SiteVisitSchedulerProps> = ({ lead, onSuccess
             setScheduled(true);
             if (onSuccess) onSuccess();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Failed to schedule site visit');
+            toast.error(error?.error || error?.message || 'Failed to schedule site visit');
         } finally {
             setSubmitting(false);
         }

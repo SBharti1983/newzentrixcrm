@@ -237,38 +237,70 @@ class AutomationService {
     async executeAssignment(wf, lead, io) {
         const { tenant_id, id: lead_id, score: lead_score } = lead;
 
-        // 1. Get available agents for this tenant with their 'Won' stats
+        // 1. Get available active agents for this tenant with their stats and last assignment time
         const { rows: agents } = await pool.query(
             `SELECT u.id, u.name, 
                 COUNT(l.id) as total_assigned,
-                COUNT(l.id) FILTER (WHERE l.stage = 'Won') as total_won
+                COUNT(l.id) FILTER (WHERE l.stage = 'Won') as total_won,
+                MAX(l.created_at) as last_assigned_at
              FROM users u
              LEFT JOIN leads l ON l.assigned_to = u.id
-             WHERE u.tenant_id = $1 AND u.role IN ('agent', 'sales_manager') 
-             GROUP BY u.id, u.name
-             ORDER BY u.id ASC`,
+             WHERE u.tenant_id = $1 AND u.role IN ('agent', 'sales_manager') AND u.is_active = TRUE
+             GROUP BY u.id, u.name`,
             [tenant_id]
         );
 
         if (agents.length === 0) throw new Error('No available agents for assignment');
 
+        // Clustered Offline Check: Filter to online agents across the cluster.
+        const onlineAgents: any[] = [];
+        if (io) {
+            for (const agent of agents) {
+                try {
+                    const sockets = await io.in(`user_${agent.id}`).fetchSockets();
+                    if (sockets.length > 0) {
+                        onlineAgents.push(agent);
+                    }
+                } catch (err) {
+                    console.error(`[Automation] Error fetching sockets for user_${agent.id}:`, err);
+                }
+            }
+        }
+
+        // Auto-escalation fallback: use online agents if any are available; otherwise, use all agents.
+        const candidateAgents = onlineAgents.length > 0 ? onlineAgents : agents;
+
         let targetAgent;
 
-        // 2. Intelligent Routing: If lead score is high (>80), give to top performer
+        // 2. Intelligent Routing: If lead score is high (>=80), give to top performer
         if (lead_score >= 80) {
-            // Calculate conversion rate and pick the best
-            targetAgent = [...agents].sort((a, b) => {
+            // Sort by conversion rate descending. If equal, sort by last_assigned_at ASC.
+            targetAgent = [...candidateAgents].sort((a, b) => {
                 const rateA = a.total_assigned > 0 ? (a.total_won / a.total_assigned) : 0;
                 const rateB = b.total_assigned > 0 ? (b.total_won / b.total_assigned) : 0;
-                return rateB - rateA;
+                if (rateB !== rateA) return rateB - rateA;
+                
+                // Tie breaker: round robin
+                const timeA = a.last_assigned_at ? new Date(a.last_assigned_at).getTime() : 0;
+                const timeB = b.last_assigned_at ? new Date(b.last_assigned_at).getTime() : 0;
+                if (timeA === 0 && timeB !== 0) return -1;
+                if (timeB === 0 && timeA !== 0) return 1;
+                return timeA - timeB;
             })[0];
-            console.log(`[Automation] Routing high-value lead ${lead_id} to top performer: ${targetAgent.name}`);
+            console.log(`[Automation] Routing high-value lead ${lead_id} to top performer: ${targetAgent?.name}`);
         } else {
-            // Standard Round Robin using consistent hashing
-            const hash = lead_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const agentIndex = hash % agents.length;
-            targetAgent = agents[agentIndex] || agents[0];
+            // Standard Round Robin: sort by last_assigned_at ASC, NULLS FIRST
+            targetAgent = [...candidateAgents].sort((a, b) => {
+                const timeA = a.last_assigned_at ? new Date(a.last_assigned_at).getTime() : 0;
+                const timeB = b.last_assigned_at ? new Date(b.last_assigned_at).getTime() : 0;
+                if (timeA === 0 && timeB !== 0) return -1;
+                if (timeB === 0 && timeA !== 0) return 1;
+                return timeA - timeB;
+            })[0];
+            console.log(`[Automation] Routing standard lead ${lead_id} via Round Robin to: ${targetAgent?.name}`);
         }
+
+        if (!targetAgent) throw new Error('No target agent determined for assignment');
 
         // 3. Update lead
         await pool.query(
@@ -345,6 +377,17 @@ class AutomationService {
                 }
             }
         }, 600000); // 10 minutes
+
+        // Real-time Lead Auto-Reassignment Checker — check every 1 minute
+        setInterval(async () => {
+            try {
+                await this.checkAutoReassignments(io);
+            } catch (err) {
+                if (!err.message?.includes('Connection terminated')) {
+                    console.error('[Auto-Reassignment Worker] Error:', err.message);
+                }
+            }
+        }, 60000); // 1 minute
 
         // Process Drip Campaigns — check every 5 minutes
         setInterval(async () => {
@@ -497,6 +540,135 @@ class AutomationService {
             } catch (err) {
                 console.error(`[Automation Worker] Failed to process idle lead ${lead.id}:`, err);
             }
+        }
+    }
+
+    async checkAutoReassignments(io) {
+        try {
+            // 1. Fetch all tenants
+            const { rows: tenants } = await pool.query(
+                `SELECT id, settings FROM tenants`
+            );
+
+            for (const t of tenants) {
+                const settings = t.settings || {};
+                const reassignMins = parseInt(settings.lead_auto_reassign_mins);
+
+                if (!reassignMins || reassignMins <= 0) continue;
+
+                // 2. Fetch leads in this tenant that:
+                //    - are assigned to an agent (assigned_to is not NULL)
+                //    - are in "New" or "New Lead" stage
+                //    - has been assigned for more than reassignMins minutes
+                //    - has NO Call interactions logged since assigned_at
+                const { rows: leadsToReassign } = await pool.query(
+                    `SELECT l.* FROM leads l
+                     WHERE l.tenant_id = $1
+                       AND l.assigned_to IS NOT NULL
+                       AND l.status = 'Active'
+                       AND l.stage IN ('New', 'New Lead')
+                       AND l.assigned_at < NOW() - ($2 * interval '1 minute')
+                       AND NOT EXISTS (
+                           SELECT 1 FROM interactions i
+                           WHERE i.lead_id = l.id
+                             AND i.user_id = l.assigned_to
+                             AND i.type = 'Call'
+                             AND i.date >= l.assigned_at
+                       )`,
+                    [t.id, reassignMins]
+                );
+
+                for (const lead of leadsToReassign) {
+                    try {
+                        console.log(`[Auto-Reassign] Lead ${lead.id} (${lead.name}) is idle (no call within ${reassignMins} mins). Reassigning...`);
+                        
+                        // Exclude the current agent from reassignment!
+                        const currentAgentId = lead.assigned_to;
+
+                        // Get available active agents (excluding current agent)
+                        const { rows: agents } = await pool.query(
+                            `SELECT u.id, u.name, 
+                                COUNT(l.id) as total_assigned,
+                                COUNT(l.id) FILTER (WHERE l.stage = 'Won') as total_won,
+                                MAX(l.created_at) as last_assigned_at
+                             FROM users u
+                             LEFT JOIN leads l ON l.assigned_to = u.id
+                             WHERE u.tenant_id = $1 
+                               AND u.role IN ('agent', 'sales_manager') 
+                               AND u.is_active = TRUE
+                               AND u.id != $2
+                             GROUP BY u.id, u.name`,
+                            [t.id, currentAgentId]
+                        );
+
+                        if (agents.length === 0) {
+                            console.warn(`[Auto-Reassign] No alternative agents available for tenant ${t.id} to reassign lead ${lead.id}.`);
+                            continue;
+                        }
+
+                        // Check which of these alternative agents are online (if io is available)
+                        const onlineAgents: any[] = [];
+                        if (io) {
+                            for (const agent of agents) {
+                                try {
+                                    const sockets = await io.in(`user_${agent.id}`).fetchSockets();
+                                    if (sockets.length > 0) {
+                                        onlineAgents.push(agent);
+                                    }
+                                } catch (err) {
+                                    console.error(`[Auto-Reassign] Socket check error for user_${agent.id}:`, err);
+                                }
+                            }
+                        }
+
+                        const candidateAgents = onlineAgents.length > 0 ? onlineAgents : agents;
+
+                        // Round-robin selection: sort by last_assigned_at ASC, NULLS FIRST
+                        const targetAgent = [...candidateAgents].sort((a, b) => {
+                            const timeA = a.last_assigned_at ? new Date(a.last_assigned_at).getTime() : 0;
+                            const timeB = b.last_assigned_at ? new Date(b.last_assigned_at).getTime() : 0;
+                            if (timeA === 0 && timeB !== 0) return -1;
+                            if (timeB === 0 && timeA !== 0) return 1;
+                            return timeA - timeB;
+                        })[0];
+
+                        if (!targetAgent) continue;
+
+                        // Reassign the lead: update leads table (the DB trigger will auto-update assigned_at!)
+                        await pool.query(
+                            `UPDATE leads SET assigned_to = $1 WHERE id = $2`,
+                            [targetAgent.id, lead.id]
+                        );
+
+                        // Log the reassignment in interactions
+                        await pool.query(
+                            `INSERT INTO interactions (tenant_id, lead_id, type, note, outcome)
+                             VALUES ($1, $2, 'System', $3, 'Reassigned')`,
+                            [t.id, lead.id, `Lead automatically reassigned from agent due to inactivity (no call placed within ${reassignMins} mins).`]
+                        );
+
+                        // Notify new agent via socket
+                        if (io) {
+                            io.to(`user_${targetAgent.id}`).emit('notification', {
+                                title: '⚡ Auto-Reassignment',
+                                message: `Lead '${lead.name}' was automatically reassigned to you due to agent inactivity.`,
+                                type: 'lead_assigned',
+                                data: { leadId: lead.id }
+                            });
+                        }
+
+                        // Log in automation logs
+                        await this.logExecution(t.id, null, lead.id, 'success', {
+                            message: `Stale lead '${lead.name}' automatically reassigned from ${currentAgentId} to ${targetAgent.name} after ${reassignMins}m idle.`
+                        });
+
+                    } catch (leadErr) {
+                        console.error(`[Auto-Reassign] Failed to reassign lead ${lead.id}:`, leadErr);
+                    }
+                }
+            }
+        } catch (globalErr) {
+            console.error('[Auto-Reassign Worker] Global execution failed:', globalErr);
         }
     }
 

@@ -4,7 +4,7 @@ class DistributionService {
     /**
      * Automatically assigns a lead to the best-performing available agent for a project
      */
-    async distributeLead(leadId: string, projectId: string, tenantId: string) {
+    async distributeLead(leadId: string, projectId: string, tenantId: string, io?: any) {
         try {
             console.log(`[Distribution] Starting allocation for Lead: ${leadId}, Project: ${projectId}`);
 
@@ -16,7 +16,7 @@ class DistributionService {
 
             if (!queues[0]) {
                 console.log(`[Distribution] No active queue found for project ${projectId}. Falling back to default tenant distribution.`);
-                return await this._distributeToTenantGeneral(leadId, tenantId);
+                return await this._distributeToTenantGeneral(leadId, tenantId, io);
             }
 
             const queueId = queues[0].id;
@@ -32,24 +32,31 @@ class DistributionService {
                 return null;
             }
 
-            const memberIds = members.map(m => m.user_id);
+            // Clustered Offline Check: Filter to online agents across the cluster.
+            // If all agents are offline, we fall back to all members to ensure assignment.
+            const onlineMemberIds: string[] = [];
+            if (io) {
+                for (const m of members) {
+                    const sockets = await io.in(`user_${m.user_id}`).fetchSockets();
+                    if (sockets.length > 0) {
+                        onlineMemberIds.push(m.user_id);
+                    }
+                }
+            }
 
-            // 3. Get Performance Scores from Leaderboard for these members
-            // We'll call the SP we created earlier
+            const candidateIds = onlineMemberIds.length > 0 ? onlineMemberIds : members.map(m => m.user_id);
+
+            // 3. Get Performance Scores from Leaderboard for these candidates
             const { rows: leaderboard } = await pool.query(`SELECT * FROM get_sales_leaderboard($1)`, [tenantId]);
             
-            // Filter leaderboard to only include queue members
-            const candidateStats = leaderboard.filter(entry => memberIds.includes(entry.agent_id));
+            // Filter leaderboard to only include queue candidates
+            const candidateStats = leaderboard.filter(entry => candidateIds.includes(entry.agent_id));
 
-            let targetAgentId = memberIds[0]; // Default to first available
+            let targetAgentId = candidateIds[0]; // Default to first available candidate
 
             if (candidateStats.length > 0) {
-                // Sort by score (which is weighted deals + site visits in our SP)
+                // Sort by score (weighted deals + site visits)
                 candidateStats.sort((a, b) => (b.performance_score || 0) - (a.performance_score || 0));
-                
-                // PERFORMANCE-WEIGHTED LOGIC: 
-                // We pick the top performer, but to avoid overloading, we could also factor in 'last_assigned_at'
-                // For now, let's pick the best performer who isn't the absolute last assigned
                 targetAgentId = candidateStats[0].agent_id;
             }
 
@@ -69,7 +76,21 @@ class DistributionService {
                 [queueId, targetAgentId]
             );
 
-            console.log(`[Distribution] Success: Lead ${leadId} assigned to Top Performer ${targetAgentId}`);
+            // 6. Emit real-time notification to the assigned user across all nodes
+            if (io) {
+                const { rows: leadRows } = await pool.query('SELECT name FROM leads WHERE id = $1', [leadId]);
+                const leadName = leadRows[0]?.name || 'New Lead';
+                
+                io.to(`user_${targetAgentId}`).emit('notification', {
+                    title: '⚡ Lead Auto-Distributed',
+                    message: `Lead '${leadName}' was automatically assigned to you.`,
+                    bg: 'var(--navy-600)',
+                    type: 'lead_assigned',
+                    data: { leadId }
+                });
+            }
+
+            console.log(`[Distribution] Success: Lead ${leadId} assigned to candidate ${targetAgentId} (Online: ${onlineMemberIds.includes(targetAgentId)})`);
             return targetAgentId;
 
         } catch (err) {
@@ -78,21 +99,48 @@ class DistributionService {
         }
     }
 
-    private async _distributeToTenantGeneral(leadId: string, tenantId: string) {
+    private async _distributeToTenantGeneral(leadId: string, tenantId: string, io?: any) {
         // Fallback: Assign to the agent with the fewest active leads
-        const { rows } = await pool.query(`
+        const { rows: agents } = await pool.query(`
             SELECT u.id, COUNT(l.id) as lead_count
             FROM users u
             LEFT JOIN leads l ON u.id = l.assigned_to AND l.status = 'Active'
             WHERE u.tenant_id = $1 AND u.role IN ('agent', 'sales_manager') AND u.is_active = TRUE
             GROUP BY u.id
             ORDER BY lead_count ASC
-            LIMIT 1
         `, [tenantId]);
 
-        if (rows[0]) {
-            await pool.query(`UPDATE leads SET assigned_to = $1 WHERE id = $2`, [rows[0].id, leadId]);
-            return rows[0].id;
+        if (agents.length === 0) return null;
+
+        // Clustered Offline Check for fallback general distribution
+        const onlineAgents: any[] = [];
+        if (io) {
+            for (const a of agents) {
+                const sockets = await io.in(`user_${a.id}`).fetchSockets();
+                if (sockets.length > 0) {
+                    onlineAgents.push(a);
+                }
+            }
+        }
+
+        const candidateAgents = onlineAgents.length > 0 ? onlineAgents : agents;
+        const targetAgent = candidateAgents[0];
+
+        if (targetAgent) {
+            await pool.query(`UPDATE leads SET assigned_to = $1 WHERE id = $2`, [targetAgent.id, leadId]);
+            
+            if (io) {
+                const { rows: leadRows } = await pool.query('SELECT name FROM leads WHERE id = $1', [leadId]);
+                const leadName = leadRows[0]?.name || 'New Lead';
+                
+                io.to(`user_${targetAgent.id}`).emit('notification', {
+                    title: '⚡ Lead Assigned (Fallback)',
+                    message: `Lead '${leadName}' was assigned to you.`,
+                    type: 'lead_assigned',
+                    data: { leadId }
+                });
+            }
+            return targetAgent.id;
         }
         return null;
     }
