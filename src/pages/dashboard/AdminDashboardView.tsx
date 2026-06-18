@@ -1,7 +1,7 @@
 import React, { useMemo, useEffect } from 'react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Cell,
-  PieChart, Pie, AreaChart, Area
+  PieChart, Pie, AreaChart, Area, CartesianGrid
 } from 'recharts';
 import {
   TrendingUp, Users, Target, ChevronDown, DollarSign, Activity, Sparkles, Zap, 
@@ -225,10 +225,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   // Funnel segments
   const funnelData = [
     { label: 'Leads', count: 8642, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
-    { label: 'Qualified', count: 2847, percentage: '32.9%', width: '85%', color: '#3b82f6', clipPath: 'polygon(0% 0%, 100% 0%, 82% 100%, 18% 100%)' },
-    { label: 'Site Visits', count: 1562, percentage: '55.0%', width: '70%', color: '#06b6d4', clipPath: 'polygon(0% 0%, 100% 0%, 78% 100%, 22% 100%)' },
-    { label: 'Negotiation', count: 568, percentage: '36.4%', width: '55%', color: '#10b981', clipPath: 'polygon(0% 0%, 100% 0%, 72% 100%, 28% 100%)' },
-    { label: 'Bookings', count: 128, percentage: '22.5%', width: '40%', color: '#f59e0b', clipPath: 'polygon(0% 0%, 100% 0%, 62% 100%, 38% 100%)' }
+    { label: 'Qualified', count: 2847, percentage: '32.9%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+    { label: 'Site Visits', count: 1562, percentage: '55.0%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+    { label: 'Negotiation', count: 568, percentage: '36.4%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+    { label: 'Bookings', count: 128, percentage: '22.5%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
   ];
 
   // Revenue trend vs target over 12 months
@@ -318,7 +318,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   ];
 
   return (
-    <div className="dash-premium-container" style={{ padding: isMobile ? '16px' : '36px 40px' }}>
+    <div className="dash-premium-container" style={{ padding: isMobile ? '16px' : '24px 32px', margin: isMobile ? undefined : '-16px -28px -28px -28px' }}>
       <style>{`
         /* Local overrides and layouts */
         .dash-premium-container {
@@ -467,7 +467,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
           
           {/* Item 2 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0' }}>
               <TrendingUp size={16} color="#059669" />
             </div>
@@ -478,7 +478,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
 
           {/* Item 3 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3' }}>
               <Briefcase size={16} color="#dc2626" />
             </div>
@@ -489,7 +489,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
 
           {/* Item 4 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe' }}>
               <CheckSquare size={16} color="#2563eb" />
             </div>
@@ -563,10 +563,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                     <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
+                <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
                 <Tooltip content={<CustomRevenueTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, strokeWidth: 1, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
                 <Line type="monotone" dataKey="target" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
               </ComposedChart>
             </ResponsiveContainer>
