@@ -284,6 +284,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   const [teamPeriod, setTeamPeriod] = useState('this_month');
   const [revenuePeriod, setRevenuePeriod] = useState('this_year');
   const [targetPeriod, setTargetPeriod] = useState('this_year');
+  const [revenueSourcePeriod, setRevenueSourcePeriod] = useState('this_year');
+
+  const forecastSparklineData = useMemo(() => [
+    { val: 12.4 }, { val: 13.5 }, { val: 14.2 }, { val: 15.6 }, { val: 16.3 }, { val: 17.1 }, { val: 18.2 }
+  ], []);
+
+  const revenueSourceData = useMemo(() => [
+    { name: 'Booking', value: 45, amount: '₹35.3 Cr', color: '#3b82f6' },
+    { name: 'Collections', value: 30, amount: '₹23.6 Cr', color: '#06b6d4' },
+    { name: 'Other Income', value: 15, amount: '₹11.8 Cr', color: '#8b5cf6' },
+    { name: 'Adjustments', value: 10, amount: '₹7.8 Cr', color: '#f59e0b' }
+  ], []);
 
   // Funnel segments
   const funnelData = useMemo(() => {
@@ -698,7 +710,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             display: flex;
             flex-direction: column;
           }
-          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5 {
+          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5, .col-span-17 {
             grid-column: span 24 !important;
           }
         }
@@ -718,6 +730,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         .col-span-12 { grid-column: span 12; }
         .col-span-7 { grid-column: span 7; }
         .col-span-5 { grid-column: span 5; }
+        .col-span-17 { grid-column: span 17; }
 
         .hide-mobile-border {
           border-right: 1px solid #e2e8f0;
@@ -881,10 +894,194 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </button>
       </div>
 
+      {/* New Row: Revenue Command Center & Revenue by Source */}
+      <div className="dash-row-grid" style={{ marginBottom: '24px' }}>
+        {/* Revenue Command Center Card */}
+        <div className="dash-card col-span-17">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <TrendingUp size={18} color="#4f46e5" />
+              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue Command Center</span>
+            </div>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={revenuePeriod}
+                onChange={(e) => setRevenuePeriod(e.target.value)}
+                aria-label="Revenue Command Center time period"
+              >
+                <option value="this_month">This Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+
+          {/* Sub-Metrics Grid & Forecast Sparkline Box */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+            {/* Stat 1 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Total Revenue (This Year)</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹78.5 Cr</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.7rem', fontWeight: 800 }}>
+                <ArrowUpRight size={12} />
+                <span>14.6% <span style={{ color: '#94a3b8', fontWeight: 500 }}>vs last year</span></span>
+              </div>
+            </div>
+
+            {/* Stat 2 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Forecast (30 Days)</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹18.2 Cr</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.7rem', fontWeight: 800 }}>
+                <ArrowUpRight size={12} />
+                <span>16.8%</span>
+              </div>
+            </div>
+
+            {/* Stat 3 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Target (This Year)</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹100 Cr</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', marginTop: '2px' }}>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>78.5% Achieved</span>
+                <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: '78.5%', background: '#3b82f6', borderRadius: '2px' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Stat 4 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Achieved (This Year)</span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.5px' }}>78.5%</span>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 550 }}>₹78.5 Cr of ₹100 Cr</span>
+            </div>
+
+            {/* Stat 5: Revenue Forecast Sparkline Card */}
+            <div style={{
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              minHeight: '72px',
+              boxShadow: '0 2px 8px rgba(148, 163, 184, 0.02)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 800 }}>Revenue Forecast</span>
+                <span style={{ fontSize: '0.55rem', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '1px 5px', borderRadius: '8px', fontWeight: 800 }}>High Confidence</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>₹18.2 Cr</span>
+                  <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: 700 }}>Next 30 Days</span>
+                </div>
+                {/* Mini sparkline */}
+                <div style={{ width: '60px', height: '24px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={forecastSparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="forecastGlow" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
+                          <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={1.5} fill="url(#forecastGlow)" dot={false} isAnimationActive={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Revenue Trend Main Line Chart */}
+          <div key={revenuePeriod} className="dash-data-fade" style={{ height: '230px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueTrendGlow" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                <Tooltip content={<CustomRevenueTooltip />} />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
+                <Line type="monotone" dataKey="target" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Revenue by Source Card */}
+        <div className="dash-card col-span-7">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue by Source</span>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={revenueSourcePeriod}
+                onChange={(e) => setRevenueSourcePeriod(e.target.value)}
+                aria-label="Revenue by Source time period"
+              >
+                <option value="this_month">This Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', flex: 1 }}>
+            <div style={{ height: '115px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Tooltip content={<CustomPieTooltip />} />
+                  <Pie
+                    data={revenueSourceData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={50}
+                    paddingAngle={3}
+                    dataKey="value"
+                    isAnimationActive={false}
+                  >
+                    {revenueSourceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+              {revenueSourceData.map((source, idx) => (
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color }} />
+                    <span>{source.name}</span>
+                  </div>
+                  <div style={{ color: '#0f172a', fontWeight: 800 }}>
+                    {source.value}% <span style={{ color: '#94a3b8', fontWeight: 500 }}>({source.amount})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Row 1 Charts: Funnel, Trend, Projects */}
       <div className="dash-row-grid">
         {/* Sales Funnel Card */}
-        <div className="dash-card col-span-8">
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Funnel</span>
             <div className="dash-period-select-wrapper">
@@ -920,59 +1117,8 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
-        {/* Revenue Trend Chart Card */}
-        <div className="dash-card col-span-10">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue Trend</span>
-              <div style={{ display: 'flex', gap: '14px', marginTop: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
-                  <span>Revenue (Cr)</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                  <span style={{ width: '8px', height: '2px', background: '#94a3b8' }} />
-                  <span>Target (Cr)</span>
-                </div>
-              </div>
-            </div>
-            <div className="dash-period-select-wrapper">
-              <select
-                className="dash-period-select"
-                value={revenuePeriod}
-                onChange={(e) => setRevenuePeriod(e.target.value)}
-                aria-label="Revenue Trend time period"
-              >
-                <option value="this_month">This Month</option>
-                <option value="this_quarter">This Quarter</option>
-                <option value="this_year">This Year</option>
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
-            </div>
-          </div>
-
-          <div key={revenuePeriod} className="dash-data-fade" style={{ height: '205px', width: '100%' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueTrendGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
-                <Tooltip content={<CustomRevenueTooltip />} />
-                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
-                <Line type="monotone" dataKey="target" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
         {/* Top Performing Projects */}
-        <div className="dash-card col-span-6">
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Top Performing Projects</span>
             <div className="dash-period-select-wrapper">
