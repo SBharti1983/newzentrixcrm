@@ -1051,4 +1051,1579 @@
   gap: 16px;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   WORLD-CLASS UPGRADE — Component CSS Classes (replaces inline styles)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Sparkline Wrapper ──────────────────────────────────────────── */
+.dash-sparkline-wrap {
+  width: 70px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* ─── Funnel Segment Classes ─────────────────────────────────────── */
+.dash-funnel-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 36px;
+  margin: 4px 0;
+}
+
+.dash-funnel-bar-wrap {
+  width: 45%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.dash-funnel-bar {
+  height: 100%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dash-funnel-label {
+  width: 25%;
+  padding-left: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.dash-funnel-values {
+  width: 30%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-funnel-count {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #0f172a;
+}
+
+.dash-funnel-pct {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+.dash-funnel-pct-spacer {
+  min-width: 40px;
+}
+
+/* ─── Custom Tooltip Classes ─────────────────────────────────────── */
+.dash-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.dash-tooltip-lg {
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.dash-tooltip-title {
+  color: #0f172a;
+  font-weight: 800;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+}
+
+.dash-tooltip-row {
+  color: #475569;
+}
+
+.dash-tooltip-val {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.dash-tooltip-muted {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dash-tooltip-pie-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-tooltip-dot-sq {
+  border-radius: 2px;
+}
+
+/* ─── Card Header Classes ────────────────────────────────────────── */
+.dash-card-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dash-card-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-card-hdr-icon {
+  display: flex;
+  align-items: center;
+}
+
+.dash-card-hdr-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.2px;
+}
+
+/* ─── Period Select Chevron ──────────────────────────────────────── */
+.dash-period-chevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: #64748b;
+}
+
+/* ─── KPI Card Classes ───────────────────────────────────────────── */
+.dash-kpi-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dash-kpi-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dash-kpi-more-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.dash-kpi-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-kpi-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin: 6px 0 2px;
+}
+
+.dash-kpi-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.dash-kpi-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.dash-kpi-change--up {
+  color: #10b981;
+}
+
+.dash-kpi-change--down {
+  color: #ef4444;
+}
+
+.dash-kpi-vs {
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.68rem;
+}
+
+/* Drill-down cursor on clickable cards */
+.dash-kpi-clickable {
+  cursor: pointer;
+}
+
+.dash-kpi-clickable:hover {
+  border-color: #818cf8;
+}
+
+/* ─── Telemetry Banner Classes ───────────────────────────────────── */
+.dash-telemetry-banner {
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) 1.2fr;
+  background: #ffffff;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 4px 18px rgba(148, 163, 184, 0.03);
+}
+
+.dash-telemetry-cell {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.dash-telemetry-cell:last-child {
+  border-right: none;
+}
+
+.dash-telemetry-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-telemetry-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-telemetry-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.dash-telemetry-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.dash-telemetry-trend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #10b981;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.dash-telemetry-trend-muted {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dash-telemetry-risk {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #fff7ed 0%, #fee2e2 100%);
+  gap: 14px;
+}
+
+/* ─── Executive Summary Classes ──────────────────────────────────── */
+.dash-exec-summary {
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dash-exec-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.dash-exec-header {
+  display: flex;
+  flex-direction: column;
+  padding-right: 20px;
+  border-right: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.dash-exec-title {
+  font-weight: 900;
+  font-size: 0.92rem;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.dash-exec-subtitle {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.dash-exec-items {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.dash-exec-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  border-right: 1px solid #e2e8f0;
+  padding-right: 20px;
+  flex: 1;
+}
+
+.dash-exec-item:last-of-type {
+  border-right: none;
+  padding-right: 0;
+}
+
+.dash-exec-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-exec-item-value {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.dash-exec-item-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 700;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.dash-exec-view-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ─── Alerts Panel Classes ───────────────────────────────────────── */
+.dash-alerts-panel {
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+}
+
+.dash-alert-block {
+  padding: 20px;
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  border-radius: 16px;
+}
+
+.dash-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-alert-title-text {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #dc2626;
+  letter-spacing: -0.2px;
+}
+
+.dash-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.dash-ai-actions-block {
+  padding: 20px;
+  background: linear-gradient(135deg, #fdfcff 0%, #f5f3ff 100%);
+  border: 1px solid #ddd6fe;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dash-ai-actions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dash-ai-actions-title-text {
+  font-size: 0.92rem;
+  font-weight: 900;
+  color: #7c3aed;
+  letter-spacing: -0.2px;
+}
+
+.dash-ai-actions-desc {
+  font-size: 0.78rem;
+  color: #475569;
+  font-weight: 650;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.dash-ai-resolve-btn {
+  background: #8b5cf6;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  margin-top: 16px;
+  align-self: flex-start;
+  box-shadow: 0 3px 8px rgba(139, 92, 246, 0.15);
+}
+
+/* ─── Revenue Command Center Classes ─────────────────────────────── */
+.dash-revenue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.dash-revenue-logo-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.dash-revenue-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.06);
+  flex-shrink: 0;
+}
+
+.dash-revenue-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+}
+
+.dash-revenue-sub {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.dash-revenue-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: start;
+}
+
+.dash-revenue-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-right: 1px solid #f1f5f9;
+  padding-right: 16px;
+}
+
+.dash-revenue-stat:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.dash-revenue-stat-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-revenue-stat-value {
+  font-size: 1.45rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.dash-revenue-stat-trend {
+  color: #10b981;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.dash-revenue-stat-trend-muted {
+  color: #94a3b8;
+  font-weight: 650;
+}
+
+.dash-revenue-achieved {
+  font-size: 0.7rem;
+  color: #2563eb;
+  font-weight: 800;
+  margin-top: 2px;
+}
+
+.dash-revenue-progress-bar {
+  height: 6px;
+  background: #eff6ff;
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+  margin-top: 4px;
+  border: 1px solid #bfdbfe;
+}
+
+.dash-revenue-progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 3px;
+}
+
+.dash-revenue-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 8px;
+  margin-bottom: 16px;
+}
+
+.dash-revenue-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+.dash-revenue-legend-line {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.dash-revenue-legend-dashed {
+  width: 14px;
+  height: 0px;
+  border-top: 2.5px dashed #94a3b8;
+  display: inline-block;
+}
+
+.dash-revenue-chart {
+  height: 230px;
+  width: 100%;
+}
+
+/* ─── Revenue Sidebar Classes ────────────────────────────────────── */
+.dash-forecast-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 110px;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.03);
+  position: relative;
+}
+
+.dash-forecast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.dash-forecast-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.dash-forecast-badge {
+  font-size: 0.6rem;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.dash-forecast-value {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.dash-forecast-sub {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.dash-forecast-chart {
+  width: 100%;
+  height: 36px;
+  margin-top: auto;
+}
+
+/* ─── Source Donut Legend ─────────────────────────────────────────── */
+.dash-source-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  width: 100%;
+}
+
+.dash-source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dash-source-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+
+.dash-source-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dash-source-values {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.dash-source-pct {
+  color: #0f172a;
+  font-weight: 800;
+  min-width: 32px;
+  text-align: right;
+}
+
+.dash-source-amount {
+  color: #64748b;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: right;
+}
+
+/* ─── Health Score Classes ───────────────────────────────────────── */
+.dash-health-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.dash-health-gauge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-health-gauge {
+  position: relative;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dash-health-gauge-label {
+  position: absolute;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.dash-health-status {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dash-health-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-health-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dash-health-item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.dash-health-item-status {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* ─── Project Item Classes ───────────────────────────────────────── */
+.dash-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dash-project-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.dash-project-item:hover {
+  opacity: 0.85;
+}
+
+.dash-project-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dash-project-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.dash-project-info {
+  flex: 1;
+}
+
+.dash-project-name {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.dash-project-bookings {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.dash-project-value {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: right;
+}
+
+.dash-project-bar-track {
+  height: 5px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.dash-project-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+/* ─── Booking Trend Classes ──────────────────────────────────────── */
+.dash-booking-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dash-booking-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.dash-booking-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.dash-booking-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #10b981;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: #ecfdf5;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid #a7f3d0;
+}
+
+.dash-booking-chart {
+  height: 145px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ─── Team Performance Classes ───────────────────────────────────── */
+.dash-team-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dash-team-th {
+  padding: 8px 4px;
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-align: left;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.dash-team-th--right {
+  text-align: right;
+}
+
+.dash-team-th--center {
+  text-align: center;
+}
+
+.dash-team-td {
+  padding: 8px 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.dash-team-td--right {
+  text-align: right;
+}
+
+.dash-team-td--center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dash-team-td--name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-team-td--green {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.dash-team-td--bold {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.dash-team-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.dash-team-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.dash-team-view-btn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* ─── Activity Feed Classes ──────────────────────────────────────── */
+.dash-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 282px;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-top: 4px;
+}
+
+.dash-activity-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dash-activity-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.dash-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-activity-text {
+  font-size: 0.78rem;
+  color: #334155;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.dash-activity-user {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.dash-activity-time {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── Lead Analytics Row ─────────────────────────────────────────── */
+.dash-lead-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dash-lead-donut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dash-lead-donut-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+}
+
+.dash-lead-donut-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dash-lead-donut-val {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.dash-lead-donut-count {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.dash-donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.dash-donut-center-val {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.dash-donut-center-label {
+  font-size: 0.55rem;
+  color: #64748b;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ─── Inventory Classes ──────────────────────────────────────────── */
+.dash-inventory-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  gap: 24px;
+}
+
+.dash-inventory-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.dash-inventory-kpi {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.dash-inventory-kpi-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-inventory-kpi-value {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+.dash-inventory-kpi-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.dash-inventory-kpi-badge {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.dash-inventory-kpi-badge--green {
+  background: #e6fffa;
+  color: #0d9488;
+}
+
+.dash-inventory-kpi-badge--red {
+  background: #fef2f2;
+  color: #e11d48;
+}
+
+.dash-inventory-chart {
+  height: 140px;
+  width: 100%;
+}
+
+.dash-inventory-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.dash-inventory-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-inventory-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* ─── Sales Target Gauge ─────────────────────────────────────────── */
+.dash-target-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.dash-target-gauge-wrap {
+  position: relative;
+  width: 120px;
+  height: 90px;
+}
+
+.dash-target-gauge-label {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.dash-target-gauge-pct {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.dash-target-gauge-sub {
+  font-size: 0.52rem;
+  color: #64748b;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.dash-target-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dash-target-stat-label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-target-stat-value {
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.dash-target-stat-value--green {
+  color: #10b981;
+}
+
+.dash-target-stat-value--red {
+  color: #ef4444;
+}
+
+/* ─── AI Recommendation Card ─────────────────────────────────────── */
+.dash-ai-rec-card {
+  background: linear-gradient(135deg, #fdfcff 0%, #f5f3ff 100%);
+  border: 1px solid #ddd6fe;
+  box-shadow: 0 4px 18px rgba(139, 92, 246, 0.04);
+  justify-content: space-between;
+}
+
+.dash-ai-rec-title {
+  font-size: 0.88rem;
+  font-weight: 900;
+  color: #8b5cf6;
+  letter-spacing: -0.2px;
+}
+
+.dash-ai-rec-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.dash-ai-rec-headline {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.dash-ai-rec-big-num {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #f59e0b;
+  margin: 8px 0 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.dash-ai-rec-big-suffix {
+  font-size: 0.92rem;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.dash-ai-rec-desc {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.dash-ai-rec-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 70px;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.dash-ai-rec-bar {
+  width: 8px;
+  background: #8b5cf6;
+  border-radius: 4px;
+}
+
+.dash-ai-rec-btn {
+  width: 100%;
+  background: #6366f1;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+  margin-top: auto;
+}
+
+/* ─── View All Buttons ───────────────────────────────────────────── */
+.dash-view-all-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* ─── Lead Risk Revenue Section ──────────────────────────────────── */
+.dash-risk-footer {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.dash-risk-footer-label {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.dash-risk-footer-value {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SKELETON LOADING ANIMATION
+   ═══════════════════════════════════════════════════════════════════ */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.dash-skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite ease-in-out;
+  border-radius: 12px;
+}
+
+.dash-skeleton-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.dash-skeleton-bar {
+  height: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.dash-skeleton-bar--sm {
+  height: 8px;
+  width: 60%;
+}
+
+.dash-skeleton-bar--lg {
+  height: 20px;
+  width: 40%;
+}
+
+.dash-skeleton-bar--full {
+  width: 100%;
+}
+
+.dash-skeleton-circle {
+  border-radius: 50%;
+}
+
+.dash-skeleton-chart {
+  height: 200px;
+  border-radius: 16px;
+  margin-top: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TABLET RESPONSIVENESS FIX (768px–1200px)
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .dash-row-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    display: grid !important;
+  }
+
+  .col-span-8,
+  .col-span-10,
+  .col-span-12,
+  .col-span-14,
+  .col-span-17,
+  .col-span-24 {
+    grid-column: span 1 !important;
+  }
+
+  .dash-grid-6-kpi {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .dash-telemetry-banner {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .dash-telemetry-cell {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .dash-telemetry-cell:nth-child(2n) {
+    border-right: none;
+  }
+
+  .dash-exec-row {
+    flex-wrap: wrap;
+  }
+
+  .dash-exec-items {
+    flex-wrap: wrap;
+  }
+
+  .dash-exec-item {
+    min-width: 140px;
+  }
+
+  .dash-revenue-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .dash-inventory-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-alerts-panel {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Mobile Overrides for New Classes ───────────────────────────── */
+@media (max-width: 768px) {
+  .dash-telemetry-banner {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-telemetry-cell {
+    border-right: none !important;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .dash-exec-row {
+    flex-direction: column !important;
+  }
+
+  .dash-exec-header {
+    border-right: none !important;
+    border-bottom: 1px solid #e2e8f0;
+    padding-right: 0 !important;
+    padding-bottom: 12px;
+    width: 100%;
+  }
+
+  .dash-exec-items {
+    flex-direction: column !important;
+  }
+
+  .dash-exec-item {
+    border-right: none !important;
+    padding-right: 0 !important;
+    width: 100%;
+  }
+
+  .dash-exec-view-btn {
+    margin-left: 0;
+  }
+
+  .dash-revenue-stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-revenue-stat {
+    border-right: none !important;
+    padding-right: 0 !important;
+  }
+
+  .dash-alerts-panel {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-inventory-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-target-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 
