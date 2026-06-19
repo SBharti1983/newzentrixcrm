@@ -496,8 +496,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <AlertTriangle size={14} color="#d97706" />
             </div>
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>23</div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Leads inactive for 7+ days</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>23</span>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Leads inactive for</span>
+              </div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>7+ days</div>
             </div>
           </div>
           
@@ -507,8 +510,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <TrendingUp size={14} color="#059669" />
             </div>
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>12</div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Bookings likely this week</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>12</span>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Bookings likely</span>
+              </div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>this week</div>
             </div>
           </div>
 
@@ -518,8 +524,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <Briefcase size={14} color="#dc2626" />
             </div>
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Revenue at risk from delayed deals</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>₹18.6 Cr</span>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Revenue at risk</span>
+              </div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>from delayed deals</div>
             </div>
           </div>
 
@@ -529,8 +538,11 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <CheckSquare size={14} color="#2563eb" />
             </div>
             <div>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>3</div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Approvals pending</div>
+              <div style={{ lineHeight: 1.2 }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>3</span>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Approvals</span>
+              </div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>pending</div>
             </div>
           </div>
         </div>
