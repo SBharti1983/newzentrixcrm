@@ -1770,7 +1770,7 @@
 .dash-source-container {
   display: flex;
   flex-direction: row;
-  gap: 20px;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
   flex: 1;
@@ -1778,15 +1778,15 @@
 }
 
 .dash-source-chart-wrap {
-  height: 140px;
-  width: 140px;
+  height: 120px;
+  width: 120px;
   flex-shrink: 0;
 }
 
 .dash-source-legend {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
   width: 100%;
   justify-content: center;
@@ -1796,7 +1796,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -1816,25 +1816,25 @@
 
 .dash-source-values {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
 }
 
 .dash-source-pct {
   color: #0f172a;
   font-weight: 800;
-  min-width: 28px;
+  min-width: 25px;
   text-align: right;
 }
 
 .dash-source-amount {
   color: #64748b;
   font-weight: 600;
-  min-width: 55px;
+  min-width: 48px;
   text-align: right;
 }
 
-@media (max-width: 1366px) {
+@media (max-width: 1440px) {
   .dash-source-container {
     flex-direction: column;
     gap: 16px;
