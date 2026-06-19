@@ -987,11 +987,26 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card col-span-17" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-                <line x1="6" y1="20" x2="6" y2="14" />
-                <line x1="12" y1="20" x2="12" y2="8" />
-                <line x1="18" y1="20" x2="18" y2="3" />
-              </svg>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '12px',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.06)',
+                flexShrink: 0
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                  <path d="M3 14l6-6 6 6 6-8" stroke="#2563eb" strokeWidth="2.5" />
+                </svg>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>Revenue Command Center</span>
                 <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
@@ -1062,8 +1077,8 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Target (This Year)</span>
               <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹100 Cr</span>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px' }}>78.5% Achieved</span>
-              <div style={{ height: '5px', background: '#f1f5f9', borderRadius: '3px', width: '100%', overflow: 'hidden', marginTop: '2px' }}>
+              <span style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 800, marginTop: '2px' }}>78.5% Achieved</span>
+              <div style={{ height: '6px', background: '#eff6ff', borderRadius: '3px', width: '100%', overflow: 'hidden', marginTop: '4px', border: '1px solid #bfdbfe' }}>
                 <div style={{ height: '100%', width: '78.5%', background: '#2563eb', borderRadius: '3px' }} />
               </div>
             </div>
@@ -1072,18 +1087,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Achieved (This Year)</span>
               <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>78.5%</span>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px' }}>₹78.5 Cr of ₹100 Cr</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>₹78.5 Cr of ₹100 Cr</span>
             </div>
           </div>
 
           {/* Custom Legend */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingLeft: '8px', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-              <span style={{ width: '12px', height: '6px', borderRadius: '3px', background: '#3b82f6', display: 'inline-block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#475569', fontWeight: 700 }}>
+              <span style={{ width: '14px', height: '4px', borderRadius: '2px', background: '#2563eb', display: 'inline-block' }} />
               <span>Revenue (Cr)</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-              <span style={{ width: '12px', height: '0px', borderTop: '2px dashed #94a3b8', display: 'inline-block' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#475569', fontWeight: 700 }}>
+              <span style={{ width: '14px', height: '0px', borderTop: '2.5px dashed #94a3b8', display: 'inline-block' }} />
               <span>Target (Cr)</span>
             </div>
           </div>
@@ -1176,8 +1191,8 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', flex: 1 }}>
-              <div style={{ height: '115px', width: '100%' }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '20px', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
+              <div style={{ height: '120px', width: isMobile ? '100%' : '120px', flexShrink: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Tooltip content={<CustomPieTooltip />} />
@@ -1185,7 +1200,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                       data={revenueSourceData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={36}
+                      innerRadius={38}
                       outerRadius={50}
                       paddingAngle={3}
                       dataKey="value"
@@ -1199,18 +1214,16 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 </ResponsiveContainer>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, width: '100%' }}>
                 {revenueSourceData.map((source, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', width: '45%' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569' }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color, flexShrink: 0 }} />
                       <span style={{ whiteSpace: 'nowrap' }}>{source.name}</span>
                     </div>
-                    <div style={{ color: '#0f172a', fontWeight: 800, width: '20%', textAlign: 'right' }}>
-                      {source.value}%
-                    </div>
-                    <div style={{ color: '#64748b', fontWeight: 600, width: '35%', textAlign: 'right' }}>
-                      {source.amount}
+                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                      <span style={{ color: '#0f172a', fontWeight: 800, minWidth: '32px', textAlign: 'right' }}>{source.value}%</span>
+                      <span style={{ color: '#64748b', fontWeight: 600, minWidth: '60px', textAlign: 'right' }}>{source.amount}</span>
                     </div>
                   </div>
                 ))}
