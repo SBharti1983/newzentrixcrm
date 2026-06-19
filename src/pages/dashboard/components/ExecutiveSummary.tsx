@@ -2,8 +2,28 @@ import React, { useState } from 'react';
 import { AlertTriangle, TrendingUp, Briefcase, CheckSquare, ArrowRight, Sparkles } from 'lucide-react';
 import { DashCardProps } from './shared/types';
 
-export default function ExecutiveSummary({ isMobile }: DashCardProps) {
+interface ExecutiveSummaryProps {
+  data: any;
+  isMobile: boolean;
+}
+
+export default function ExecutiveSummary({ data, isMobile }: ExecutiveSummaryProps) {
   const [showAllInsights, setShowAllInsights] = useState(false);
+
+  const formatRev = (v: any) => {
+    if (!v) return '₹0';
+    const cr = Number(v) / 10000000;
+    return cr >= 1 ? `₹${cr.toFixed(2)} Cr` : `₹${(Number(v) / 100000).toFixed(1)} L`;
+  };
+
+  const activeLeads = data?.leads?.active_leads ?? 0;
+  const overdueCount = data?.overdue?.overdue_count ?? 0;
+  const revenueRisk = data?.telemetry?.revenue_at_risk ?? 0;
+  
+  // Calculate dynamic likely bookings
+  const likelyBookings = Math.max(1, Math.round((data?.bookings?.total || 0) * 0.1));
+
+  const alerts = data?.alerts || [];
 
   return (
     <div className="dash-card dash-exec-summary">
@@ -12,7 +32,7 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
         <div className="dash-exec-header">
           <span className="dash-exec-title">Executive Summary</span>
           <span className="dash-exec-subtitle">Key insights &amp; actions</span>
-        </div>
+        </div>Logical Flow
 
         {/* Items list */}
         <div className="dash-exec-items">
@@ -22,8 +42,8 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
               <AlertTriangle size={16} color="#ea580c" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="dash-exec-item-value">23</span>
-              <span className="dash-exec-item-label">Leads inactive for<br />7+ days</span>
+              <span className="dash-exec-item-value">{activeLeads}</span>
+              <span className="dash-exec-item-label">Active Leads<br />in pipeline</span>
             </div>
           </div>
 
@@ -33,8 +53,8 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
               <TrendingUp size={16} color="#059669" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="dash-exec-item-value">12</span>
-              <span className="dash-exec-item-label">Bookings likely<br />this week</span>
+              <span className="dash-exec-item-value">{likelyBookings}</span>
+              <span className="dash-exec-item-label">Bookings projected<br />this month</span>
             </div>
           </div>
 
@@ -44,8 +64,8 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
               <Briefcase size={16} color="#dc2626" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="dash-exec-item-value">₹18.6 Cr</span>
-              <span className="dash-exec-item-label">Revenue at risk from<br />delayed deals</span>
+              <span className="dash-exec-item-value">{formatRev(revenueRisk)}</span>
+              <span className="dash-exec-item-label">Revenue at risk from<br />overdue accounts</span>
             </div>
           </div>
 
@@ -55,8 +75,8 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
               <CheckSquare size={16} color="#2563eb" />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="dash-exec-item-value">3</span>
-              <span className="dash-exec-item-label">Approvals<br />pending</span>
+              <span className="dash-exec-item-value">{overdueCount}</span>
+              <span className="dash-exec-item-label">Overdue milestones<br />pending</span>
             </div>
           </div>
 
@@ -81,18 +101,27 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
               <span className="dash-alert-title-text">Critical Alerts</span>
             </div>
             <div className="dash-alert-list">
-              <div className="dash-alert-item">
-                <AlertTriangle size={14} color="#f97316" />
-                <span>23 Leads inactive &gt; 7 days</span>
-              </div>
-              <div className="dash-alert-item">
-                <AlertTriangle size={14} color="#f97316" />
-                <span>12 Deals at risk of closing</span>
-              </div>
-              <div className="dash-alert-item">
-                <AlertTriangle size={14} color="#f97316" />
-                <span>3 High value approvals pending</span>
-              </div>
+              {alerts.length > 0 ? (
+                alerts.map((alert: any, i: number) => (
+                  <div className="dash-alert-item" key={alert.id || i}>
+                    <AlertTriangle size={14} color="#ef4444" />
+                    <span><strong>{alert.lead_name}</strong>: {alert.note || 'Cold interaction sentiment detected'}</span>
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="dash-alert-item">
+                    <CheckSquare size={14} color="#10b981" />
+                    <span>No critical cold interaction friction alerts today.</span>
+                  </div>
+                </>
+              )}
+              {overdueCount > 0 && (
+                <div className="dash-alert-item">
+                  <AlertTriangle size={14} color="#f97316" />
+                  <span>{overdueCount} Milestones are currently Overdue for collection.</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -104,11 +133,16 @@ export default function ExecutiveSummary({ isMobile }: DashCardProps) {
                 <span className="dash-ai-actions-title-text">AI Recommended Actions</span>
               </div>
               <p className="dash-ai-actions-desc">
-                • Re-assign the **23 inactive leads** to active agents to prevent drop-offs.<br />
-                • Follow up with client accounts for the **3 pending approvals** immediately to close Q2 targets.
+                {alerts.length > 0 ? (
+                  `• Address the ${alerts.length} high-friction interactions immediately. Re-assign or schedule urgent followups.\n`
+                ) : ''}
+                {overdueCount > 0 ? (
+                  `• Follow up with accounts for the ${overdueCount} overdue milestones to maintain healthy project cashflow.\n`
+                ) : ''}
+                • All systems running clean. Good day to check on won leads and ask for referrals.
               </p>
             </div>
-            <button className="dash-ai-resolve-btn">Auto-resolve Inactive Leads</button>
+            <button className="dash-ai-resolve-btn" style={{ whiteSpace: 'nowrap' }}>Resolve Inactive Leads</button>
           </div>
         </div>
       )}

@@ -2,8 +2,25 @@ import React from 'react';
 import { Calendar, Clock, ArrowUpRight, Users, AlertTriangle, ArrowUp, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export default function TelemetryBanner() {
+interface TelemetryBannerProps {
+  data: any;
+}
+
+export default function TelemetryBanner({ data }: TelemetryBannerProps) {
   const navigate = useNavigate();
+  const telemetry = data?.telemetry || {};
+
+  const formatRev = (v: any) => {
+    if (!v) return '₹0';
+    const cr = Number(v) / 10000000;
+    return cr >= 1 ? `₹${cr.toFixed(2)} Cr` : `₹${(Number(v) / 100000).toFixed(1)} L`;
+  };
+
+  const bookingsToday = telemetry.bookings_today ?? 0;
+  const siteVisitsToday = telemetry.site_visits_today ?? 0;
+  const newLeadsToday = telemetry.new_leads_today ?? 0;
+  const dealsNegotiation = telemetry.deals_negotiation ?? 0;
+  const revenueRisk = telemetry.revenue_at_risk ?? 0;
 
   return (
     <div className="dash-telemetry-banner">
@@ -14,10 +31,10 @@ export default function TelemetryBanner() {
         </div>
         <div className="dash-telemetry-info">
           <span className="dash-telemetry-label" style={{ color: '#2563eb' }}>Today's Bookings</span>
-          <span className="dash-telemetry-value">12</span>
+          <span className="dash-telemetry-value">{bookingsToday}</span>
           <div className="dash-telemetry-trend">
             <ArrowUp size={11} strokeWidth={3} />
-            <span>8.3% <span className="dash-telemetry-trend-muted">vs yesterday</span></span>
+            <span>Live <span className="dash-telemetry-trend-muted">updates today</span></span>
           </div>
         </div>
       </div>
@@ -29,10 +46,10 @@ export default function TelemetryBanner() {
         </div>
         <div className="dash-telemetry-info">
           <span className="dash-telemetry-label" style={{ color: '#4f46e5' }}>Site Visits</span>
-          <span className="dash-telemetry-value">28</span>
+          <span className="dash-telemetry-value">{siteVisitsToday}</span>
           <div className="dash-telemetry-trend">
             <ArrowUp size={11} strokeWidth={3} />
-            <span>12.5% <span className="dash-telemetry-trend-muted">vs yesterday</span></span>
+            <span>Today <span className="dash-telemetry-trend-muted">scheduled</span></span>
           </div>
         </div>
       </div>
@@ -44,10 +61,10 @@ export default function TelemetryBanner() {
         </div>
         <div className="dash-telemetry-info">
           <span className="dash-telemetry-label" style={{ color: '#2563eb' }}>New Leads</span>
-          <span className="dash-telemetry-value">156</span>
+          <span className="dash-telemetry-value">{newLeadsToday}</span>
           <div className="dash-telemetry-trend">
             <ArrowUp size={11} strokeWidth={3} />
-            <span>10.2% <span className="dash-telemetry-trend-muted">vs yesterday</span></span>
+            <span>Today <span className="dash-telemetry-trend-muted">incoming</span></span>
           </div>
         </div>
       </div>
@@ -59,10 +76,10 @@ export default function TelemetryBanner() {
         </div>
         <div className="dash-telemetry-info">
           <span className="dash-telemetry-label" style={{ color: '#4f46e5' }}>Deals in Negotiation</span>
-          <span className="dash-telemetry-value">47</span>
+          <span className="dash-telemetry-value">{dealsNegotiation}</span>
           <div className="dash-telemetry-trend">
             <ArrowUp size={11} strokeWidth={3} />
-            <span>6.8% <span className="dash-telemetry-trend-muted">vs yesterday</span></span>
+            <span>Active <span className="dash-telemetry-trend-muted">pipeline</span></span>
           </div>
         </div>
       </div>
@@ -75,8 +92,8 @@ export default function TelemetryBanner() {
           </div>
           <div className="dash-telemetry-info">
             <span className="dash-telemetry-label" style={{ color: '#475569' }}>Revenue at Risk</span>
-            <span className="dash-telemetry-value" style={{ color: '#dc2626' }}>₹18.6 Cr</span>
-            <span style={{ color: '#dc2626', fontSize: '0.72rem', fontWeight: 850 }}>High Priority</span>
+            <span className="dash-telemetry-value" style={{ color: '#dc2626' }}>{formatRev(revenueRisk)}</span>
+            <span style={{ color: '#dc2626', fontSize: '0.72rem', fontWeight: 850 }}>Overdue Payments</span>
           </div>
         </div>
       </div>

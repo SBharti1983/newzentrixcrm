@@ -1,13 +1,33 @@
 import React from 'react';
 import { ShieldCheck, CheckCircle2, ChevronDown } from 'lucide-react';
 
-export default function BusinessHealthScore() {
+interface BusinessHealthScoreProps {
+  data: any;
+}
+
+export default function BusinessHealthScore({ data }: BusinessHealthScoreProps) {
+  const winRate = data?.leads?.win_rate ?? 0;
+  const activeLeads = data?.leads?.active_leads ?? 0;
+  const overdueCount = data?.overdue?.overdue_count ?? 0;
+
+  // Formula for Business Health Score
+  const healthScore = Math.min(100, Math.max(50, Math.round(
+    (winRate * 2.5) + (100 - Math.min(50, overdueCount * 8))
+  )));
+
+  let healthStatus = 'Excellent';
+  if (healthScore < 70) healthStatus = 'Needs Attention';
+  else if (healthScore < 85) healthStatus = 'Good';
+
   const healthItems = [
-    { name: 'Revenue Health', status: 'Good' },
-    { name: 'Lead Health', status: 'Excellent' },
+    { name: 'Revenue Health', status: overdueCount > 2 ? 'Needs Attention' : 'Good' },
+    { name: 'Lead Health', status: activeLeads > 10 ? 'Excellent' : 'Good' },
     { name: 'Team Performance', status: 'Good' },
-    { name: 'Conversion Health', status: 'Good' },
+    { name: 'Conversion Health', status: winRate > 8 ? 'Excellent' : 'Good' },
   ];
+
+  // SVG dashoffset calculation: 100 is empty, 0 is full circle
+  const dashOffset = 100 - healthScore;
 
   return (
     <div className="dash-card col-span-12" style={{ padding: 24 }}>
@@ -26,7 +46,7 @@ export default function BusinessHealthScore() {
               <circle
                 cx="18" cy="18" r="16" fill="none"
                 stroke="url(#healthGrad)" strokeWidth="3.2"
-                strokeDasharray="100" strokeDashoffset="14"
+                strokeDasharray="100" strokeDashoffset={dashOffset}
                 strokeLinecap="round" transform="rotate(-90 18 18)"
               />
               <defs>
@@ -36,10 +56,10 @@ export default function BusinessHealthScore() {
                 </linearGradient>
               </defs>
             </svg>
-            <span className="dash-health-gauge-label">86%</span>
+            <span className="dash-health-gauge-label">{healthScore}%</span>
           </div>
           <div>
-            <div className="dash-health-status">Excellent</div>
+            <div className="dash-health-status">{healthStatus}</div>
             <ChevronDown size={14} color="#64748b" style={{ marginTop: 2, cursor: 'pointer' }} />
           </div>
         </div>
@@ -62,10 +82,10 @@ export default function BusinessHealthScore() {
         {healthItems.map((item, idx) => (
           <div key={idx} className="dash-health-item">
             <div className="dash-health-item-name">
-              <CheckCircle2 size={14} color="#10b981" />
+              <CheckCircle2 size={14} color={item.status === 'Needs Attention' ? '#ef4444' : '#10b981'} />
               <span>{item.name}</span>
             </div>
-            <span className="dash-health-item-status">{item.status}</span>
+            <span className="dash-health-item-status" style={{ color: item.status === 'Needs Attention' ? '#ef4444' : undefined }}>{item.status}</span>
           </div>
         ))}
       </div>

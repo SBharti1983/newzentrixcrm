@@ -39,6 +39,17 @@ DECLARE
     v_active_deals JSON;
     v_team JSON;
     v_top_projects JSON;
+    v_telemetry JSON;
+    v_activities JSON;
+    v_booking_trends JSON;
+    v_lead_sources JSON;
+    v_lead_aging JSON;
+    v_lead_risk JSON;
+    v_bookings_today INT;
+    v_site_visits_today INT;
+    v_new_leads_today INT;
+    v_deals_negotiation INT;
+    v_revenue_at_risk NUMERIC;
 BEGIN
     -- ── Leads KPI ──
     SELECT json_build_object(
@@ -218,13 +229,137 @@ BEGIN
     -- ── Top Projects ──
     SELECT COALESCE(json_agg(row_to_json(tp)), '[]'::json) INTO v_top_projects
     FROM (
-        SELECT p.name, p.id, COUNT(l.id) as lead_count
-        FROM leads l JOIN projects p ON l.project_id = p.id
-        WHERE l.tenant_id = p_tenant_id
-          AND (NOT p_is_personal OR l.assigned_to = p_user_id)
-          AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR l.assigned_to = ANY(p_downline_ids))
-        GROUP BY p.id, p.name ORDER BY lead_count DESC LIMIT 3
+        SELECT p.name, p.id,
+               (SELECT COUNT(*) FROM bookings b WHERE b.project_id = p.id AND b.status != 'Cancelled') as bookings_count,
+               COALESCE((SELECT SUM(total_amount) FROM bookings b WHERE b.project_id = p.id AND b.status != 'Cancelled'), 0) as total_value
+        FROM projects p
+        WHERE p.tenant_id = p_tenant_id
+        ORDER BY total_value DESC, bookings_count DESC LIMIT 5
     ) tp;
+
+    -- ── Telemetry Stats ──
+    SELECT COUNT(*) INTO v_bookings_today
+    FROM bookings
+    WHERE tenant_id = p_tenant_id AND status != 'Cancelled' AND booking_date::date = current_date
+      AND (NOT p_is_personal OR assigned_agent_id = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_agent_id = ANY(p_downline_ids));
+
+    SELECT COUNT(*) INTO v_site_visits_today
+    FROM site_visits
+    WHERE tenant_id = p_tenant_id AND scheduled_at::date = current_date
+      AND (NOT p_is_personal OR assigned_agent = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_agent = ANY(p_downline_ids));
+
+    SELECT COUNT(*) INTO v_new_leads_today
+    FROM leads
+    WHERE tenant_id = p_tenant_id AND created_at::date = current_date
+      AND (NOT p_is_personal OR assigned_to = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_to = ANY(p_downline_ids));
+
+    SELECT COUNT(*) INTO v_deals_negotiation
+    FROM leads
+    WHERE tenant_id = p_tenant_id AND stage = 'Negotiation'
+      AND (NOT p_is_personal OR assigned_to = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_to = ANY(p_downline_ids));
+
+    SELECT COALESCE(SUM(i.amount), 0) INTO v_revenue_at_risk
+    FROM installments i
+    JOIN bookings b ON i.booking_id = b.id
+    WHERE i.tenant_id = p_tenant_id AND i.status = 'Overdue'
+      AND (NOT p_is_personal OR b.assigned_agent_id = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR b.assigned_agent_id = ANY(p_downline_ids));
+
+    v_telemetry := json_build_object(
+        'bookings_today', v_bookings_today,
+        'site_visits_today', v_site_visits_today,
+        'new_leads_today', v_new_leads_today,
+        'deals_negotiation', v_deals_negotiation,
+        'revenue_at_risk', v_revenue_at_risk
+    );
+
+    -- ── Live Activities ──
+    SELECT COALESCE(json_agg(row_to_json(act)), '[]'::json) INTO v_activities
+    FROM (
+        SELECT al.id, al.action, al.entity_type, al.created_at,
+               u.name as user_name, u.avatar as user_avatar, u.role as user_role
+        FROM activity_log al
+        LEFT JOIN users u ON al.user_id = u.id
+        WHERE al.tenant_id = p_tenant_id
+        ORDER BY al.created_at DESC LIMIT 5
+    ) act;
+
+    -- ── Booking Trends ──
+    SELECT COALESCE(json_agg(row_to_json(bt) ORDER BY bt.month_date), '[]'::json) INTO v_booking_trends
+    FROM (
+        WITH months AS (
+            SELECT date_trunc('month', series)::date as month_date
+            FROM generate_series(
+                date_trunc('month', NOW() - INTERVAL '11 months'),
+                date_trunc('month', NOW()),
+                '1 month'
+            ) series
+        )
+        SELECT
+            TO_CHAR(m.month_date, 'Mon') as name,
+            m.month_date,
+            (SELECT COUNT(*) FROM bookings b
+             WHERE b.tenant_id = p_tenant_id AND b.status != 'Cancelled'
+               AND date_trunc('month', b.booking_date) = m.month_date
+               AND (NOT p_is_personal OR b.assigned_agent_id = p_user_id)
+               AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR b.assigned_agent_id = ANY(p_downline_ids))
+            ) as bookings
+        FROM months m
+    ) bt;
+
+    -- ── Lead Sources ──
+    SELECT COALESCE(json_agg(row_to_json(ls)), '[]'::json) INTO v_lead_sources
+    FROM (
+        SELECT name, COUNT(*) as count
+        FROM (
+            SELECT COALESCE(source, 'Unknown') as name
+            FROM leads
+            WHERE tenant_id = p_tenant_id
+              AND (NOT p_is_personal OR assigned_to = p_user_id)
+              AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_to = ANY(p_downline_ids))
+        ) s
+        GROUP BY name
+        ORDER BY count DESC
+    ) ls;
+
+    -- ── Lead Aging ──
+    SELECT COALESCE(json_agg(row_to_json(la)), '[]'::json) INTO v_lead_aging
+    FROM (
+        SELECT name, COUNT(*) as count
+        FROM (
+            SELECT
+                CASE
+                    WHEN created_at >= NOW() - INTERVAL '7 days' THEN '0-7 Days'
+                    WHEN created_at >= NOW() - INTERVAL '15 days' THEN '8-15 Days'
+                    WHEN created_at >= NOW() - INTERVAL '30 days' THEN '16-30 Days'
+                    WHEN created_at >= NOW() - INTERVAL '60 days' THEN '31-60 Days'
+                    ELSE '60+ Days'
+                END as name
+            FROM leads
+            WHERE tenant_id = p_tenant_id AND stage NOT IN ('Won','Lost')
+              AND (NOT p_is_personal OR assigned_to = p_user_id)
+              AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_to = ANY(p_downline_ids))
+        ) a
+        GROUP BY name
+    ) la;
+
+    -- ── Lead Risk ──
+    SELECT COALESCE(json_agg(row_to_json(lr)), '[]'::json) INTO v_lead_risk
+    FROM (
+        SELECT name, COUNT(*) as count
+        FROM (
+            SELECT COALESCE(priority, 'Medium') as name
+            FROM leads
+            WHERE tenant_id = p_tenant_id AND stage NOT IN ('Won','Lost')
+              AND (NOT p_is_personal OR assigned_to = p_user_id)
+              AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR assigned_to = ANY(p_downline_ids))
+        ) r
+        GROUP BY name
+    ) lr;
 
     -- ── Assemble Final JSON ──
     result := json_build_object(
@@ -244,7 +379,13 @@ BEGIN
         'trends', v_trends,
         'telephony_stats', v_telephony,
         'active_deals', v_active_deals,
-        'top_projects', v_top_projects
+        'top_projects', v_top_projects,
+        'telemetry', v_telemetry,
+        'activities', v_activities,
+        'booking_trends', v_booking_trends,
+        'lead_sources', v_lead_sources,
+        'lead_aging', v_lead_aging,
+        'lead_risk', v_lead_risk
     );
 
     RETURN result;

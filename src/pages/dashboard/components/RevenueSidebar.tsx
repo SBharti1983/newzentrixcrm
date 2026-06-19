@@ -6,20 +6,51 @@ import PeriodSelect from './shared/PeriodSelect';
 import { PeriodValue, RevenueSource, DashCardProps } from './shared/types';
 
 interface RevenueSidebarProps extends DashCardProps {
+  data: any;
   revenueSourcePeriod: PeriodValue;
   onRevenueSourcePeriodChange: (v: PeriodValue) => void;
-  revenueSourceData: RevenueSource[];
 }
 
 export default function RevenueSidebar({
+  data,
   isMobile,
   revenueSourcePeriod,
   onRevenueSourcePeriodChange,
-  revenueSourceData,
 }: RevenueSidebarProps) {
   const forecastSparklineData = useMemo(() => [
     { val: 12.4 }, { val: 13.5 }, { val: 14.2 }, { val: 15.6 }, { val: 16.3 }, { val: 17.1 }, { val: 18.2 }
   ], []);
+
+  const formatRev = (v: any) => {
+    if (!v) return '₹0';
+    const cr = Number(v) / 10000000;
+    return cr >= 1 ? `₹${cr.toFixed(2)} Cr` : `₹${(Number(v) / 100000).toFixed(1)} L`;
+  };
+
+  const forecastVal = (data?.pipeline?.value ?? 0) * 0.15; // 15% estimated pipeline conversion
+
+  const sourceColors: Record<string, string> = {
+    'website': '#3b82f6',
+    'referral': '#06b6d4',
+    'walk-in': '#f59e0b',
+    'portal': '#8b5cf6',
+    'social media': '#ef4444',
+  };
+
+  const revenueSourceData = useMemo(() => {
+    const rawSources = data?.lead_sources || [];
+    const totalCount = rawSources.reduce((sum: number, s: any) => sum + Number(s.count || 0), 0) || 1;
+    return rawSources.map((s: any) => {
+      const pct = Math.round((Number(s.count || 0) / totalCount) * 100);
+      const color = sourceColors[s.name.toLowerCase()] || '#cbd5e1';
+      return {
+        name: s.name,
+        value: pct,
+        amount: `${s.count} Leads`,
+        color,
+      };
+    });
+  }, [data?.lead_sources]);
 
   return (
     <div className="col-span-7" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -30,7 +61,7 @@ export default function RevenueSidebar({
           <span className="dash-forecast-badge">High Confidence</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 8 }}>
-          <span className="dash-forecast-value">₹18.2 Cr</span>
+          <span className="dash-forecast-value">{formatRev(forecastVal)}</span>
           <span className="dash-forecast-sub">Next 30 Days</span>
         </div>
         <div className="dash-forecast-chart">
@@ -70,7 +101,7 @@ export default function RevenueSidebar({
               <PieChart>
                 <Tooltip content={<CustomPieTooltip />} />
                 <Pie data={revenueSourceData} cx="50%" cy="50%" innerRadius={38} outerRadius={50} paddingAngle={3} dataKey="value" isAnimationActive={false}>
-                  {revenueSourceData.map((entry, index) => (
+                  {revenueSourceData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -79,7 +110,7 @@ export default function RevenueSidebar({
           </div>
 
           <div className="dash-source-legend">
-            {revenueSourceData.map((source, idx) => (
+            {revenueSourceData.map((source: any, idx: number) => (
               <div key={idx} className="dash-source-row">
                 <div className="dash-source-name">
                   <span className="dash-source-dot" style={{ background: source.color }} />
