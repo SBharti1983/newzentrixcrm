@@ -350,6 +350,23 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           box-shadow: 0 10px 25px rgba(148, 163, 184, 0.08);
           border-color: #cbd5e1;
         }
+        .dash-card {
+          background: #ffffff;
+          border-radius: 20px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 18px rgba(148, 163, 184, 0.03);
+          padding: 24px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+        .dash-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 22px rgba(148, 163, 184, 0.06);
+          border-color: #cbd5e1;
+        }
         .dash-row-grid {
           display: grid;
           grid-template-columns: repeat(24, 1fr);
