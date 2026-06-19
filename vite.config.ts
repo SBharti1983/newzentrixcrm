@@ -10,12 +10,12 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:5051',
+        target: 'http://127.0.0.1:5051',
         changeOrigin: true,
         secure: false
       },
       '/socket.io': {
-        target: 'http://localhost:5051',
+        target: 'http://127.0.0.1:5051',
         changeOrigin: true,
         ws: true
       }
