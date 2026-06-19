@@ -1607,10 +1607,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 8: Inventory Overview, Sales Target Radial, Tasks & Approvals */}
+      {/* Row 8: Inventory Overview */}
       <div className="dash-row-grid">
         {/* Inventory Overview Stacked Grouped Bar */}
-        <div className="dash-card col-span-12">
+        <div className="dash-card col-span-24">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Inventory Overview</span>
             <div style={{ display: 'flex', gap: '14px' }}>
@@ -1629,9 +1629,9 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 2fr', gap: '24px' }}>
             {/* KPI statistics block */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Total Units</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>3,128</div>
@@ -1674,9 +1674,12 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
         </div>
+      </div>
 
+      {/* Row 9: Sales Target, AI Recommendation, Tasks & Approvals */}
+      <div className="dash-row-grid">
         {/* Sales Target vs Achievement Radial Gauge */}
-        <div className="dash-card col-span-6">
+        <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Target vs Achievement</span>
             <div className="dash-period-select-wrapper">
@@ -1745,8 +1748,61 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
+        {/* AI Recommendation Card */}
+        <div className="dash-card col-span-8" style={{
+          background: 'linear-gradient(135deg, #fdfcff 0%, #f5f3ff 100%)',
+          border: '1px solid #ddd6fe',
+          boxShadow: '0 4px 18px rgba(139, 92, 246, 0.04)',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={16} color="#8b5cf6" />
+              <span style={{ fontSize: '0.88rem', fontWeight: 900, color: '#8b5cf6', letterSpacing: '-0.2px' }}>AI Recommendation</span>
+            </div>
+            <ChevronDown size={14} style={{ color: '#94a3b8', transform: 'rotate(180deg)' }} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.3 }}>
+                Site visits from <br /> Google Ads convert
+              </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#f59e0b', margin: '8px 0 4px', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                42% <span style={{ fontSize: '0.92rem', color: '#0f172a', fontWeight: 800 }}>higher.</span>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, lineHeight: 1.3 }}>
+                Increase budget by 15% <br /> to get more qualified leads.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '70px', paddingBottom: '4px', flexShrink: 0 }}>
+              <div style={{ width: '8px', height: '24px', background: '#8b5cf6', borderRadius: '4px' }} />
+              <div style={{ width: '8px', height: '36px', background: '#8b5cf6', borderRadius: '4px' }} />
+              <div style={{ width: '8px', height: '48px', background: '#8b5cf6', borderRadius: '4px' }} />
+              <div style={{ width: '8px', height: '60px', background: '#8b5cf6', borderRadius: '4px' }} />
+            </div>
+          </div>
+
+          <button style={{
+            width: '100%',
+            background: '#6366f1',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '12px',
+            padding: '10px 16px',
+            fontSize: '0.8rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.2)',
+            marginTop: 'auto'
+          }}>
+            Optimize Budget
+          </button>
+        </div>
+
         {/* Tasks & Approvals */}
-        <div className="dash-card col-span-6">
+        <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Tasks & Approvals</span>
             <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
