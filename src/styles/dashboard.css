@@ -2604,7 +2604,7 @@
 @media (max-width: 768px) {
   /* KPI Cards Grid */
   .dash-grid-6-kpi {
-    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 10px !important;
     margin-bottom: 16px !important;
   }
@@ -2613,6 +2613,7 @@
     min-height: 95px !important;
     padding: 10px 12px !important;
     border-radius: 16px !important;
+    min-width: 0 !important;
   }
 
   .dash-kpi-value {

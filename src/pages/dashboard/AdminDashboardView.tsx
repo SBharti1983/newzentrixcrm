@@ -182,7 +182,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         .col-span-12 { grid-column: span 12; } .col-span-14 { grid-column: span 14; } .col-span-17 { grid-column: span 17; }
         .col-span-24 { grid-column: span 24; }
         @media (max-width: 1200px) { .dash-row-grid { grid-template-columns: 1fr; } .col-span-7,.col-span-8,.col-span-10,.col-span-12,.col-span-14,.col-span-17,.col-span-24 { grid-column: span 1; } .dash-grid-6-kpi { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 768px) { .dash-grid-6-kpi { grid-template-columns: 1fr 1fr; gap: 12px; } }
+        @media (max-width: 768px) { .dash-grid-6-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
         .dash-scrollbar::-webkit-scrollbar { width: 4px; } .dash-scrollbar::-webkit-scrollbar-track { background: transparent; } .dash-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
       `}</style>
 
