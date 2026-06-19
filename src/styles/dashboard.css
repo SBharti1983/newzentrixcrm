@@ -1778,8 +1778,8 @@
 }
 
 .dash-source-chart-wrap {
-  height: 120px;
-  width: 120px;
+  height: 140px;
+  width: 140px;
   flex-shrink: 0;
 }
 
@@ -1789,6 +1789,7 @@
   gap: 10px;
   flex: 1;
   width: 100%;
+  justify-content: center;
 }
 
 .dash-source-row {
@@ -1844,6 +1845,7 @@
     width: 100%;
     max-width: 130px;
     margin: 0 auto;
+    height: 130px;
   }
 }
 

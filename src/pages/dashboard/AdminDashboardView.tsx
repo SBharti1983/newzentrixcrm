@@ -78,12 +78,32 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   }, [stats, bookings]);
 
   // ─── Revenue Source Data ───────────────────────────────────────
-  const revenueSourceData = useMemo(() => [
-    { name: 'Booking', value: 45, amount: '₹35.3 Cr', color: '#3b82f6' },
-    { name: 'Collections', value: 30, amount: '₹23.6 Cr', color: '#06b6d4' },
-    { name: 'Other Income', value: 15, amount: '₹11.8 Cr', color: '#8b5cf6' },
-    { name: 'Adjustments', value: 10, amount: '₹7.8 Cr', color: '#f59e0b' }
-  ], []);
+  const revenueSourceData = useMemo(() => {
+    switch (revenueSourcePeriod) {
+      case 'this_month':
+        return [
+          { name: 'Booking', value: 50, amount: '₹2.5 Cr', color: '#3b82f6' },
+          { name: 'Collections', value: 25, amount: '₹1.25 Cr', color: '#06b6d4' },
+          { name: 'Other Income', value: 15, amount: '₹0.75 Cr', color: '#8b5cf6' },
+          { name: 'Adjustments', value: 10, amount: '₹0.5 Cr', color: '#f59e0b' }
+        ];
+      case 'this_quarter':
+        return [
+          { name: 'Booking', value: 48, amount: '₹8.5 Cr', color: '#3b82f6' },
+          { name: 'Collections', value: 28, amount: '₹5.0 Cr', color: '#06b6d4' },
+          { name: 'Other Income', value: 14, amount: '₹2.5 Cr', color: '#8b5cf6' },
+          { name: 'Adjustments', value: 10, amount: '₹1.8 Cr', color: '#f59e0b' }
+        ];
+      case 'this_year':
+      default:
+        return [
+          { name: 'Booking', value: 45, amount: '₹35.3 Cr', color: '#3b82f6' },
+          { name: 'Collections', value: 30, amount: '₹23.6 Cr', color: '#06b6d4' },
+          { name: 'Other Income', value: 15, amount: '₹11.8 Cr', color: '#8b5cf6' },
+          { name: 'Adjustments', value: 10, amount: '₹7.8 Cr', color: '#f59e0b' }
+        ];
+    }
+  }, [revenueSourcePeriod]);
 
   // ─── Funnel Data ───────────────────────────────────────────────
   const funnelData = useMemo(() => {

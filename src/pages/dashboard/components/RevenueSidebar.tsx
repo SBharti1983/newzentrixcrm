@@ -69,7 +69,7 @@ export default function RevenueSidebar({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip content={<CustomPieTooltip />} />
-                <Pie data={revenueSourceData} cx="50%" cy="50%" innerRadius={38} outerRadius={50} paddingAngle={3} dataKey="value" isAnimationActive={false}>
+                <Pie data={revenueSourceData} cx="50%" cy="50%" innerRadius={44} outerRadius={60} paddingAngle={3} dataKey="value" isAnimationActive={false}>
                   {revenueSourceData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
