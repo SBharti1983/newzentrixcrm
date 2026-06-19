@@ -69,9 +69,12 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
     const [showHelp, setShowHelp] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [showThemeMenu, setShowThemeMenu] = useState(false);
+    const [showMobileSearch, setShowMobileSearch] = useState(false);
     const { theme: currentTheme, setTheme } = useTheme();
     const dropdownRef = useRef(null);
     const userMenuRef = useRef(null);
+    const mobileSearchRef = useRef(null);
+    const mobileInputRef = useRef<HTMLInputElement>(null);
 
     const { logout } = useAuth();
 
@@ -133,13 +136,26 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Auto-focus mobile search input when opened
+    useEffect(() => {
+        if (showMobileSearch && mobileInputRef.current) {
+            setTimeout(() => mobileInputRef.current?.focus(), 50);
+        }
+        if (!showMobileSearch) {
+            setSearchVal('');
+            setResults({ leads: [], projects: [] });
+            setShowDropdown(false);
+        }
+    }, [showMobileSearch]);
+
     const handleResultClick = (type, id) => {
         setShowDropdown(false);
+        setShowMobileSearch(false);
         setSearchVal('');
         if (type === 'lead') {
             navigate(`/leads/${id}`);
         } else {
-            navigate(`/projects`); // Project detail page might not be fully active yet, but we point to projects
+            navigate(`/projects`);
         }
     };
 
@@ -281,14 +297,134 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                         )}
                     </div>
                 ) : (
-                    <button 
-                        className="icon-btn" 
-                        onClick={() => navigate('/search')}
-                        aria-label="Search"
-                        style={{ marginRight: 8, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f1f5f9' }}
-                    >
-                        <Search size={18} />
-                    </button>
+                    /* Mobile Search: expandable overlay */
+                    <>
+                        <button 
+                            className="icon-btn" 
+                            onClick={() => setShowMobileSearch(true)}
+                            aria-label="Search"
+                            style={{ marginRight: 8, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f1f5f9' }}
+                        >
+                            <Search size={18} />
+                        </button>
+
+                        {showMobileSearch && (
+                            <div style={{
+                                position: 'fixed', inset: 0, zIndex: 2000,
+                                background: 'rgba(15,23,42,0.55)',
+                                backdropFilter: 'blur(4px)',
+                                display: 'flex', flexDirection: 'column',
+                                alignItems: 'stretch',
+                            }} onClick={(e) => { if (e.target === e.currentTarget) setShowMobileSearch(false); }}>
+                                <div style={{
+                                    background: 'white',
+                                    borderRadius: '0 0 24px 24px',
+                                    padding: '16px 16px 0',
+                                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                                    display: 'flex', flexDirection: 'column', gap: 0,
+                                }} ref={mobileSearchRef}>
+                                    {/* Search bar row */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                                        <div style={{ position: 'relative', flex: 1 }}>
+                                            {searching
+                                                ? <Loader2 size={16} className="animate-spin" style={{ color: '#94a3b8', position: 'absolute', left: 14, top: '50%', marginTop: -8 }} />
+                                                : <Search size={16} style={{ color: '#94a3b8', position: 'absolute', left: 14, top: '50%', marginTop: -8 }} />}
+                                            <input
+                                                ref={mobileInputRef}
+                                                className="search-input"
+                                                value={searchVal}
+                                                onChange={e => setSearchVal(e.target.value)}
+                                                onFocus={() => searchVal.trim().length >= 2 && setShowDropdown(true)}
+                                                placeholder="Search leads, projects, contacts..."
+                                                style={{
+                                                    width: '100%', paddingLeft: 42, paddingRight: 16,
+                                                    borderRadius: '12px', height: '44px',
+                                                    fontSize: '0.9rem', outline: 'none',
+                                                    border: '1.5px solid #e2e8f0',
+                                                    background: '#f8fafc',
+                                                }}
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={() => setShowMobileSearch(false)}
+                                            style={{ flexShrink: 0, width: 40, height: 40, borderRadius: '12px', border: 'none', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+
+                                    {/* Results */}
+                                    {showDropdown && (
+                                        <div style={{ maxHeight: '55vh', overflowY: 'auto', borderTop: '1px solid #f1f5f9' }}>
+                                            {/* Leads */}
+                                            {results.leads.length > 0 && (
+                                                <div style={{ padding: '12px 0' }}>
+                                                    <div style={{ padding: '0 4px 8px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <User size={11} /> Leads
+                                                    </div>
+                                                    {results.leads.map(lead => (
+                                                        <div key={lead.id} onClick={() => handleResultClick('lead', lead.id)}
+                                                            style={{ padding: '10px 4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, borderRadius: 10, transition: 'background 0.15s' }}
+                                                            className="hover-bg-slate"
+                                                        >
+                                                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', flexShrink: 0 }}>
+                                                                {getInitials(lead.name)}
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name}</div>
+                                                                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{lead.phone || lead.email || 'No contact info'}</div>
+                                                            </div>
+                                                            <div style={{ fontSize: '0.65rem', background: '#f1f5f9', color: '#64748b', padding: '2px 8px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>{lead.stage}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Projects */}
+                                            {results.projects.length > 0 && (
+                                                <div style={{ padding: '12px 0', borderTop: results.leads.length > 0 ? '1px solid #f1f5f9' : 'none' }}>
+                                                    <div style={{ padding: '0 4px 8px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <Building size={11} /> Projects
+                                                    </div>
+                                                    {results.projects.map(p => (
+                                                        <div key={p.id} onClick={() => handleResultClick('project', p.id)}
+                                                            style={{ padding: '10px 4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, borderRadius: 10, transition: 'background 0.15s' }}
+                                                            className="hover-bg-slate"
+                                                        >
+                                                            <div style={{ width: 36, height: 36, borderRadius: 10, background: '#ecfeff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0891b2', flexShrink: 0 }}>
+                                                                <Building size={16} />
+                                                            </div>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                                                                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{p.location || 'No location'}</div>
+                                                            </div>
+                                                            <ArrowRight size={14} color="#94a3b8" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Empty state */}
+                                            {results.leads.length === 0 && results.projects.length === 0 && !searching && (
+                                                <div style={{ padding: '28px 0', textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '1.6rem', marginBottom: 8 }}>🔍</div>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>No results found</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>Try a different name or phone number</div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Footer hint */}
+                                    {!showDropdown && (
+                                        <div style={{ padding: '16px 0', textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem' }}>
+                                            Type at least 2 characters to search
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {!isMobile && (
