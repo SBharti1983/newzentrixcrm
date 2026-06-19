@@ -809,118 +809,209 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
       ))}
     </div>
 
-      {/* Executive Insights Banner */}
-      <div className="dash-card" style={{ 
-        padding: '16px 24px', 
+      {/* Row 2: Telemetry Metrics Banner */}
+      <div style={{ 
         marginBottom: '24px', 
-        display: 'flex', 
-        flexDirection: isMobile ? 'column' : 'row', 
-        alignItems: isMobile ? 'flex-start' : 'center', 
-        gap: '16px',
-        width: '100%',
-        boxSizing: 'border-box'
+        display: 'grid', 
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr) 1.2fr', 
+        background: '#ffffff',
+        overflow: 'hidden',
+        border: '1px solid #e2e8f0',
+        borderRadius: '20px',
+        boxShadow: '0 4px 18px rgba(148, 163, 184, 0.03)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: isMobile ? '0' : '16px', borderRight: isMobile ? 'none' : '1px solid #e2e8f0', flexShrink: 0 }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={16} color="white" />
-          </div>
-          <span style={{ fontWeight: 900, fontSize: '0.9rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Insights</span>
-        </div>
-
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'row', 
-          alignItems: 'center', 
-          gap: '16px', 
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
-          flex: 1,
-          minWidth: 0
+        {/* Card 1: Today's Bookings */}
+        <div style={{
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none'
         }}>
-          {/* Item 1 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a', flexShrink: 0 }}>
-              <AlertTriangle size={14} color="#d97706" />
-            </div>
-            <div>
-              <div style={{ lineHeight: 1.2 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>23</span>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Leads inactive for</span>
-              </div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>7+ days</div>
-            </div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Calendar size={20} color="#2563eb" />
           </div>
-          
-          {/* Item 2 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
-              <TrendingUp size={14} color="#059669" />
-            </div>
-            <div>
-              <div style={{ lineHeight: 1.2 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>12</span>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Bookings likely</span>
-              </div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>this week</div>
-            </div>
-          </div>
-
-          {/* Item 3 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
-              <Briefcase size={14} color="#dc2626" />
-            </div>
-            <div>
-              <div style={{ lineHeight: 1.2 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>₹18.6 Cr</span>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Revenue at risk</span>
-              </div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>from delayed deals</div>
-            </div>
-          </div>
-
-          {/* Item 4 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
-              <CheckSquare size={14} color="#2563eb" />
-            </div>
-            <div>
-              <div style={{ lineHeight: 1.2 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', marginRight: '4px' }}>3</span>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Approvals</span>
-              </div>
-              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, lineHeight: 1.2 }}>pending</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 800 }}>Today's Bookings</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>12</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10b981', fontSize: '0.72rem', fontWeight: 800 }}>
+              <ArrowUp size={11} strokeWidth={3} />
+              <span>8.3% <span style={{ color: '#64748b', fontWeight: 500 }}>vs yesterday</span></span>
             </div>
           </div>
         </div>
 
-        <button style={{ 
-          background: 'none', 
-          border: 'none', 
-          color: '#2563eb', 
-          fontWeight: 800, 
-          fontSize: '0.8rem', 
-          cursor: 'pointer', 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '4px',
-          marginLeft: isMobile ? '0' : 'auto',
-          flexShrink: 0
+        {/* Card 2: Site Visits */}
+        <div style={{
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none'
         }}>
-          View All Insights <ArrowRight size={14} />
-        </button>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: '#f5f3ff',
+            border: '1px solid #ddd6fe',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Clock size={20} color="#7c3aed" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#4f46e5', fontWeight: 800 }}>Site Visits</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>28</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10b981', fontSize: '0.72rem', fontWeight: 800 }}>
+              <ArrowUp size={11} strokeWidth={3} />
+              <span>12.5% <span style={{ color: '#64748b', fontWeight: 500 }}>vs yesterday</span></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: New Leads */}
+        <div style={{
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none'
+        }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <ArrowUpRight size={20} color="#059669" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: 800 }}>New Leads</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>156</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10b981', fontSize: '0.72rem', fontWeight: 800 }}>
+              <ArrowUp size={11} strokeWidth={3} />
+              <span>10.2% <span style={{ color: '#64748b', fontWeight: 500 }}>vs yesterday</span></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Deals in Negotiation */}
+        <div style={{
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '14px',
+          borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none'
+        }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '12px',
+            background: '#fdf2f8',
+            border: '1px solid #fbcfe8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Users size={20} color="#db2777" />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <span style={{ fontSize: '0.8rem', color: '#4f46e5', fontWeight: 800 }}>Deals in Negotiation</span>
+            <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>47</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10b981', fontSize: '0.72rem', fontWeight: 800 }}>
+              <ArrowUp size={11} strokeWidth={3} />
+              <span>6.8% <span style={{ color: '#64748b', fontWeight: 500 }}>vs yesterday</span></span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 5: Revenue at Risk */}
+        <div style={{
+          padding: '20px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'linear-gradient(135deg, #fff7ed 0%, #fee2e2 100%)',
+          gap: '14px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              background: '#ffedd5',
+              border: '1px solid #fed7aa',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <AlertTriangle size={20} color="#ea580c" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '0.8rem', color: '#475569', fontWeight: 800 }}>Revenue at Risk</span>
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#dc2626', lineHeight: 1.1 }}>₹18.6 Cr</span>
+              <span style={{ color: '#dc2626', fontSize: '0.72rem', fontWeight: 850 }}>High Priority</span>
+            </div>
+          </div>
+          <ChevronRight size={22} color="#dc2626" style={{ cursor: 'pointer', flexShrink: 0 }} />
+        </div>
       </div>
 
       {/* Row 3: Revenue Command Center (Left) & Forecast + Source Stack (Right) */}
       <div className="dash-row-grid" style={{ marginBottom: '24px' }}>
         {/* Left Column: Revenue Command Center Card */}
         <div className="dash-card col-span-17" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
-              <line x1="6" y1="20" x2="6" y2="14" />
-              <line x1="12" y1="20" x2="12" y2="8" />
-              <line x1="18" y1="20" x2="18" y2="3" />
-            </svg>
-            <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>Revenue Command Center</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+                <line x1="6" y1="20" x2="6" y2="14" />
+                <line x1="12" y1="20" x2="12" y2="8" />
+                <line x1="18" y1="20" x2="18" y2="3" />
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>Revenue Command Center</span>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>
+                  {revenuePeriod === 'this_year' ? 'This Year Performance Overview' : revenuePeriod === 'this_month' ? 'This Month Performance Overview' : 'This Quarter Performance Overview'}
+                </span>
+              </div>
+            </div>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={revenuePeriod}
+                onChange={(e) => setRevenuePeriod(e.target.value)}
+                aria-label="Revenue period"
+              >
+                <option value="this_month">This Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
           </div>
 
           {/* Sub-Metrics Grid of 4 Items */}
@@ -1009,7 +1100,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 </defs>
                 <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 135]} ticks={[0, 25, 50, 75, 100, 125]} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 150]} ticks={[0, 25, 50, 75, 100, 125, 150]} />
                 <Tooltip content={<CustomRevenueTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
                 <Line type="monotone" dataKey="target" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
