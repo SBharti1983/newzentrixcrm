@@ -2602,41 +2602,165 @@
 
 /* ─── Mobile Overrides for New Classes ───────────────────────────── */
 @media (max-width: 768px) {
+  /* KPI Cards Grid */
+  .dash-grid-6-kpi {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .enterprise-kpi-card {
+    min-height: 95px !important;
+    padding: 10px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .dash-kpi-value {
+    font-size: 1.15rem !important;
+    margin: 4px 0 2px !important;
+  }
+
+  .dash-kpi-label {
+    font-size: 0.72rem !important;
+    font-weight: 800;
+  }
+
+  .dash-kpi-vs {
+    font-size: 0.65rem !important;
+  }
+
+  .dash-kpi-change {
+    font-size: 0.68rem !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+  }
+
+  .dash-sparkline-wrap {
+    display: none !important;
+  }
+
+  /* Telemetry Banner: Premium Horizontal Swiper Layout */
   .dash-telemetry-banner {
-    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    gap: 12px !important;
+    padding: 12px !important;
+    margin-bottom: 16px !important;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    box-shadow: 0 4px 18px rgba(148, 163, 184, 0.03);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dash-telemetry-banner::-webkit-scrollbar {
+    display: none; /* Hide scrollbars for clean swiper appearance */
   }
 
   .dash-telemetry-cell {
-    border-right: none !important;
-    border-bottom: 1px solid #e2e8f0;
+    flex: 0 0 auto !important;
+    width: 175px !important;
+    border-right: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+    padding: 6px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
   }
 
+  .dash-telemetry-cell:last-child {
+    border-right: none !important;
+  }
+
+  .dash-telemetry-risk {
+    flex: 0 0 auto !important;
+    width: 200px !important;
+    background: linear-gradient(135deg, #fff7ed 0%, #fee2e2 100%) !important;
+    border-radius: 12px !important;
+    padding: 6px 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .dash-telemetry-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .dash-telemetry-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .dash-telemetry-value {
+    font-size: 1.15rem !important;
+  }
+
+  .dash-telemetry-label {
+    font-size: 0.72rem !important;
+  }
+
+  /* Executive Summary: Clean 2x2 Grid Layout */
   .dash-exec-row {
     flex-direction: column !important;
+    gap: 12px !important;
   }
 
   .dash-exec-header {
     border-right: none !important;
     border-bottom: 1px solid #e2e8f0;
     padding-right: 0 !important;
-    padding-bottom: 12px;
+    padding-bottom: 10px !important;
     width: 100%;
   }
 
   .dash-exec-items {
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
   }
 
   .dash-exec-item {
     border-right: none !important;
     padding-right: 0 !important;
-    width: 100%;
+    width: auto !important;
+    padding: 8px 10px !important;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+    flex: none !important;
+  }
+
+  .dash-exec-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+  }
+
+  .dash-exec-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .dash-exec-item-value {
+    font-size: 1rem !important;
+  }
+
+  .dash-exec-item-label {
+    font-size: 0.68rem !important;
+    line-height: 1.15 !important;
   }
 
   .dash-exec-view-btn {
     margin-left: 0;
+    margin-top: 8px;
   }
 
+  /* Revenue Center Mobile Fixes */
   .dash-revenue-stats {
     grid-template-columns: 1fr !important;
   }
@@ -2658,4 +2782,3 @@
     grid-template-columns: 1fr !important;
   }
 }
-

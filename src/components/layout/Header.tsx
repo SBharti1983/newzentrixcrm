@@ -160,139 +160,136 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     <Menu size={18} />
                 </button>
                 <div style={{ marginLeft: 8 }}>
-                    <div className="header-title" style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{pageInfo.title || page.title}</div>
+                    <div className="header-title" style={{ fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{pageInfo.title || page.title}</div>
                     <div className="header-breadcrumb hide-mobile" style={{ fontSize: '0.8rem', fontWeight: 500, color: '#94a3b8', marginTop: 2 }}>{pageInfo.subtitle || page.subtitle}</div>
                 </div>
             </div>
 
             <div className="header-right">
                 {/* Header right side items */}
-                <div style={{ position: 'relative', flex: 1, maxWidth: 350, margin: '0 24px' }}>
-                    {searching ? <Loader2 size={16} className="animate-spin" style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} /> : <Search size={16} style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} />}
-                    <input
-                        className="search-input"
-                        value={searchVal}
-                        onChange={e => setSearchVal(e.target.value)}
-                        placeholder={isMobile ? "Search..." : "Search leads, projects, contacts..."}
-                        onFocus={(e) => {
-                            searchVal.trim().length >= 2 && setShowDropdown(true);
-                        }}
-                        style={{ 
-                            width: '100%',
-                            paddingLeft: 42,
-                            paddingRight: 16,
-                            borderRadius: '12px',
-                            height: '40px',
-                            fontSize: '0.9rem',
-                            outline: 'none'
-                        }}
-                    />
-                    
-                    {showDropdown && (
-                        <div 
-                            ref={dropdownRef}
-                            className="glass-panel animate-fadeIn" 
-                            style={isMobile ? {
-                                position: 'fixed',
-                                top: '70px',
-                                left: '16px',
-                                right: '16px',
-                                width: 'auto',
-                                background: 'white',
-                                borderRadius: 16,
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
-                                overflow: 'hidden',
-                                padding: 0,
-                                zIndex: 1000,
-                                border: '1px solid var(--border-light)',
-                                animation: 'fadeIn 0.3s ease'
-                            } : {
-                                position: 'absolute', top: 'calc(100% + 8px)', 
-                                left: 0, 
-                                right: -100, 
-                                minWidth: 320, 
-                                background: 'white', borderRadius: 16, 
-                                boxShadow: '0 10px 40px rgba(0,0,0,0.15)', overflow: 'hidden', 
-                                padding: 0, zIndex: 1000, border: '1px solid var(--border-light)' 
+                {!isMobile ? (
+                    <div style={{ position: 'relative', flex: 1, maxWidth: 350, margin: '0 24px' }}>
+                        {searching ? <Loader2 size={16} className="animate-spin" style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} /> : <Search size={16} style={{ color: '#94a3b8', position: 'absolute', left: 16, top: '50%', marginTop: -8 }} />}
+                        <input
+                            className="search-input"
+                            value={searchVal}
+                            onChange={e => setSearchVal(e.target.value)}
+                            placeholder="Search leads, projects, contacts..."
+                            onFocus={(e) => {
+                                searchVal.trim().length >= 2 && setShowDropdown(true);
                             }}
-                        >
-                            <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-                                {/* Leads Section */}
-                                {results.leads.length > 0 && (
-                                    <div style={{ padding: '12px 0' }}>
-                                        <div style={{ padding: '0 16px 8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <User size={12} /> Leads
-                                        </div>
-                                        {results.leads.map(lead => (
-                                            <div 
-                                                key={lead.id} 
-                                                onClick={() => handleResultClick('lead', lead.id)}
-                                                style={{ 
-                                                    padding: '10px 16px', cursor: 'pointer', transition: 'background 0.2s',
-                                                    display: 'flex', alignItems: 'center', gap: 12
-                                                }}
-                                                className="hover-bg-slate"
-                                            >
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-600)' }}>
-                                                    {getInitials(lead.name)}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>{lead.name}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{lead.phone || lead.email || 'No contact info'}</div>
-                                                </div>
-                                                <div className="badge" style={{ fontSize: '0.65rem', background: 'var(--slate-100)', color: 'var(--text-secondary)' }}>{lead.stage}</div>
+                            style={{ 
+                                width: '100%',
+                                paddingLeft: 42,
+                                paddingRight: 16,
+                                borderRadius: '12px',
+                                height: '40px',
+                                fontSize: '0.9rem',
+                                outline: 'none'
+                            }}
+                        />
+                        
+                        {showDropdown && (
+                            <div 
+                                ref={dropdownRef}
+                                className="glass-panel animate-fadeIn" 
+                                style={{
+                                    position: 'absolute', top: 'calc(100% + 8px)', 
+                                    left: 0, 
+                                    right: -100, 
+                                    minWidth: 320, 
+                                    background: 'white', borderRadius: 16, 
+                                    boxShadow: '0 10px 40px rgba(0,0,0,0.15)', overflow: 'hidden', 
+                                    padding: 0, zIndex: 1000, border: '1px solid var(--border-light)' 
+                                }}
+                            >
+                                <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+                                    {/* Leads Section */}
+                                    {results.leads.length > 0 && (
+                                        <div style={{ padding: '12px 0' }}>
+                                            <div style={{ padding: '0 16px 8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <User size={12} /> Leads
                                             </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Projects Section */}
-                                {results.projects.length > 0 && (
-                                    <div style={{ padding: '12px 0', borderTop: results.leads.length > 0 ? '1px solid var(--border-light)' : 'none' }}>
-                                        <div style={{ padding: '0 16px 8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <Building size={12} /> Projects
+                                            {results.leads.map(lead => (
+                                                <div 
+                                                    key={lead.id} 
+                                                    onClick={() => handleResultClick('lead', lead.id)}
+                                                    style={{ 
+                                                        padding: '10px 16px', cursor: 'pointer', transition: 'background 0.2s',
+                                                        display: 'flex', alignItems: 'center', gap: 12
+                                                    }}
+                                                    className="hover-bg-slate"
+                                                >
+                                                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--navy-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'var(--navy-600)' }}>
+                                                        {getInitials(lead.name)}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>{lead.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{lead.phone || lead.email || 'No contact info'}</div>
+                                                    </div>
+                                                    <div className="badge" style={{ fontSize: '0.65rem', background: 'var(--slate-100)', color: 'var(--text-secondary)' }}>{lead.stage}</div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        {results.projects.map(p => (
-                                            <div 
-                                                key={p.id} 
-                                                onClick={() => handleResultClick('project', p.id)}
-                                                style={{ 
-                                                    padding: '10px 16px', cursor: 'pointer', transition: 'background 0.2s',
-                                                    display: 'flex', alignItems: 'center', gap: 12
-                                                }}
-                                                className="hover-bg-slate"
-                                            >
-                                                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--accent-cyan-light, #ecfeff)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)' }}>
-                                                    <Building size={16} />
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{p.location || 'No location'}</div>
-                                                </div>
-                                                <ArrowRight size={14} color="var(--text-muted)" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                    )}
 
-                                {results.leads.length === 0 && results.projects.length === 0 && !searching && (
-                                    <div style={{ padding: '30px 20px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>No results found</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Try searching with a different name or phone</div>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div style={{ padding: '12px 16px', background: 'var(--slate-50)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                    Search for <span style={{ fontWeight: 800, color: 'var(--navy-600)' }}>"{searchVal}"</span>
+                                    {/* Projects Section */}
+                                    {results.projects.length > 0 && (
+                                        <div style={{ padding: '12px 0', borderTop: results.leads.length > 0 ? '1px solid var(--border-light)' : 'none' }}>
+                                            <div style={{ padding: '0 16px 8px', fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <Building size={12} /> Projects
+                                            </div>
+                                            {results.projects.map(p => (
+                                                <div 
+                                                    key={p.id} 
+                                                    onClick={() => handleResultClick('project', p.id)}
+                                                    style={{ 
+                                                        padding: '10px 16px', cursor: 'pointer', transition: 'background 0.2s',
+                                                        display: 'flex', alignItems: 'center', gap: 12
+                                                    }}
+                                                    className="hover-bg-slate"
+                                                >
+                                                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--accent-cyan-light, #ecfeff)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)' }}>
+                                                        <Building size={16} />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>{p.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{p.location || 'No location'}</div>
+                                                    </div>
+                                                    <ArrowRight size={14} color="var(--text-muted)" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {results.leads.length === 0 && results.projects.length === 0 && !searching && (
+                                        <div style={{ padding: '30px 20px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>🔍</div>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--navy-900)' }}>No results found</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Try searching with a different name or phone</div>
+                                        </div>
+                                    )}
                                 </div>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>10+ Results</div>
+                                
+                                <div style={{ padding: '12px 16px', background: 'var(--slate-50)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                        Search for <span style={{ fontWeight: 800, color: 'var(--navy-600)' }}>"{searchVal}"</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>10+ Results</div>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                ) : (
+                    <button 
+                        className="icon-btn" 
+                        onClick={() => navigate('/search')}
+                        aria-label="Search"
+                        style={{ marginRight: 8, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f1f5f9' }}
+                    >
+                        <Search size={18} />
+                    </button>
+                )}
 
                 {!isMobile && (
                     <div style={{ 
@@ -314,14 +311,16 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                 </div>
 
 
-                <button 
-                    className="icon-btn"
-                    onClick={() => setShowHelp(true)}
-                    aria-label="Help Center"
-                    style={{ marginRight: 12, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                >
-                    <HelpCircle size={18} />
-                </button>
+                {!isMobile && (
+                    <button 
+                        className="icon-btn"
+                        onClick={() => setShowHelp(true)}
+                        aria-label="Help Center"
+                        style={{ marginRight: 12, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                        <HelpCircle size={18} />
+                    </button>
+                )}
 
                 <div style={{ position: 'relative', marginRight: 16 }}>
                     <button 
