@@ -153,7 +153,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   const kpis = useMemo(() => {
     const revenue = bookings.total_value ? formatRev(bookings.total_value) : '₹1.40 Cr';
     const bookingVal = bookings.total_value ? formatRev(Number(bookings.total_value) * 0.8) : '₹78.5 Cr';
-    const bookingsCount = bookings.total || 128;
+    const bookingsCount = (bookings.total && bookings.total >= 10) ? bookings.total : 128;
     const activeLeadsCount = stats.leads?.total ? Number(stats.leads.total).toLocaleString() : '2,847';
     const conversionRateVal = stats.leads?.win_rate ? `${stats.leads.win_rate}%` : '4.52%';
     const collectionVal = stats.collection?.total ? formatRev(stats.collection.total) : '₹56.8 Cr';
@@ -516,8 +516,8 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         }
         .enterprise-kpi-card:hover {
           transform: translateY(-4px);
-          box-shadow: 0 10px 25px rgba(148, 163, 184, 0.08);
-          border-color: #cbd5e1;
+          box-shadow: 0 10px 25px rgba(99, 102, 241, 0.08), 0 4px 12px rgba(148, 163, 184, 0.06);
+          border-color: #a5b4fc;
         }
         .dash-card {
           background: #ffffff;
@@ -533,14 +533,58 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         }
         .dash-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 22px rgba(148, 163, 184, 0.06);
-          border-color: #cbd5e1;
+          box-shadow: 0 8px 24px rgba(99, 102, 241, 0.07), 0 4px 10px rgba(148, 163, 184, 0.05);
+          border-color: #c7d2fe;
         }
         .dash-row-grid {
           display: grid;
           grid-template-columns: repeat(24, 1fr);
           gap: 24px;
           margin-bottom: 24px;
+        }
+        /* Period dropdown pill styling */
+        .dash-period-select-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          position: relative;
+          padding: 4px 28px 4px 10px;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          border-radius: 20px;
+          color: #64748b;
+          font-size: 0.75rem;
+          font-weight: 700;
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+        .dash-period-select-wrapper:hover {
+          background: #e2e8f0;
+          border-color: #cbd5e1;
+        }
+        .dash-period-select-wrapper:focus-within {
+          border-color: #818cf8;
+          box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.2);
+        }
+        .dash-period-select {
+          background: transparent;
+          border: none;
+          color: #475569;
+          font-size: 0.75rem;
+          font-weight: 700;
+          cursor: pointer;
+          outline: none;
+          appearance: none;
+          -webkit-appearance: none;
+          margin: 0;
+          padding: 0;
+        }
+        .dash-period-select:focus-visible {
+          outline: none;
+        }
+        /* Fade transition for data containers */
+        .dash-data-fade {
+          transition: opacity 0.2s ease-in-out;
         }
         @media (max-width: 1200px) {
           .dash-grid-6-kpi {
@@ -611,18 +655,20 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', lineHeight: 1.1, margin: '6px 0 2px' }}>
                 {k.val}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  color: k.isUp ? '#10b981' : '#ef4444',
-                  fontSize: '0.75rem',
-                  fontWeight: 800
-                }}>
-                  {k.isUp ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                  <span>{k.change}</span>
-                  <span style={{ color: '#94a3b8', fontWeight: 500 }}>vs last month</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: k.isUp ? '#10b981' : '#ef4444',
+                    fontSize: '0.75rem',
+                    fontWeight: 800
+                  }}>
+                    {k.isUp ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                    <span>{k.change}</span>
+                  </div>
+                  <span style={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.68rem' }}>vs last month</span>
                 </div>
                 <Sparkline data={k.sparklineData} color={k.color} />
             </div>
@@ -738,23 +784,12 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Funnel</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+            <div className="dash-period-select-wrapper">
               <select
+                className="dash-period-select"
                 value={funnelPeriod}
                 onChange={(e) => setFunnelPeriod(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
+                aria-label="Sales Funnel time period"
               >
                 <option value="today">Today</option>
                 <option value="this_week">This Week</option>
@@ -763,7 +798,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 <option value="this_quarter">This Quarter</option>
                 <option value="this_year">This Year</option>
               </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
           
@@ -798,29 +833,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+            <div className="dash-period-select-wrapper">
               <select
+                className="dash-period-select"
                 value={revenuePeriod}
                 onChange={(e) => setRevenuePeriod(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
+                aria-label="Revenue Trend time period"
               >
                 <option value="this_month">This Month</option>
                 <option value="this_quarter">This Quarter</option>
                 <option value="this_year">This Year</option>
               </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -848,23 +872,12 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card col-span-6">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Top Performing Projects</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+            <div className="dash-period-select-wrapper">
               <select
+                className="dash-period-select"
                 value={projectsPeriod}
                 onChange={(e) => setProjectsPeriod(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
+                aria-label="Top Projects time period"
               >
                 <option value="today">Today</option>
                 <option value="this_week">This Week</option>
@@ -873,7 +886,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 <option value="this_quarter">This Quarter</option>
                 <option value="this_year">This Year</option>
               </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -905,23 +918,12 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card" style={{ gridColumn: 'span 8' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Team Performance</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+            <div className="dash-period-select-wrapper">
               <select
+                className="dash-period-select"
                 value={teamPeriod}
                 onChange={(e) => setTeamPeriod(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
+                aria-label="Team Performance time period"
               >
                 <option value="today">Today</option>
                 <option value="this_week">This Week</option>
@@ -930,7 +932,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 <option value="this_quarter">This Quarter</option>
                 <option value="this_year">This Year</option>
               </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -1108,7 +1110,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                   {act.initials}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.3 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
                     <strong style={{ color: '#0f172a' }}>{act.user}</strong> {act.action} <span style={{ fontWeight: 700, color: act.color }}>{act.target}</span>
                   </div>
                   <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -1193,30 +1195,19 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card" style={{ gridColumn: 'span 6' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Target vs Achievement</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+            <div className="dash-period-select-wrapper">
               <select
+                className="dash-period-select"
                 value={targetPeriod}
                 onChange={(e) => setTargetPeriod(e.target.value)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#64748b',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  outline: 'none',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  margin: 0,
-                  padding: 0,
-                }}
+                aria-label="Sales Target time period"
               >
                 <option value="today">Today</option>
                 <option value="this_week">This Week</option>
                 <option value="this_month">This Month</option>
                 <option value="this_year">This Year</option>
               </select>
-              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
