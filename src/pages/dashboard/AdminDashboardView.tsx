@@ -276,6 +276,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   const [revenueSourcePeriod, setRevenueSourcePeriod] = useState('this_year');
   const [bookingPeriod, setBookingPeriod] = useState('this_year');
   const [leadRiskPeriod, setLeadRiskPeriod] = useState('all_leads');
+  const [showAllInsights, setShowAllInsights] = useState(false);
 
   const forecastSparklineData = useMemo(() => [
     { val: 12.4 }, { val: 13.5 }, { val: 14.2 }, { val: 15.6 }, { val: 16.3 }, { val: 17.1 }, { val: 18.2 }
@@ -986,142 +987,224 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         padding: '20px 24px', 
         marginBottom: '24px', 
         display: 'flex', 
-        flexDirection: isMobile ? 'column' : 'row', 
-        alignItems: 'center', 
+        flexDirection: 'column', 
         gap: '20px',
         width: '100%',
         boxSizing: 'border-box'
       }}>
-        {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          paddingRight: isMobile ? '0' : '20px', 
-          borderRight: isMobile ? 'none' : '1px solid #e2e8f0', 
-          flexShrink: 0,
-          width: isMobile ? '100%' : 'auto',
-          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none',
-          paddingBottom: isMobile ? '12px' : '0'
+        <div style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: 'center',
+          gap: '20px',
+          width: '100%'
         }}>
-          <span style={{ fontWeight: 900, fontSize: '0.92rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Summary</span>
-          <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>Key insights & actions</span>
+          {/* Header */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            paddingRight: isMobile ? '0' : '20px', 
+            borderRight: isMobile ? 'none' : '1px solid #e2e8f0', 
+            flexShrink: 0,
+            width: isMobile ? '100%' : 'auto',
+            borderBottom: isMobile ? '1px solid #e2e8f0' : 'none',
+            paddingBottom: isMobile ? '12px' : '0'
+          }}>
+            <span style={{ fontWeight: 900, fontSize: '0.92rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Summary</span>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>Key insights & actions</span>
+          </div>
+
+          {/* Items list */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row', 
+            alignItems: 'center', 
+            gap: isMobile ? '16px' : '20px', 
+            flex: 1,
+            width: '100%',
+            justifyContent: 'space-between'
+          }}>
+            {/* Item 1 */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              flexShrink: 0,
+              borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+              paddingRight: isMobile ? '0' : '20px',
+              flex: 1,
+              width: isMobile ? '100%' : 'auto'
+            }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fed7aa', flexShrink: 0 }}>
+                <AlertTriangle size={16} color="#ea580c" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>23</span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                  Leads inactive for<br />7+ days
+                </span>
+              </div>
+            </div>
+
+            {/* Item 2 */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              flexShrink: 0,
+              borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+              paddingRight: isMobile ? '0' : '20px',
+              flex: 1,
+              width: isMobile ? '100%' : 'auto'
+            }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
+                <TrendingUp size={16} color="#059669" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>12</span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                  Bookings likely<br />this week
+                </span>
+              </div>
+            </div>
+
+            {/* Item 3 */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              flexShrink: 0,
+              borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+              paddingRight: isMobile ? '0' : '20px',
+              flex: 1,
+              width: isMobile ? '100%' : 'auto'
+            }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
+                <Briefcase size={16} color="#dc2626" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                  Revenue at risk from<br />delayed deals
+                </span>
+              </div>
+            </div>
+
+            {/* Item 4 */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px', 
+              flexShrink: 0,
+              borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+              paddingRight: isMobile ? '0' : '20px',
+              flex: 1,
+              width: isMobile ? '100%' : 'auto'
+            }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
+                <CheckSquare size={16} color="#2563eb" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>3</span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                  Approvals<br />pending
+                </span>
+              </div>
+            </div>
+
+            {/* View All Insights Button */}
+            <button 
+              onClick={() => setShowAllInsights(!showAllInsights)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#2563eb', 
+                fontWeight: 800, 
+                fontSize: '0.8rem', 
+                cursor: 'pointer', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                marginLeft: isMobile ? '0' : 'auto',
+                flexShrink: 0
+              }}
+            >
+              {showAllInsights ? 'Hide Details' : 'View All Insights'} <ArrowRight size={14} style={{ transform: showAllInsights ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }} />
+            </button>
+          </div>
         </div>
 
-        {/* Items list */}
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: isMobile ? 'column' : 'row', 
-          alignItems: 'center', 
-          gap: isMobile ? '16px' : '20px', 
-          flex: 1,
-          width: '100%',
-          justifyContent: 'space-between'
-        }}>
-          {/* Item 1 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            flexShrink: 0,
-            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-            paddingRight: isMobile ? '0' : '20px',
-            flex: 1,
-            width: isMobile ? '100%' : 'auto'
+        {/* Expandable Critical Alerts & Insights Panel */}
+        {showAllInsights && (
+          <div className="dash-data-fade" style={{ 
+            marginTop: '10px', 
+            paddingTop: '20px', 
+            borderTop: '1px solid #f1f5f9',
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+            gap: '20px',
+            width: '100%'
           }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fed7aa', flexShrink: 0 }}>
-              <AlertTriangle size={16} color="#ea580c" />
+            {/* Critical Alerts Block */}
+            <div style={{ padding: '20px', background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <AlertTriangle size={18} color="#ef4444" />
+                <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#dc2626', letterSpacing: '-0.2px' }}>Critical Alerts</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={14} color="#f97316" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>23 Leads inactive &gt; 7 days</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={14} color="#f97316" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>12 Deals at risk of closing</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={14} color="#f97316" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>3 High value approvals pending</span>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>23</span>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
-                Leads inactive for<br />7+ days
-              </span>
+
+            {/* AI Action Plan Suggestions */}
+            <div style={{ 
+              padding: '20px', 
+              background: 'linear-gradient(135deg, #fdfcff 0%, #f5f3ff 100%)', 
+              border: '1px solid #ddd6fe', 
+              borderRadius: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                  <Sparkles size={16} color="#8b5cf6" />
+                  <span style={{ fontSize: '0.92rem', fontWeight: 900, color: '#7c3aed', letterSpacing: '-0.2px' }}>AI Recommended Actions</span>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: '#475569', fontWeight: 650, lineHeight: 1.45, margin: 0 }}>
+                  • Re-assign the **23 inactive leads** to active agents to prevent drop-offs.<br />
+                  • Follow up with client accounts for the **3 pending approvals** immediately to close Q2 targets.
+                </p>
+              </div>
+              <button style={{
+                background: '#8b5cf6',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '8px 14px',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                marginTop: '16px',
+                alignSelf: 'flex-start',
+                boxShadow: '0 3px 8px rgba(139, 92, 246, 0.15)'
+              }}>
+                Auto-resolve Inactive Leads
+              </button>
             </div>
           </div>
-
-          {/* Item 2 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            flexShrink: 0,
-            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-            paddingRight: isMobile ? '0' : '20px',
-            flex: 1,
-            width: isMobile ? '100%' : 'auto'
-          }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
-              <TrendingUp size={16} color="#059669" />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>12</span>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
-                Bookings likely<br />this week
-              </span>
-            </div>
-          </div>
-
-          {/* Item 3 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            flexShrink: 0,
-            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-            paddingRight: isMobile ? '0' : '20px',
-            flex: 1,
-            width: isMobile ? '100%' : 'auto'
-          }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
-              <Briefcase size={16} color="#dc2626" />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</span>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
-                Revenue at risk from<br />delayed deals
-              </span>
-            </div>
-          </div>
-
-          {/* Item 4 */}
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '12px', 
-            flexShrink: 0,
-            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
-            paddingRight: isMobile ? '0' : '20px',
-            flex: 1,
-            width: isMobile ? '100%' : 'auto'
-          }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
-              <CheckSquare size={16} color="#2563eb" />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>3</span>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
-                Approvals<br />pending
-              </span>
-            </div>
-          </div>
-
-          {/* View All Insights Button */}
-          <button style={{ 
-            background: 'none', 
-            border: 'none', 
-            color: '#2563eb', 
-            fontWeight: 800, 
-            fontSize: '0.8rem', 
-            cursor: 'pointer', 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px',
-            marginLeft: isMobile ? '0' : 'auto',
-            flexShrink: 0
-          }}>
-            View All Insights <ArrowRight size={14} />
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Row 3: Revenue Command Center (Left) & Forecast + Source Stack (Right) */}
@@ -1897,10 +1980,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 8: Inventory Overview & Critical Alerts */}
+      {/* Row 8: Inventory Overview */}
       <div className="dash-row-grid">
         {/* Inventory Overview Stacked Grouped Bar */}
-        <div className="dash-card col-span-16">
+        <div className="dash-card col-span-24">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Inventory Overview</span>
             <div style={{ display: 'flex', gap: '14px' }}>
@@ -1964,35 +2047,6 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
         </div>
-
-        {/* Critical Alerts Card */}
-        <div className="dash-card col-span-8" style={{ padding: '24px', background: '#fef2f2', border: '1px solid #fee2e2' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={18} color="#ef4444" />
-              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#dc2626', letterSpacing: '-0.2px' }}>Critical Alerts</span>
-            </div>
-            <button style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
-              View All
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={14} color="#f97316" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>23 Leads inactive &gt; 7 days</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={14} color="#f97316" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>12 Deals at risk of closing</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={14} color="#f97316" />
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>3 High value approvals pending</span>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* Row 9: Sales Target, AI Recommendation, Tasks & Approvals */}
