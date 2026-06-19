@@ -3012,9 +3012,9 @@
     padding: 12px 10px !important;
   }
 
-  /* Telemetry Banner -> Stack 1-column */
+  /* Telemetry Banner -> Keep 2x2 grid on small phones */
   .dash-telemetry-banner {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
@@ -3022,23 +3022,24 @@
     border-bottom: 1px solid #f1f5f9 !important;
   }
 
+  /* Items 3 & 4 are the bottom row — no border needed */
   .dash-telemetry-cell:nth-child(3),
   .dash-telemetry-cell:nth-child(4) {
-    border-bottom: 1px solid #f1f5f9 !important;
+    border-bottom: none !important;
   }
 
   .dash-telemetry-risk {
-    grid-column: span 1 !important;
+    grid-column: span 2 !important;
   }
 
-  /* Executive Summary */
+  /* Executive Summary -> Keep 2x2 grid on small phones */
   .dash-exec-items {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
   .dash-exec-view-btn {
-    grid-column: span 1 !important;
+    grid-column: span 2 !important;
   }
 
   /* Revenue Center */
