@@ -123,6 +123,62 @@ const CustomRevenueTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+// Sub-component: Custom tooltip for Pie charts (Lead Source & Lead Aging)
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.98)',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '10px 14px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+        fontSize: '0.78rem',
+        fontWeight: 700
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: data.color }} />
+          <span style={{ color: '#64748b' }}>{data.name}:</span>
+          <span style={{ color: '#0f172a', fontWeight: 850 }}>{data.value}%</span>
+          <span style={{ color: '#94a3b8', fontWeight: 500 }}>({data.count})</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+// Sub-component: Custom tooltip for Inventory stacked Bar chart
+const CustomInventoryTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.98)',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
+        padding: '12px 14px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+        fontSize: '0.78rem',
+        fontWeight: 700
+      }}>
+        <div style={{ color: '#0f172a', fontWeight: 800, fontSize: '0.82rem', marginBottom: '8px' }}>
+          {label}
+        </div>
+        {payload.map((p: any, idx: number) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: idx === payload.length - 1 ? '0' : '4px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: p.fill }} />
+            <span style={{ color: '#64748b', textTransform: 'capitalize' }}>{p.name}:</span>
+            <span style={{ color: '#0f172a', fontWeight: 800 }}>{p.value} Units</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+
 interface AdminDashboardViewProps {
   user: any;
   data: any;
@@ -583,8 +639,42 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           outline: none;
         }
         /* Fade transition for data containers */
+        @keyframes dashFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .dash-data-fade {
-          transition: opacity 0.2s ease-in-out;
+          animation: dashFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .leaderboard-row {
+          transition: background-color 0.2s ease;
+        }
+        .leaderboard-row:hover {
+          background-color: #f8fafc !important;
+          cursor: pointer;
+        }
+        .task-item-card {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          background: #f8fafc;
+          border-radius: 10px;
+          border: 1px solid #f1f5f9;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .task-item-card:hover {
+          transform: translateY(-2px);
+          background: #ffffff;
+          border-color: #cbd5e1;
+          box-shadow: 0 4px 12px rgba(148, 163, 184, 0.08);
         }
         @media (max-width: 1200px) {
           .dash-grid-6-kpi {
@@ -802,7 +892,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div key={funnelPeriod} className="dash-data-fade" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {funnelData.map((f, idx) => (
               <FunnelSegment
                 key={idx}
@@ -848,7 +938,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
 
-          <div style={{ height: '205px', width: '100%' }}>
+          <div key={revenuePeriod} className="dash-data-fade" style={{ height: '205px', width: '100%' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
                 <defs>
@@ -890,7 +980,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div key={projectsPeriod} className="dash-data-fade" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {topProjectsData.map((project, idx) => (
               <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyItems: 'space-between', gap: '12px' }}>
@@ -936,7 +1026,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
 
-          <div style={{ overflowX: 'auto', marginBottom: '8px' }}>
+          <div key={teamPeriod} className="dash-data-fade" style={{ overflowX: 'auto', marginBottom: '8px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>
@@ -949,7 +1039,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               </thead>
               <tbody>
                 {teamData.map((agent, idx) => (
-                  <tr key={idx} style={{ borderBottom: idx === teamData.length - 1 ? 'none' : '1px solid #f8fafc' }}>
+                  <tr key={idx} className="leaderboard-row" style={{ borderBottom: idx === teamData.length - 1 ? 'none' : '1px solid #f8fafc' }}>
                     <td style={{ padding: '8px 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{
                         width: '26px',
@@ -993,6 +1083,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <div style={{ height: '110px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <Tooltip content={<CustomPieTooltip />} />
                   <Pie
                     data={leadSourceData}
                     cx="50%"
@@ -1038,6 +1129,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <div style={{ position: 'relative', height: '110px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
+                  <Tooltip content={<CustomPieTooltip />} />
                   <Pie
                     data={leadAgingData}
                     cx="50%"
@@ -1182,6 +1274,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 <BarChart data={inventoryChartData} margin={{ top: 10, right: 10, left: -26, bottom: 0 }}>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} />
+                  <Tooltip content={<CustomInventoryTooltip />} />
                   <Bar dataKey="sold" stackId="invStack" fill="#10b981" barSize={14} radius={[0, 0, 0, 0]} isAnimationActive={false} />
                   <Bar dataKey="available" stackId="invStack" fill="#3b82f6" barSize={14} isAnimationActive={false} />
                   <Bar dataKey="hold" stackId="invStack" fill="#f59e0b" barSize={14} radius={[3, 3, 0, 0]} isAnimationActive={false} />
@@ -1211,7 +1304,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', alignItems: 'center' }}>
+          <div key={targetPeriod} className="dash-data-fade" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', alignItems: 'center' }}>
             <div style={{ position: 'relative', width: '120px', height: '90px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -1272,17 +1365,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {tasksList.map((task, idx) => (
-              <div key={idx} style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 12px',
-                background: '#f8fafc',
-                borderRadius: '10px',
-                border: '1px solid #f1f5f9',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }} className="hover-bg-slate">
+              <div key={idx} className="task-item-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 900, color: '#f59e0b' }}>{task.count}</span>
                   <span style={{ fontSize: '0.75rem', color: '#475569', fontWeight: 700 }}>{task.label}</span>
