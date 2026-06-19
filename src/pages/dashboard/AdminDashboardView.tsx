@@ -676,6 +676,19 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           border-color: #cbd5e1;
           box-shadow: 0 4px 12px rgba(148, 163, 184, 0.08);
         }
+        .dash-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .dash-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .dash-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 2px;
+        }
+        .dash-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
         @media (max-width: 1200px) {
           .dash-grid-6-kpi {
             grid-template-columns: repeat(3, 1fr);
@@ -1183,7 +1196,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </button>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: '240px', overflowY: 'auto', paddingRight: '4px' }}>
+          <div className="dash-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: '282px', overflowY: 'auto', paddingRight: '4px', paddingTop: '4px' }}>
             {activitiesData.map((act, idx) => (
               <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <div style={{
@@ -1272,7 +1285,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <div style={{ height: '140px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={inventoryChartData} margin={{ top: 10, right: 10, left: -26, bottom: 0 }}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} interval={0} tick={{ fill: '#94a3b8', fontSize: 7, fontWeight: 700, angle: -12, textAnchor: 'end' } as any} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} />
                   <Tooltip content={<CustomInventoryTooltip />} />
                   <Bar dataKey="sold" stackId="invStack" fill="#10b981" barSize={14} radius={[0, 0, 0, 0]} isAnimationActive={false} />
