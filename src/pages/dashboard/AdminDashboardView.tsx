@@ -7,7 +7,7 @@ import {
   TrendingUp, Users, Target, ChevronDown, DollarSign, Activity, Sparkles, Zap, 
   ShieldCheck, Clock, AlertCircle, ArrowUpRight, AlertTriangle, Briefcase, 
   CheckSquare, ArrowRight, MoreHorizontal, Calendar, ArrowUp, ArrowDown, Percent,
-  ChevronRight, FileText
+  ChevronRight, FileText, CheckCircle2
 } from 'lucide-react';
 import { useMobile } from '../../hooks/useMobile';
 import { usePageInfo } from '../../context/PageContext';
@@ -1167,61 +1167,135 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
-        {/* AI Insights Card */}
-        <div className="dash-card col-span-12">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={16} color="#3b82f6" />
-              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>AI Insights</span>
+        {/* Business Health Score & Critical Alerts Column */}
+        <div className="col-span-12" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Business Health Score Card */}
+          <div className="dash-card" style={{ padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+              <ShieldCheck size={18} color="#10b981" />
+              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Business Health Score</span>
             </div>
-            <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
-              View All
-            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '20px', borderBottom: '1px solid #f1f5f9', marginBottom: '16px' }}>
+              {/* Radial Gauge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ position: 'relative', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="70" height="70" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                    <circle 
+                      cx="18" 
+                      cy="18" 
+                      r="16" 
+                      fill="none" 
+                      stroke="url(#healthGrad)" 
+                      strokeWidth="3.2" 
+                      strokeDasharray="100" 
+                      strokeDashoffset="14" 
+                      strokeLinecap="round"
+                      transform="rotate(-90 18 18)"
+                    />
+                    <defs>
+                      <linearGradient id="healthGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#f59e0b" />
+                        <stop offset="100%" stopColor="#10b981" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <span style={{ position: 'absolute', fontSize: '1.05rem', fontWeight: 900, color: '#0f172a' }}>86%</span>
+                </div>
+                
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>Excellent</div>
+                  <ChevronDown size={14} color="#64748b" style={{ marginTop: '2px', cursor: 'pointer' }} />
+                </div>
+              </div>
+
+              {/* Sparkline Chart */}
+              <div style={{ width: '120px', height: '40px' }}>
+                <svg width="120" height="40" viewBox="0 0 120 40">
+                  <path 
+                    d="M0,32 Q15,28 30,26 T60,18 T90,13 T120,4" 
+                    fill="none" 
+                    stroke="#10b981" 
+                    strokeWidth="2.2" 
+                    strokeLinecap="round" 
+                  />
+                  <path 
+                    d="M0,32 Q15,28 30,26 T60,18 T90,13 T120,4 L120,40 L0,40 Z" 
+                    fill="url(#trendFill)" 
+                  />
+                  <defs>
+                    <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#d1fae5" stopOpacity="0.6" />
+                      <stop offset="100%" stopColor="#d1fae5" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+
+            {/* List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={14} color="#10b981" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Revenue Health</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981' }}>Good</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={14} color="#10b981" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Lead Health</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981' }}>Excellent</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={14} color="#10b981" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Team Performance</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981' }}>Good</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle2 size={14} color="#10b981" />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Conversion Health</span>
+                </div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#10b981' }}>Good</span>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
-            {/* Item 1 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f3e8ff', border: '1px solid #e9d5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Zap size={14} color="#8b5cf6" />
+          {/* Critical Alerts Card */}
+          <div className="dash-card" style={{ padding: '24px', background: '#fef2f2', border: '1px solid #fee2e2' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} color="#ef4444" />
+                <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#dc2626', letterSpacing: '-0.2px' }}>Critical Alerts</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>High Intent Leads</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>42 leads are showing high buying intent from last 7 days.</div>
-              </div>
-              <button style={{ fontSize: '0.7rem', color: '#2563eb', border: '1px solid #bfdbfe', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                View Leads
+              <button style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
+                View All
               </button>
             </div>
 
-            {/* Item 2 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Target size={14} color="#10b981" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={14} color="#f97316" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>23 Leads inactive &gt; 7 days</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>Conversion Boost</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>Leads from Google Ads convert 42% higher than other sources.</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={14} color="#f97316" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>12 Deals at risk of closing</span>
               </div>
-              <button style={{ fontSize: '0.7rem', color: '#059669', border: '1px solid #a7f3d0', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                Optimize Budget
-              </button>
-            </div>
-
-            {/* Item 3 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <AlertTriangle size={14} color="#ef4444" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={14} color="#f97316" />
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>3 High value approvals pending</span>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>Risk Alert</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>18 deals are at risk of missing expected closing date.</div>
-              </div>
-              <button style={{ fontSize: '0.7rem', color: '#dc2626', border: '1px solid #fecdd3', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                View Deals
-              </button>
             </div>
           </div>
+
         </div>
 
       </div>
