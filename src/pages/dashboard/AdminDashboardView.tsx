@@ -981,6 +981,149 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
+      {/* Executive Summary Banner */}
+      <div className="dash-card" style={{ 
+        padding: '20px 24px', 
+        marginBottom: '24px', 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row', 
+        alignItems: 'center', 
+        gap: '20px',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          paddingRight: isMobile ? '0' : '20px', 
+          borderRight: isMobile ? 'none' : '1px solid #e2e8f0', 
+          flexShrink: 0,
+          width: isMobile ? '100%' : 'auto',
+          borderBottom: isMobile ? '1px solid #e2e8f0' : 'none',
+          paddingBottom: isMobile ? '12px' : '0'
+        }}>
+          <span style={{ fontWeight: 900, fontSize: '0.92rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Summary</span>
+          <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>Key insights & actions</span>
+        </div>
+
+        {/* Items list */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: isMobile ? 'column' : 'row', 
+          alignItems: 'center', 
+          gap: isMobile ? '16px' : '20px', 
+          flex: 1,
+          width: '100%',
+          justifyContent: 'space-between'
+        }}>
+          {/* Item 1 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            flexShrink: 0,
+            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+            paddingRight: isMobile ? '0' : '20px',
+            flex: 1,
+            width: isMobile ? '100%' : 'auto'
+          }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fed7aa', flexShrink: 0 }}>
+              <AlertTriangle size={16} color="#ea580c" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>23</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                Leads inactive for<br />7+ days
+              </span>
+            </div>
+          </div>
+
+          {/* Item 2 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            flexShrink: 0,
+            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+            paddingRight: isMobile ? '0' : '20px',
+            flex: 1,
+            width: isMobile ? '100%' : 'auto'
+          }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
+              <TrendingUp size={16} color="#059669" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>12</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                Bookings likely<br />this week
+              </span>
+            </div>
+          </div>
+
+          {/* Item 3 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            flexShrink: 0,
+            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+            paddingRight: isMobile ? '0' : '20px',
+            flex: 1,
+            width: isMobile ? '100%' : 'auto'
+          }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
+              <Briefcase size={16} color="#dc2626" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                Revenue at risk from<br />delayed deals
+              </span>
+            </div>
+          </div>
+
+          {/* Item 4 */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            flexShrink: 0,
+            borderRight: isMobile ? 'none' : '1px solid #e2e8f0',
+            paddingRight: isMobile ? '0' : '20px',
+            flex: 1,
+            width: isMobile ? '100%' : 'auto'
+          }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
+              <CheckSquare size={16} color="#2563eb" />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.1 }}>3</span>
+              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700, marginTop: '2px', lineHeight: 1.2 }}>
+                Approvals<br />pending
+              </span>
+            </div>
+          </div>
+
+          {/* View All Insights Button */}
+          <button style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: '#2563eb', 
+            fontWeight: 800, 
+            fontSize: '0.8rem', 
+            cursor: 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px',
+            marginLeft: isMobile ? '0' : 'auto',
+            flexShrink: 0
+          }}>
+            View All Insights <ArrowRight size={14} />
+          </button>
+        </div>
+      </div>
+
       {/* Row 3: Revenue Command Center (Left) & Forecast + Source Stack (Right) */}
       <div className="dash-row-grid" style={{ marginBottom: '24px' }}>
         {/* Left Column: Revenue Command Center Card */}
