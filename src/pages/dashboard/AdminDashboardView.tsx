@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import {
   ComposedChart, Line, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, BarChart, Cell,
   PieChart, Pie, AreaChart, Area, CartesianGrid
@@ -222,48 +222,199 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
     ];
   }, [stats, bookings]);
 
+  // States for period dropdowns
+  const [funnelPeriod, setFunnelPeriod] = useState('this_month');
+  const [projectsPeriod, setProjectsPeriod] = useState('this_month');
+  const [teamPeriod, setTeamPeriod] = useState('this_month');
+  const [revenuePeriod, setRevenuePeriod] = useState('this_year');
+  const [targetPeriod, setTargetPeriod] = useState('this_year');
+
   // Funnel segments
-  const funnelData = [
-    { label: 'Leads', count: 8642, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
-    { label: 'Qualified', count: 2847, percentage: '32.9%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
-    { label: 'Site Visits', count: 1562, percentage: '55.0%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
-    { label: 'Negotiation', count: 568, percentage: '36.4%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
-    { label: 'Bookings', count: 128, percentage: '22.5%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
-  ];
+  const funnelData = useMemo(() => {
+    switch (funnelPeriod) {
+      case 'today':
+        return [
+          { label: 'Leads', count: 280, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 90, percentage: '32.1%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 48, percentage: '53.3%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 18, percentage: '37.5%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 4, percentage: '22.2%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+      case 'this_week':
+        return [
+          { label: 'Leads', count: 1940, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 640, percentage: '33.0%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 350, percentage: '54.7%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 120, percentage: '34.3%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 28, percentage: '23.3%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+      case 'last_month':
+        return [
+          { label: 'Leads', count: 9120, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 2980, percentage: '32.7%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 1650, percentage: '55.4%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 610, percentage: '37.0%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 135, percentage: '22.1%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+      case 'this_quarter':
+        return [
+          { label: 'Leads', count: 25800, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 8520, percentage: '33.0%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 4680, percentage: '54.9%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 1720, percentage: '36.8%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 390, percentage: '22.7%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+      case 'this_year':
+        return [
+          { label: 'Leads', count: 96420, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 31280, percentage: '32.4%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 16720, percentage: '53.5%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 5980, percentage: '35.8%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 1456, percentage: '24.3%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+      case 'this_month':
+      default:
+        return [
+          { label: 'Leads', count: 8642, width: '100%', color: '#6366f1', clipPath: 'polygon(0% 0%, 100% 0%, 85% 100%, 15% 100%)' },
+          { label: 'Qualified', count: 2847, percentage: '32.9%', width: '100%', color: '#3b82f6', clipPath: 'polygon(15% 0%, 85% 0%, 75% 100%, 25% 100%)' },
+          { label: 'Site Visits', count: 1562, percentage: '55.0%', width: '100%', color: '#06b6d4', clipPath: 'polygon(25% 0%, 75% 0%, 65% 100%, 35% 100%)' },
+          { label: 'Negotiation', count: 568, percentage: '36.4%', width: '100%', color: '#10b981', clipPath: 'polygon(35% 0%, 65% 0%, 58% 100%, 42% 100%)' },
+          { label: 'Bookings', count: 128, percentage: '22.5%', width: '100%', color: '#f59e0b', clipPath: 'polygon(42% 0%, 58% 0%, 53% 100%, 47% 100%)' }
+        ];
+    }
+  }, [funnelPeriod]);
 
   // Revenue trend vs target over 12 months
-  const revenueTrendData = [
-    { name: 'Jan', revenue: 42, target: 50 },
-    { name: 'Feb', revenue: 48, target: 55 },
-    { name: 'Mar', revenue: 58, target: 60 },
-    { name: 'Apr', revenue: 70, target: 65 },
-    { name: 'May', revenue: 78.5, target: 68 },
-    { name: 'Jun', revenue: 85, target: 75 },
-    { name: 'Jul', revenue: 92, target: 82 },
-    { name: 'Aug', revenue: 105, target: 90 },
-    { name: 'Sep', revenue: 112, target: 95 },
-    { name: 'Oct', revenue: 120, target: 100 },
-    { name: 'Nov', revenue: 128, target: 110 },
-    { name: 'Dec', revenue: 140, target: 120 }
-  ];
+  const revenueTrendData = useMemo(() => {
+    switch (revenuePeriod) {
+      case 'this_quarter':
+        return [
+          { name: 'Week 1', revenue: 8, target: 10 },
+          { name: 'Week 2', revenue: 12, target: 12 },
+          { name: 'Week 3', revenue: 15, target: 13 },
+          { name: 'Week 4', revenue: 18, target: 15 },
+          { name: 'Week 5', revenue: 22, target: 18 },
+          { name: 'Week 6', revenue: 26, target: 20 },
+          { name: 'Week 7', revenue: 31, target: 22 },
+          { name: 'Week 8', revenue: 35, target: 25 }
+        ];
+      case 'this_month':
+        return [
+          { name: 'Day 1-5', revenue: 2, target: 3 },
+          { name: 'Day 6-10', revenue: 5, target: 5 },
+          { name: 'Day 11-15', revenue: 9, target: 8 },
+          { name: 'Day 16-20', revenue: 14, target: 12 },
+          { name: 'Day 21-25', revenue: 20, target: 16 },
+          { name: 'Day 26-30', revenue: 28, target: 20 }
+        ];
+      case 'this_year':
+      default:
+        return [
+          { name: 'Jan', revenue: 42, target: 50 },
+          { name: 'Feb', revenue: 48, target: 55 },
+          { name: 'Mar', revenue: 58, target: 60 },
+          { name: 'Apr', revenue: 70, target: 65 },
+          { name: 'May', revenue: 78.5, target: 68 },
+          { name: 'Jun', revenue: 85, target: 75 },
+          { name: 'Jul', revenue: 92, target: 82 },
+          { name: 'Aug', revenue: 105, target: 90 },
+          { name: 'Sep', revenue: 112, target: 95 },
+          { name: 'Oct', revenue: 120, target: 100 },
+          { name: 'Nov', revenue: 128, target: 110 },
+          { name: 'Dec', revenue: 140, target: 120 }
+        ];
+    }
+  }, [revenuePeriod]);
 
   // Top Performing Projects
-  const topProjectsData = [
-    { name: 'Green Vista', bookings: '128 Bookings', value: '₹32.5 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
-    { name: 'Sunrise Residency', bookings: '74 Bookings', value: '₹18.7 Cr', progress: 58, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
-    { name: 'Maple Heights', bookings: '38 Bookings', value: '₹12.4 Cr', progress: 38, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' },
-    { name: 'Skyline Towers', bookings: '18 Bookings', value: '₹8.2 Cr', progress: 25, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=100&auto=format&fit=crop&q=60' },
-    { name: 'Riverfront Phase 2', bookings: '24 Bookings', value: '₹6.1 Cr', progress: 19, color: '#06b6d4', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&auto=format&fit=crop&q=60' }
-  ];
+  const topProjectsData = useMemo(() => {
+    switch (projectsPeriod) {
+      case 'today':
+        return [
+          { name: 'Green Vista', bookings: '4 Bookings', value: '₹1.1 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '2 Bookings', value: '₹0.5 Cr', progress: 50, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '1 Bookings', value: '₹0.3 Cr', progress: 25, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' }
+        ];
+      case 'this_week':
+        return [
+          { name: 'Green Vista', bookings: '28 Bookings', value: '₹7.1 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '16 Bookings', value: '₹4.0 Cr', progress: 57, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '9 Bookings', value: '₹2.8 Cr', progress: 32, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' }
+        ];
+      case 'last_month':
+        return [
+          { name: 'Green Vista', bookings: '135 Bookings', value: '₹34.2 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '80 Bookings', value: '₹20.1 Cr', progress: 59, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '42 Bookings', value: '₹13.6 Cr', progress: 31, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' }
+        ];
+      case 'this_quarter':
+        return [
+          { name: 'Green Vista', bookings: '390 Bookings', value: '₹98.5 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '220 Bookings', value: '₹55.2 Cr', progress: 56, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '115 Bookings', value: '₹37.4 Cr', progress: 29, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' }
+        ];
+      case 'this_year':
+        return [
+          { name: 'Green Vista', bookings: '1,456 Bookings', value: '₹368.5 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '820 Bookings', value: '₹208.7 Cr', progress: 56, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '418 Bookings', value: '₹136.4 Cr', progress: 28, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' }
+        ];
+      case 'this_month':
+      default:
+        return [
+          { name: 'Green Vista', bookings: '128 Bookings', value: '₹32.5 Cr', progress: 100, color: '#10b981', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Sunrise Residency', bookings: '74 Bookings', value: '₹18.7 Cr', progress: 58, color: '#3b82f6', img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Maple Heights', bookings: '38 Bookings', value: '₹12.4 Cr', progress: 38, color: '#8b5cf6', img: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Skyline Towers', bookings: '18 Bookings', value: '₹8.2 Cr', progress: 25, color: '#f59e0b', img: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Riverfront Phase 2', bookings: '24 Bookings', value: '₹6.1 Cr', progress: 19, color: '#06b6d4', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&auto=format&fit=crop&q=60' }
+        ];
+    }
+  }, [projectsPeriod]);
 
   // Team Leaderboard
-  const teamData = [
-    { name: 'Rahul Sharma', leads: 156, visits: 48, bookings: 12, conversion: '8.3%', initials: 'RS' },
-    { name: 'Priya Singh', leads: 142, visits: 42, bookings: 11, conversion: '7.7%', initials: 'PS' },
-    { name: 'Amit Verma', leads: 135, visits: 38, bookings: 9, conversion: '6.7%', initials: 'AV' },
-    { name: 'Neha Kapoor', leads: 118, visits: 33, bookings: 8, conversion: '6.8%', initials: 'NK' },
-    { name: 'Vikram Patel', leads: 105, visits: 28, bookings: 6, conversion: '5.7%', initials: 'VP' }
-  ];
+  const teamData = useMemo(() => {
+    switch (teamPeriod) {
+      case 'today':
+        return [
+          { name: 'Rahul Sharma', leads: 5, visits: 2, bookings: 1, conversion: '20.0%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', initials: 'AV' }
+        ];
+      case 'this_week':
+        return [
+          { name: 'Rahul Sharma', leads: 32, visits: 10, bookings: 3, conversion: '9.4%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 28, visits: 9, bookings: 2, conversion: '7.1%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 30, visits: 8, bookings: 2, conversion: '6.7%', initials: 'AV' }
+        ];
+      case 'last_month':
+        return [
+          { name: 'Rahul Sharma', leads: 162, visits: 52, bookings: 14, conversion: '8.6%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 148, visits: 45, bookings: 12, conversion: '8.1%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 140, visits: 40, bookings: 10, conversion: '7.1%', initials: 'AV' }
+        ];
+      case 'this_quarter':
+        return [
+          { name: 'Rahul Sharma', leads: 480, visits: 150, bookings: 38, conversion: '7.9%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 430, visits: 130, bookings: 33, conversion: '7.7%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 410, visits: 120, bookings: 29, conversion: '7.1%', initials: 'AV' }
+        ];
+      case 'this_year':
+        return [
+          { name: 'Rahul Sharma', leads: 1920, visits: 580, bookings: 148, conversion: '7.7%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 1720, visits: 520, bookings: 132, conversion: '7.7%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 1640, visits: 480, bookings: 110, conversion: '6.7%', initials: 'AV' }
+        ];
+      case 'this_month':
+      default:
+        return [
+          { name: 'Rahul Sharma', leads: 156, visits: 48, bookings: 12, conversion: '8.3%', initials: 'RS' },
+          { name: 'Priya Singh', leads: 142, visits: 42, bookings: 11, conversion: '7.7%', initials: 'PS' },
+          { name: 'Amit Verma', leads: 135, visits: 38, bookings: 9, conversion: '6.7%', initials: 'AV' },
+          { name: 'Neha Kapoor', leads: 118, visits: 33, bookings: 8, conversion: '6.8%', initials: 'NK' },
+          { name: 'Vikram Patel', leads: 105, visits: 28, bookings: 6, conversion: '5.7%', initials: 'VP' }
+        ];
+    }
+  }, [teamPeriod]);
 
   // Donut data for Lead Source
   const leadSourceData = [
@@ -303,11 +454,28 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
     { name: 'Orchard Estate', sold: 80, available: 95, hold: 6 }
   ];
 
+  // Sales target calculation based on period
+  const targetDataCalculated = useMemo(() => {
+    switch (targetPeriod) {
+      case 'today':
+        return { achieved: 0.85, target: 1.0, remaining: 0.15, percentage: 85 };
+      case 'this_week':
+        return { achieved: 6.2, target: 8.0, remaining: 1.8, percentage: 77 };
+      case 'this_month':
+        return { achieved: 28.5, target: 35.0, remaining: 6.5, percentage: 81 };
+      case 'this_year':
+      default:
+        return { achieved: 140.4, target: 180.0, remaining: 39.6, percentage: 78 };
+    }
+  }, [targetPeriod]);
+
   // Radial target gauge achieved segments
-  const radialTargetData = [
-    { name: 'Achieved', value: 78, color: '#10b981' },
-    { name: 'Remaining', value: 22, color: '#f1f5f9' }
-  ];
+  const radialTargetData = useMemo(() => {
+    return [
+      { name: 'Achieved', value: targetDataCalculated.percentage, color: '#10b981' },
+      { name: 'Remaining', value: 100 - targetDataCalculated.percentage, color: '#f1f5f9' }
+    ];
+  }, [targetDataCalculated]);
 
   // Tasks checklist
   const tasksList = [
@@ -570,9 +738,32 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Funnel</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>This Month</span>
-              <ChevronDown size={14} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+              <select
+                value={funnelPeriod}
+                onChange={(e) => setFunnelPeriod(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
           
@@ -607,9 +798,29 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>This Year</span>
-              <ChevronDown size={14} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+              <select
+                value={revenuePeriod}
+                onChange={(e) => setRevenuePeriod(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                <option value="this_month">This Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -637,9 +848,32 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card col-span-6">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Top Performing Projects</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>This Month</span>
-              <ChevronDown size={14} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+              <select
+                value={projectsPeriod}
+                onChange={(e) => setProjectsPeriod(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -671,9 +905,32 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card" style={{ gridColumn: 'span 8' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Team Performance</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>This Month</span>
-              <ChevronDown size={14} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+              <select
+                value={teamPeriod}
+                onChange={(e) => setTeamPeriod(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="last_month">Last Month</option>
+                <option value="this_quarter">This Quarter</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -936,9 +1193,30 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         <div className="dash-card" style={{ gridColumn: 'span 6' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Target vs Achievement</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
-              <span>This Year</span>
-              <ChevronDown size={14} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', paddingRight: '16px', color: '#64748b', fontSize: '0.75rem', fontWeight: 700 }}>
+              <select
+                value={targetPeriod}
+                onChange={(e) => setTargetPeriod(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  margin: 0,
+                  padding: 0,
+                }}
+              >
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="this_year">This Year</option>
+              </select>
+              <ChevronDown size={14} style={{ position: 'absolute', right: 0, pointerEvents: 'none', color: '#64748b' }} />
             </div>
           </div>
 
@@ -970,7 +1248,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 transform: 'translateX(-50%)',
                 textAlign: 'center'
               }}>
-                <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>78%</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{targetDataCalculated.percentage}%</div>
                 <div style={{ fontSize: '0.52rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>Achievement</div>
               </div>
             </div>
@@ -978,15 +1256,15 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Target</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a' }}>₹180 Cr</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a' }}>₹{targetDataCalculated.target} Cr</div>
               </div>
               <div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Achieved</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#10b981' }}>₹140.4 Cr</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#10b981' }}>₹{targetDataCalculated.achieved} Cr</div>
               </div>
               <div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Remaining</div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ef4444' }}>₹39.6 Cr</div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#ef4444' }}>₹{targetDataCalculated.remaining} Cr</div>
               </div>
             </div>
           </div>
