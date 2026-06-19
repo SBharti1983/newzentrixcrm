@@ -85,37 +85,26 @@ const CustomRevenueTooltip = ({ active, payload }: any) => {
     const data = payload[0].payload;
     return (
       <div style={{
-        background: 'rgba(255, 255, 255, 0.98)',
+        background: '#ffffff',
         border: '1px solid #e2e8f0',
-        borderRadius: '16px',
-        padding: '14px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
-        fontSize: '0.8rem',
-        fontWeight: 700
+        borderRadius: '12px',
+        padding: '10px 14px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        lineHeight: 1.5
       }}>
-        <div style={{ color: '#0f172a', fontWeight: 800, fontSize: '0.85rem', marginBottom: '8px' }}>
+        <div style={{ color: '#0f172a', fontWeight: 800, marginBottom: '4px' }}>
           {data.name} 2024
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3b82f6' }} />
-          <span style={{ color: '#64748b' }}>Revenue:</span>
-          <span style={{ color: '#0f172a', fontWeight: 800 }}>₹{data.revenue} Cr</span>
+        <div style={{ color: '#475569' }}>
+          Revenue: <span style={{ color: '#0f172a', fontWeight: 800 }}>₹{data.revenue.toFixed(1)} Cr</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <span style={{ width: '8px', height: '2px', background: '#94a3b8' }} />
-          <span style={{ color: '#64748b' }}>Target:</span>
-          <span style={{ color: '#0f172a', fontWeight: 800 }}>₹{data.target} Cr</span>
+        <div style={{ color: '#475569' }}>
+          Target: <span style={{ color: '#0f172a', fontWeight: 800 }}>₹{data.target.toFixed(1)} Cr</span>
         </div>
-        <div style={{ 
-          background: 'rgba(16, 185, 129, 0.08)', 
-          color: '#10b981', 
-          padding: '4px 8px', 
-          borderRadius: '8px', 
-          display: 'inline-block',
-          fontSize: '0.72rem',
-          fontWeight: 800
-        }}>
-          • Achievement: {Math.round(data.revenue * 100 / data.target)}%
+        <div style={{ color: '#475569' }}>
+          Achievement: <span style={{ color: '#0f172a', fontWeight: 800 }}>{Math.floor(data.revenue * 100 / data.target)}%</span>
         </div>
       </div>
     );
@@ -380,18 +369,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
       case 'this_year':
       default:
         return [
-          { name: 'Jan', revenue: 42, target: 50 },
-          { name: 'Feb', revenue: 48, target: 55 },
-          { name: 'Mar', revenue: 58, target: 60 },
-          { name: 'Apr', revenue: 70, target: 65 },
-          { name: 'May', revenue: 78.5, target: 68 },
-          { name: 'Jun', revenue: 85, target: 75 },
-          { name: 'Jul', revenue: 92, target: 82 },
-          { name: 'Aug', revenue: 105, target: 90 },
-          { name: 'Sep', revenue: 112, target: 95 },
-          { name: 'Oct', revenue: 120, target: 100 },
-          { name: 'Nov', revenue: 128, target: 110 },
-          { name: 'Dec', revenue: 140, target: 120 }
+          { name: 'Jan', revenue: 12, target: 20 },
+          { name: 'Feb', revenue: 26, target: 28 },
+          { name: 'Mar', revenue: 24, target: 36 },
+          { name: 'Apr', revenue: 38, target: 48 },
+          { name: 'May', revenue: 78.5, target: 66 },
+          { name: 'Jun', revenue: 62, target: 72 },
+          { name: 'Jul', revenue: 58, target: 82 },
+          { name: 'Aug', revenue: 75, target: 90 },
+          { name: 'Sep', revenue: 90, target: 98 },
+          { name: 'Oct', revenue: 105, target: 108 },
+          { name: 'Nov', revenue: 118, target: 118 },
+          { name: 'Dec', revenue: 130, target: 125 }
         ];
     }
   }, [revenuePeriod]);
@@ -923,103 +912,132 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
       <div className="dash-row-grid" style={{ marginBottom: '24px' }}>
         {/* Revenue Command Center Card */}
         <div className="dash-card col-span-17">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <TrendingUp size={18} color="#4f46e5" />
-              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue Command Center</span>
-            </div>
-            <div className="dash-period-select-wrapper">
-              <select
-                className="dash-period-select"
-                value={revenuePeriod}
-                onChange={(e) => setRevenuePeriod(e.target.value)}
-                aria-label="Revenue Command Center time period"
-              >
-                <option value="this_month">This Month</option>
-                <option value="this_quarter">This Quarter</option>
-                <option value="this_year">This Year</option>
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
+              <line x1="6" y1="20" x2="6" y2="14" />
+              <line x1="12" y1="20" x2="12" y2="8" />
+              <line x1="18" y1="20" x2="18" y2="3" />
+            </svg>
+            <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>Revenue Command Center</span>
           </div>
 
           {/* Sub-Metrics Grid & Forecast Sparkline Box */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: '16px', marginBottom: '24px', background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr) 1.25fr',
+            gap: '24px',
+            marginBottom: '24px',
+            alignItems: 'start'
+          }}>
             {/* Stat 1 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Total Revenue (This Year)</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹78.5 Cr</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.7rem', fontWeight: 800 }}>
-                <ArrowUpRight size={12} />
-                <span>14.6% <span style={{ color: '#94a3b8', fontWeight: 500 }}>vs last year</span></span>
-              </div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              borderRight: isMobile ? 'none' : '1px solid #f1f5f9',
+              paddingRight: isMobile ? '0' : '16px'
+            }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Total Revenue (This Year)</span>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹78.5 Cr</span>
+              <span style={{ color: '#10b981', fontSize: '0.72rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '0.62rem' }}>▲</span> 14.6% <span style={{ color: '#94a3b8', fontWeight: 650 }}>vs last year</span>
+              </span>
             </div>
 
             {/* Stat 2 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Forecast (30 Days)</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹18.2 Cr</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.7rem', fontWeight: 800 }}>
-                <ArrowUpRight size={12} />
-                <span>16.8%</span>
-              </div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              borderRight: isMobile ? 'none' : '1px solid #f1f5f9',
+              paddingRight: isMobile ? '0' : '16px'
+            }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Forecast (30 Days)</span>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹18.2 Cr</span>
+              <span style={{ color: '#10b981', fontSize: '0.72rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '0.62rem' }}>▲</span> 16.8%
+              </span>
             </div>
 
             {/* Stat 3 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Target (This Year)</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px' }}>₹100 Cr</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', marginTop: '2px' }}>
-                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>78.5% Achieved</span>
-                <div style={{ height: '4px', background: '#e2e8f0', borderRadius: '2px', width: '100%', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: '78.5%', background: '#3b82f6', borderRadius: '2px' }} />
-                </div>
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              borderRight: isMobile ? 'none' : '1px solid #f1f5f9',
+              paddingRight: isMobile ? '0' : '16px'
+            }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Target (This Year)</span>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹100 Cr</span>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px' }}>78.5% Achieved</span>
+              <div style={{ height: '5px', background: '#f1f5f9', borderRadius: '3px', width: '100%', overflow: 'hidden', marginTop: '2px' }}>
+                <div style={{ height: '100%', width: '78.5%', background: '#2563eb', borderRadius: '3px' }} />
               </div>
             </div>
 
             {/* Stat 4 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderLeft: isMobile ? 'none' : '1px solid #e2e8f0', paddingLeft: isMobile ? '0' : '16px' }}>
-              <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Achieved (This Year)</span>
-              <span style={{ fontSize: '1.25rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.5px' }}>78.5%</span>
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 550 }}>₹78.5 Cr of ₹100 Cr</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Achieved (This Year)</span>
+              <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>78.5%</span>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px' }}>₹78.5 Cr of ₹100 Cr</span>
             </div>
 
             {/* Stat 5: Revenue Forecast Sparkline Card */}
             <div style={{
               background: '#ffffff',
               border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '10px 12px',
+              borderRadius: '16px',
+              padding: '16px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              minHeight: '72px',
-              boxShadow: '0 2px 8px rgba(148, 163, 184, 0.02)'
+              minHeight: '110px',
+              boxShadow: '0 4px 12px rgba(148, 163, 184, 0.03)',
+              position: 'relative'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 800 }}>Revenue Forecast</span>
-                <span style={{ fontSize: '0.55rem', background: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', padding: '1px 5px', borderRadius: '8px', fontWeight: 800 }}>High Confidence</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800 }}>Revenue Forecast</span>
+                <span style={{
+                  fontSize: '0.6rem',
+                  background: '#f0fdf4',
+                  color: '#16a34a',
+                  border: '1px solid #bbf7d0',
+                  padding: '2px 6px',
+                  borderRadius: '12px',
+                  fontWeight: 800
+                }}>
+                  High Confidence
+                </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: '6px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>₹18.2 Cr</span>
-                  <span style={{ fontSize: '0.55rem', color: '#94a3b8', fontWeight: 700 }}>Next 30 Days</span>
-                </div>
-                {/* Mini sparkline */}
-                <div style={{ width: '60px', height: '24px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={forecastSparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="forecastGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.2} />
-                          <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
-                        </linearGradient>
-                      </defs>
-                      <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={1.5} fill="url(#forecastGlow)" dot={false} isAnimationActive={false} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹18.2 Cr</span>
+                <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>Next 30 Days</span>
               </div>
+              <div style={{ width: '100%', height: '36px', marginTop: 'auto' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={forecastSparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="forecastGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={2} fill="url(#forecastGlow)" dot={false} isAnimationActive={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Custom Legend */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingLeft: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+              <span style={{ width: '12px', height: '6px', borderRadius: '3px', background: '#3b82f6', display: 'inline-block' }} />
+              <span>Revenue (Cr)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+              <span style={{ width: '12px', height: '0px', borderTop: '2px dashed #94a3b8', display: 'inline-block' }} />
+              <span>Target (Cr)</span>
             </div>
           </div>
 
@@ -1029,13 +1047,13 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <ComposedChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -24, bottom: 0 }}>
                 <defs>
                   <linearGradient id="revenueTrendGlow" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.12} />
                     <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid vertical={false} stroke="#f1f5f9" strokeDasharray="3 3" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }} domain={[0, 135]} ticks={[0, 25, 50, 75, 100, 125]} />
                 <Tooltip content={<CustomRevenueTooltip />} />
                 <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revenueTrendGlow)" dot={{ r: 4, stroke: '#3b82f6', strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6 }} isAnimationActive={false} />
                 <Line type="monotone" dataKey="target" stroke="#94a3b8" strokeWidth={1.5} strokeDasharray="4 4" dot={false} isAnimationActive={false} />
@@ -1086,15 +1104,18 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               </ResponsiveContainer>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
               {revenueSourceData.map((source, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color }} />
-                    <span>{source.name}</span>
+                <div key={idx} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', width: '45%' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color, flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap' }}>{source.name}</span>
                   </div>
-                  <div style={{ color: '#0f172a', fontWeight: 800 }}>
-                    {source.value}% <span style={{ color: '#94a3b8', fontWeight: 500 }}>({source.amount})</span>
+                  <div style={{ color: '#0f172a', fontWeight: 800, width: '20%', textAlign: 'right' }}>
+                    {source.value}%
+                  </div>
+                  <div style={{ color: '#64748b', fontWeight: 600, width: '35%', textAlign: 'right' }}>
+                    {source.amount}
                   </div>
                 </div>
               ))}
