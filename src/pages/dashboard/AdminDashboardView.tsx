@@ -457,22 +457,39 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                   <span style={{ color: '#94a3b8', fontWeight: 500 }}>vs last month</span>
                 </div>
                 <Sparkline data={k.sparklineData} color={k.color} />
-              </div>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+    </div>
 
       {/* Executive Insights Banner */}
-      <div className="dash-card" style={{ padding: '16px 24px', marginBottom: '24px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '20px' }} className="hide-mobile-border">
+      <div className="dash-card" style={{ 
+        padding: '16px 24px', 
+        marginBottom: '24px', 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row', 
+        alignItems: isMobile ? 'flex-start' : 'center', 
+        gap: '16px',
+        width: '100%',
+        boxSizing: 'border-box'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingRight: isMobile ? '0' : '16px', borderRight: isMobile ? 'none' : '1px solid #e2e8f0', flexShrink: 0 }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sparkles size={16} color="white" />
           </div>
           <span style={{ fontWeight: 900, fontSize: '0.9rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Insights</span>
         </div>
 
-        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '12px', minWidth: '250px' }}>
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          gap: '16px', 
+          flexWrap: isMobile ? 'wrap' : 'nowrap',
+          flex: 1,
+          minWidth: 0
+        }}>
           {/* Item 1 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a', flexShrink: 0 }}>
@@ -485,7 +502,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
           
           {/* Item 2 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
               <TrendingUp size={14} color="#059669" />
             </div>
@@ -496,7 +513,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
 
           {/* Item 3 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
               <Briefcase size={14} color="#dc2626" />
             </div>
@@ -507,7 +524,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
 
           {/* Item 4 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '16px', flexShrink: 0 }}>
             <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
               <CheckSquare size={14} color="#2563eb" />
             </div>
@@ -518,7 +535,19 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
-        <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <button style={{ 
+          background: 'none', 
+          border: 'none', 
+          color: '#2563eb', 
+          fontWeight: 800, 
+          fontSize: '0.8rem', 
+          cursor: 'pointer', 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '4px',
+          marginLeft: isMobile ? '0' : 'auto',
+          flexShrink: 0
+        }}>
           View All Insights <ArrowRight size={14} />
         </button>
       </div>
