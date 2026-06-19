@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2, ChevronRight, Calendar } from 'lucide-react';
+import { Search, Bell, HelpCircle, Menu, Phone, Palette, Globe, Users, X, User, Building, ArrowRight, Loader2, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useBranding } from '../../context/BrandingContext';
 import { usePresence } from '../../context/PresenceContext';
@@ -308,27 +308,6 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     </div>
                 )}
 
-                {!isMobile && location.pathname === '/' && (
-                    <div style={{
-                        marginRight: 16,
-                        padding: '6px 14px',
-                        borderRadius: '10px',
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: '#475569',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-                    }}>
-                        <Calendar size={13} style={{ color: '#64748b' }} />
-                        <span>Today, 20 May 2024</span>
-                        <ChevronRight size={13} style={{ transform: 'rotate(90deg)', color: '#94a3b8' }} />
-                    </div>
-                )}
 
                 <div className="hide-mobile" style={{ display: 'flex', gap: 10, marginRight: 20, fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>
                     {['EN', 'AR', 'ES', 'ZH'].map(lang => (lang === 'EN' ? <span key={lang} style={{ color: 'var(--navy-900)', background: '#f1f5f9', padding: '4px 8px', borderRadius: 8, border: '1px solid #e2e8f0' }}>{lang}</span> : null))}

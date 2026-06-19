@@ -472,48 +472,48 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           <span style={{ fontWeight: 900, fontSize: '0.9rem', color: '#0f172a', letterSpacing: '-0.3px' }}>Executive Insights</span>
         </div>
 
-        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', flexWrap: 'wrap', gap: '16px', minWidth: '250px' }}>
+        <div style={{ display: 'flex', flex: 1, justifyContent: 'space-around', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: '12px', minWidth: '250px' }}>
           {/* Item 1 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a' }}>
-              <AlertTriangle size={16} color="#d97706" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fde68a', flexShrink: 0 }}>
+              <AlertTriangle size={14} color="#d97706" />
             </div>
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>23</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Leads inactive for 7+ days</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>23</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Leads inactive for 7+ days</div>
             </div>
           </div>
           
           {/* Item 2 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0' }}>
-              <TrendingUp size={16} color="#059669" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #a7f3d0', flexShrink: 0 }}>
+              <TrendingUp size={14} color="#059669" />
             </div>
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>12</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Bookings likely this week</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>12</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Bookings likely this week</div>
             </div>
           </div>
 
           {/* Item 3 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3' }}>
-              <Briefcase size={16} color="#dc2626" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #fecdd3', flexShrink: 0 }}>
+              <Briefcase size={14} color="#dc2626" />
             </div>
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Revenue at risk from delayed deals</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>₹18.6 Cr</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Revenue at risk from delayed deals</div>
             </div>
           </div>
 
           {/* Item 4 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '20px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe' }}>
-              <CheckSquare size={16} color="#2563eb" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderLeft: isMobile ? 'none' : '1px solid #f1f5f9', paddingLeft: isMobile ? '0' : '14px', flexShrink: 0 }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #bfdbfe', flexShrink: 0 }}>
+              <CheckSquare size={14} color="#2563eb" />
             </div>
             <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>3</div>
-              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Approvals pending</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#0f172a', lineHeight: 1.1 }}>3</div>
+              <div style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap' }}>Approvals pending</div>
             </div>
           </div>
         </div>
