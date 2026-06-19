@@ -64,8 +64,8 @@ export default function RevenueSidebar({
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 20, alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
-          <div style={{ height: 120, width: isMobile ? '100%' : 120, flexShrink: 0 }}>
+        <div className="dash-source-container">
+          <div className="dash-source-chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip content={<CustomPieTooltip />} />
