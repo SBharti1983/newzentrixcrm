@@ -734,7 +734,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             display: flex;
             flex-direction: column;
           }
-          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5, .col-span-17 {
+          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5, .col-span-17, .col-span-14 {
             grid-column: span 24 !important;
           }
         }
@@ -755,6 +755,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         .col-span-7 { grid-column: span 7; }
         .col-span-5 { grid-column: span 5; }
         .col-span-17 { grid-column: span 17; }
+        .col-span-14 { grid-column: span 14; }
 
         .hide-mobile-border {
           border-right: 1px solid #e2e8f0;
@@ -1362,10 +1363,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 2 Charts: Leaderboard, Source, Aging, Timeline */}
-      <div className="dash-row-grid" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+      {/* Row 6: Team Performance & Live Activities */}
+      <div className="dash-row-grid">
         {/* Team Performance Leaderboard */}
-        <div className="dash-card" style={{ gridColumn: 'span 8' }}>
+        <div className="dash-card col-span-14">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Team Performance</span>
             <div className="dash-period-select-wrapper">
@@ -1434,14 +1435,58 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </button>
         </div>
 
+        {/* Live Activities Feed */}
+        <div className="dash-card col-span-10">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Live Activities</span>
+            <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
+              View All
+            </button>
+          </div>
+
+          <div className="dash-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: '282px', overflowY: 'auto', paddingRight: '4px', paddingTop: '4px' }}>
+            {activitiesData.map((act, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  background: act.bg,
+                  color: act.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  flexShrink: 0
+                }}>
+                  {act.initials}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+                    <strong style={{ color: '#0f172a' }}>{act.user}</strong> {act.action} <span style={{ fontWeight: 700, color: act.color }}>{act.target}</span>
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={10} />
+                    <span>{act.time}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 7: Lead Source Analytics & Lead Aging */}
+      <div className="dash-row-grid">
         {/* Lead Source Analytics */}
-        <div className="dash-card" style={{ gridColumn: 'span 5' }}>
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Source Analytics</span>
             <ChevronDown size={14} style={{ color: '#64748b', cursor: 'pointer' }} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
             <div style={{ height: '110px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -1481,13 +1526,13 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* Lead Aging */}
-        <div className="dash-card" style={{ gridColumn: 'span 5' }}>
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Aging</span>
             <ChevronDown size={14} style={{ color: '#64748b', cursor: 'pointer' }} />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
             <div style={{ position: 'relative', height: '110px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -1535,53 +1580,12 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             </div>
           </div>
         </div>
-
-        {/* Live Activities Feed */}
-        <div className="dash-card" style={{ gridColumn: 'span 6' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Live Activities</span>
-            <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
-              View All
-            </button>
-          </div>
-
-          <div className="dash-scrollbar" style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: '282px', overflowY: 'auto', paddingRight: '4px', paddingTop: '4px' }}>
-            {activitiesData.map((act, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: act.bg,
-                  color: act.color,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  flexShrink: 0
-                }}>
-                  {act.initials}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.78rem', color: '#334155', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
-                    <strong style={{ color: '#0f172a' }}>{act.user}</strong> {act.action} <span style={{ fontWeight: 700, color: act.color }}>{act.target}</span>
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={10} />
-                    <span>{act.time}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
-      {/* Row 3: Inventory Overview, Sales Target Radial, Tasks & Approvals */}
-      <div className="dash-row-grid" style={{ gridTemplateColumns: 'repeat(24, 1fr)' }}>
+      {/* Row 8: Inventory Overview, Sales Target Radial, Tasks & Approvals */}
+      <div className="dash-row-grid">
         {/* Inventory Overview Stacked Grouped Bar */}
-        <div className="dash-card" style={{ gridColumn: 'span 12' }}>
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Inventory Overview</span>
             <div style={{ display: 'flex', gap: '14px' }}>
@@ -1647,7 +1651,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* Sales Target vs Achievement Radial Gauge */}
-        <div className="dash-card" style={{ gridColumn: 'span 6' }}>
+        <div className="dash-card col-span-6">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Target vs Achievement</span>
             <div className="dash-period-select-wrapper">
@@ -1717,7 +1721,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* Tasks & Approvals */}
-        <div className="dash-card" style={{ gridColumn: 'span 6' }}>
+        <div className="dash-card col-span-6">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Tasks & Approvals</span>
             <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
