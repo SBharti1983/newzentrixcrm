@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AlertTriangle, TrendingUp, Briefcase, CheckSquare, ArrowRight, Sparkles } from 'lucide-react';
-import { DashCardProps } from './shared/types';
 
 interface ExecutiveSummaryProps {
   data: any;
@@ -32,7 +31,7 @@ export default function ExecutiveSummary({ data, isMobile }: ExecutiveSummaryPro
         <div className="dash-exec-header">
           <span className="dash-exec-title">Executive Summary</span>
           <span className="dash-exec-subtitle">Key insights &amp; actions</span>
-        </div>Logical Flow
+        </div>
 
         {/* Items list */}
         <div className="dash-exec-items">
