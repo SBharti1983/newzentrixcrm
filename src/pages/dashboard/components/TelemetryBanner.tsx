@@ -1,11 +1,14 @@
 import React from 'react';
 import { Calendar, Clock, ArrowUpRight, Users, AlertTriangle, ArrowUp, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function TelemetryBanner() {
+  const navigate = useNavigate();
+
   return (
     <div className="dash-telemetry-banner">
       {/* Card 1: Today's Bookings */}
-      <div className="dash-telemetry-cell">
+      <div className="dash-telemetry-cell" onClick={() => navigate('/bookings')} style={{ cursor: 'pointer' }}>
         <div className="dash-telemetry-icon" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
           <Calendar size={20} color="#2563eb" />
         </div>
@@ -20,7 +23,7 @@ export default function TelemetryBanner() {
       </div>
 
       {/* Card 2: Site Visits */}
-      <div className="dash-telemetry-cell">
+      <div className="dash-telemetry-cell" onClick={() => navigate('/site-visits')} style={{ cursor: 'pointer' }}>
         <div className="dash-telemetry-icon" style={{ background: '#f5f3ff', border: '1px solid #ddd6fe' }}>
           <Clock size={20} color="#7c3aed" />
         </div>
@@ -35,7 +38,7 @@ export default function TelemetryBanner() {
       </div>
 
       {/* Card 3: New Leads */}
-      <div className="dash-telemetry-cell">
+      <div className="dash-telemetry-cell" onClick={() => navigate('/leads')} style={{ cursor: 'pointer' }}>
         <div className="dash-telemetry-icon" style={{ background: '#ecfdf5', border: '1px solid #a7f3d0' }}>
           <ArrowUpRight size={20} color="#059669" />
         </div>
@@ -50,7 +53,7 @@ export default function TelemetryBanner() {
       </div>
 
       {/* Card 4: Deals in Negotiation */}
-      <div className="dash-telemetry-cell">
+      <div className="dash-telemetry-cell" onClick={() => navigate('/pipeline')} style={{ cursor: 'pointer' }}>
         <div className="dash-telemetry-icon" style={{ background: '#fdf2f8', border: '1px solid #fbcfe8' }}>
           <Users size={20} color="#db2777" />
         </div>
@@ -65,7 +68,7 @@ export default function TelemetryBanner() {
       </div>
 
       {/* Card 5: Revenue at Risk */}
-      <div className="dash-telemetry-risk">
+      <div className="dash-telemetry-risk" onClick={() => navigate('/pipeline')} style={{ cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div className="dash-telemetry-icon" style={{ background: '#ffedd5', border: '1px solid #fed7aa' }}>
             <AlertTriangle size={20} color="#ea580c" />
@@ -76,7 +79,6 @@ export default function TelemetryBanner() {
             <span style={{ color: '#dc2626', fontSize: '0.72rem', fontWeight: 850 }}>High Priority</span>
           </div>
         </div>
-        <ChevronRight size={22} color="#dc2626" style={{ cursor: 'pointer', flexShrink: 0 }} />
       </div>
     </div>
   );
