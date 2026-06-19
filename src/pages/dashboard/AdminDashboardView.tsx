@@ -1103,10 +1103,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 4 Charts: Funnel, AI Insights, Lead Risk */}
+      {/* Row 4: Sales Funnel & AI Insights */}
       <div className="dash-row-grid">
         {/* Sales Funnel Card */}
-        <div className="dash-card col-span-8">
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Funnel</span>
             <div className="dash-period-select-wrapper">
@@ -1143,7 +1143,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* AI Insights Card */}
-        <div className="dash-card col-span-8">
+        <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={16} color="#3b82f6" />
@@ -1199,79 +1199,6 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
-        {/* Lead Risk Overview Card */}
-        <div className="dash-card col-span-8">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Risk Overview</span>
-            <div className="dash-period-select-wrapper">
-              <select
-                className="dash-period-select"
-                value={leadRiskPeriod}
-                onChange={(e) => setLeadRiskPeriod(e.target.value)}
-                aria-label="Lead Risk Overview filter"
-              >
-                <option value="all_leads">All Leads</option>
-                <option value="hot_leads">Hot Leads</option>
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div style={{ position: 'relative', height: '100px', width: '100px', flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip content={<CustomPieTooltip />} />
-                    <Pie
-                      data={leadRiskData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={34}
-                      outerRadius={46}
-                      paddingAngle={3}
-                      dataKey="value"
-                      isAnimationActive={false}
-                    >
-                      {leadRiskData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>47</div>
-                  <div style={{ fontSize: '0.52rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>At Risk</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                {leadRiskData.map((risk, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
-                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: risk.color }} />
-                      <span>{risk.name}</span>
-                    </div>
-                    <div style={{ color: '#0f172a', fontWeight: 850 }}>
-                      {risk.value} <span style={{ color: '#94a3b8', fontWeight: 500 }}>({risk.percentage})</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', marginTop: '4px' }}>
-              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>Potential Revenue Risk</div>
-              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>₹26.5 Lakh</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Row 5: Top Performing Projects & Booking Trend */}
@@ -1477,10 +1404,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 7: Lead Source Analytics & Lead Aging */}
+      {/* Row 7: Lead Source Analytics, Lead Aging & Lead Risk Overview */}
       <div className="dash-row-grid">
         {/* Lead Source Analytics */}
-        <div className="dash-card col-span-12">
+        <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Source Analytics</span>
             <ChevronDown size={14} style={{ color: '#64748b', cursor: 'pointer' }} />
@@ -1526,7 +1453,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
 
         {/* Lead Aging */}
-        <div className="dash-card col-span-12">
+        <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Aging</span>
             <ChevronDown size={14} style={{ color: '#64748b', cursor: 'pointer' }} />
@@ -1577,6 +1504,80 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Lead Risk Overview Card */}
+        <div className="dash-card col-span-8">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Risk Overview</span>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={leadRiskPeriod}
+                onChange={(e) => setLeadRiskPeriod(e.target.value)}
+                aria-label="Lead Risk Overview filter"
+              >
+                <option value="all_leads">All Leads</option>
+                <option value="hot_leads">Hot Leads</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', height: '100px', width: '100px', flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip content={<CustomPieTooltip />} />
+                    <Pie
+                      data={leadRiskData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={34}
+                      outerRadius={46}
+                      paddingAngle={3}
+                      dataKey="value"
+                      isAnimationActive={false}
+                    >
+                      {leadRiskData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>47</div>
+                  <div style={{ fontSize: '0.52rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>At Risk</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                {leadRiskData.map((risk, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: risk.color }} />
+                      <span>{risk.name}</span>
+                    </div>
+                    <div style={{ color: '#0f172a', fontWeight: 850 }}>
+                      {risk.value} <span style={{ color: '#94a3b8', fontWeight: 500 }}>({risk.percentage})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>Potential Revenue Risk</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>₹26.5 Lakh</div>
             </div>
           </div>
         </div>
