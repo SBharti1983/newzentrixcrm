@@ -336,14 +336,15 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           border-radius: 20px;
           border: 1px solid #e2e8f0;
           box-shadow: 0 4px 18px rgba(148, 163, 184, 0.03);
-          padding: 20px 16px;
+          padding: 16px;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
           overflow: hidden;
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          height: 145px;
+          min-height: 155px;
+          height: auto;
         }
         .enterprise-kpi-card:hover {
           transform: translateY(-4px);
