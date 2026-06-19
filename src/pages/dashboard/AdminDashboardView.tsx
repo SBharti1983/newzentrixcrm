@@ -723,7 +723,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             display: flex;
             flex-direction: column;
           }
-          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5, .col-span-17, .col-span-14 {
+          .col-span-8, .col-span-10, .col-span-6, .col-span-12, .col-span-7, .col-span-5, .col-span-17, .col-span-14, .col-span-24 {
             grid-column: span 24 !important;
           }
         }
@@ -745,6 +745,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         .col-span-5 { grid-column: span 5; }
         .col-span-17 { grid-column: span 17; }
         .col-span-14 { grid-column: span 14; }
+        .col-span-24 { grid-column: span 24; }
 
         .hide-mobile-border {
           border-right: 1px solid #e2e8f0;
@@ -1631,7 +1632,7 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 2fr', gap: '24px' }}>
             {/* KPI statistics block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>Total Units</div>
                 <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>3,128</div>
