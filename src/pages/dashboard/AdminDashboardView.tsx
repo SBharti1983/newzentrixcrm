@@ -285,6 +285,8 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
   const [revenuePeriod, setRevenuePeriod] = useState('this_year');
   const [targetPeriod, setTargetPeriod] = useState('this_year');
   const [revenueSourcePeriod, setRevenueSourcePeriod] = useState('this_year');
+  const [bookingPeriod, setBookingPeriod] = useState('this_year');
+  const [leadRiskPeriod, setLeadRiskPeriod] = useState('all_leads');
 
   const forecastSparklineData = useMemo(() => [
     { val: 12.4 }, { val: 13.5 }, { val: 14.2 }, { val: 15.6 }, { val: 16.3 }, { val: 17.1 }, { val: 18.2 }
@@ -444,42 +446,42 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
     switch (teamPeriod) {
       case 'today':
         return [
-          { name: 'Rahul Sharma', leads: 5, visits: 2, bookings: 1, conversion: '20.0%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', initials: 'AV' }
+          { name: 'Rahul Sharma', leads: 5, visits: 2, bookings: 1, conversion: '20.0%', revenue: '₹0.25 Cr', sparklineData: [0.1, 0.15, 0.2, 0.25], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', revenue: '₹0.00 Cr', sparklineData: [0, 0, 0, 0], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 4, visits: 1, bookings: 0, conversion: '0.0%', revenue: '₹0.00 Cr', sparklineData: [0, 0, 0, 0], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' }
         ];
       case 'this_week':
         return [
-          { name: 'Rahul Sharma', leads: 32, visits: 10, bookings: 3, conversion: '9.4%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 28, visits: 9, bookings: 2, conversion: '7.1%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 30, visits: 8, bookings: 2, conversion: '6.7%', initials: 'AV' }
+          { name: 'Rahul Sharma', leads: 32, visits: 10, bookings: 3, conversion: '9.4%', revenue: '₹0.80 Cr', sparklineData: [0.3, 0.5, 0.6, 0.8], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 28, visits: 9, bookings: 2, conversion: '7.1%', revenue: '₹0.50 Cr', sparklineData: [0.2, 0.3, 0.4, 0.5], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 30, visits: 8, bookings: 2, conversion: '6.7%', revenue: '₹0.48 Cr', sparklineData: [0.1, 0.2, 0.3, 0.48], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' }
         ];
       case 'last_month':
         return [
-          { name: 'Rahul Sharma', leads: 162, visits: 52, bookings: 14, conversion: '8.6%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 148, visits: 45, bookings: 12, conversion: '8.1%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 140, visits: 40, bookings: 10, conversion: '7.1%', initials: 'AV' }
+          { name: 'Rahul Sharma', leads: 162, visits: 52, bookings: 14, conversion: '8.6%', revenue: '₹3.80 Cr', sparklineData: [3.0, 3.2, 3.5, 3.8], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 148, visits: 45, bookings: 12, conversion: '8.1%', revenue: '₹3.10 Cr', sparklineData: [2.5, 2.8, 3.0, 3.1], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 140, visits: 40, bookings: 10, conversion: '7.1%', revenue: '₹2.45 Cr', sparklineData: [2.0, 2.2, 2.3, 2.45], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' }
         ];
       case 'this_quarter':
         return [
-          { name: 'Rahul Sharma', leads: 480, visits: 150, bookings: 38, conversion: '7.9%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 430, visits: 130, bookings: 33, conversion: '7.7%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 410, visits: 120, bookings: 29, conversion: '7.1%', initials: 'AV' }
+          { name: 'Rahul Sharma', leads: 480, visits: 150, bookings: 38, conversion: '7.9%', revenue: '₹9.80 Cr', sparklineData: [8.0, 8.5, 9.2, 9.8], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 430, visits: 130, bookings: 33, conversion: '7.7%', revenue: '₹8.40 Cr', sparklineData: [7.0, 7.5, 8.0, 8.4], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 410, visits: 120, bookings: 29, conversion: '7.1%', revenue: '₹7.20 Cr', sparklineData: [6.0, 6.5, 6.8, 7.2], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' }
         ];
       case 'this_year':
         return [
-          { name: 'Rahul Sharma', leads: 1920, visits: 580, bookings: 148, conversion: '7.7%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 1720, visits: 520, bookings: 132, conversion: '7.7%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 1640, visits: 480, bookings: 110, conversion: '6.7%', initials: 'AV' }
+          { name: 'Rahul Sharma', leads: 1920, visits: 580, bookings: 148, conversion: '7.7%', revenue: '₹38.40 Cr', sparklineData: [32.0, 34.5, 36.8, 38.4], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 1720, visits: 520, bookings: 132, conversion: '7.7%', revenue: '₹34.10 Cr', sparklineData: [28.0, 30.5, 32.8, 34.1], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 1640, visits: 480, bookings: 110, conversion: '6.7%', revenue: '₹28.50 Cr', sparklineData: [24.0, 26.5, 27.8, 28.5], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' }
         ];
       case 'this_month':
       default:
         return [
-          { name: 'Rahul Sharma', leads: 156, visits: 48, bookings: 12, conversion: '8.3%', initials: 'RS' },
-          { name: 'Priya Singh', leads: 142, visits: 42, bookings: 11, conversion: '7.7%', initials: 'PS' },
-          { name: 'Amit Verma', leads: 135, visits: 38, bookings: 9, conversion: '6.7%', initials: 'AV' },
-          { name: 'Neha Kapoor', leads: 118, visits: 33, bookings: 8, conversion: '6.8%', initials: 'NK' },
-          { name: 'Vikram Patel', leads: 105, visits: 28, bookings: 6, conversion: '5.7%', initials: 'VP' }
+          { name: 'Rahul Sharma', leads: 156, visits: 48, bookings: 12, conversion: '8.3%', revenue: '₹3.24 Cr', sparklineData: [2.5, 2.8, 3.0, 2.9, 3.1, 3.24], img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Priya Singh', leads: 142, visits: 42, bookings: 11, conversion: '7.7%', revenue: '₹2.85 Cr', sparklineData: [2.0, 2.2, 2.5, 2.4, 2.7, 2.85], img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Amit Verma', leads: 135, visits: 38, bookings: 9, conversion: '6.7%', revenue: '₹2.12 Cr', sparklineData: [1.8, 1.9, 2.0, 2.1, 2.1, 2.12], img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Neha Kapoor', leads: 118, visits: 33, bookings: 8, conversion: '6.8%', revenue: '₹1.85 Cr', sparklineData: [1.5, 1.6, 1.7, 1.7, 1.8, 1.85], img: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop&q=60' },
+          { name: 'Vikram Patel', leads: 105, visits: 28, bookings: 6, conversion: '5.7%', revenue: '₹1.35 Cr', sparklineData: [1.0, 1.1, 1.2, 1.1, 1.3, 1.35], img: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=60' }
         ];
     }
   }, [teamPeriod]);
@@ -504,11 +506,33 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
 
   // Timeline feed
   const activitiesData = [
-    { user: 'Rohit Kumar', action: 'booked Unit B120', target: 'Green Vista', time: '2m ago', initials: 'RK', color: '#10b981', bg: '#ecfdf5' },
     { user: 'Neha', action: 'completed site visit for', target: 'Amit Verma', time: '15m ago', initials: 'NK', color: '#3b82f6', bg: '#eff6ff' },
     { user: 'System Auto', action: 'assigned new lead to', target: 'Rahul', time: '28m ago', initials: 'SA', color: '#f59e0b', bg: '#fffbeb' },
     { user: 'Amit Verma', action: 'moved deal to', target: 'Negotiation', time: '45m ago', initials: 'AV', color: '#8b5cf6', bg: '#f5f3ff' },
-    { user: 'Accounts', action: 'received payment of ₹25,00,000 for', target: 'Unit A502 - Skyline Towers', time: '1h ago', initials: 'AC', color: '#06b6d4', bg: '#ecfeff' }
+    { user: 'Accounts', action: 'received payment of', target: '₹25,00,000', time: '1h ago', initials: 'AC', color: '#06b6d4', bg: '#ecfeff' },
+    { user: 'Rohit Kumar', action: 'booked', target: 'Unit B120', time: '2h ago', initials: 'RK', color: '#10b981', bg: '#ecfdf5' }
+  ];
+
+  // Custom static data for Lead Risk and Booking Trend
+  const leadRiskData = [
+    { name: 'High Risk', value: 12, percentage: '25.5%', color: '#ef4444' },
+    { name: 'Medium Risk', value: 23, percentage: '48.9%', color: '#f59e0b' },
+    { name: 'Low Risk', value: 12, percentage: '25.5%', color: '#10b981' }
+  ];
+
+  const bookingTrendData = [
+    { name: 'Jan', bookings: 23 },
+    { name: 'Feb', bookings: 28 },
+    { name: 'Mar', bookings: 21 },
+    { name: 'Apr', bookings: 32 },
+    { name: 'May', bookings: 26 },
+    { name: 'Jun', bookings: 16 },
+    { name: 'Jul', bookings: 25 },
+    { name: 'Aug', bookings: 38 },
+    { name: 'Sep', bookings: 26 },
+    { name: 'Oct', bookings: 30 },
+    { name: 'Nov', bookings: 21 },
+    { name: 'Dec', bookings: 24 }
   ];
 
   // Grouped Stacked Bar chart for projects inventory
@@ -1078,10 +1102,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </div>
       </div>
 
-      {/* Row 1 Charts: Funnel, Trend, Projects */}
+      {/* Row 4 Charts: Funnel, AI Insights, Lead Risk */}
       <div className="dash-row-grid">
         {/* Sales Funnel Card */}
-        <div className="dash-card col-span-12">
+        <div className="dash-card col-span-8">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Sales Funnel</span>
             <div className="dash-period-select-wrapper">
@@ -1117,6 +1141,140 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
+        {/* AI Insights Card */}
+        <div className="dash-card col-span-8">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={16} color="#3b82f6" />
+              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>AI Insights</span>
+            </div>
+            <button style={{ background: 'none', border: 'none', color: '#2563eb', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer' }}>
+              View All
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
+            {/* Item 1 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f3e8ff', border: '1px solid #e9d5ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Zap size={14} color="#8b5cf6" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>High Intent Leads</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>42 leads are showing high buying intent from last 7 days.</div>
+              </div>
+              <button style={{ fontSize: '0.7rem', color: '#2563eb', border: '1px solid #bfdbfe', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                View Leads
+              </button>
+            </div>
+
+            {/* Item 2 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Target size={14} color="#10b981" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>Conversion Boost</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>Leads from Google Ads convert 42% higher than other sources.</div>
+              </div>
+              <button style={{ fontSize: '0.7rem', color: '#059669', border: '1px solid #a7f3d0', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                Optimize Budget
+              </button>
+            </div>
+
+            {/* Item 3 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertTriangle size={14} color="#ef4444" />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0f172a' }}>Risk Alert</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px', lineHeight: 1.3 }}>18 deals are at risk of missing expected closing date.</div>
+              </div>
+              <button style={{ fontSize: '0.7rem', color: '#dc2626', border: '1px solid #fecdd3', background: 'none', borderRadius: '6px', padding: '5px 10px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                View Deals
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Lead Risk Overview Card */}
+        <div className="dash-card col-span-8">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Lead Risk Overview</span>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={leadRiskPeriod}
+                onChange={(e) => setLeadRiskPeriod(e.target.value)}
+                aria-label="Lead Risk Overview filter"
+              >
+                <option value="all_leads">All Leads</option>
+                <option value="hot_leads">Hot Leads</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ position: 'relative', height: '100px', width: '100px', flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip content={<CustomPieTooltip />} />
+                    <Pie
+                      data={leadRiskData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={34}
+                      outerRadius={46}
+                      paddingAngle={3}
+                      dataKey="value"
+                      isAnimationActive={false}
+                    >
+                      {leadRiskData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>47</div>
+                  <div style={{ fontSize: '0.52rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginTop: '2px' }}>At Risk</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                {leadRiskData.map((risk, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: risk.color }} />
+                      <span>{risk.name}</span>
+                    </div>
+                    <div style={{ color: '#0f172a', fontWeight: 850 }}>
+                      {risk.value} <span style={{ color: '#94a3b8', fontWeight: 500 }}>({risk.percentage})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>Potential Revenue Risk</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>₹26.5 Lakh</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 5: Top Performing Projects & Booking Trend */}
+      <div className="dash-row-grid">
         {/* Top Performing Projects */}
         <div className="dash-card col-span-12">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -1159,6 +1317,49 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             ))}
           </div>
         </div>
+
+        {/* Booking Trend Card */}
+        <div className="dash-card col-span-12">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Booking Trend</span>
+            <div className="dash-period-select-wrapper">
+              <select
+                className="dash-period-select"
+                value={bookingPeriod}
+                onChange={(e) => setBookingPeriod(e.target.value)}
+                aria-label="Booking Trend time period"
+              >
+                <option value="this_year">This Year</option>
+                <option value="this_month">This Month</option>
+              </select>
+              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-1px', lineHeight: 1.1 }}>128</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, marginTop: '2px' }}>Total Bookings</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontSize: '0.75rem', fontWeight: 800, background: '#ecfdf5', padding: '3px 8px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                <ArrowUp size={12} />
+                <span>8.3% <span style={{ color: '#059669', fontWeight: 600 }}>vs last year</span></span>
+              </div>
+            </div>
+
+            <div style={{ height: '145px', width: '100%', marginTop: '10px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bookingTrendData} margin={{ top: 5, right: 10, left: -26, bottom: 0 }}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }} />
+                  <Tooltip cursor={{ fill: 'rgba(99, 102, 241, 0.04)' }} />
+                  <Bar dataKey="bookings" fill="#3b82f6" barSize={12} radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Row 2 Charts: Leaderboard, Source, Aging, Timeline */}
@@ -1191,35 +1392,37 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
                 <tr style={{ borderBottom: '1px solid #f1f5f9', textAlign: 'left' }}>
                   <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>Agent</th>
                   <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Leads</th>
-                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Visits</th>
+                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Site Visits</th>
                   <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Bookings</th>
-                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Conv.</th>
+                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Conversion</th>
+                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'right' }}>Revenue (Cr)</th>
+                  <th style={{ padding: '8px 4px', fontSize: '0.7rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', textAlign: 'center' }}> </th>
                 </tr>
               </thead>
               <tbody>
                 {teamData.map((agent, idx) => (
                   <tr key={idx} className="leaderboard-row" style={{ borderBottom: idx === teamData.length - 1 ? 'none' : '1px solid #f8fafc' }}>
                     <td style={{ padding: '8px 4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: ['#fee2e2', '#e0f2fe', '#fef3c7', '#dcfce7', '#f3e8ff'][idx % 5],
-                        color: ['#dc2626', '#0284c7', '#d97706', '#16a34a', '#9333ea'][idx % 5],
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '0.68rem',
-                        fontWeight: 800
-                      }}>
-                        {agent.initials}
-                      </div>
-                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{agent.name.split(' ')[0]}</span>
+                      <img
+                        src={agent.img}
+                        alt={agent.name}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                      <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>{agent.name}</span>
                     </td>
                     <td style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textAlign: 'right' }}>{agent.leads}</td>
                     <td style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textAlign: 'right' }}>{agent.visits}</td>
                     <td style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', textAlign: 'right' }}>{agent.bookings}</td>
                     <td style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 800, color: '#10b981', textAlign: 'right' }}>{agent.conversion}</td>
+                    <td style={{ padding: '8px 4px', fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', textAlign: 'right' }}>{agent.revenue}</td>
+                    <td style={{ padding: '8px 4px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <Sparkline data={agent.sparklineData} color="#10b981" />
+                    </td>
                   </tr>
                 ))}
               </tbody>
