@@ -13,7 +13,7 @@ import { useMobile } from '../../hooks/useMobile';
 import { usePageInfo } from '../../context/PageContext';
 
 // Sub-component: Area sparkline for KPI cards
-const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
+const Sparkline = React.memo(({ data, color }: { data: number[]; color: string }) => {
   const chartData = data.map((val, idx) => ({ id: idx, val }));
   return (
     <div style={{ width: '70px', height: '24px', flexShrink: 0 }}>
@@ -38,10 +38,10 @@ const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
       </ResponsiveContainer>
     </div>
   );
-};
+});
 
 // Sub-component: Sales Funnel clip-path layer
-const FunnelSegment = ({ label, count, percentage, color, clipPath, width }: {
+const FunnelSegment = React.memo(({ label, count, percentage, color, clipPath, width }: {
   label: string;
   count: number;
   percentage?: string;
@@ -77,7 +77,7 @@ const FunnelSegment = ({ label, count, percentage, color, clipPath, width }: {
       </div>
     </div>
   );
-};
+});
 
 // Sub-component: Custom tooltip for Revenue Trend AreaChart
 const CustomRevenueTooltip = ({ active, payload }: any) => {
