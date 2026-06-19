@@ -908,10 +908,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
         </button>
       </div>
 
-      {/* New Row: Revenue Command Center & Revenue by Source */}
+      {/* Row 3: Revenue Command Center (Left) & Forecast + Source Stack (Right) */}
       <div className="dash-row-grid" style={{ marginBottom: '24px' }}>
-        {/* Revenue Command Center Card */}
-        <div className="dash-card col-span-17">
+        {/* Left Column: Revenue Command Center Card */}
+        <div className="dash-card col-span-17" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '8px' }}>
               <line x1="6" y1="20" x2="6" y2="14" />
@@ -921,10 +921,10 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
             <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.3px' }}>Revenue Command Center</span>
           </div>
 
-          {/* Sub-Metrics Grid & Forecast Sparkline Box */}
+          {/* Sub-Metrics Grid of 4 Items */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr) 1.25fr',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
             gap: '24px',
             marginBottom: '24px',
             alignItems: 'start'
@@ -981,52 +981,6 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
               <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>78.5%</span>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px' }}>₹78.5 Cr of ₹100 Cr</span>
             </div>
-
-            {/* Stat 5: Revenue Forecast Sparkline Card */}
-            <div style={{
-              background: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '16px',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              minHeight: '110px',
-              boxShadow: '0 4px 12px rgba(148, 163, 184, 0.03)',
-              position: 'relative'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800 }}>Revenue Forecast</span>
-                <span style={{
-                  fontSize: '0.6rem',
-                  background: '#f0fdf4',
-                  color: '#16a34a',
-                  border: '1px solid #bbf7d0',
-                  padding: '2px 6px',
-                  borderRadius: '12px',
-                  fontWeight: 800
-                }}>
-                  High Confidence
-                </span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
-                <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹18.2 Cr</span>
-                <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>Next 30 Days</span>
-              </div>
-              <div style={{ width: '100%', height: '36px', marginTop: 'auto' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={forecastSparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="forecastGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={2} fill="url(#forecastGlow)" dot={false} isAnimationActive={false} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
           </div>
 
           {/* Custom Legend */}
@@ -1062,63 +1016,112 @@ export default function AdminDashboardView({ user, data }: AdminDashboardViewPro
           </div>
         </div>
 
-        {/* Revenue by Source Card */}
-        <div className="dash-card col-span-7">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue by Source</span>
-            <div className="dash-period-select-wrapper">
-              <select
-                className="dash-period-select"
-                value={revenueSourcePeriod}
-                onChange={(e) => setRevenueSourcePeriod(e.target.value)}
-                aria-label="Revenue by Source time period"
-              >
-                <option value="this_month">This Month</option>
-                <option value="this_quarter">This Quarter</option>
-                <option value="this_year">This Year</option>
-              </select>
-              <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+        {/* Right Column: Stack of Forecast (Sparkline) and Revenue by Source (Donut) */}
+        <div className="col-span-7" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Revenue Forecast Sparkline Card */}
+          <div className="dash-card" style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '110px',
+            boxShadow: '0 4px 12px rgba(148, 163, 184, 0.03)',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 800 }}>Revenue Forecast</span>
+              <span style={{
+                fontSize: '0.6rem',
+                background: '#f0fdf4',
+                color: '#16a34a',
+                border: '1px solid #bbf7d0',
+                padding: '2px 6px',
+                borderRadius: '12px',
+                fontWeight: 800
+              }}>
+                High Confidence
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '8px' }}>
+              <span style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>₹18.2 Cr</span>
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 700 }}>Next 30 Days</span>
+            </div>
+            <div style={{ width: '100%', height: '36px', marginTop: 'auto' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={forecastSparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="forecastGlow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={2} fill="url(#forecastGlow)" dot={false} isAnimationActive={false} />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', flex: 1 }}>
-            <div style={{ height: '115px', width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip content={<CustomPieTooltip />} />
-                  <Pie
-                    data={revenueSourceData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={36}
-                    outerRadius={50}
-                    paddingAngle={3}
-                    dataKey="value"
-                    isAnimationActive={false}
-                  >
-                    {revenueSourceData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+          {/* Revenue by Source Card */}
+          <div className="dash-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.2px' }}>Revenue by Source</span>
+              <div className="dash-period-select-wrapper">
+                <select
+                  className="dash-period-select"
+                  value={revenueSourcePeriod}
+                  onChange={(e) => setRevenueSourcePeriod(e.target.value)}
+                  aria-label="Revenue by Source time period"
+                >
+                  <option value="this_month">This Month</option>
+                  <option value="this_quarter">This Quarter</option>
+                  <option value="this_year">This Year</option>
+                </select>
+                <ChevronDown size={12} style={{ position: 'absolute', right: '8px', pointerEvents: 'none', color: '#64748b' }} />
+              </div>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
-              {revenueSourceData.map((source, idx) => (
-                <div key={idx} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', width: '45%' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color, flexShrink: 0 }} />
-                    <span style={{ whiteSpace: 'nowrap' }}>{source.name}</span>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'center', flex: 1 }}>
+              <div style={{ height: '115px', width: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip content={<CustomPieTooltip />} />
+                    <Pie
+                      data={revenueSourceData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={36}
+                      outerRadius={50}
+                      paddingAngle={3}
+                      dataKey="value"
+                      isAnimationActive={false}
+                    >
+                      {revenueSourceData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '6px' }}>
+                {revenueSourceData.map((source, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', fontSize: '0.75rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#475569', width: '45%' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: source.color, flexShrink: 0 }} />
+                      <span style={{ whiteSpace: 'nowrap' }}>{source.name}</span>
+                    </div>
+                    <div style={{ color: '#0f172a', fontWeight: 800, width: '20%', textAlign: 'right' }}>
+                      {source.value}%
+                    </div>
+                    <div style={{ color: '#64748b', fontWeight: 600, width: '35%', textAlign: 'right' }}>
+                      {source.amount}
+                    </div>
                   </div>
-                  <div style={{ color: '#0f172a', fontWeight: 800, width: '20%', textAlign: 'right' }}>
-                    {source.value}%
-                  </div>
-                  <div style={{ color: '#64748b', fontWeight: 600, width: '35%', textAlign: 'right' }}>
-                    {source.amount}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
