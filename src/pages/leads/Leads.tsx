@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useApi } from '../../hooks/useApi';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
 import { leadsApi, projectsApi, usersApi, notificationsApi, channelPartnersApi } from '../../api/client';
-import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar, Upload } from 'lucide-react';
+import { Plus, Search, Filter, Phone, Mail, Edit2, Trash2, X, Users, Tag, MessageSquare, Home, Handshake, Layout, Table, RotateCw, Calendar, Upload, ArrowUpDown } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../hooks/useAuth';
 import ContactPreviewSidebar from '../../components/shared/ContactPreviewSidebar';
 import { dialerEvents } from '../../constants/events';
 import { useMobile } from '../../hooks/useMobile';
+import '../../styles/leads-list.css';
 
 const STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
 const STAGE_COLORS = {
@@ -34,6 +35,18 @@ const STAGE_BG = {
     'Negotiation': 'rgba(245, 158, 11, 0.08)',
     'Won': 'rgba(34, 197, 94, 0.08)',
     'Lost': 'rgba(244, 63, 94, 0.08)'
+};
+const STAGE_DOT_COLORS: Record<string, string> = {
+    'New Lead': '#3b82f6',
+    'Connected': '#6366f1',
+    'Qualified': '#06b6d4',
+    'Site Visit Scheduled': '#14b8a6',
+    'Site Visit Done': '#10b981',
+    'Interested': '#7c4dff',
+    'Proposal Shared': '#d946ef',
+    'Negotiation': '#f59e0b',
+    'Won': '#22c55e',
+    'Lost': '#f43f5e'
 };
 
 const SOURCE_COLORS = {
@@ -158,6 +171,7 @@ interface LeadRowProps {
     lead: any;
     isSelected: boolean;
     filterNurtureDue: boolean;
+    rowIndex: number;
     onSelect: (id: any) => void;
     onPreview: (id: any) => void;
     onDelete: (id: any) => void;
@@ -167,24 +181,34 @@ interface LeadRowProps {
 }
 
 // Optimized Memoized Row Component
-const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: LeadRowProps) => {
+const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: LeadRowProps) => {
     const [hovered, setHovered] = useState(false);
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
+    const scoreClass = leadScore > 80 ? 'll-score-high' : leadScore > 50 ? 'll-score-mid' : 'll-score-low';
+    const staggerClass = `ll-stagger-${Math.min(rowIndex + 1, 20)}`;
+    const statusKey = (lead.status || 'Active').toLowerCase();
+    const stageDotColor = STAGE_DOT_COLORS[lead.stage] || '#94a3b8';
+    const stageBgColor = STAGE_BG[lead.stage] || '#f8fafc';
+
+    const scoreAccent = leadScore > 80 ? 'll-score-accent-high' : leadScore > 50 ? 'll-score-accent-mid' : 'll-score-accent-low';
 
     return (
         <tr 
+            className={`ll-row-animate ll-premium-row ${staggerClass} ${scoreAccent}`}
             onClick={() => onNavigate(lead.id)} 
             onMouseEnter={() => setHovered(true)} 
             onMouseLeave={() => setHovered(false)} 
             style={{ cursor: 'pointer', background: isSelected ? 'var(--navy-50)' : undefined }}
         >
             <td onClick={e => e.stopPropagation()} style={{ paddingRight: 0 }}>
-                <input type="checkbox" checked={isSelected} onChange={() => onSelect(lead.id)} style={{ cursor: 'pointer', transform: 'scale(1.1)' }} />
+                <input type="checkbox" className="ll-checkbox" checked={isSelected} onChange={() => onSelect(lead.id)} />
             </td>
             <td style={{ padding: '8px 8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
-                        {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                    <div className="ll-avatar-ring">
+                        <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
+                            {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                        </div>
                     </div>
                     <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ height: 14, opacity: hovered ? 1 : 0, visibility: hovered ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
@@ -199,7 +223,11 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview,
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <span style={{ color: lead.email ? 'var(--text-secondary)' : '#ef4444', overflowWrap: 'anywhere', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: lead.email ? 'inherit' : '0.65rem', fontWeight: lead.email ? 'inherit' : 700 }}>{lead.email || 'Email missing'}</span>
+                        {lead.email ? (
+                            <span style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.email}</span>
+                        ) : (
+                            <span className="ll-email-missing">⚠ No email</span>
+                        )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Phone size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -208,14 +236,27 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview,
                 </div>
             </td>
             <td style={{ textAlign: 'center', padding: '8px' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9', color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569' }}>{lead.status || 'Active'}</span>
+                <span className={`ll-status-pill ll-status-${statusKey}`}>{lead.status || 'Active'}</span>
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.stage || '—'}</span></td>
+            <td style={{ textAlign: 'center', padding: '8px' }}>
+                <span className="ll-stage-pill" style={{ '--ll-stage-dot': stageDotColor, '--ll-stage-bg': stageBgColor, '--ll-stage-border': `${stageDotColor}25`, '--ll-stage-color': stageDotColor } as any}>{lead.stage || '—'}</span>
+            </td>
             <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
             <td style={{ textAlign: 'center', padding: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center' }}>
-                    <div className="progress-bar" style={{ width: 35, height: 4 }}><div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} /></div>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 800 }}>{leadScore}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className={`ll-score-ring ${scoreClass}`}>
+                        <svg width="38" height="38" viewBox="0 0 38 38" className="ll-score-svg">
+                            <circle cx="19" cy="19" r="16" fill="transparent" stroke="var(--slate-200)" strokeWidth="3" />
+                            <circle cx="19" cy="19" r="16" fill="transparent" stroke="currentColor" strokeWidth="3"
+                                strokeDasharray={2 * Math.PI * 16}
+                                strokeDashoffset={2 * Math.PI * 16 * (1 - leadScore / 100)}
+                                strokeLinecap="round"
+                                transform="rotate(-90 19 19)"
+                            />
+                        </svg>
+                        <span className="ll-score-text">{leadScore}</span>
+                        <span className="ll-score-tooltip">{leadScore > 80 ? '🔥 Hot Lead' : leadScore > 50 ? '⚡ Warm Lead' : '❄️ Cold Lead'}</span>
+                    </div>
                 </div>
             </td>
             {filterNurtureDue && (
@@ -247,11 +288,11 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, onSelect, onPreview,
             <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
                 {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
             </td>
-            <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center', position: 'sticky', right: 0, background: hovered ? 'var(--slate-100)' : isSelected ? 'var(--navy-50)' : 'white', zIndex: 30, boxShadow: '-2px 0 5px rgba(0,0,0,0.05)', padding: '4px 6px' }}>
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', minWidth: '90px' }}>
-                    <button className="btn btn-ghost" onClick={() => onCall(lead.id, lead.phone, lead.name)} style={{ width: 32, height: 32, padding: 0 }}><Phone size={14} style={{ color: '#00a38d' }} /></button>
-                    <button className="btn btn-ghost" onClick={() => onEdit(lead)} style={{ width: 32, height: 32, padding: 0 }}><Edit2 size={14} /></button>
-                    <button className="btn btn-ghost" onClick={() => onDelete(lead.id)} style={{ color: 'var(--accent-rose)', width: 32, height: 32, padding: 0 }}><Trash2 size={14} /></button>
+            <td onClick={e => e.stopPropagation()} className="ll-actions-sticky" style={{ textAlign: 'center', padding: '4px 6px' }}>
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'center', minWidth: '90px' }}>
+                    <button className="ll-action-btn ll-action-call" onClick={() => onCall(lead.id, lead.phone, lead.name)} aria-label="Call lead"><Phone size={14} style={{ color: '#00a38d' }} /></button>
+                    <button className="ll-action-btn ll-action-edit" onClick={() => onEdit(lead)} aria-label="Edit lead"><Edit2 size={14} /></button>
+                    <button className="ll-action-btn ll-action-delete" onClick={() => onDelete(lead.id)} aria-label="Delete lead"><Trash2 size={14} style={{ color: 'var(--accent-rose)' }} /></button>
                 </div>
             </td>
         </tr>
@@ -287,6 +328,9 @@ export default function Leads() {
     const [saving, setSaving] = useState(false);
     const [previewLeadId, setPreviewLeadId] = useState(null);
     const fileInputRef = useRef(null);
+    const [sortField, setSortField] = useState<string | null>(null);
+    const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+    const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
 
     // Bulk Selection State
     const [selectedIds, setSelectedIds] = useState(new Set());
@@ -329,6 +373,7 @@ export default function Leads() {
 
             const res = await leadsApi.list(p);
             setLeadsRes(res || { data: [], total: 0 });
+            setLastFetchTime(new Date());
         } catch (err) {
             console.error('Fetch leads error:', err);
             showToast('Failed to load leads', 'error');
@@ -347,8 +392,38 @@ export default function Leads() {
         channelPartnersApi.list().then(setChannelPartners).catch(console.error);
     }, []);
 
-    const leads = leadsRes?.data || [];
+    const rawLeads = leadsRes?.data || [];
     const agents = Array.isArray(users) ? users.filter(u => ['agent', 'sales_manager', 'team_leader', 'admin'].includes(u.role)) : [];
+
+    // Client-side sort for current page
+    const leads = useMemo(() => {
+        if (!sortField) return rawLeads;
+        const sorted = [...rawLeads].sort((a, b) => {
+            let va = a[sortField], vb = b[sortField];
+            if (sortField === 'score') { va = Number(va) || 0; vb = Number(vb) || 0; return sortDir === 'asc' ? va - vb : vb - va; }
+            if (sortField === 'created_at' || sortField === 'last_contact_at') { va = va ? new Date(va).getTime() : 0; vb = vb ? new Date(vb).getTime() : 0; return sortDir === 'asc' ? va - vb : vb - va; }
+            va = String(va || '').toLowerCase(); vb = String(vb || '').toLowerCase();
+            return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+        return sorted;
+    }, [rawLeads, sortField, sortDir]);
+
+    const handleSort = useCallback((field: string) => {
+        if (sortField === field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
+        else { setSortField(field); setSortDir('asc'); }
+    }, [sortField]);
+
+    const freshnessTxt = useMemo(() => {
+        if (!lastFetchTime) return '';
+        const secs = Math.floor((Date.now() - lastFetchTime.getTime()) / 1000);
+        if (secs < 10) return 'Just now';
+        if (secs < 60) return `${secs}s ago`;
+        return `${Math.floor(secs / 60)}m ago`;
+    }, [lastFetchTime]);
+
+    // Re-render freshness text every 10s
+    const [, setTick] = useState(0);
+    useEffect(() => { const t = setInterval(() => setTick(x => x + 1), 10000); return () => clearInterval(t); }, []);
 
     const openAdd = () => { 
         setForm({
@@ -522,13 +597,19 @@ export default function Leads() {
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: '-0.02em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="ll-count-hero">
                             {leadsRes?.total || 0}
                         </span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             total leads
                         </span>
+                        {lastFetchTime && (
+                            <span className="ll-freshness">
+                                <span className="ll-freshness-dot" />
+                                {freshnessTxt}
+                            </span>
+                        )}
                     </div>
                 </div>
                 
@@ -548,7 +629,7 @@ export default function Leads() {
             </div>
 
             {/* Filters */}
-            <div className="card mb-2" style={{ padding: isMobile ? '12px' : '8px 12px', borderRadius: 12 }}>
+            <div className={`card mb-2 ll-filter-bar ${(filterStage !== 'All' || filterStatus !== 'All' || filterSource !== 'All' || filterAgent !== 'All' || filterNurtureDue || startDate || endDate || search) ? 'll-filter-active' : ''}`} style={{ padding: isMobile ? '12px' : '8px 12px', borderRadius: 12 }}>
                 <div style={{ 
                     display: 'flex', 
                     gap: 8, 
@@ -675,22 +756,46 @@ export default function Leads() {
                     )}
             </div>
         </div>
-            <div style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+            <div className="leads-table-card" style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {leadsLoading && (
                     <div style={{
-                        position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(255,255,255,0.7)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(2px)'
+                        position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(255,255,255,0.75)',
+                        display: 'flex', flexDirection: 'column', backdropFilter: 'blur(3px)', overflow: 'hidden', borderRadius: 12
                     }}>
-                        <div className="animate-spin" style={{ width: 40, height: 40, border: '4px solid var(--navy-500)', borderTopColor: 'transparent', borderRadius: '50%' }} />
+                        {/* Premium Shimmer Skeleton */}
+                        <div style={{ padding: '12px 16px', background: 'linear-gradient(180deg, #f8fafc, #f1f5f9)', borderBottom: '2px solid rgba(99,102,241,0.1)' }}>
+                            <div style={{ display: 'flex', gap: 24 }}>
+                                {[40, 130, 140, 70, 90, 80, 45].map((w, i) => (
+                                    <div key={i} className="ll-skeleton-cell" style={{ width: w, animationDelay: `${i * 0.08}s` }} />
+                                ))}
+                            </div>
+                        </div>
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="ll-skeleton-row" style={{ animationDelay: `${i * 0.05}s` }}>
+                                <div style={{ width: 18, height: 18, borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: `shimmer 1.5s infinite ${i * 0.05}s` }} />
+                                <div className="ll-skeleton-avatar" style={{ animationDelay: `${i * 0.05}s` }} />
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                    <div className="ll-skeleton-cell" style={{ width: '60%', height: 12, animationDelay: `${i * 0.05}s` }} />
+                                    <div className="ll-skeleton-cell" style={{ width: '35%', height: 8, animationDelay: `${i * 0.05 + 0.1}s` }} />
+                                </div>
+                                <div className="ll-skeleton-cell" style={{ width: 90, animationDelay: `${i * 0.05 + 0.1}s` }} />
+                                <div className="ll-skeleton-badge" style={{ width: 65, animationDelay: `${i * 0.05 + 0.15}s` }} />
+                                <div className="ll-skeleton-badge" style={{ width: 72, animationDelay: `${i * 0.05 + 0.2}s` }} />
+                                <div className="ll-skeleton-ring" style={{ animationDelay: `${i * 0.05 + 0.25}s` }} />
+                                <div className="ll-skeleton-cell" style={{ width: 60, animationDelay: `${i * 0.05 + 0.3}s` }} />
+                                <div className="ll-skeleton-cell" style={{ width: 55, animationDelay: `${i * 0.05 + 0.35}s` }} />
+                            </div>
+                        ))}
                     </div>
                 )}
 
-                <div className="table-wrapper" style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
+                <div className="table-wrapper ll-scroll" style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
                     {leads.length === 0 && !leadsLoading ? (
-                        <div className="empty-state" style={{ padding: '80px 0' }}>
-                            <div className="empty-state-icon">🔍</div>
-                            <div className="empty-state-title">No leads found</div>
-                            <div className="empty-state-text">Try adjusting filters or add a new lead.</div>
+                        <div className="ll-empty-state">
+                            <div className="ll-empty-icon">🔍</div>
+                            <div className="ll-empty-title">No leads found</div>
+                            <div className="ll-empty-text">Try adjusting your filters, search query, or date range — or add a new lead to get started.</div>
+                            <button className="ll-empty-cta" onClick={openAdd}><Plus size={16} /> Add New Lead</button>
                         </div>
                     ) : isMobile ? (
                         /* ═══ MOBILE CARD VIEW ═══ */
@@ -711,37 +816,53 @@ export default function Leads() {
                     ) : (
                         /* ═══ DESKTOP TABLE VIEW ═══ */
                         <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px', borderCollapse: 'separate', borderSpacing: 0 }}>
-                            <thead>
+                            <thead className="ll-thead-premium">
                                 <tr>
                                     <th style={{ width: 40, paddingRight: 0 }}>
                                         <input
                                             type="checkbox"
+                                            className="ll-checkbox"
                                             checked={leads.length > 0 && selectedIds.size === leads.length}
                                             onChange={toggleSelectAll}
-                                            style={{ cursor: 'pointer', transform: 'scale(1.1)' }}
                                         />
                                     </th>
-                                    {['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
-                                        const widths = { 'Lead': '130px', 'Contact': '140px', 'Status': '70px', 'Stage': '90px', 'Source': '80px', 'Score': '45px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Create Date': '80px', 'Assigned To': '90px', 'Last Contact': '100px', 'Actions': '100px' };
-                                        const isSticky = h === 'Actions';
-                                        return (
-                                            <th key={h} style={{ 
-                                                width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center', padding: '10px 4px', fontSize: '0.68rem',
-                                                textTransform: 'uppercase', fontWeight: 800, color: 'var(--slate-500)', borderBottom: '1px solid var(--border-light)',
-                                                background: 'var(--slate-50)', position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
-                                                zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-2px 0 5px rgba(0,0,0,0.05)' : 'none', whiteSpace: 'nowrap'
-                                            }}>{h}</th>
-                                        );
-                                    })}
+                                    {(() => {
+                                        const SORT_MAP: Record<string, string> = { 'Lead': 'name', 'Score': 'score', 'Status': 'status', 'Stage': 'stage', 'Source': 'source', 'Create Date': 'created_at', 'Last Contacted': 'last_contact_at' };
+                                        return ['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contacted', 'Actions'].map((h, i) => {
+                                            const widths: Record<string, string> = { 'Lead': '130px', 'Contact': '140px', 'Status': '80px', 'Stage': '120px', 'Source': '80px', 'Score': '55px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Create Date': '80px', 'Assigned To': '90px', 'Last Contacted': '110px', 'Actions': '100px' };
+                                            const isSticky = h === 'Actions';
+                                            const sortKey = SORT_MAP[h];
+                                            const isSorted = sortField === sortKey;
+                                            return (
+                                                <th key={h}
+                                                    className={sortKey ? `ll-sortable-th ${isSorted ? `ll-sort-active ll-sort-active-${sortDir}` : ''}` : ''}
+                                                    onClick={sortKey ? () => handleSort(sortKey) : undefined}
+                                                    style={{
+                                                        width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center',
+                                                        position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
+                                                        zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-4px 0 12px rgba(0,0,0,0.04)' : 'none'
+                                                    }}>
+                                                    {h}
+                                                    {sortKey && (
+                                                        <span className="ll-sort-icon">
+                                                            <span className="ll-sort-arrow ll-sort-arrow-up" />
+                                                            <span className="ll-sort-arrow ll-sort-arrow-down" />
+                                                        </span>
+                                                    )}
+                                                </th>
+                                            );
+                                        });
+                                    })()}
                                 </tr>
                             </thead>
-                            <tbody>
-                                {leads.map(lead => (
+                            <tbody className="ll-page-transition" key={`page-${page}`}>
+                                {leads.map((lead, i) => (
                                     <LeadRow 
                                         key={lead.id} 
                                         lead={lead} 
                                         isSelected={selectedIds.has(lead.id)}
                                         filterNurtureDue={filterNurtureDue}
+                                        rowIndex={i}
                                         onSelect={toggleSelect}
                                         onPreview={setPreviewLeadId}
                                         onDelete={deleteLead}
@@ -756,10 +877,10 @@ export default function Leads() {
                 </div>
 
                 {/* Pagination Section - Now ALWAYS stable and positioned correctly */}
-                <div style={{
+                <div className="ll-pagination" style={{
                     display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center',
-                    padding: isMobile ? '10px 12px' : '12px 20px', borderTop: '1px solid var(--border-light)',
-                    background: 'var(--slate-50)', borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: isMobile ? 8 : 12,
+                    padding: isMobile ? '10px 12px' : '12px 20px',
+                    borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: isMobile ? 8 : 12,
                     zIndex: 100, position: 'relative',
                     flexDirection: isMobile ? 'column' : 'row'
                 }}>
@@ -786,28 +907,40 @@ export default function Leads() {
                     
                     <div style={{ display: 'flex', gap: 8, marginRight: isMobile ? 0 : '100px', justifyContent: isMobile ? 'center' : 'flex-end', width: isMobile ? '100%' : 'auto' }}>
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="ll-page-btn"
                             onClick={() => { setPage(p => Math.max(1, p - 1)); showToast(`Loading page ${page - 1}...`, 'info'); }}
                             disabled={page === 1 || leadsLoading}
-                            style={{ borderRadius: 8, height: 34, padding: '0 16px', fontWeight: 700 }}
                         >
-                            Previous
+                            ← Prev
                         </button>
-                        <div style={{ 
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                            background: 'white', height: 34, borderRadius: 8, 
-                            border: '1px solid var(--border-light)', fontSize: '0.75rem', 
-                            fontWeight: 800, padding: '0 16px', color: 'var(--navy-600)'
-                        }}>
-                            Page {page}
-                        </div>
+                        {(() => {
+                            const totalPages = Math.max(1, Math.ceil((leadsRes?.total || 0) / limit));
+                            const pages: (number | string)[] = [];
+                            for (let p = 1; p <= Math.min(totalPages, 5); p++) pages.push(p);
+                            if (totalPages > 5 && page > 4) { pages.splice(0, pages.length); pages.push(1, '...'); for (let p = Math.max(2, page - 1); p <= Math.min(totalPages, page + 1); p++) pages.push(p); if (page + 1 < totalPages) pages.push('...', totalPages); }
+                            else if (totalPages > 5) { pages.push('...', totalPages); }
+                            return pages.map((p, idx) =>
+                                typeof p === 'string' ? (
+                                    <span key={`ellipsis-${idx}`} style={{ padding: '0 4px', color: 'var(--text-muted)', fontSize: '0.75rem', fontWeight: 700 }}>{p}</span>
+                                ) : (
+                                    <button
+                                        key={p}
+                                        className={`ll-page-btn ${p === page ? 'll-page-btn-active' : ''}`}
+                                        onClick={() => { setPage(p); showToast(`Loading page ${p}...`, 'info'); }}
+                                        disabled={leadsLoading}
+                                        style={{ minWidth: 34 }}
+                                    >
+                                        {p}
+                                    </button>
+                                )
+                            );
+                        })()}
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="ll-page-btn"
                             onClick={() => { setPage(p => p + 1); showToast(`Loading page ${page + 1}...`, 'info'); }}
                             disabled={(leads.length < limit && !leadsLoading) || (page * limit) >= (leadsRes?.total || 0) || leadsLoading}
-                            style={{ borderRadius: 8, height: 34, padding: '0 16px', fontWeight: 700 }}
                         >
-                            Next
+                            Next →
                         </button>
                     </div>
                 </div>

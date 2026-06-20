@@ -1,18 +1,28 @@
 const { Pool } = require('pg');
 require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 async function run() {
     try {
-        try {
-            await pool.query('ALTER TABLE channel_partners RENAME COLUMN rera_number TO rera_no;');
-        } catch(e) {}
-        await pool.query('ALTER TABLE channel_partners ADD COLUMN IF NOT EXISTS contact_person TEXT; ALTER TABLE channel_partners ADD COLUMN IF NOT EXISTS notes TEXT; ALTER TABLE channel_partners ADD COLUMN IF NOT EXISTS assigned_projects JSONB; ALTER TABLE channel_partners ADD COLUMN IF NOT EXISTS type TEXT;');
-        console.log('DB altered successfully!');
-    } catch(e){
-        console.error(e);
+        const sqlPath = path.resolve(__dirname, 'src/migrations/stored_procedures_v3_leads.sql');
+        console.log(`Reading SQL file from: ${sqlPath}`);
+        const sqlContent = fs.readFileSync(sqlPath, 'utf8');
+
+        console.log(`\n🚀 Deploying Stored Procedure get_lead_details...\n`);
+
+        await pool.query(sqlContent);
+        console.log(`  ✅ get_lead_details() deployed successfully`);
+
+        console.log(`\n══════════════════════════════════════`);
+        console.log(`✅ Deployment Complete`);
+        console.log(`══════════════════════════════════════\n`);
+    } catch (e) {
+        console.error(`  ❌ Deployment Failed:`, e.message);
     } finally {
-        pool.end();
+        await pool.end();
     }
 }
 run();

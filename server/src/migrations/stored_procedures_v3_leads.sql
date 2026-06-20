@@ -55,7 +55,16 @@ BEGIN
                            END as note,
                            (SELECT name FROM users WHERE id = activity_log.user_id) as agent_name,
                            'system' as entry_type
-                    FROM activity_log WHERE (entity_type = 'lead' AND entity_id::uuid = l.id) OR (entity_type = 'contact' AND entity_id::uuid = l.id)
+                    FROM activity_log 
+                    WHERE ((entity_type = 'lead' AND entity_id::uuid = l.id) OR (entity_type = 'contact' AND entity_id::uuid = l.id))
+                      AND (
+                        LOWER(TRIM(action)) != 'updated' 
+                        OR (new_data::jsonb->>'budget' IS DISTINCT FROM old_data::jsonb->>'budget')
+                        OR (new_data::jsonb->>'stage' IS DISTINCT FROM old_data::jsonb->>'stage')
+                        OR (new_data::jsonb->>'status' IS DISTINCT FROM old_data::jsonb->>'status')
+                        OR (new_data::jsonb->>'property_type' IS DISTINCT FROM old_data::jsonb->>'property_type')
+                        OR (new_data::jsonb->>'project_id' IS DISTINCT FROM old_data::jsonb->>'project_id')
+                      )
                 ) merged_activity
             ) as interactions,
             

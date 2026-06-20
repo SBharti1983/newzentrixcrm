@@ -17,9 +17,9 @@ import * as dateUtils from '../../utils/dateUtils';
 //  CANNED TEMPLATES
 // ═══════════════════════════════════════════════════════════════════
 const CANNED_REPLIES = [
-    { label: "📅 Schedule Visit", text: "Hi! Would you be available for a project site visit this Saturday or Sunday? We can arrange transport for you." },
-    { label: "🏠 Share Brochure", text: "Hello! Here are the project configurations, floor plans, and amenities lists for your review. Let me know what you think." },
-    { label: "💰 Request Pricing", text: "Hi! I am compiling the detailed pricing sheets, payment plans, and inventory lists to send over shortly." },
+    { label: "📅 Site Visit", text: "Hi! Would you be available for a project site visit this Saturday or Sunday? We can arrange transport for you." },
+    { label: "🏠 Brochure", text: "Hello! Here are the project configurations, floor plans, and amenities lists for your review. Let me know what you think." },
+    { label: "💰 Pricing", text: "Hi! I am compiling the detailed pricing sheets, payment plans, and inventory lists to send over shortly." },
     { label: "📞 Callback", text: "Hello! Just tried calling to discuss your query. Let me know when is a convenient time to connect today." },
     { label: "👋 Follow Up", text: "Hi! Just following up to see if you had any questions on the project options we discussed earlier." }
 ];
@@ -323,16 +323,12 @@ export default function CommandCenter() {
         return true;
     });
 
-    const probability = intel?.closingProbability || intel?.score || 0;
-    const radius = 46;
-    const strokeWidth = 8;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (probability / 100) * circumference;
+
 
     if (loading) return <CommandCenterSkeleton />;
 
     return (
-        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '80px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: 0 }}>
+        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '80px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: isMobile ? '0' : '-16px -28px -16px -28px' }}>
             {/* ─── Premium Keyframe styles ─── */}
             <style>{`
                 @keyframes calPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.65; transform: scale(0.97); } }
@@ -363,26 +359,27 @@ export default function CommandCenter() {
                             </div>
 
                             {/* Sidebar Filters */}
-                            <div style={{ display: 'flex', gap: 6, marginTop: 12, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }} className="sidebar-filters">
+                            <div style={{ display: 'flex', gap: 4, marginTop: 12, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }} className="sidebar-filters">
                                 {[
                                     { id: 'All', label: 'All' },
                                     { id: 'Active', label: '⚡ Active' },
-                                    { id: 'High', label: '🔥 High Prob' },
+                                    { id: 'High', label: '🔥 High' },
                                     { id: 'Won', label: '🎉 Won' }
                                 ].map(f => (
                                     <button
                                         key={f.id}
                                         onClick={() => setSidebarFilter(f.id)}
                                         style={{
-                                            padding: '4px 10px',
+                                            padding: '3px 8px',
                                             borderRadius: 12,
                                             border: '1px solid',
                                             borderColor: sidebarFilter === f.id ? 'var(--navy-900)' : 'var(--border-medium)',
                                             background: sidebarFilter === f.id ? 'var(--navy-900)' : 'white',
                                             color: sidebarFilter === f.id ? 'white' : 'var(--text-muted)',
-                                            fontSize: '0.7rem',
+                                            fontSize: '0.64rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
+                                            flexShrink: 0,
                                             whiteSpace: 'nowrap',
                                             transition: 'all 0.15s'
                                         }}
@@ -575,19 +572,19 @@ export default function CommandCenter() {
                                     {/* Chat Input controls */}
                                     <div style={{ padding: isMobile ? '12px 14px' : '18px 24px', background: 'white', borderTop: '1px solid var(--border-light)' }}>
                                         {/* Canned reply templates */}
-                                        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }} className="canned-replies-container">
+                                        <div style={{ display: 'flex', gap: 4, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }} className="canned-replies-container">
                                             {CANNED_REPLIES.map((r, idx) => (
                                                 <button
                                                     key={idx}
                                                     onClick={() => setReplyText(r.text)}
                                                     style={{
                                                         whiteSpace: 'nowrap',
-                                                        padding: '5px 12px',
+                                                        padding: '4px 10px',
                                                         borderRadius: '99px',
                                                         border: '1px solid #e2e8f0',
                                                         background: '#f8fafc',
                                                         color: '#475569',
-                                                        fontSize: '0.7rem',
+                                                        fontSize: '0.66rem',
                                                         fontWeight: 700,
                                                         cursor: 'pointer',
                                                         transition: 'all 0.15s',
@@ -649,7 +646,7 @@ export default function CommandCenter() {
                     RIGHT PANEL: AI INTELLIGENCE
                    ═══════════════════════════════════════════════════════ */}
                 {(!isMobile || mobileView === 'intel') && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: isMobile ? 'calc(100vh - 160px)' : '100%', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: isMobile ? 'calc(100vh - 160px)' : '100%', minHeight: 0, overflowY: 'auto' }}>
                         
                         {isMobile && (
                             <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 16 }}>
@@ -660,59 +657,11 @@ export default function CommandCenter() {
                             </div>
                         )}
 
-                        {/* Conversion Index Gauge Card */}
-                        <div className="card" style={{ padding: '10px 20px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 10px 25px -10px rgba(15,23,42,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #818cf8, #c084fc, #38bdf8)' }} />
-                            
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, width: '100%', alignSelf: 'flex-start' }}>
-                                <div className="ai-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-violet)', boxShadow: '0 0 10px var(--accent-violet)', animation: 'calPulse 2s infinite' }} />
-                                <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Conversion Index</h4>
-                            </div>
 
-                            {/* SVGGauge rendering */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0px 0', position: 'relative', width: 100, height: 100 }}>
-                                <svg width="90" height="90" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
-                                    <circle
-                                        cx="55"
-                                        cy="55"
-                                        r={radius}
-                                        fill="none"
-                                        stroke="#f1f5f9"
-                                        strokeWidth={strokeWidth}
-                                    />
-                                    <circle
-                                        cx="55"
-                                        cy="55"
-                                        r={radius}
-                                        fill="none"
-                                        stroke="url(#probabilityGradient)"
-                                        strokeWidth={strokeWidth}
-                                        strokeDasharray={circumference}
-                                        strokeDashoffset={strokeDashoffset}
-                                        strokeLinecap="round"
-                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
-                                    />
-                                    <defs>
-                                        <linearGradient id="probabilityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#818cf8" />
-                                            <stop offset="100%" stopColor="#c084fc" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: '1.6rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em' }}>
-                                        {probability}%
-                                    </span>
-                                    <span style={{ fontSize: '0.5rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: -2 }}>
-                                        Closing Rate
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
                         {/* Intel Summary */}
-                        <div className="card" style={{ flex: 1, padding: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--navy-900)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-                            <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', flexShrink: 0, background: 'var(--navy-900)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                            <div style={{ padding: '24px', background: 'rgba(0,0,0,0.15)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                     <h5 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 900, color: 'white' }}>
                                         <Sparkles size={16} style={{ color: '#c084fc' }} /> Lead Intelligence
@@ -744,30 +693,73 @@ export default function CommandCenter() {
                                     </div>
                                 </div>
 
+                                {/* Opportunity Profile Grid */}
+                                <div style={{ marginBottom: 20, padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: 12, letterSpacing: '0.05em' }}>Opportunity Profile</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
+                                        <div>
+                                            <span style={{ fontSize: '0.58rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700, marginBottom: 2 }}>Requirement</span>
+                                            <span style={{ fontSize: '0.82rem', color: 'white', fontWeight: 800 }}>{intel?.propertyType || 'Any Project'}</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '0.58rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700, marginBottom: 2 }}>Target City</span>
+                                            <span style={{ fontSize: '0.82rem', color: 'white', fontWeight: 800 }}>{intel?.city || 'Any Region'}</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '0.58rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700, marginBottom: 2 }}>Pipeline Stage</span>
+                                            <span style={{ 
+                                                fontSize: '0.72rem', 
+                                                color: '#c084fc', 
+                                                fontWeight: 800,
+                                                background: 'rgba(168, 85, 247, 0.1)',
+                                                padding: '2px 8px',
+                                                borderRadius: 6,
+                                                display: 'inline-block',
+                                                border: '1px solid rgba(168, 85, 247, 0.2)'
+                                            }}>{intel?.stage || 'Connected'}</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '0.58rem', color: '#94a3b8', display: 'block', textTransform: 'uppercase', fontWeight: 700, marginBottom: 2 }}>Status</span>
+                                            <span style={{ 
+                                                fontSize: '0.72rem', 
+                                                color: intel?.status === 'Won' ? '#34d399' : intel?.status === 'Lost' ? '#f43f5e' : '#fbbf24', 
+                                                fontWeight: 800,
+                                                background: intel?.status === 'Won' ? 'rgba(16, 185, 129, 0.1)' : intel?.status === 'Lost' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(251, 191, 36, 0.1)',
+                                                padding: '2px 8px',
+                                                borderRadius: 6,
+                                                display: 'inline-block',
+                                                border: `1px solid ${intel?.status === 'Won' ? 'rgba(16, 185, 129, 0.2)' : intel?.status === 'Lost' ? 'rgba(244, 63, 94, 0.2)' : 'rgba(251, 191, 36, 0.2)'}`
+                                            }}>{intel?.status || 'Active'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 {/* Summary Text */}
-                                <div style={{ marginBottom: 10 }}>
+                                <div style={{ marginBottom: 20 }}>
                                     <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.04em' }}>Executive Analysis</label>
                                     <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500 }}>
                                         {intel?.summary}
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* Pitch / Action Triggers */}
-                            <div style={{ padding: '20px 24px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(15, 23, 42, 0.4)' }}>
-                                <button className="btn hover-lift" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15))', color: '#e0e7ff', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', fontWeight: 900, fontSize: '0.8rem', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
-                                    <Sparkles size={14} style={{ marginRight: 6, color: '#c084fc' }} /> Generate Smart Pitch
-                                </button>
-                                
-                                <div style={{ padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.05em' }}>System Recommendation</label>
-                                    <button className="btn hover-lift" onClick={handleRecommendationClick} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#8b5cf6" style={{ fill: '#8b5cf6' }}/> {intel?.nextAction}</span>
-                                        <ChevronRight size={16} color="#94a3b8" />
+                                {/* Pitch / Action Triggers */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                                    <button className="btn hover-lift" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15))', color: '#e0e7ff', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', fontWeight: 900, fontSize: '0.8rem', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
+                                        <Sparkles size={14} style={{ marginRight: 6, color: '#c084fc' }} /> Generate Smart Pitch
                                     </button>
+                                    
+                                    <div style={{ padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.05em' }}>System Recommendation</label>
+                                        <button className="btn hover-lift" onClick={handleRecommendationClick} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#8b5cf6" style={{ fill: '#8b5cf6' }}/> {intel?.nextAction}</span>
+                                            <ChevronRight size={16} color="#94a3b8" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        {/* Spacer to guarantee scroll padding clearance at the bottom of the flex list */}
+                        <div style={{ height: isMobile ? 120 : 90, flexShrink: 0 }} />
                     </div>
                 )}
             </div>

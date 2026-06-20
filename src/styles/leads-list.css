@@ -1,0 +1,715 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Lead Management List — Enterprise Premium Styles
+   Benchmarked against Salesforce Lightning / HubSpot / Monday.com
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Staggered Row Entrance ─────────────────────────────────────── */
+@keyframes ll-rowSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ll-row-animate {
+  animation: ll-rowSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.ll-stagger-1  { animation-delay: 0.01s; }
+.ll-stagger-2  { animation-delay: 0.02s; }
+.ll-stagger-3  { animation-delay: 0.03s; }
+.ll-stagger-4  { animation-delay: 0.04s; }
+.ll-stagger-5  { animation-delay: 0.05s; }
+.ll-stagger-6  { animation-delay: 0.06s; }
+.ll-stagger-7  { animation-delay: 0.07s; }
+.ll-stagger-8  { animation-delay: 0.08s; }
+.ll-stagger-9  { animation-delay: 0.09s; }
+.ll-stagger-10 { animation-delay: 0.10s; }
+.ll-stagger-11 { animation-delay: 0.11s; }
+.ll-stagger-12 { animation-delay: 0.12s; }
+.ll-stagger-13 { animation-delay: 0.13s; }
+.ll-stagger-14 { animation-delay: 0.14s; }
+.ll-stagger-15 { animation-delay: 0.15s; }
+.ll-stagger-16 { animation-delay: 0.16s; }
+.ll-stagger-17 { animation-delay: 0.17s; }
+.ll-stagger-18 { animation-delay: 0.18s; }
+.ll-stagger-19 { animation-delay: 0.19s; }
+.ll-stagger-20 { animation-delay: 0.20s; }
+
+/* ─── Premium Row Hover ──────────────────────────────────────────── */
+.ll-premium-row {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-left: 3px solid transparent;
+}
+
+.ll-premium-row:hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.01) 100%) !important;
+  border-left-color: #6366f1;
+  transform: translateX(2px);
+}
+
+.ll-premium-row:hover td {
+  color: var(--navy-900);
+}
+
+/* ─── Table Container Override (suppress card:hover lift) ────────── */
+.leads-table-card {
+  transition: box-shadow 0.2s ease !important;
+}
+
+.leads-table-card:hover {
+  transform: none !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ─── Glassmorphic Filter Bar ────────────────────────────────────── */
+.ll-filter-bar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78) 0%, rgba(248, 250, 252, 0.65) 100%) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow:
+    0 10px 30px -10px rgba(0, 0, 0, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.ll-filter-bar:hover {
+  transform: none !important;
+  box-shadow:
+    0 12px 36px -8px rgba(99, 102, 241, 0.08),
+    0 2px 8px rgba(99, 102, 241, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(99, 102, 241, 0.15) !important;
+}
+
+.ll-filter-active {
+  border-color: rgba(99, 102, 241, 0.25) !important;
+  box-shadow:
+    0 4px 24px rgba(99, 102, 241, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 0 0 1px rgba(99, 102, 241, 0.08) !important;
+}
+
+/* ─── Premium Table Header ───────────────────────────────────────── */
+.ll-thead-premium {
+  position: relative;
+}
+
+.ll-thead-premium th {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  color: var(--slate-500) !important;
+  padding: 12px 4px !important;
+  border-bottom: 2px solid transparent !important;
+  border-image: linear-gradient(90deg, #6366f1, #06b6d4, #6366f1) 1 !important;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ─── Score Ring ──────────────────────────────────────────────────── */
+.ll-score-ring {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ll-score-svg {
+  width: 38px;
+  height: 38px;
+  transform: rotate(0deg);
+}
+
+.ll-score-text {
+  position: absolute;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: inherit;
+}
+
+.ll-score-high {
+  color: #059669;
+  --ll-score-color: #10b981;
+}
+
+.ll-score-mid {
+  color: #d97706;
+  --ll-score-color: #f59e0b;
+}
+
+.ll-score-low {
+  color: #e11d48;
+  --ll-score-color: #f43f5e;
+}
+
+/* ─── Status Pill Premium ────────────────────────────────────────── */
+.ll-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ll-status-pill::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ll-status-active {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #065f46;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.ll-status-active::before { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+
+.ll-status-won {
+  background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
+  color: #14532d;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.ll-status-won::before { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+
+.ll-status-lost {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #881337;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+.ll-status-lost::before { background: #f43f5e; box-shadow: 0 0 6px rgba(244, 63, 94, 0.4); }
+
+.ll-status-nurture {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  color: #581c87;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+.ll-status-nurture::before { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }
+
+/* ─── Stage Badge with Color Dot ─────────────────────────────────── */
+.ll-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--ll-stage-border, rgba(100, 116, 139, 0.15));
+  background: var(--ll-stage-bg, #f8fafc);
+  color: var(--ll-stage-color, #475569);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.ll-stage-pill::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ll-stage-dot, #94a3b8);
+  flex-shrink: 0;
+}
+
+/* ─── Email Missing — Softer Amber Warning ───────────────────────── */
+.ll-email-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.08);
+  padding: 1px 7px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+/* ─── Action Button Micro-Interactions ───────────────────────────── */
+.ll-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+}
+
+.ll-action-btn:hover {
+  transform: scale(1.15);
+  background: var(--slate-100);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ll-action-btn:active {
+  transform: scale(0.95);
+}
+
+.ll-action-call:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.ll-action-edit:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+}
+
+.ll-action-delete:hover {
+  background: rgba(244, 63, 94, 0.1);
+  color: #e11d48;
+}
+
+/* ─── Premium Pagination ─────────────────────────────────────────── */
+.ll-pagination {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.9) 0%, rgba(241, 245, 249, 0.95) 100%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(99, 102, 241, 0.08) !important;
+}
+
+.ll-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: 1px solid var(--border-light);
+  background: white;
+  color: var(--navy-600);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 10px;
+}
+
+.ll-page-btn:hover:not(:disabled) {
+  border-color: #6366f1;
+  color: #6366f1;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+}
+
+.ll-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ll-page-btn-active {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  color: white !important;
+  border-color: transparent !important;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* ─── Total Count Hero ───────────────────────────────────────────── */
+@keyframes ll-countPop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.ll-count-hero {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6366f1 0%, #06b6d4 50%, #6366f1 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ll-countPop 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both,
+             ll-gradientShift 3s ease-in-out infinite;
+  letter-spacing: -0.02em;
+}
+
+@keyframes ll-gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────── */
+.ll-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.ll-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ll-scroll::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 10px;
+}
+
+.ll-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+/* ─── Shimmer Loading Skeleton ───────────────────────────────────── */
+.ll-skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ll-skeleton-cell {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.ll-skeleton-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+.ll-skeleton-badge {
+  height: 22px;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.ll-skeleton-ring {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  flex-shrink: 0;
+}
+
+/* ─── Premium Empty State ────────────────────────────────────────── */
+@keyframes ll-emptyFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+.ll-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.ll-empty-icon {
+  font-size: 3.5rem;
+  animation: ll-emptyFloat 3s ease-in-out infinite;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+.ll-empty-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--navy-900);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.ll-empty-text {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+.ll-empty-cta {
+  margin-top: 24px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ll-empty-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.4);
+}
+
+/* ─── Row Actions Sticky Column Premium ──────────────────────────── */
+.ll-actions-sticky {
+  position: sticky;
+  right: 0;
+  z-index: 30;
+  background: white;
+  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.04);
+  transition: background 0.2s ease;
+}
+
+.ll-premium-row:hover .ll-actions-sticky {
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0.95), white);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   PHASE 2: Final 12-Point Premium Push (100/100)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Custom Styled Checkboxes ────────────────────────────────── */
+.ll-checkbox {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ll-checkbox:hover {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.ll-checkbox:checked {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-color: transparent;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.ll-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* ─── 2. Alternating Row Tints (Zebra Striping) ──────────────────── */
+.ll-premium-row:nth-child(even) {
+  background: rgba(248, 250, 252, 0.5);
+}
+
+.ll-premium-row:nth-child(even):hover {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.01) 100%) !important;
+}
+
+.ll-premium-row:nth-child(even) .ll-actions-sticky {
+  background: rgba(248, 250, 252, 0.95);
+}
+
+/* ─── 3. Sticky Table Header ─────────────────────────────────────── */
+.ll-thead-premium th {
+  position: sticky !important;
+  top: 0;
+  z-index: 20 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ll-thead-premium th[style*="sticky"] {
+  z-index: 40 !important;
+}
+
+/* ─── 4. Sort Indicator Headers ──────────────────────────────────── */
+.ll-sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.ll-sortable-th:hover {
+  color: #6366f1 !important;
+  background: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%) !important;
+}
+
+.ll-sort-icon {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.3;
+  transition: opacity 0.15s ease;
+}
+
+.ll-sortable-th:hover .ll-sort-icon {
+  opacity: 0.6;
+}
+
+.ll-sort-active .ll-sort-icon {
+  opacity: 1;
+}
+
+.ll-sort-arrow {
+  width: 0;
+  height: 0;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+}
+
+.ll-sort-arrow-up {
+  border-bottom: 4px solid currentColor;
+}
+
+.ll-sort-arrow-down {
+  border-top: 4px solid currentColor;
+}
+
+.ll-sort-active-asc .ll-sort-arrow-up {
+  border-bottom-color: #6366f1;
+}
+
+.ll-sort-active-desc .ll-sort-arrow-down {
+  border-top-color: #6366f1;
+}
+
+/* ─── 5. Score Ring Hover Tooltip ─────────────────────────────────── */
+/* Score ring uses SVG progress now, ::before border styling is redundant */
+
+.ll-score-tooltip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: var(--navy-900);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: all 0.15s ease;
+  z-index: 50;
+  letter-spacing: 0.03em;
+}
+
+.ll-score-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--navy-900);
+}
+
+.ll-score-ring:hover .ll-score-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ─── 6. Avatar Gradient Ring ────────────────────────────────────── */
+.ll-avatar-ring {
+  position: relative;
+  padding: 2px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(6, 182, 212, 0.3));
+  flex-shrink: 0;
+}
+
+.ll-avatar-ring .avatar {
+  border: 1.5px solid white;
+}
+
+/* ─── 7. Row Score Accent Border ─────────────────────────────────── */
+.ll-score-accent-high {
+  border-left: 3px solid #10b981 !important;
+}
+
+.ll-score-accent-mid {
+  border-left: 3px solid #f59e0b !important;
+}
+
+.ll-score-accent-low {
+  border-left: 3px solid #f43f5e !important;
+}
+
+/* ─── 8. Page Transition Animation ───────────────────────────────── */
+@keyframes ll-pageFade {
+  from { opacity: 0.4; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ll-page-transition {
+  animation: ll-pageFade 0.3s ease both;
+}
+
+/* ─── 9. Freshness Indicator ─────────────────────────────────────── */
+@keyframes ll-livePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.ll-freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.08);
+}
+
+.ll-freshness-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: ll-livePulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}

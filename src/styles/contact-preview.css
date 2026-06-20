@@ -679,3 +679,209 @@
   /* Chrome/Safari */
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ENTERPRISE PREMIUM LAYER
+   World-class animations, micro-interactions, and depth hierarchy
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Premium Custom Scrollbar ──────────────────────────────────── */
+.contact-details-main::-webkit-scrollbar {
+  width: 5px;
+}
+.contact-details-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+.contact-details-main::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 10px;
+  transition: background 0.3s;
+}
+.contact-details-main::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+.contact-details-main {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+/* ─── Staggered Card Entrance Animations ────────────────────────── */
+@keyframes cd-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cd-card-animate {
+  animation: cd-card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cd-stagger-1 { animation-delay: 0.04s; }
+.cd-stagger-2 { animation-delay: 0.10s; }
+.cd-stagger-3 { animation-delay: 0.16s; }
+.cd-stagger-4 { animation-delay: 0.22s; }
+.cd-stagger-5 { animation-delay: 0.28s; }
+.cd-stagger-6 { animation-delay: 0.34s; }
+.cd-stagger-7 { animation-delay: 0.40s; }
+
+/* ─── Premium Hover Glow Effect ─────────────────────────────────── */
+.cd-hover-glow {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.25s ease;
+}
+.cd-hover-glow:hover {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.08), 0 1px 3px rgba(10, 22, 40, 0.04) !important;
+  transform: translateY(-1px);
+}
+
+/* ─── Hero Card (elevated depth for important cards) ────────────── */
+.cd-hero-card {
+  position: relative;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.cd-hero-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+  transition: box-shadow 0.4s ease;
+}
+.cd-hero-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(10, 22, 40, 0.07), 0 2px 6px rgba(10, 22, 40, 0.03);
+}
+.cd-hero-card:hover::after {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.1);
+}
+
+/* ─── Journey Stepper: Active Stage Breathing Pulse ─────────────── */
+@keyframes cd-stage-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px white, 0 0 0 5px currentColor;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 3px white, 0 0 0 7px currentColor;
+    transform: scale(1.08);
+  }
+}
+
+.cd-stage-active {
+  animation: cd-stage-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ─── Stepper Connector Draw Animation ──────────────────────────── */
+@keyframes cd-connector-draw {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.cd-connector-animate {
+  transform-origin: left center;
+  animation: cd-connector-draw 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─── Checklist Toggle Ripple ───────────────────────────────────── */
+@keyframes cd-check-ripple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+  }
+}
+.cd-check-ripple {
+  animation: cd-check-ripple 0.4s ease-out;
+}
+
+/* ─── Checklist Item Hover ──────────────────────────────────────── */
+.cd-checklist-item {
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.cd-checklist-item:hover {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  transform: translateX(2px);
+}
+
+/* ─── Communication Pulse Bar Animation ─────────────────────────── */
+@keyframes cd-bar-grow {
+  from {
+    width: 0%;
+  }
+}
+.cd-bar-animate {
+  animation: cd-bar-grow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cd-bar-delay-1 { animation-delay: 0.1s; }
+.cd-bar-delay-2 { animation-delay: 0.18s; }
+.cd-bar-delay-3 { animation-delay: 0.26s; }
+.cd-bar-delay-4 { animation-delay: 0.34s; }
+.cd-bar-delay-5 { animation-delay: 0.42s; }
+
+/* ─── Dark Card Shimmer Overlay ─────────────────────────────────── */
+@keyframes cd-shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.cd-dark-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.cd-dark-shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.03) 40%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.03) 60%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  pointer-events: none;
+  z-index: 1;
+}
+.cd-dark-shimmer:hover::before {
+  animation: cd-shimmer-sweep 1.2s ease-in-out;
+}
+
+/* ─── Number Count-Up Effect ────────────────────────────────────── */
+@keyframes cd-count-pop {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.cd-count-animate {
+  animation: cd-count-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.3s;
+}
+
+/* ─── Vitals Row Entrance ───────────────────────────────────────── */
+@keyframes cd-vitals-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.cd-vital-animate {
+  animation: cd-vitals-slide 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.cd-vital-delay-1 { animation-delay: 0.08s; }
+.cd-vital-delay-2 { animation-delay: 0.16s; }
+.cd-vital-delay-3 { animation-delay: 0.24s; }
+.cd-vital-delay-4 { animation-delay: 0.32s; }
+

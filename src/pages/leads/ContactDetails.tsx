@@ -26,10 +26,261 @@ const LIFECYCLE_COLORS = {
     'Lost': { bg: 'rgba(244, 63, 94, 0.08)', text: 'var(--accent-rose-dark)', icon: X }
 };
 
+const STAGE_CHECKLISTS: Record<string, string[]> = {
+    'New Lead': [
+        'Verify lead contact details (Phone & Email)',
+        'Call within 15 minutes of inbound query',
+        'Send introductory WhatsApp message with company profile'
+    ],
+    'Connected': [
+        'Log property requirement (BHK, Location, Budget)',
+        'Share initial project brochures & costing details',
+        'Schedule formal qualification/discussion call'
+    ],
+    'Qualified': [
+        'Identify buyer timeline & financing options',
+        'Select top 3 project matches based on budget',
+        'Invite lead for an in-person site visit'
+    ],
+    'Site Visit Scheduled': [
+        'Arrange cab/transportation or send directions pin',
+        'Brief site executive on lead’s profile and interest',
+        'Send site visit reminder invitation via WhatsApp'
+    ],
+    'Site Visit Done': [
+        'Log site visit feedback & unit preference',
+        'Provide detailed cost sheets & pricing breakdowns',
+        'Follow up within 24 hours of visit completion'
+    ],
+    'Interested': [
+        'Customize final proposal & payment schedule',
+        'Block preferred unit tentatively in inventory',
+        'Collect KYC documents (PAN, Aadhaar)'
+    ],
+    'Proposal Shared': [
+        'Confirm receipt and review of proposal document',
+        'Schedule quick review call to answer questions',
+        'Identify and resolve first-level pricing objections'
+    ],
+    'Negotiation': [
+        'Get management approval for special discounts',
+        'Finalize payment milestones & token booking amount',
+        'Send formal booking link / bank transfer details'
+    ],
+    'Won': [
+        'Validate booking amount credit in bank',
+        'Generate Pro-Forma Invoice and Booking Agreement',
+        'Handover file to CRM Operations for onboarding'
+    ],
+    'Lost': [
+        'Log primary reason for loss (Budget, Competitor, etc.)',
+        'Move lead to automated cold-outreach list',
+        'Set reminder for check-in after 6 months'
+    ]
+};
+
+function ContactDetailsSkeleton() {
+    return (
+        <div style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', overflow: 'hidden' }}>
+            {/* LEFT COLUMN - Profile Summary Skeleton */}
+            <div style={{
+                width: 400,
+                flexShrink: 0,
+                borderRight: '1px solid var(--border-light)',
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '4px 0 24px rgba(10,22,40,0.02)',
+                zIndex: 10,
+                padding: '12px'
+            }}>
+                {/* Back Button Skeleton */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, padding: '0 4px' }}>
+                    <div className="dash-skeleton" style={{ width: 80, height: 32, borderRadius: '10px' }} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <div className="dash-skeleton" style={{ width: 60, height: 20, borderRadius: '10px' }} />
+                        <div className="dash-skeleton" style={{ width: 80, height: 20, borderRadius: '10px' }} />
+                    </div>
+                </div>
+
+                {/* Avatar & Name Skeleton */}
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                    <div className="dash-skeleton dash-skeleton-circle" style={{ width: 48, height: 48, margin: '0 auto 12px' }} />
+                    <div className="dash-skeleton dash-skeleton-bar" style={{ width: '40%', height: 16, margin: '0 auto 8px' }} />
+                    <div className="dash-skeleton dash-skeleton-bar" style={{ width: '25%', height: 12, margin: '0 auto' }} />
+                </div>
+
+                {/* Strategic Action Hub (9 buttons) */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: 6,
+                    marginBottom: 16,
+                    padding: '8px',
+                    background: '#f8fafc',
+                    borderRadius: '14px'
+                }}>
+                    {Array.from({ length: 9 }).map((_, i) => (
+                        <div key={i} className="dash-skeleton" style={{ height: 46, borderRadius: '10px', background: '#e2e8f0' }} />
+                    ))}
+                </div>
+
+                {/* Core Identity Section */}
+                <div style={{
+                    padding: '14px',
+                    borderRadius: '18px',
+                    background: '#f8fafc',
+                    border: '1px solid #f1f5f9',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 16
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div className="dash-skeleton dash-skeleton-bar" style={{ width: '30%', height: 10 }} />
+                        <div className="dash-skeleton dash-skeleton-circle" style={{ width: 14, height: 14 }} />
+                    </div>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <div className="dash-skeleton dash-skeleton-circle" style={{ width: 36, height: 36, borderRadius: '12px' }} />
+                            <div style={{ flex: 1 }}>
+                                <div className="dash-skeleton dash-skeleton-bar" style={{ width: '40%', height: 8, marginBottom: 4 }} />
+                                <div className="dash-skeleton dash-skeleton-bar" style={{ width: '70%', height: 12 }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Journey Milestone Section */}
+                <div style={{ marginTop: 12, padding: '14px', borderRadius: '18px', background: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                    <div className="dash-skeleton dash-skeleton-bar" style={{ width: '40%', height: 10, marginBottom: 12 }} />
+                    <div className="dash-skeleton" style={{ width: '100%', height: 44, borderRadius: '16px' }} />
+                </div>
+            </div>
+
+            {/* MIDDLE COLUMN - Timeline & Intelligence Skeleton */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowX: 'hidden', backgroundColor: '#fcfdfe', padding: '16px' }}>
+                {/* Tabs Skeleton */}
+                <div style={{ display: 'flex', borderBottom: '1px solid #f1f5f9', background: 'white', paddingBottom: 10, marginBottom: 16 }}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+                            <div className="dash-skeleton dash-skeleton-bar" style={{ width: '50%', height: 14 }} />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Overview content skeleton */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* Deal Matrix Intelligence */}
+                    <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3' }}>
+                        <div className="dash-skeleton dash-skeleton-bar" style={{ width: '20%', height: 12, marginBottom: 12 }} />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} style={{ background: '#f8fafc', padding: '10px', borderRadius: '10px', border: '1px solid #eef2f6', textAlign: 'center' }}>
+                                    <div className="dash-skeleton dash-skeleton-circle" style={{ width: 22, height: 22, margin: '0 auto 6px' }} />
+                                    <div className="dash-skeleton dash-skeleton-bar" style={{ width: '60%', height: 8, margin: '0 auto 4px' }} />
+                                    <div className="dash-skeleton dash-skeleton-bar" style={{ width: '40%', height: 10, margin: '0 auto' }} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Lead Lifecycle Journey Stepper */}
+                    <div style={{ padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3' }}>
+                        <div className="dash-skeleton dash-skeleton-bar" style={{ width: '15%', height: 12, marginBottom: 16 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', padding: '0 10px', marginBottom: 12 }}>
+                            <div style={{ position: 'absolute', top: '50%', left: 10, right: 10, height: 3, background: '#f1f5f9', transform: 'translateY(-50%)', zIndex: 0 }} />
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <div key={i} className="dash-skeleton dash-skeleton-circle" style={{ width: 20, height: 20, zIndex: 1, border: '2.5px solid white' }} />
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <div className="dash-skeleton dash-skeleton-bar" style={{ width: '15%', height: 8 }} />
+                            <div className="dash-skeleton dash-skeleton-bar" style={{ width: '15%', height: 8 }} />
+                        </div>
+                    </div>
+
+                    {/* Cards grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {/* Strategic window card */}
+                        <div className="dash-skeleton-card" style={{ height: 72, background: 'linear-gradient(135deg, #0a1628, #152238)', padding: 12 }}>
+                            <div className="dash-skeleton" style={{ width: '30%', height: 8, marginBottom: 8, opacity: 0.3 }} />
+                            <div className="dash-skeleton" style={{ width: '60%', height: 12, opacity: 0.3 }} />
+                        </div>
+                        {/* Behavioral IQ card */}
+                        <div className="dash-skeleton-card" style={{ height: 72, background: 'linear-gradient(135deg, #0a1628, #152238)', padding: 12 }}>
+                            <div className="dash-skeleton" style={{ width: '30%', height: 8, marginBottom: 8, opacity: 0.3 }} />
+                            <div className="dash-skeleton" style={{ width: '60%', height: 12, opacity: 0.3 }} />
+                        </div>
+                    </div>
+
+                    {/* Suggested Next Action */}
+                    <div style={{ padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid rgba(16, 185, 129, 0.15)', borderLeft: '5px solid #10b981' }}>
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                            <div className="dash-skeleton dash-skeleton-circle" style={{ width: 20, height: 20, borderRadius: '6px' }} />
+                            <div className="dash-skeleton dash-skeleton-bar" style={{ width: '40%', height: 10 }} />
+                        </div>
+                        <div className="dash-skeleton dash-skeleton-bar dash-skeleton-bar--full" style={{ height: 14, marginBottom: 6 }} />
+                        <div className="dash-skeleton dash-skeleton-bar dash-skeleton-bar--full" style={{ height: 14, marginBottom: 12, width: '80%' }} />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <div className="dash-skeleton" style={{ width: 120, height: 28, borderRadius: '8px' }} />
+                            <div className="dash-skeleton" style={{ width: 100, height: 28, borderRadius: '8px' }} />
+                        </div>
+                    </div>
+
+                    {/* AI Engagement Checklist */}
+                    <div style={{ padding: '16px', borderRadius: '16px', background: 'white', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <div className="dash-skeleton dash-skeleton-circle" style={{ width: 20, height: 20, borderRadius: '6px' }} />
+                                <div className="dash-skeleton dash-skeleton-bar" style={{ width: 140, height: 12 }} />
+                            </div>
+                            <div className="dash-skeleton dash-skeleton-bar" style={{ width: 80, height: 12 }} />
+                        </div>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', marginBottom: 8, background: '#f8fafc', borderRadius: '10px' }}>
+                                <div className="dash-skeleton dash-skeleton-circle" style={{ width: 18, height: 18, borderRadius: '5px' }} />
+                                <div className="dash-skeleton dash-skeleton-bar" style={{ width: '70%', height: 10 }} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ContactDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showToast } = useToast();
+    const [checklistState, setChecklistState] = useState<Record<string, boolean>>(() => {
+        try {
+            const saved = localStorage.getItem(`lead_checklist_${id}`);
+            return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+            return {};
+        }
+    });
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(`lead_checklist_${id}`);
+            setChecklistState(saved ? JSON.parse(saved) : {});
+        } catch (e) {
+            setChecklistState({});
+        }
+    }, [id]);
+
+    const handleToggleChecklist = (task: string) => {
+        const nextState = { ...checklistState, [task]: !checklistState[task] };
+        setChecklistState(nextState);
+        try {
+            localStorage.setItem(`lead_checklist_${id}`, JSON.stringify(nextState));
+        } catch (e) {
+            console.error('Failed to save checklist state', e);
+        }
+    };
+
     const [activeTab, setActiveTab] = useState('Overview');
     const [newNote, setNewNote] = useState('');
     const [showActivityBox, setShowActivityBox] = useState(false);
@@ -226,6 +477,48 @@ export default function ContactDetails() {
         };
     }, []);
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeTag = document.activeElement?.tagName;
+            if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement?.getAttribute('contenteditable') === 'true') {
+                return;
+            }
+
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'e' || e.key === 'E') {
+                    e.preventDefault();
+                    setIsEditingInterest(prev => {
+                        if (!prev) {
+                            if (contact) {
+                                setEditInterestData({ budget: contact.budget || '', property_type: contact.property_type || '' });
+                            }
+                        } else {
+                            if (contact) {
+                                leadsApi.update(id, editInterestData).then(upd => { 
+                                    setContact(p => p ? { ...p, ...upd } : null); 
+                                    showToast("Interest Profile updated", "success");
+                                    loadData();
+                                }).catch(() => showToast("Update failed", "error"));
+                            }
+                        }
+                        return !prev;
+                    });
+                } else if (e.key === 'n' || e.key === 'N') {
+                    e.preventDefault();
+                    setActivityType('Note');
+                    setActiveTab('Activities');
+                    setShowActivityBox(true);
+                    setTimeout(() => {
+                        const inputEl = document.getElementById('activity-note-input');
+                        if (inputEl) inputEl.focus();
+                    }, 100);
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [id, contact, editInterestData, loadData, showToast]);
+
     const handleUpdateStage = async (newStage) => {
         if (newStage === contact.stage) {
             setShowStageMenu(false);
@@ -265,7 +558,7 @@ export default function ContactDetails() {
         };
     }, [contact]);
 
-    if (loading) return <PageLoader />;
+    if (loading) return <ContactDetailsSkeleton />;
     if (error) return <PageError message={error} onRetry={loadData} />;
     if (!contact) return <div style={{ padding: 40, textAlign: 'center' }}>Contact not found</div>;
 
@@ -573,7 +866,7 @@ export default function ContactDetails() {
                                 }}
                             >
                                 <act.icon size={14} color={act.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
+                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-700)', textTransform: 'uppercase' }}>{act.label}</span>
                             </button>
                         ))}
                     </div>
@@ -591,7 +884,7 @@ export default function ContactDetails() {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Core Identity</h3>
-                                <button style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}><Edit2 size={13} color="var(--slate-400)" /></button>
+                                <button aria-label="Edit Core Identity" style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}><Edit2 size={13} color="var(--slate-400)" /></button>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -854,7 +1147,7 @@ export default function ContactDetails() {
                     ) : activeTab === 'Overview' ? (
                         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 40 }}>
                             {/* Deal Matrix Intelligence */}
-                            <div style={{ padding: '6px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                            <div className="cd-card-animate cd-stagger-1 cd-hover-glow" style={{ padding: '6px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                         <div style={{ width: 4, height: 12, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
@@ -872,9 +1165,9 @@ export default function ContactDetails() {
                                             <div style={{ width: 22, height: 22, borderRadius: '6px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2px', border: `1px solid ${stat.color}15` }}>
                                                 <stat.Icon size={11} color={stat.color} />
                                             </div>
-                                            <div style={{ fontSize: '7.5px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 0 }}>{stat.label}</div>
+                                            <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 0 }}>{stat.label}</div>
                                             <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px', lineHeight: 1 }}>{stat.value}</div>
-                                            {stat.trend && <div style={{ fontSize: '7px', fontWeight: 800, color: '#10b981', marginTop: 1, lineHeight: 1 }}>▲ {stat.trend}</div>}
+                                            {stat.trend && <div style={{ fontSize: '9px', fontWeight: 800, color: '#10b981', marginTop: 1, lineHeight: 1 }}>▲ {stat.trend}</div>}
                                         </div>
                                     ))}
                                     {/* Consult AI Specialist */}
@@ -897,9 +1190,104 @@ export default function ContactDetails() {
                                     </button>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+
+                            {/* Lead Lifecycle Journey Stepper */}
+                            <div className="cd-card-animate cd-stagger-2" style={{ padding: '12px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                {(() => {
+                                    const stages = LIFECYCLE_STAGES.filter(s => s !== 'Lost');
+                                    const currentIdx = stages.indexOf(contact.stage);
+                                    const isLost = contact.stage === 'Lost';
+                                    const pct = !isLost && currentIdx >= 0 ? Math.round(((currentIdx + 1) / stages.length) * 100) : 0;
+                                    const progressWidth = !isLost && currentIdx > 0 ? (currentIdx / (stages.length - 1)) * 100 : 0;
+                                    return (
+                                        <>
+                                            {/* Header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                                                <div style={{ width: 4, height: 14, borderRadius: '2px', background: isLost ? '#f43f5e' : 'linear-gradient(180deg, #8b5cf6, #06b6d4)' }} />
+                                                <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Lead Journey</h3>
+                                                <div style={{ marginLeft: 'auto', fontSize: '9px', fontWeight: 900, color: isLost ? '#f43f5e' : '#10b981', background: isLost ? 'rgba(244,63,94,0.06)' : 'rgba(16,185,129,0.06)', padding: '2px 8px', borderRadius: '6px', border: `1px solid ${isLost ? 'rgba(244,63,94,0.12)' : 'rgba(16,185,129,0.12)'}` }}>
+                                                    {isLost ? '✕ Lost' : `${pct}% Complete`}
+                                                </div>
+                                            </div>
+
+                                            {/* Stepper Track + Dots */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <div style={{ position: 'relative', padding: '0 6px' }}>
+                                                    {/* Background Track */}
+                                                    <div style={{ position: 'absolute', top: '50%', left: 6, right: 6, height: 3, background: isLost ? 'repeating-linear-gradient(90deg, #fecdd3 0px, #fecdd3 4px, transparent 4px, transparent 8px)' : '#f1f5f9', borderRadius: '2px', transform: 'translateY(-50%)' }} />
+                                                    {/* Filled Progress Track */}
+                                                    {!isLost && currentIdx > 0 && (
+                                                        <div className="cd-connector-animate" style={{ position: 'absolute', top: '50%', left: 6, width: `calc(${progressWidth}% - 6px)`, height: 3, background: 'linear-gradient(90deg, #10b981, #06b6d4)', borderRadius: '2px', transform: 'translateY(-50%)', boxShadow: '0 0 6px rgba(16,185,129,0.2)' }} />
+                                                    )}
+                                                    {/* Dot Nodes */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                                                        {stages.map((stage, idx) => {
+                                                            const isCompleted = !isLost && idx < currentIdx;
+                                                            const isCurrent = stage === contact.stage;
+                                                            const stageColor = (LIFECYCLE_COLORS[stage] || LIFECYCLE_COLORS['New Lead']);
+                                                            const StageIcon = stageColor.icon;
+                                                            return (
+                                                                <div
+                                                                    key={stage}
+                                                                    title={stage}
+                                                                    className={isCurrent ? 'cd-stage-active' : ''}
+                                                                    style={{
+                                                                        width: isCurrent ? 28 : 20,
+                                                                        height: isCurrent ? 28 : 20,
+                                                                        borderRadius: '50%',
+                                                                        background: isCurrent ? stageColor.text : isCompleted ? '#10b981' : isLost ? '#fecdd3' : '#e2e8f0',
+                                                                        color: stageColor.text,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        flexShrink: 0,
+                                                                        transition: 'all 0.3s',
+                                                                        cursor: 'default',
+                                                                        border: '2.5px solid white',
+                                                                        boxShadow: isCompleted ? '0 1px 4px rgba(16,185,129,0.25)' : '0 1px 2px rgba(0,0,0,0.06)'
+                                                                    }}
+                                                                >
+                                                                    {isCompleted ? <CheckSquare size={9} color="white" strokeWidth={3} /> : isCurrent ? <StageIcon size={11} color="white" strokeWidth={2.5} /> : null}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+
+                                                {/* Stage Labels */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px' }}>
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--slate-400)' }}>New Lead</span>
+                                                    {!isLost && currentIdx >= 0 && (
+                                                        <span style={{ fontSize: '9px', fontWeight: 900, color: (LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead']).text }}>{contact.stage}</span>
+                                                    )}
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--slate-400)' }}>Won</span>
+                                                </div>
+
+                                                {/* Lost Alert Banner */}
+                                                {isLost && (
+                                                    <div style={{ padding: '8px 12px', background: 'linear-gradient(135deg, rgba(244,63,94,0.03), rgba(244,63,94,0.07))', borderRadius: '10px', border: '1px solid rgba(244,63,94,0.12)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 24, height: 24, borderRadius: '8px', background: 'rgba(244,63,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(244,63,94,0.15)' }}>
+                                                            <X size={12} color="#f43f5e" strokeWidth={3} />
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontSize: '11px', fontWeight: 800, color: '#be123c' }}>Lead marked as Lost</div>
+                                                            <div style={{ fontSize: '9px', fontWeight: 600, color: '#f87171', marginTop: 1 }}>Pipeline journey ended — consider reactivation</div>
+                                                        </div>
+                                                        <button onClick={() => handleUpdateStage('New Lead')} className="hover-lift" style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', background: 'white', border: '1px solid rgba(244,63,94,0.2)', color: '#be123c', fontWeight: 800, fontSize: '9px', cursor: 'pointer', flexShrink: 0 }}>
+                                                            Reactivate
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+
+                            <div className="cd-card-animate cd-stagger-3" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* AI Strategic Window Card */}
-                                <div style={{ 
+                                <div className="cd-dark-shimmer" style={{ 
                                     borderRadius: '12px', 
                                     background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
                                     border: '1px solid rgba(255,255,255,0.05)', 
@@ -926,7 +1314,7 @@ export default function ContactDetails() {
                                 </div>
 
                                 {/* Behavioral IQ Card */}
-                                <div style={{ 
+                                <div className="cd-dark-shimmer" style={{ 
                                     borderRadius: '12px', 
                                     background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
                                     border: '1px solid rgba(255,255,255,0.05)', 
@@ -942,11 +1330,12 @@ export default function ContactDetails() {
                                         </div>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div style={{ fontSize: '7px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
+                                                <div style={{ fontSize: '9px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
                                                 <button 
                                                     onClick={handleRecalculateScore} 
                                                     disabled={recalculatingScore}
                                                     title="Recalculate with AI Intelligence"
+                                                    aria-label="Recalculate with AI Intelligence"
                                                     style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
                                                 >
                                                     <RotateCw size={8} color={recalculatingScore ? "#f59e0b" : "rgba(255,255,255,0.3)"} className={recalculatingScore ? "animate-spin" : ""} />
@@ -966,7 +1355,7 @@ export default function ContactDetails() {
                                                 { label: 'URGE', value: 'MED', color: '#f59e0b' }
                                             ].map(m => (
                                                 <div key={m.label} style={{ flex: 1, minWidth: 0, padding: '2px 3px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-                                                    <div style={{ fontSize: '5.5px', color: 'rgba(255,255,255,0.3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.label}</div>
+                                                    <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.label}</div>
                                                     <div style={{ fontSize: '8px', fontWeight: 900, color: m.color, overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1 }}>{m.value}</div>
                                                 </div>
                                             ))}
@@ -980,14 +1369,14 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Suggested Next Best Action Card */}
-                            <div style={{ 
+                            <div className="cd-card-animate cd-stagger-4 cd-hero-card" style={{ 
                                 borderRadius: '16px', 
                                 background: 'white', 
                                 border: '1px solid rgba(16, 185, 129, 0.15)', 
                                 borderLeft: '5px solid #10b981',
                                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.05)', 
                                 padding: '12px 16px',
-                                marginBottom: '4px'
+                                marginBottom: '12px'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                                     <div style={{ padding: '6px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px' }}>
@@ -1004,8 +1393,119 @@ export default function ContactDetails() {
                                 </div>
                             </div>
 
-                            {/* Interest Profile + Interaction Pulse */}
-                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                            {/* AI Engagement Checklist */}
+                            <div className="cd-card-animate cd-stagger-5 cd-hero-card" style={{
+                                borderRadius: '16px',
+                                background: 'white',
+                                border: '1px solid rgba(139, 92, 246, 0.15)',
+                                borderLeft: '5px solid var(--accent-violet)',
+                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.05)',
+                                padding: '16px',
+                                marginBottom: '12px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 12
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                        <div style={{ padding: '6px', background: 'rgba(139, 92, 246, 0.08)', borderRadius: '8px' }}>
+                                            <ClipboardCheck size={16} color="var(--accent-violet)" />
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Engagement Checklist</h3>
+                                            <div style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 600, marginTop: 1 }}>Recommended for <span style={{ fontWeight: 800, color: 'var(--accent-violet)' }}>{contact.stage}</span> stage</div>
+                                        </div>
+                                    </div>
+                                    {(() => {
+                                        const currentTasks = STAGE_CHECKLISTS[contact.stage] || STAGE_CHECKLISTS['New Lead'] || [];
+                                        const completedCount = currentTasks.filter(task => !!checklistState[task]).length;
+                                        const totalCount = currentTasks.length;
+                                        return (
+                                            <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.08)', padding: '3px 8px', borderRadius: '6px' }}>
+                                                {completedCount}/{totalCount} Completed
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+
+                                {(() => {
+                                    const currentTasks = STAGE_CHECKLISTS[contact.stage] || STAGE_CHECKLISTS['New Lead'] || [];
+                                    const completedCount = currentTasks.filter(task => !!checklistState[task]).length;
+                                    const totalCount = currentTasks.length;
+                                    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                                    return (
+                                        <>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                                                {currentTasks.map((task, index) => {
+                                                    const isChecked = !!checklistState[task];
+                                                    return (
+                                                        <div 
+                                                            key={index} 
+                                                            className="cd-checklist-item"
+                                                            onClick={() => handleToggleChecklist(task)}
+                                                            style={{ 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                gap: 10, 
+                                                                padding: '10px 12px', 
+                                                                background: isChecked ? '#f8fafc' : 'white', 
+                                                                borderRadius: '10px', 
+                                                                border: `1px solid ${isChecked ? '#e2e8f0' : '#f1f5f9'}`,
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                        >
+                                                            <div style={{
+                                                                width: 18,
+                                                                height: 18,
+                                                                borderRadius: '5px',
+                                                                border: `2px solid ${isChecked ? 'var(--accent-violet)' : '#cbd5e1'}`,
+                                                                background: isChecked ? 'var(--accent-violet)' : 'transparent',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                flexShrink: 0
+                                                            }}>
+                                                                {isChecked && <CheckSquare size={12} color="white" style={{ strokeWidth: 3 }} />}
+                                                            </div>
+                                                            <span style={{ 
+                                                                fontSize: '12px', 
+                                                                fontWeight: isChecked ? 600 : 700, 
+                                                                color: isChecked ? 'var(--slate-400)' : 'var(--navy-900)',
+                                                                textDecoration: isChecked ? 'line-through' : 'none',
+                                                                transition: 'all 0.2s'
+                                                            }}>
+                                                                {task}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* Progress Bar */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                                                <div style={{ height: 6, background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                                    <div style={{ 
+                                                        width: `${progressPercent}%`, 
+                                                        height: '100%', 
+                                                        background: 'linear-gradient(90deg, #818cf8, #c084fc)', 
+                                                        borderRadius: '3px',
+                                                        transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                    }} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
+                                                    <span>Progress</span>
+                                                    <span>{progressPercent}%</span>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* Interest Profile + Interaction Timeline */}
+                            <div className="cd-card-animate cd-stagger-5" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Interest Profile */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -1021,7 +1521,7 @@ export default function ContactDetails() {
                                                     leadsApi.update(id, editInterestData).then(upd => { 
                                                         setContact(prev => ({ ...prev, ...upd })); 
                                                         showToast("Interest Profile updated", "success");
-                                                        loadData(); // Refresh interaction pulse
+                                                        loadData(); // Refresh interaction timeline
                                                     }).catch(e => showToast("Update failed", "error"));
                                                 }
                                                 setIsEditingInterest(!isEditingInterest);
@@ -1060,18 +1560,32 @@ export default function ContactDetails() {
                                     </div>
                                 </div>
 
-                                {/* Interaction Pulse */}
+                                {/* Interaction History Timeline */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#8b5cf6' }} />
-                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interaction Pulse</h3>
+                                            <div style={{ width: 4, height: 14, borderRadius: '2px', background: 'var(--accent-violet)' }} />
+                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Interaction Timeline</h3>
                                         </div>
-                                        <button onClick={() => setActiveTab('Activities')} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '9px', fontWeight: 800, color: '#3b82f6', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer' }}>
+                                        <button onClick={() => setActiveTab('Activities')} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '9px', fontWeight: 800, color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.06)', border: '1px solid rgba(139, 92, 246, 0.12)', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer' }}>
                                             View all <ArrowRight size={10} />
                                         </button>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    
+                                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 20, paddingLeft: '8px' }}>
+                                        {/* Vertical Timeline track line */}
+                                        {interactions.length > 1 && (
+                                            <div style={{ 
+                                                position: 'absolute', 
+                                                left: 12, 
+                                                top: 12, 
+                                                bottom: 12, 
+                                                width: 2, 
+                                                background: 'linear-gradient(180deg, #e2e8f0, #f1f5f9)', 
+                                                zIndex: 0 
+                                            }} />
+                                        )}
+
                                         {interactions.length === 0 ? (
                                             <div style={{ textAlign: 'center', padding: '20px 10px' }}>
                                                 <div style={{ fontSize: '20px', marginBottom: 4 }}>📭</div>
@@ -1079,16 +1593,86 @@ export default function ContactDetails() {
                                                 <div style={{ fontSize: '9px', color: 'var(--slate-300)', marginTop: 2 }}>Log a call, note or meeting to start tracking</div>
                                             </div>
                                         ) : interactions.slice(0, 3).map((item, idx) => {
-                                            const typeColor = item.type === 'Call' ? '#10b981' : item.type === 'Email' ? '#3b82f6' : item.type === 'WhatsApp' ? '#25D366' : '#f59e0b';
+                                            let IconComp = FileText;
+                                            let iconColor = '#8b5cf6';
+                                            
+                                            if (item.type === 'Call') {
+                                                IconComp = Phone;
+                                                iconColor = '#10b981';
+                                            } else if (item.type === 'Email') {
+                                                IconComp = Mail;
+                                                iconColor = '#3b82f6';
+                                            } else if (item.type === 'WhatsApp') {
+                                                IconComp = MessageSquare;
+                                                iconColor = '#25D366';
+                                            }
+                                            
+                                            const formattedDate = dateUtils.parseSafe(item.date)?.toLocaleDateString(undefined, { 
+                                                day: 'numeric', 
+                                                month: 'short',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                            }) || '—';
+
                                             return (
-                                                <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
-                                                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: typeColor, marginTop: 5, flexShrink: 0, boxShadow: `0 0 6px ${typeColor}40` }} />
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                                                            <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.type}</div>
-                                                            <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>{dateUtils.parseSafe(item.date)?.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) || '—'}</div>
+                                                <div key={idx} style={{ display: 'flex', gap: 14, zIndex: 1, position: 'relative' }}>
+                                                    {/* Timeline Node Icon Badge */}
+                                                    <div style={{ 
+                                                        width: 26, 
+                                                        height: 26, 
+                                                        borderRadius: '50%', 
+                                                        background: 'white', 
+                                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                                                        border: `2px solid ${iconColor}`,
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        justifyContent: 'center', 
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <IconComp size={12} color={iconColor} style={{ strokeWidth: 2.5 }} />
+                                                    </div>
+
+                                                    {/* Timeline content bubble */}
+                                                    <div style={{ 
+                                                        flex: 1, 
+                                                        minWidth: 0, 
+                                                        background: '#f8fafc', 
+                                                        border: '1px solid #eef2f6', 
+                                                        padding: '10px 12px', 
+                                                        borderRadius: '12px',
+                                                        position: 'relative'
+                                                    }}>
+                                                        {/* Triangle pointing to the node */}
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            left: -6,
+                                                            top: 8,
+                                                            width: 0,
+                                                            height: 0,
+                                                            borderTop: '6px solid transparent',
+                                                            borderBottom: '6px solid transparent',
+                                                            borderRight: '6px solid #f8fafc',
+                                                            zIndex: 1
+                                                        }} />
+                                                        
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                            <span style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)' }}>
+                                                                {item.type} {item.outcome && `(${item.outcome})`}
+                                                            </span>
+                                                            <span style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 800 }}>
+                                                                {formattedDate}
+                                                            </span>
                                                         </div>
-                                                        <div style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.4 }}>{item.note || 'Interaction logged.'}</div>
+                                                        <div style={{ 
+                                                            fontSize: '11px', 
+                                                            color: 'var(--slate-600)', 
+                                                            fontWeight: 500, 
+                                                            lineHeight: 1.45,
+                                                            wordBreak: 'break-word',
+                                                            whiteSpace: 'pre-wrap'
+                                                        }}>
+                                                            {item.note || 'Interaction logged.'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             );
@@ -1098,7 +1682,7 @@ export default function ContactDetails() {
                             </div>
 
                             {/* Active Deals + Assigned Team */}
-                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                            <div className="cd-card-animate cd-stagger-6" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
                                 {/* Active Deals */}
                                 <div style={{ padding: '14px 16px', borderRadius: '16px', border: '1px solid #e8edf3', background: 'white', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -1195,6 +1779,95 @@ export default function ContactDetails() {
                                             </div>
                                         )}
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Communication Pulse + Lead Vitals */}
+                            <div className="cd-card-animate cd-stagger-7" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
+                                {/* Communication Activity Pulse */}
+                                <div className="cd-hover-glow" style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                        <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#06b6d4' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Communication Pulse</h3>
+                                    </div>
+                                    {(() => {
+                                        const types = [
+                                            { type: 'Call', Icon: Phone, color: '#10b981', bg: 'rgba(16,185,129,0.06)' },
+                                            { type: 'Email', Icon: Mail, color: '#3b82f6', bg: 'rgba(59,130,246,0.06)' },
+                                            { type: 'WhatsApp', Icon: MessageSquare, color: '#25D366', bg: 'rgba(37,211,102,0.06)' },
+                                            { type: 'Note', Icon: Edit2, color: '#f59e0b', bg: 'rgba(245,158,11,0.06)' },
+                                            { type: 'Meeting', Icon: Users, color: '#8b5cf6', bg: 'rgba(139,92,246,0.06)' }
+                                        ];
+                                        const counts: Record<string, number> = {};
+                                        interactions.forEach((i: any) => { counts[i.type] = (counts[i.type] || 0) + 1; });
+                                        const totalCount = interactions.length;
+                                        const maxCount = Math.max(...types.map(t => counts[t.type] || 0), 1);
+                                        return (
+                                            <>
+                                                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
+                                                    <span className="cd-count-animate" style={{ fontSize: '22px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-1px', display: 'inline-block' }}>{totalCount}</span>
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase' }}>Total Interactions</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                    {types.map(t => {
+                                                        const count = counts[t.type] || 0;
+                                                        const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                                                        return (
+                                                            <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                <div style={{ width: 22, height: 22, borderRadius: '6px', background: t.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                                    <t.Icon size={10} color={t.color} />
+                                                                </div>
+                                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                                    <div style={{ height: 5, background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                                                        <div className={`cd-bar-animate cd-bar-delay-${types.indexOf(t) + 1}`} style={{ width: `${pct}%`, height: '100%', background: t.color, borderRadius: '3px' }} />
+                                                                    </div>
+                                                                </div>
+                                                                <span style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', minWidth: 14, textAlign: 'right' }}>{count}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+
+                                {/* Lead Vitals */}
+                                <div className="cd-hover-glow" style={{ padding: '14px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                                        <div style={{ width: 4, height: 14, borderRadius: '2px', background: '#f43f5e' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Lead Vitals</h3>
+                                    </div>
+                                    {(() => {
+                                        const now = new Date();
+                                        const created = dateUtils.parseSafe(contact.created_at);
+                                        const leadAgeDays = created ? Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                                        const lastContactDate = contact.last_contact_at ? dateUtils.parseSafe(contact.last_contact_at) : null;
+                                        const daysSinceContact = lastContactDate ? Math.floor((now.getTime() - lastContactDate.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                                        const nextFollowup = contact.followups && contact.followups.length > 0 ? contact.followups[0] : null;
+                                        const StageIconVital = currentStageStyle.icon;
+                                        return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                {[
+                                                    { label: 'Lead Age', value: `${leadAgeDays} days`, subtext: created ? created.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A', Icon: Clock, color: '#3b82f6' },
+                                                    { label: 'Last Contact', value: daysSinceContact !== null ? (daysSinceContact === 0 ? 'Today' : `${daysSinceContact}d ago`) : 'Never', subtext: lastContactDate ? lastContactDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'No contact', Icon: Phone, color: daysSinceContact !== null && daysSinceContact <= 3 ? '#10b981' : daysSinceContact !== null && daysSinceContact <= 7 ? '#f59e0b' : '#ef4444' },
+                                                    { label: 'Stage', value: contact.stage, subtext: contact.status || 'Active', Icon: StageIconVital, color: currentStageStyle.text },
+                                                    { label: 'Next Follow-up', value: nextFollowup ? (dateUtils.parseSafe(nextFollowup.scheduled_at)?.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) || 'Scheduled') : 'None set', subtext: nextFollowup ? (nextFollowup.type || 'General') : 'Schedule one', Icon: CalendarIcon, color: '#8b5cf6' }
+                                                ].map(item => (
+                                                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${item.color}08`, border: `1px solid ${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                            <item.Icon size={12} color={item.color} />
+                                                        </div>
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ fontSize: '7.5px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</div>
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{item.value}</div>
+                                                        </div>
+                                                        <div style={{ fontSize: '8px', color: 'var(--slate-400)', fontWeight: 600, textAlign: 'right' }}>{item.subtext}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         </div>
@@ -1343,6 +2016,7 @@ export default function ContactDetails() {
                                             </div>
                                         )}
                                         <textarea
+                                            id="activity-note-input"
                                             value={newNote}
                                             onChange={e => setNewNote(e.target.value)}
                                             placeholder={`Crafting a professional ${activityType.toLowerCase()} response...`}
@@ -1356,7 +2030,7 @@ export default function ContactDetails() {
                                         />
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, flexWrap: 'wrap', gap: 8 }}>
                                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                                <button onClick={handleVoice} className="hover-lift" style={{
+                                                <button onClick={handleVoice} aria-label="Use voice input" className="hover-lift" style={{
                                                     width: 36, height: 36, borderRadius: '10px', border: '1px solid #f1f5f9',
                                                     background: isListening ? '#fee2e2' : 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                 }}>
@@ -1489,6 +2163,7 @@ export default function ContactDetails() {
                                                                 onClick={(e) => { e.stopPropagation(); setEditingInteraction(item.id); setEditNote(item.note || ''); }}
                                                                 style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                 title="Edit"
+                                                                aria-label="Edit interaction"
                                                             >
                                                                 <Edit2 size={13} color="#3b82f6" />
                                                             </button>
@@ -1496,6 +2171,7 @@ export default function ContactDetails() {
                                                                 onClick={(e) => { e.stopPropagation(); handleDeleteInteraction(item.id); }}
                                                                 style={{ width: 30, height: 30, borderRadius: '8px', border: '1px solid #fecaca', background: '#fef2f2', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                 title="Delete"
+                                                                aria-label="Delete interaction"
                                                             >
                                                                 <X size={13} color="#ef4444" />
                                                             </button>
@@ -1730,7 +2406,7 @@ export default function ContactDetails() {
                                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: 'var(--navy-900)' }}>Move Lead Stage</h3>
                                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--slate-400)', fontWeight: 600 }}>Current: <strong style={{ color: currentStageStyle.text }}>{contact.stage}</strong></p>
                             </div>
-                            <button onClick={() => setShowStageMenu(false)} style={{ width: 36, height: 36, borderRadius: '12px', background: 'var(--slate-50)', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="var(--slate-400)" /></button>
+                            <button onClick={() => setShowStageMenu(false)} aria-label="Close stage menu" style={{ width: 36, height: 36, borderRadius: '12px', background: 'var(--slate-50)', border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color="var(--slate-400)" /></button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                             {LIFECYCLE_STAGES.map(s => {
@@ -1839,6 +2515,7 @@ export default function ContactDetails() {
                             <button 
                                 onClick={() => setShowSiteVisitScheduler(false)}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                aria-label="Close site visit scheduler modal"
                             >
                                 <X size={20} className="text-gray-400" />
                             </button>
