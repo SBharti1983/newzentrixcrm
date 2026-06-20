@@ -1,18 +1,155 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dialerEvents } from '../../constants/events';
 import {
     Search, Mail, MessageSquare, Phone, MoreVertical,
     Send, RefreshCw, Wand2, User, Sparkles, Brain,
     TrendingUp, TrendingDown, Target, Zap, Clock,
-    CheckCircle2, AlertCircle, ChevronRight, Filter
+    CheckCircle2, AlertCircle, ChevronRight, Filter,
+    ChevronLeft, X, Paperclip
 } from 'lucide-react';
 import { leadsApi, notificationsApi, dashboardApi } from '../../api/client';
-import { PageLoader } from '../../components/feedback/Feedback';
 import { useToast } from '../../hooks/useToast';
 import AIPitchModal from '../../components/modals/AIPitchModal';
 import * as dateUtils from '../../utils/dateUtils';
 
+// ═══════════════════════════════════════════════════════════════════
+//  CANNED TEMPLATES
+// ═══════════════════════════════════════════════════════════════════
+const CANNED_REPLIES = [
+    { label: "📅 Schedule Visit", text: "Hi! Would you be available for a project site visit this Saturday or Sunday? We can arrange transport for you." },
+    { label: "🏠 Share Brochure", text: "Hello! Here are the project configurations, floor plans, and amenities lists for your review. Let me know what you think." },
+    { label: "💰 Request Pricing", text: "Hi! I am compiling the detailed pricing sheets, payment plans, and inventory lists to send over shortly." },
+    { label: "📞 Callback", text: "Hello! Just tried calling to discuss your query. Let me know when is a convenient time to connect today." },
+    { label: "👋 Follow Up", text: "Hi! Just following up to see if you had any questions on the project options we discussed earlier." }
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  SKELETON COMPONENT (Initial Loading)
+// ═══════════════════════════════════════════════════════════════════
+function CommandCenterSkeleton() {
+    return (
+        <div style={{ padding: '16px 24px', height: 'calc(100vh - 100px)', overflow: 'hidden', background: '#f8fafc' }} className="animate-fadeIn">
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(310px, 1.2fr) 2fr 1.2fr', gap: 20, height: '100%' }} className="command-center-grid">
+                {/* Left panel skeleton */}
+                <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16, border: '1px solid var(--border-light)' }}>
+                    <div style={{ height: 40, borderRadius: 12, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                        {[50, 70, 60].map((w, i) => (
+                            <div key={i} style={{ height: 26, width: w, borderRadius: 10, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', animationDelay: `${i * 0.1}s` }} />
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, overflow: 'hidden' }}>
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} style={{ padding: 16, borderRadius: 16, border: '1px solid #f1f5f9', display: 'flex', gap: 12 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div style={{ height: 14, width: '70%', borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                    <div style={{ height: 10, width: '45%', borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Center panel skeleton */}
+                <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)' }}>
+                    <div style={{ padding: 20, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                <div style={{ height: 16, width: 140, borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div style={{ height: 12, width: 80, borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ flex: 1, padding: 32, background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start' }}><div style={{ width: '60%', height: 60, borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} /></div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}><div style={{ width: '50%', height: 48, borderRadius: '20px 20px 4px 20px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} /></div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start' }}><div style={{ width: '45%', height: 48, borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} /></div>
+                    </div>
+                </div>
+
+                {/* Right panel skeleton */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div className="card" style={{ height: 160, padding: 20, border: '1px solid var(--border-light)' }}>
+                        <div style={{ height: 16, width: '60%', borderRadius: 4, background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', marginBottom: 16 }} />
+                        <div style={{ height: 80, width: 80, borderRadius: '50%', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite', margin: '0 auto' }} />
+                    </div>
+                    <div className="card" style={{ flex: 1, padding: 24, background: 'var(--navy-900)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: 24 }}>
+                        <div style={{ height: 20, width: '50%', borderRadius: 4, background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                        {[1, 2, 3].map(i => (
+                            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                <div style={{ height: 12, width: '40%', borderRadius: 4, background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                <div style={{ height: 36, borderRadius: 10, background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHAT MESSAGES SKELETON (Switching Leads)
+// ═══════════════════════════════════════════════════════════════════
+function ChatMessagesSkeleton() {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', padding: '10px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+                <div style={{ width: '65%', height: 60, borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+                <div style={{ width: '50%', height: 48, borderRadius: '20px 20px 4px 20px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+                <div style={{ width: '45%', height: 50, borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+            </div>
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  TYPING INDICATOR
+// ═══════════════════════════════════════════════════════════════════
+function TypingIndicator() {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'flex-start', margin: '6px 0' }} className="animate-fadeIn">
+            <div style={{
+                padding: '14px 20px',
+                borderRadius: '24px',
+                borderBottomLeftRadius: 4,
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.03)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                position: 'relative'
+            }}>
+                <div style={{ position: 'absolute', top: -16, left: 6, fontSize: '0.62rem', fontWeight: 900, color: 'var(--accent-violet)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Assistant</div>
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center', height: 16 }}>
+                    {[0, 1, 2].map(i => (
+                        <span key={i} style={{
+                            width: 6,
+                            height: 6,
+                            background: 'var(--accent-violet)',
+                            borderRadius: '50%',
+                            display: 'inline-block',
+                            animation: 'calTyping 1.4s infinite both',
+                            animationDelay: `${i * 0.2}s`
+                        }} />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════
 export default function CommandCenter() {
     const { addToast } = useToast();
     const navigate = useNavigate();
@@ -22,19 +159,26 @@ export default function CommandCenter() {
     const [replyText, setReplyText] = useState('');
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [sidebarFilter, setSidebarFilter] = useState('All'); // All, Active, High, Won, Lost
     const [messagesLoading, setMessagesLoading] = useState(false);
     const [isDrafting, setIsDrafting] = useState(false);
     const [showPitchModal, setShowPitchModal] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    
+    // Mobile layouts
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024);
+    const [mobileView, setMobileView] = useState('list'); // 'list', 'chat', 'intel'
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        const handleResize = () => {
+            const mobile = window.innerWidth <= 1024;
+            setIsMobile(mobile);
+            if (!mobile) setMobileView('list');
+        };
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-
-
+    // ── Data Fetching ─────────────────────────────────────────────
     const loadLeads = useCallback(async () => {
         try {
             setLoading(true);
@@ -71,8 +215,9 @@ export default function CommandCenter() {
     }, [activeLeadId, loadMessages]);
 
     const activeLead = leads.find(l => l.id === activeLeadId);
-    const intel = activeLead; // Data now comes pre-calculated from the SP!
+    const intel = activeLead; 
 
+    // ── Handlers ──────────────────────────────────────────────────
     const handleSend = async () => {
         if (!replyText.trim() || !activeLeadId) return;
         try {
@@ -89,6 +234,7 @@ export default function CommandCenter() {
             addToast({ type: 'error', title: 'Error', message: 'Failed to send message.' });
         }
     };
+
     const handleDraft = async () => {
         if (!activeLeadId) return;
         try {
@@ -109,290 +255,541 @@ export default function CommandCenter() {
         }
     };
 
+    const handleLeadSelect = (leadId: any) => {
+        setActiveLeadId(leadId);
+        if (isMobile) {
+            setMobileView('chat');
+        }
+    };
+
+    // ── Smart Conversational Previews ─────────────────────────────
+    const getLeadLastMessage = (l: any) => {
+        if (l.id === activeLeadId && messages.length > 0) {
+            return messages[0].body; 
+        }
+        if (l.stage === 'Won') return "Deal closed! Welcome to Maya Infratech 🎉";
+        if (l.stage === 'Lost') return "Outreach ended.";
+        if (l.stage === 'Negotiation') return "Sent: Finalizing proposal & payment link.";
+        if (l.stage === 'Site Visit Done') return "Site visit completed. Client was positive.";
+        if (l.stage === 'Site Visit Scheduled') return "Site visit scheduled for this weekend.";
+        if (l.stage === 'Qualified') return "Waiting for client's confirmation.";
+        if (l.stage === 'Connected') return "Follow-up: Project brochures sent.";
+        return "Outbound: Welcome to Maya Infratech! 👋";
+    };
+
+    const getLeadLastTime = (l: any) => {
+        if (l.id === activeLeadId && messages.length > 0) {
+            return dateUtils.parseSafe(messages[0].sent_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 'Just now';
+        }
+        if (l.stage === 'Won') return '1d ago';
+        if (l.stage === 'Negotiation') return '2h ago';
+        if (l.stage === 'Site Visit Done') return '4h ago';
+        if (l.stage === 'Site Visit Scheduled') return 'Yesterday';
+        return '3h ago';
+    };
+
+    // ── Predictive Analytics helpers ──────────────────────────────
+    const isOptimalTime = useMemo(() => {
+        if (!intel?.bestTimeToContact) return false;
+        const currentHour = new Date().getHours();
+        const b = intel.bestTimeToContact.toLowerCase();
+        if (b.includes('8-11 am') && currentHour >= 8 && currentHour < 11) return true;
+        if (b.includes('11 am-2 pm') && currentHour >= 11 && currentHour < 14) return true;
+        if (b.includes('2-5 pm') && currentHour >= 14 && currentHour < 17) return true;
+        if (b.includes('5-8 pm') && currentHour >= 17 && currentHour < 20) return true;
+        if (b.includes('8-10 pm') && currentHour >= 20 && currentHour < 22) return true;
+        if (b.includes('anytime') && currentHour >= 9 && currentHour < 18) return true;
+        return false;
+    }, [intel?.bestTimeToContact]);
+
+    // ── Filtering logic ──────────────────────────────────────────
     const filteredLeads = leads.filter(l => {
         const nameMatch = (l.name || '').toLowerCase().includes(searchTerm.toLowerCase());
         const phoneMatch = (l.phone || '').includes(searchTerm);
         const cityMatch = (l.city || '').toLowerCase().includes(searchTerm.toLowerCase());
-        return nameMatch || phoneMatch || cityMatch;
+        const matchesSearch = nameMatch || phoneMatch || cityMatch;
+
+        if (!matchesSearch) return false;
+
+        const prob = l.closingProbability || l.score || 0;
+        if (sidebarFilter === 'High') return prob >= 60;
+        if (sidebarFilter === 'Won') return l.status === 'Won' || l.stage === 'Won';
+        if (sidebarFilter === 'Lost') return l.status === 'Lost' || l.stage === 'Lost';
+        if (sidebarFilter === 'Active') return l.status !== 'Won' && l.status !== 'Lost' && l.stage !== 'Won' && l.stage !== 'Lost';
+        return true;
     });
 
-    if (loading) return <PageLoader />;
+    const probability = intel?.closingProbability || intel?.score || 0;
+    const radius = 46;
+    const strokeWidth = 8;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (probability / 100) * circumference;
 
-    const handleSimulateInbound = () => {
-        if (window.simulateInbound) {
-            window.simulateInbound();
-        } else {
-            addToast({ type: 'error', title: 'Error', message: 'Telephony system not ready.' });
-        }
-    };
+    if (loading) return <CommandCenterSkeleton />;
 
     return (
-        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '100px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: 0 }}>
+        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '80px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: 0 }}>
+            {/* ─── Premium Keyframe styles ─── */}
+            <style>{`
+                @keyframes calPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.65; transform: scale(0.97); } }
+                @keyframes calTyping { 0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; } 40% { transform: scale(1); opacity: 1; } }
+                .sidebar-filters::-webkit-scrollbar { display: none; }
+                .canned-replies-container::-webkit-scrollbar { display: none; }
+            `}</style>
 
-            <div className="command-center-grid">
-                {/* Left Panel: Conversations List */}
-                <div className="card" style={{ flex: isMobile ? 'none' : 1, padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden', height: isMobile ? 350 : 'auto' }}>
-                    <div style={{ padding: isMobile ? '12px' : '20px', borderBottom: '1px solid var(--border-light)' }}>
-                        <div className="search-bar" style={{ width: '100%', background: 'var(--slate-50)' }}>
-                            <Search size={14} style={{ color: 'var(--text-muted)' }} />
-                            <input 
-                                placeholder="Search opportunities..." 
-                                style={{ fontSize: '0.85rem' }} 
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                    <div style={{ flex: 1, overflowY: 'auto' }}>
-                        {filteredLeads.map(l => {
-                            const lIntel = { closingProbability: l.score || 0 };
-                            return (
-                                <div
-                                    key={l.id}
-                                    onClick={() => setActiveLeadId(l.id)}
-                                    style={{
-                                        position: 'relative',
-                                        padding: isMobile ? '12px' : '16px 20px', cursor: 'pointer',
-                                        background: activeLeadId === l.id ? 'white' : 'transparent',
-                                        margin: isMobile ? '4px 8px' : '8px 12px',
-                                        borderRadius: '16px',
-                                        border: activeLeadId === l.id ? '1px solid #e2e8f0' : '1px solid transparent',
-                                        boxShadow: activeLeadId === l.id ? '0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01)' : 'none',
-                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        transform: activeLeadId === l.id ? 'scale(1.02)' : 'scale(1)'
-                                    }}
-                                >
-                                    {activeLeadId === l.id && <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: '60%', width: 4, background: 'var(--accent-violet)', borderRadius: '0 4px 4px 0' }} />}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 12 }}>
-                                            <div style={{ width: isMobile ? 28 : 36, height: isMobile ? 28 : 36, borderRadius: '8px', background: activeLeadId === l.id ? 'var(--navy-900)' : '#f1f5f9', color: activeLeadId === l.id ? 'white' : 'var(--navy-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: isMobile ? '0.75rem' : '0.9rem' }}>
-                                                {l.name ? l.name[0].toUpperCase() : '?'}
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: isMobile ? '0.8rem' : '0.9rem', letterSpacing: '-0.02em', maxWidth: isMobile ? 120 : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 2, fontWeight: 600 }}>{l.city || 'Unknown Region'}</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: isMobile ? '0.85rem' : '0.95rem', fontWeight: 900, color: (lIntel?.closingProbability || 0) > 70 ? 'var(--accent-emerald-dark)' : 'var(--accent-amber-dark)' }}>
-                                                {lIntel?.closingProbability || 0}%
-                                            </div>
-                                            <div style={{ fontSize: '0.55rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Prob.</div>
-                                        </div>
-                                    </div>
-                                    <div style={{ height: 4, width: '100%', background: 'var(--slate-100)', borderRadius: 2, overflow: 'hidden' }}>
-                                        <div style={{ 
-                                            height: '100%', 
-                                            width: `${lIntel?.closingProbability || 0}%`, 
-                                            background: activeLeadId === l.id ? 'linear-gradient(90deg, #818cf8, #c084fc)' : 'var(--slate-300)',
-                                            transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                                        }} />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Center Panel: Interaction & Action */}
-                <div className="card" style={{ flex: 1, padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-                    {activeLead ? (
-                        <>
-                            <div style={{ padding: isMobile ? '16px' : '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', background: 'white', gap: isMobile ? 12 : 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 15 }}>
-                                    <div style={{ width: isMobile ? 36 : 48, height: isMobile ? 36 : 48, borderRadius: isMobile ? '12px' : '16px', background: 'linear-gradient(135deg, var(--navy-900), var(--navy-700))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: isMobile ? '1rem' : '1.2rem', boxShadow: '0 4px 12px rgba(10, 22, 40, 0.2)', flexShrink: 0 }}>
-                                        {(activeLead.name || '?')[0]}
-                                    </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <h3 style={{ margin: 0, fontSize: isMobile ? '0.95rem' : '1.1rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeLead.name || 'Unknown Lead'}</h3>
-                                        <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                                            <span style={{ 
-                                                fontSize: '0.6rem', 
-                                                background: activeLead.status === 'Won' ? '#dcfce7' : activeLead.status === 'Lost' ? '#ffe4e6' : '#e0e7ff', 
-                                                color: activeLead.status === 'Won' ? '#15803d' : activeLead.status === 'Lost' ? '#be123c' : '#4338ca', 
-                                                padding: '2px 8px', 
-                                                borderRadius: '100px', 
-                                                fontWeight: 900,
-                                                textTransform: 'uppercase',
-                                                letterSpacing: '0.04em',
-                                                border: `1px solid ${activeLead.status === 'Won' ? '#16653420' : activeLead.status === 'Lost' ? '#9f123920' : '#4338ca20'}`,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 4
-                                            }}>
-                                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'currentColor' }} />
-                                                {activeLead.status || 'Active'}
-                                            </span>
-                                            {!isMobile && (
-                                            <span style={{ 
-                                                fontSize: '0.65rem', 
-                                                background: '#f8fafc', 
-                                                color: '#64748b', 
-                                                padding: '3px 10px', 
-                                                borderRadius: '100px', 
-                                                fontWeight: 800,
-                                                border: '1px solid #e2e8f0',
-                                                fontFamily: 'monospace'
-                                            }}>
-                                                ID: {activeLead.id?.toString().slice(0, 8)}
-                                            </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: 8, justifyContent: isMobile ? 'flex-end' : 'flex-end' }}>
-                                    <button className="icon-btn" onClick={() => dialerEvents.call(activeLead.id, activeLead.phone, activeLead.name)} title="Call Lead" style={{ width: 32, height: 32 }}>
-                                        <Phone size={16} color="var(--accent-emerald)" />
-                                    </button>
-                                    <button className="icon-btn" onClick={() => activeLead.email && window.open(`mailto:${activeLead.email}`, '_blank')} title="Send Email" style={{ width: 32, height: 32 }}><Mail size={16} /></button>
-                                    <button className="btn btn-primary btn-sm" onClick={() => navigate(`/leads/${activeLead.id}`)} style={{ fontSize: '0.7rem', padding: '6px 12px' }}>Profile</button>
-                                </div>
+            <div className="command-center-grid" style={{ display: isMobile ? 'block' : 'grid', height: isMobile ? 'auto' : '100%' }}>
+                
+                {/* ═══════════════════════════════════════════════════════
+                    LEFT PANEL: CONVERSATIONS LIST
+                   ═══════════════════════════════════════════════════════ */}
+                {(!isMobile || mobileView === 'list') && (
+                    <div className="card" style={{ height: isMobile ? 'calc(100vh - 160px)' : '100%', padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', background: 'white' }}>
+                            <div className="search-bar" style={{ width: '100%', background: 'var(--slate-50)', display: 'flex', alignItems: 'center', padding: '6px 12px', borderRadius: 12 }}>
+                                <Search size={14} style={{ color: 'var(--text-muted)', marginRight: 6 }} />
+                                <input 
+                                    placeholder="Search opportunities..." 
+                                    style={{ fontSize: '0.85rem', border: 'none', background: 'transparent', outline: 'none', flex: 1 }} 
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                    <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}><X size={14} /></button>
+                                )}
                             </div>
 
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f8fafc', minHeight: isMobile ? 400 : 'auto' }}>
-                                <div style={{ 
-                                    flex: 1, padding: isMobile ? '16px' : '32px 40px', overflowY: 'auto', display: 'flex', flexDirection: 'column-reverse', gap: isMobile ? 12 : 24, position: 'relative' 
-                                }}>
-                                    {messagesLoading && (
-                                        <div style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', padding: '8px 20px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', background: 'white', boxShadow: '0 4px 12px rgba(99,102,241,0.1)', zIndex: 10 }}>
-                                            Synchronizing...
-                                        </div>
-                                    )}
-                                    {messages.map(m => (
-                                        <div key={m.id} className="animate-fadeIn" style={{ display: 'flex', justifyContent: m.sent_by ? 'flex-end' : 'flex-start' }}>
-                                            <div style={{
-                                                maxWidth: isMobile ? '90%' : '80%', padding: isMobile ? '12px 16px' : '16px 24px', borderRadius: '24px',
-                                                background: m.sent_by ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'white',
-                                                color: m.sent_by ? 'white' : '#1e293b',
-                                                border: m.sent_by ? 'none' : '1px solid #e2e8f0',
-                                                boxShadow: m.sent_by ? '0 10px 25px -5px rgba(99,102,241,0.3)' : '0 4px 6px rgba(0,0,0,0.02)',
-                                                borderBottomLeftRadius: !m.sent_by ? 4 : 24,
-                                                borderBottomRightRadius: m.sent_by ? 4 : 24,
-                                                position: 'relative'
-                                            }}>
-                                                {!m.sent_by && (
-                                                    <div style={{ position: 'absolute', top: -16, left: 4, fontSize: '0.6rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{activeLead.name}</div>
-                                                )}
-                                                <p style={{ margin: 0, fontSize: isMobile ? '0.85rem' : '0.95rem', lineHeight: 1.5, fontWeight: 500, color: 'inherit', whiteSpace: 'pre-wrap' }}>{m.body}</p>
-                                                <div style={{ textAlign: 'right', marginTop: 8, fontSize: '0.6rem', opacity: m.sent_by ? 0.9 : 0.6, fontWeight: 700, color: 'inherit' }}>
-                                                    {dateUtils.parseSafe(m.sent_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '—'}
+                            {/* Sidebar Filters */}
+                            <div style={{ display: 'flex', gap: 6, marginTop: 12, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' }} className="sidebar-filters">
+                                {[
+                                    { id: 'All', label: 'All' },
+                                    { id: 'Active', label: '⚡ Active' },
+                                    { id: 'High', label: '🔥 High Prob' },
+                                    { id: 'Won', label: '🎉 Won' }
+                                ].map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => setSidebarFilter(f.id)}
+                                        style={{
+                                            padding: '4px 10px',
+                                            borderRadius: 12,
+                                            border: '1px solid',
+                                            borderColor: sidebarFilter === f.id ? 'var(--navy-900)' : 'var(--border-medium)',
+                                            background: sidebarFilter === f.id ? 'var(--navy-900)' : 'white',
+                                            color: sidebarFilter === f.id ? 'white' : 'var(--text-muted)',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            transition: 'all 0.15s'
+                                        }}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* List Area */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0', background: '#fafbfc' }}>
+                            {filteredLeads.length === 0 ? (
+                                <div className="empty-state" style={{ padding: '40px 20px' }}>
+                                    <div className="empty-state-icon" style={{ fontSize: '2.5rem' }}>🎯</div>
+                                    <div className="empty-state-title">No opportunities found</div>
+                                    <div className="empty-state-text" style={{ fontSize: '0.78rem' }}>Try refining your filters or search keywords.</div>
+                                </div>
+                            ) : (
+                                filteredLeads.map(l => {
+                                    const prob = l.closingProbability || l.score || 0;
+                                    const isActive = activeLeadId === l.id;
+                                    return (
+                                        <div
+                                            key={l.id}
+                                            onClick={() => handleLeadSelect(l.id)}
+                                            style={{
+                                                position: 'relative',
+                                                padding: '14px 18px', cursor: 'pointer',
+                                                background: isActive ? 'white' : 'transparent',
+                                                margin: '4px 10px',
+                                                borderRadius: '16px',
+                                                border: isActive ? '1px solid rgba(226,232,240,0.8)' : '1px solid transparent',
+                                                boxShadow: isActive ? '0 10px 25px -5px rgba(15,23,42,0.05), 0 4px 10px -4px rgba(15,23,42,0.02)' : 'none',
+                                                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                transform: isActive ? 'scale(1.01)' : 'scale(1)'
+                                            }}
+                                            onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.4)'; }}
+                                            onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                                        >
+                                            {isActive && <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', height: '50%', width: 4, background: 'var(--accent-violet)', borderRadius: '0 4px 4px 0' }} />}
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <div style={{ width: 32, height: 32, borderRadius: '8px', background: isActive ? 'var(--navy-900)' : '#f1f5f9', color: isActive ? 'white' : 'var(--navy-600)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.85rem' }}>
+                                                        {l.name ? l.name[0].toUpperCase() : '?'}
+                                                    </div>
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 800, color: 'var(--navy-900)', fontSize: '0.84rem', letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.name}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 1, fontWeight: 600 }}>{l.city || 'Unknown Region'}</div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                    <div style={{ fontSize: '0.82rem', fontWeight: 900, color: prob > 70 ? 'var(--accent-emerald-dark)' : prob > 40 ? 'var(--accent-amber-dark)' : '#f43f5e' }}>
+                                                        {prob}%
+                                                    </div>
+                                                    <div style={{ fontSize: '0.55rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{getLeadLastTime(l)}</div>
                                                 </div>
                                             </div>
+                                            
+                                            {/* Snippet preview */}
+                                            <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: '4px 0 8px', fontWeight: 500 }}>
+                                                {getLeadLastMessage(l)}
+                                            </div>
+
+                                            <div style={{ height: 3, width: '100%', background: 'var(--slate-100)', borderRadius: 2, overflow: 'hidden' }}>
+                                                <div style={{ 
+                                                    height: '100%', 
+                                                    width: `${prob}%`, 
+                                                    background: isActive ? 'linear-gradient(90deg, #818cf8, #c084fc)' : 'var(--slate-300)',
+                                                    transition: 'width 1s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                                                }} />
+                                            </div>
                                         </div>
-                                    ))}
-                                    <div style={{ textAlign: 'center', margin: isMobile ? '20px 0' : '30px 0' }}>
-                                        <span style={{ background: 'white', border: '1px solid #e2e8f0', color: 'var(--slate-500)', padding: '6px 16px', borderRadius: 20, fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>Connection Established</span>
-                                    </div>
-                                </div>
-
-                                <div style={{ padding: isMobile ? '12px' : '24px', background: 'white', borderTop: '1px solid var(--border-light)' }}>
-                                    <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: isMobile ? '8px' : '12px', background: 'white', border: '1px solid #cbd5e1', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)', transition: 'all 0.2s', padding: isMobile ? '4px 8px' : '8px 12px' }} tabIndex={0} onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-violet)'} onBlur={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
-                                        <button 
-                                            className="btn hover-lift" 
-                                            style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1))', color: 'var(--accent-violet)', fontWeight: 800, padding: isMobile ? '8px' : '12px', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                                            onClick={handleDraft}
-                                            disabled={isDrafting}
-                                            title="Generate AI Draft"
-                                        >
-                                            <Wand2 size={isMobile ? 16 : 18} />
-                                        </button>
-                                        <textarea
-                                            value={replyText}
-                                            onChange={e => setReplyText(e.target.value)}
-                                            placeholder={isMobile ? "Write a message..." : "Write a message or utilize the AI to draft..."}
-                                            style={{
-                                                flex: 1, border: 'none', background: 'transparent',
-                                                padding: '8px 4px', outline: 'none', resize: 'none', height: '36px',
-                                                fontSize: isMobile ? '0.75rem' : '0.8rem', fontWeight: 500, color: 'var(--navy-900)'
-                                            }}
-                                        />
-                                        <button className="btn btn-primary hover-lift" onClick={handleSend} disabled={!replyText.trim()} style={{ borderRadius: '12px', padding: isMobile ? '8px 12px' : '12px 32px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: isMobile ? '0.75rem' : '0.85rem', minWidth: isMobile ? 'auto' : '140px', justifyContent: 'center' }}>
-                                            {isMobile ? <Send size={15} /> : <>Send <Send size={16} /></>}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </>
-                    ) : null}
-                </div>
-
-                {/* Right Panel: AI Intelligence */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden' }}>
-                    <div className="card" style={{ padding: '12px 32px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 12px 30px -10px rgba(0,0,0,0.05)' }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4)' }} />
-                        <div style={{ position: 'absolute', right: -20, bottom: -20, opacity: 0.02, transform: 'rotate(-15deg)' }}>
-                            <TrendingUp size={160} />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                            <div className="ai-pulse" style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-violet)', boxShadow: '0 0 12px var(--accent-violet)' }} />
-                            <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Conversion Index</h4>
-                        </div>
-                        <div style={{ textAlign: 'center', position: 'relative', zIndex: 1, paddingBottom: '4px' }}>
-                            <div style={{ fontSize: '4.5rem', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1, letterSpacing: '-0.08em', textShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>{intel?.closingProbability || 0}<span style={{ fontSize: '2rem', opacity: 0.5 }}>%</span></div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
+                )}
 
-                    <div className="card" style={{ flex: 1, padding: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--navy-900)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-                        <div style={{ padding: '28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.2)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                <h5 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 12, fontSize: '1rem', fontWeight: 900, color: 'white' }}>
-                                    <Sparkles size={18} style={{ color: '#a855f7' }} /> Lead Intelligence
-                                </h5>
-                                <div style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(16,185,129,0.1)', color: '#34d399', fontSize: '0.65rem', fontWeight: 900, border: '1px solid rgba(52, 211, 153, 0.2)' }}>REALTIME</div>
-                            </div>
+                {/* ═══════════════════════════════════════════════════════
+                    CENTER PANEL: CHAT FEED VIEW
+                   ═══════════════════════════════════════════════════════ */}
+                {(!isMobile || mobileView === 'chat') && (
+                    <div className="card" style={{ height: isMobile ? 'calc(100vh - 160px)' : '100%', padding: 0, display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+                        {activeLead ? (
+                            <>
+                                {/* Chat Header */}
+                                <div style={{ padding: isMobile ? '14px 16px' : '20px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                        {isMobile && (
+                                            <button onClick={() => setMobileView('list')} style={{ background: 'none', border: 'none', color: 'var(--navy-600)', cursor: 'pointer', padding: '4px 6px', display: 'flex', alignItems: 'center', gap: 2, marginRight: 4, fontWeight: 700, fontSize: '0.8rem' }}>
+                                                <ChevronLeft size={18} /> Back
+                                            </button>
+                                        )}
+                                        <div style={{ width: 38, height: 38, borderRadius: '12px', background: 'linear-gradient(135deg, var(--navy-900), var(--navy-700))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.05rem', boxShadow: '0 4px 10px rgba(10, 22, 40, 0.15)', flexShrink: 0 }}>
+                                            {(activeLead.name || '?')[0]}
+                                        </div>
+                                        <div style={{ minWidth: 0 }}>
+                                            <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)' }}>{activeLead.name || 'Unknown Lead'}</h3>
+                                            <div style={{ display: 'flex', gap: 6, marginTop: 2, alignItems: 'center' }}>
+                                                <span style={{ 
+                                                    fontSize: '0.58rem', 
+                                                    background: activeLead.status === 'Won' ? '#dcfce7' : activeLead.status === 'Lost' ? '#ffe4e6' : '#e0e7ff', 
+                                                    color: activeLead.status === 'Won' ? '#15803d' : activeLead.status === 'Lost' ? '#be123c' : '#4338ca', 
+                                                    padding: '1px 6px', 
+                                                    borderRadius: 99, 
+                                                    fontWeight: 900,
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.04em',
+                                                    border: `1px solid ${activeLead.status === 'Won' ? '#16653420' : activeLead.status === 'Lost' ? '#9f123920' : '#4338ca20'}`,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 3
+                                                }}>
+                                                    <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'currentColor' }} />
+                                                    {activeLead.status || 'Active'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+                                        <button className="icon-btn" onClick={() => dialerEvents.call(activeLead.id, activeLead.phone, activeLead.name)} title="Call Lead" style={{ width: 32, height: 32, border: '1px solid var(--border-medium)', borderRadius: 8, background: 'white' }}>
+                                            <Phone size={14} color="var(--accent-emerald)" />
+                                        </button>
+                                        <button className="icon-btn" onClick={() => activeLead.email && window.open(`mailto:${activeLead.email}`, '_blank')} title="Send Email" style={{ width: 32, height: 32, border: '1px solid var(--border-medium)', borderRadius: 8, background: 'white' }}><Mail size={14} color="#64748b" /></button>
+                                        
+                                        {isMobile ? (
+                                            <button className="btn hover-lift" onClick={() => setMobileView('intel')} style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1))', color: 'var(--accent-violet)', fontWeight: 800, padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(139, 92, 246, 0.2)', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <Brain size={14} /> Intel
+                                            </button>
+                                        ) : (
+                                            <button className="btn btn-secondary btn-sm hover-lift" onClick={() => navigate(`/leads/${activeLead.id}`)} style={{ fontSize: '0.72rem', padding: '6px 12px', height: 32, borderRadius: 8 }}>Profile</button>
+                                        )}
+                                    </div>
+                                </div>
 
-                            <div style={{ marginBottom: 32 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                                    <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment Score</label>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 900, color: intel?.sentiment === 'Positive' ? '#34d399' : '#fbbf24', textTransform: 'uppercase' }}>{intel?.sentiment}</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: 6, height: 6 }}>
-                                    {[1, 2, 3, 4, 5, 6].map(i => (
-                                        <div key={i} style={{ 
-                                            flex: 1, 
-                                            height: '100%', 
-                                            background: i <= (intel?.sentiment === 'Positive' ? 5 : 3) ? '#a855f7' : 'rgba(255,255,255,0.1)', 
-                                            borderRadius: 4,
-                                            boxShadow: i <= (intel?.sentiment === 'Positive' ? 5 : 3) ? '0 0 10px rgba(168, 85, 247, 0.4)' : 'none'
-                                        }} />
-                                    ))}
-                                </div>
-                            </div>
+                                {/* Chat Body */}
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#f8fafc' }}>
+                                    <div style={{ 
+                                        flex: 1, padding: isMobile ? '16px' : '24px 32px', overflowY: 'auto', display: 'flex', flexDirection: 'column-reverse', gap: 14, position: 'relative' 
+                                    }}>
+                                        {isDrafting && <TypingIndicator />}
+                                        
+                                        {messagesLoading ? (
+                                            <ChatMessagesSkeleton />
+                                        ) : (
+                                            messages.map(m => (
+                                                <div key={m.id} className="animate-fadeIn" style={{ display: 'flex', justifyContent: m.sent_by ? 'flex-end' : 'flex-start' }}>
+                                                    <div style={{
+                                                        maxWidth: isMobile ? '85%' : '75%', padding: '12px 18px', borderRadius: '20px',
+                                                        background: m.sent_by ? 'linear-gradient(135deg, #4f46e5, #6366f1)' : 'white',
+                                                        color: m.sent_by ? 'white' : '#1e293b',
+                                                        border: m.sent_by ? 'none' : '1px solid #e2e8f0',
+                                                        boxShadow: m.sent_by ? '0 6px 16px -4px rgba(99,102,241,0.25)' : '0 2px 4px rgba(0,0,0,0.01)',
+                                                        borderBottomLeftRadius: !m.sent_by ? 4 : 20,
+                                                        borderBottomRightRadius: m.sent_by ? 4 : 20,
+                                                        position: 'relative'
+                                                    }}>
+                                                        {!m.sent_by && (
+                                                            <div style={{ position: 'absolute', top: -15, left: 4, fontSize: '0.58rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{activeLead.name}</div>
+                                                        )}
+                                                        <p style={{ margin: 0, fontSize: '0.84rem', lineHeight: 1.45, fontWeight: 500, color: 'inherit', whiteSpace: 'pre-wrap' }}>{m.body}</p>
+                                                        
+                                                        {/* Status Ticks */}
+                                                        <div style={{ textAlign: 'right', marginTop: 6, fontSize: '0.55rem', opacity: m.sent_by ? 0.95 : 0.6, fontWeight: 700, color: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
+                                                            {dateUtils.parseSafe(m.sent_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '—'}
+                                                            {m.sent_by && (
+                                                                <span style={{ 
+                                                                    marginLeft: 2, 
+                                                                    color: m.status === 'Read' ? '#38bdf8' : '#e0e7ff',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 900,
+                                                                    display: 'inline-flex'
+                                                                }}>
+                                                                    {m.status === 'Read' ? '✓✓' : m.status === 'Delivered' ? '✓✓' : '✓'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                        <div style={{ textAlign: 'center', margin: '15px 0' }}>
+                                            <span style={{ background: 'white', border: '1px solid #e2e8f0', color: 'var(--slate-500)', padding: '5px 14px', borderRadius: 20, fontSize: '0.62rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>Connection Established</span>
+                                        </div>
+                                    </div>
 
-                            <div style={{ marginBottom: 32, padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                                    <Clock size={14} color="#38bdf8" />
-                                    <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Predictive Window</label>
-                                </div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'white' }}>
-                                    {intel?.bestTimeToContact || 'Analyzing Patterns...'}
-                                </div>
-                                <div style={{ fontSize: '0.6rem', color: '#64748b', marginTop: 4 }}>Based on historical interaction peaks</div>
-                            </div>
-                            
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 12, letterSpacing: '0.05em' }}>Executive Analysis</label>
-                                <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.6, fontWeight: 500, boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)' }}>
-                                    {intel?.summary}
-                                </div>
-                            </div>
-                        </div>
+                                    {/* Chat Input controls */}
+                                    <div style={{ padding: isMobile ? '12px 14px' : '18px 24px', background: 'white', borderTop: '1px solid var(--border-light)' }}>
+                                        {/* Canned reply templates */}
+                                        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' }} className="canned-replies-container">
+                                            {CANNED_REPLIES.map((r, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setReplyText(r.text)}
+                                                    style={{
+                                                        whiteSpace: 'nowrap',
+                                                        padding: '5px 12px',
+                                                        borderRadius: '99px',
+                                                        border: '1px solid #e2e8f0',
+                                                        background: '#f8fafc',
+                                                        color: '#475569',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                                                >
+                                                    {r.label}
+                                                </button>
+                                            ))}
+                                        </div>
 
-                        <div style={{ padding: '28px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 16, background: 'rgba(15, 23, 42, 0.5)' }}>
-                            <button className="btn hover-lift" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15))', color: '#e0e7ff', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '14px', fontWeight: 900, fontSize: '0.85rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'center' }}>
-                                <Sparkles size={16} style={{ marginRight: 8, color: '#c084fc' }} /> Generate Smart Pitch
-                            </button>
-                            
-                            <div style={{ padding: '20px', background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <label style={{ fontSize: '0.65rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 12, letterSpacing: '0.1em' }}>System Recommendation</label>
-                                <button className="btn hover-lift" style={{ width: '100%', justifyContent: 'space-between', padding: '16px 20px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '12px', fontWeight: 900, fontSize: '0.85rem', boxShadow: '0 8px 16px rgba(0,0,0,0.3)' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}><Zap size={16} color="#8b5cf6" style={{ fill: '#8b5cf6' }}/> {intel?.nextAction}</span>
-                                    <ChevronRight size={18} color="#94a3b8" />
+                                        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', gap: 10, background: 'white', border: '1px solid #cbd5e1', borderRadius: '24px', transition: 'all 0.2s', padding: '4px 8px' }} tabIndex={0} onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-violet)'} onBlur={e => e.currentTarget.style.borderColor = '#cbd5e1'}>
+                                            <button 
+                                                className="btn hover-lift" 
+                                                style={{ background: 'linear-gradient(to right, rgba(139, 92, 246, 0.08), rgba(168, 85, 247, 0.08))', color: 'var(--accent-violet)', fontWeight: 800, padding: 10, borderRadius: '50%', border: '1px solid rgba(139, 92, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 36, height: 36 }}
+                                                onClick={handleDraft}
+                                                disabled={isDrafting}
+                                                title="Generate AI Draft"
+                                            >
+                                                <Wand2 size={16} />
+                                            </button>
+                                            <button 
+                                                className="btn hover-lift" 
+                                                style={{ color: '#94a3b8', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 36, cursor: 'pointer', padding: 0 }}
+                                                onClick={() => addToast({ type: 'info', title: 'File Attachment', message: 'Attachment portal simulation ready.' })}
+                                                title="Attach File"
+                                            >
+                                                <Paperclip size={16} />
+                                            </button>
+                                            <textarea
+                                                value={replyText}
+                                                onChange={e => setReplyText(e.target.value)}
+                                                placeholder={isMobile ? "Write message..." : "Type a message or click AI to draft..."}
+                                                style={{
+                                                    flex: 1, border: 'none', background: 'transparent',
+                                                    padding: '8px 2px', outline: 'none', resize: 'none', height: '36px',
+                                                    fontSize: '0.8rem', fontWeight: 500, color: 'var(--navy-900)', fontFamily: 'inherit'
+                                                }}
+                                            />
+                                            <button className="btn btn-primary hover-lift" onClick={handleSend} disabled={!replyText.trim()} style={{ borderRadius: '18px', padding: isMobile ? '8px 12px' : '10px 24px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, fontSize: '0.8rem', justifyContent: 'center', height: 36 }}>
+                                                {isMobile ? <Send size={14} /> : <>Send <Send size={14} /></>}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="empty-state">
+                                <div className="empty-state-icon">💬</div>
+                                <div className="empty-state-title">Select a Conversation</div>
+                                <div className="empty-state-text">Choose an opportunity from the list to begin conversation management.</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* ═══════════════════════════════════════════════════════
+                    RIGHT PANEL: AI INTELLIGENCE
+                   ═══════════════════════════════════════════════════════ */}
+                {(!isMobile || mobileView === 'intel') && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: isMobile ? 'calc(100vh - 160px)' : '100%', overflowY: 'auto' }}>
+                        
+                        {isMobile && (
+                            <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 16 }}>
+                                <button onClick={() => setMobileView('chat')} style={{ background: 'none', border: 'none', color: 'var(--navy-600)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2, fontWeight: 700, fontSize: '0.8rem' }}>
+                                    <ChevronLeft size={18} /> Chat
                                 </button>
+                                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)' }}>AI Intelligence Details</span>
+                            </div>
+                        )}
+
+                        {/* Conversion Index Gauge Card */}
+                        <div className="card" style={{ padding: '16px 20px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 10px 25px -10px rgba(15,23,42,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #818cf8, #c084fc, #38bdf8)' }} />
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, width: '100%', alignSelf: 'flex-start' }}>
+                                <div className="ai-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-violet)', boxShadow: '0 0 10px var(--accent-violet)', animation: 'calPulse 2s infinite' }} />
+                                <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Conversion Index</h4>
+                            </div>
+
+                            {/* SVGGauge rendering */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '10px 0', position: 'relative', width: 120, height: 120 }}>
+                                <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
+                                    <circle
+                                        cx="55"
+                                        cy="55"
+                                        r={radius}
+                                        fill="none"
+                                        stroke="#f1f5f9"
+                                        strokeWidth={strokeWidth}
+                                    />
+                                    <circle
+                                        cx="55"
+                                        cy="55"
+                                        r={radius}
+                                        fill="none"
+                                        stroke="url(#probabilityGradient)"
+                                        strokeWidth={strokeWidth}
+                                        strokeDasharray={circumference}
+                                        strokeDashoffset={strokeDashoffset}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 1s ease-out' }}
+                                    />
+                                    <defs>
+                                        <linearGradient id="probabilityGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" stopColor="#818cf8" />
+                                            <stop offset="100%" stopColor="#c084fc" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em' }}>
+                                        {probability}%
+                                    </span>
+                                    <span style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: -2 }}>
+                                        Closing Rate
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Intel Summary */}
+                        <div className="card" style={{ flex: 1, padding: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--navy-900)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                            <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                                    <h5 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 900, color: 'white' }}>
+                                        <Sparkles size={16} style={{ color: '#c084fc' }} /> Lead Intelligence
+                                    </h5>
+                                    <div style={{ padding: '3px 8px', borderRadius: 20, background: 'rgba(16,185,129,0.1)', color: '#34d399', fontSize: '0.62rem', fontWeight: 900, border: '1px solid rgba(52, 211, 153, 0.2)' }}>REALTIME</div>
+                                </div>
+
+                                {/* Sentiment Index */}
+                                <div style={{ marginBottom: 24 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                                        <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sentiment Score</label>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 900, color: intel?.sentiment === 'Positive' ? '#34d399' : intel?.sentiment === 'Negative' ? '#f43f5e' : '#fbbf24', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {intel?.sentiment === 'Positive' ? '😊 Positive' : intel?.sentiment === 'Negative' ? '😡 Negative' : '😐 Neutral'}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 5, height: 5 }}>
+                                        {[1, 2, 3, 4, 5].map(i => {
+                                            const score = intel?.sentiment === 'Positive' ? 5 : intel?.sentiment === 'Negative' ? 1 : 3;
+                                            return (
+                                                <div key={i} style={{ 
+                                                    flex: 1, 
+                                                    height: '100%', 
+                                                    background: i <= score ? (intel?.sentiment === 'Positive' ? '#10b981' : intel?.sentiment === 'Negative' ? '#f43f5e' : '#fbbf24') : 'rgba(255,255,255,0.08)', 
+                                                    borderRadius: 4,
+                                                    transition: 'all 0.3s'
+                                                }} />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Optimal Predictive Window */}
+                                <div style={{ marginBottom: 24, padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <Clock size={12} color="#38bdf8" />
+                                            <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Predictive Window</label>
+                                        </div>
+                                        {isOptimalTime ? (
+                                            <span style={{ fontSize: '0.55rem', fontWeight: 900, background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(52,211,153,0.2)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'calPulse 1.5s infinite' }} />
+                                                ACTIVE NOW
+                                            </span>
+                                        ) : (
+                                            <span style={{ fontSize: '0.55rem', fontWeight: 800, background: 'rgba(255,255,255,0.05)', color: '#94a3b8', padding: '2px 8px', borderRadius: 99 }}>
+                                                STANDBY
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>
+                                        {intel?.bestTimeToContact || 'Analyzing Patterns...'}
+                                    </div>
+                                    <div style={{ fontSize: '0.58rem', color: '#64748b', marginTop: 4 }}>Based on historical interaction peaks</div>
+                                </div>
+                                
+                                {/* Summary Text */}
+                                <div style={{ marginBottom: 10 }}>
+                                    <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.04em' }}>Executive Analysis</label>
+                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500 }}>
+                                        {intel?.summary}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Pitch / Action Triggers */}
+                            <div style={{ padding: '20px 24px', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(15, 23, 42, 0.4)' }}>
+                                <button className="btn hover-lift" onClick={() => setShowPitchModal(true)} style={{ width: '100%', padding: '12px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.15))', color: '#e0e7ff', border: '1px solid rgba(168, 85, 247, 0.25)', borderRadius: '12px', fontWeight: 900, fontSize: '0.8rem', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}>
+                                    <Sparkles size={14} style={{ marginRight: 6, color: '#c084fc' }} /> Generate Smart Pitch
+                                </button>
+                                
+                                <div style={{ padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.05em' }}>System Recommendation</label>
+                                    <button className="btn hover-lift" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#8b5cf6" style={{ fill: '#8b5cf6' }}/> {intel?.nextAction}</span>
+                                        <ChevronRight size={16} color="#94a3b8" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {showPitchModal && activeLead && (
