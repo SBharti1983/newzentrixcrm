@@ -796,22 +796,9 @@ export default function CalendarPage() {
             {/* ─── Premium Page Header ─── */}
             <div className="page-header cal-no-print" style={{ flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16, marginBottom: 8 }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-                        <div style={{
-                            width: 40, height: 40, borderRadius: 12,
-                            background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-                        }}>
-                            <CalendarDays size={20} color="white" />
-                        </div>
-                        <h1 className="page-title" style={{ fontSize: isMobile ? '1.5rem' : '1.8rem', margin: 0, fontWeight: 950, letterSpacing: '-0.03em', color: 'var(--navy-900)' }}>
-                            Calendar
-                        </h1>
-                    </div>
-                    <p className="page-subtitle" style={{ margin: 0, paddingLeft: 52 }}>
+                    <p className="page-subtitle" style={{ margin: 0, paddingLeft: 0, fontWeight: 750, color: 'var(--text-muted)', fontSize: '0.88rem' }}>
                         {totalThisMonth} activities {isMobile ? '' : `in ${MONTHS[month]}`}
-                        {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 700 }}> · {overdueCount} overdue</span>}
+                        {overdueCount > 0 && <span style={{ color: 'var(--accent-rose)', fontWeight: 800 }}> · {overdueCount} overdue</span>}
                     </p>
                 </div>
                 <div className="page-actions" style={{ width: isMobile ? '100%' : 'auto', flexWrap: 'wrap', gap: 8, display: 'flex', alignItems: 'center' }}>
