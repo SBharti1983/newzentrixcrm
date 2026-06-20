@@ -288,19 +288,6 @@ export default function CommandCenter() {
         return '3h ago';
     };
 
-    // ── Predictive Analytics helpers ──────────────────────────────
-    const isOptimalTime = useMemo(() => {
-        if (!intel?.bestTimeToContact) return false;
-        const currentHour = new Date().getHours();
-        const b = intel.bestTimeToContact.toLowerCase();
-        if (b.includes('8-11 am') && currentHour >= 8 && currentHour < 11) return true;
-        if (b.includes('11 am-2 pm') && currentHour >= 11 && currentHour < 14) return true;
-        if (b.includes('2-5 pm') && currentHour >= 14 && currentHour < 17) return true;
-        if (b.includes('5-8 pm') && currentHour >= 17 && currentHour < 20) return true;
-        if (b.includes('8-10 pm') && currentHour >= 20 && currentHour < 22) return true;
-        if (b.includes('anytime') && currentHour >= 9 && currentHour < 18) return true;
-        return false;
-    }, [intel?.bestTimeToContact]);
 
     // ── Filtering logic ──────────────────────────────────────────
     const filteredLeads = leads.filter(l => {
@@ -657,17 +644,17 @@ export default function CommandCenter() {
                         )}
 
                         {/* Conversion Index Gauge Card */}
-                        <div className="card" style={{ padding: '16px 20px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 10px 25px -10px rgba(15,23,42,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div className="card" style={{ padding: '10px 20px', border: '1px solid #e2e8f0', position: 'relative', overflow: 'hidden', background: 'white', boxShadow: '0 10px 25px -10px rgba(15,23,42,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #818cf8, #c084fc, #38bdf8)' }} />
                             
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, width: '100%', alignSelf: 'flex-start' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, width: '100%', alignSelf: 'flex-start' }}>
                                 <div className="ai-pulse" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-violet)', boxShadow: '0 0 10px var(--accent-violet)', animation: 'calPulse 2s infinite' }} />
                                 <h4 style={{ margin: 0, color: 'var(--navy-900)', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.12em' }}>Conversion Index</h4>
                             </div>
 
                             {/* SVGGauge rendering */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '10px 0', position: 'relative', width: 120, height: 120 }}>
-                                <svg width="110" height="110" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', margin: '0px 0', position: 'relative', width: 100, height: 100 }}>
+                                <svg width="90" height="90" viewBox="0 0 110 110" style={{ transform: 'rotate(-90deg)' }}>
                                     <circle
                                         cx="55"
                                         cy="55"
@@ -696,10 +683,10 @@ export default function CommandCenter() {
                                     </defs>
                                 </svg>
                                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ fontSize: '1.8rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em' }}>
+                                    <span style={{ fontSize: '1.6rem', fontWeight: 950, color: 'var(--navy-900)', letterSpacing: '-0.04em' }}>
                                         {probability}%
                                     </span>
-                                    <span style={{ fontSize: '0.52rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: -2 }}>
+                                    <span style={{ fontSize: '0.5rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: -2 }}>
                                         Closing Rate
                                     </span>
                                 </div>
@@ -740,30 +727,6 @@ export default function CommandCenter() {
                                     </div>
                                 </div>
 
-                                {/* Optimal Predictive Window */}
-                                <div style={{ marginBottom: 24, padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <Clock size={12} color="#38bdf8" />
-                                            <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Predictive Window</label>
-                                        </div>
-                                        {isOptimalTime ? (
-                                            <span style={{ fontSize: '0.55rem', fontWeight: 900, background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 8px', borderRadius: 99, border: '1px solid rgba(52,211,153,0.2)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'calPulse 1.5s infinite' }} />
-                                                ACTIVE NOW
-                                            </span>
-                                        ) : (
-                                            <span style={{ fontSize: '0.55rem', fontWeight: 800, background: 'rgba(255,255,255,0.05)', color: '#94a3b8', padding: '2px 8px', borderRadius: 99 }}>
-                                                STANDBY
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'white' }}>
-                                        {intel?.bestTimeToContact || 'Analyzing Patterns...'}
-                                    </div>
-                                    <div style={{ fontSize: '0.58rem', color: '#64748b', marginTop: 4 }}>Based on historical interaction peaks</div>
-                                </div>
-                                
                                 {/* Summary Text */}
                                 <div style={{ marginBottom: 10 }}>
                                     <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.04em' }}>Executive Analysis</label>
