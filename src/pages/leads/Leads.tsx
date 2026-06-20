@@ -638,7 +638,7 @@ export default function Leads() {
                     width: '100%' 
                 }}>
                     <div className="search-bar" style={{ 
-                        width: isMobile ? '100%' : 220, 
+                        width: isMobile ? '100%' : 150, 
                         flex: isMobile ? '1 1 100%' : 'none', 
                         background: 'var(--slate-50)', 
                         border: '1px solid var(--slate-200)',
