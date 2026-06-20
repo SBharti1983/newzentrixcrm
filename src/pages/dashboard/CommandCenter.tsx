@@ -255,6 +255,23 @@ export default function CommandCenter() {
         }
     };
 
+    const handleRecommendationClick = () => {
+        if (!intel?.nextAction) return;
+        const action = intel.nextAction;
+        let text = '';
+        if (action === 'Prepare for Site Visit') {
+            text = "Hi! I am preparing the project site layouts and directions for your upcoming visit. Please let me know if you would like me to arrange transport.";
+        } else if (action === 'Share Final Pricing') {
+            text = "Hello! Based on our last discussion, here is the finalized pricing sheet and booking amount details for your preferred units.";
+        } else if (action === 'Schedule Site Visit') {
+            text = "Hi! I see you are interested in this project. Would you be available for a site visit this Saturday or Sunday? We can arrange transport for you.";
+        } else {
+            text = "Hi! Just following up to see if you had a chance to review the details we sent over. Let me know if you need any clarification.";
+        }
+        setReplyText(text);
+        addToast({ type: 'success', title: 'Recommendation Loaded', message: 'Loaded action draft into reply field.' });
+    };
+
     const handleLeadSelect = (leadId: any) => {
         setActiveLeadId(leadId);
         if (isMobile) {
@@ -695,7 +712,7 @@ export default function CommandCenter() {
 
                         {/* Intel Summary */}
                         <div className="card" style={{ flex: 1, padding: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--navy-900)', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-                            <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)' }}>
+                            <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(0,0,0,0.15)', flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
                                     <h5 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', fontWeight: 900, color: 'white' }}>
                                         <Sparkles size={16} style={{ color: '#c084fc' }} /> Lead Intelligence
@@ -728,9 +745,9 @@ export default function CommandCenter() {
                                 </div>
 
                                 {/* Summary Text */}
-                                <div style={{ marginBottom: 10 }}>
+                                <div style={{ marginBottom: 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
                                     <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.04em' }}>Executive Analysis</label>
-                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500 }}>
+                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500, flex: 1 }}>
                                         {intel?.summary}
                                     </div>
                                 </div>
@@ -744,7 +761,7 @@ export default function CommandCenter() {
                                 
                                 <div style={{ padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
                                     <label style={{ fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.05em' }}>System Recommendation</label>
-                                    <button className="btn hover-lift" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
+                                    <button className="btn hover-lift" onClick={handleRecommendationClick} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'white', color: 'var(--navy-900)', border: 'none', borderRadius: '10px', fontWeight: 800, fontSize: '0.8rem', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Zap size={14} color="#8b5cf6" style={{ fill: '#8b5cf6' }}/> {intel?.nextAction}</span>
                                         <ChevronRight size={16} color="#94a3b8" />
                                     </button>
