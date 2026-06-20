@@ -745,9 +745,9 @@ export default function CommandCenter() {
                                 </div>
 
                                 {/* Summary Text */}
-                                <div style={{ marginBottom: 10, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ marginBottom: 10 }}>
                                     <label style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: 8, letterSpacing: '0.04em' }}>Executive Analysis</label>
-                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500, flex: 1 }}>
+                                    <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.04)', fontSize: '0.84rem', color: '#e2e8f0', lineHeight: 1.55, fontWeight: 500 }}>
                                         {intel?.summary}
                                     </div>
                                 </div>
