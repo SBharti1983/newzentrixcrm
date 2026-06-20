@@ -86,6 +86,19 @@ function toDateStr(year, month, day) {
     return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+function getEventStyles(ev: any, ec: any) {
+    if (ev.status === 'Completed') {
+        return {
+            bg: 'rgba(16, 185, 129, 0.1)', // soft green
+            color: '#10b981'
+        };
+    }
+    return {
+        bg: ec.bg || 'rgba(59,99,184,0.12)',
+        color: ec.color || '#3b63b8'
+    };
+}
+
 export default function CalendarPage() {
     const { data: fuRes, refetch: refetchFU } = useApi(() => followupsApi.list({ limit: 500 }));
     const { data: svRes, refetch: refetchSV } = useApi(() => siteVisitsApi.list({ limit: 500 }));
@@ -196,8 +209,6 @@ export default function CalendarPage() {
     const allEvents = Object.entries(events).flatMap(([date, evs]) => (evs as any[]).map(e => ({ ...e, date })));
     const filteredAllEvents = allEvents.filter(e => filterType === 'All' || e.type === filterType);
 
-
-
     const upcomingEvents = filteredAllEvents
         .filter(e => e.date >= today)
         .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''))
@@ -263,7 +274,7 @@ export default function CalendarPage() {
                 {/* ── Month Calendar ── */}
                 <div style={{ flex: 1, minWidth: 0, width: '100%' }}>
                     {view === 'month' && (
-                        <div className="card">
+                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                             {/* Month nav */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
                                 <button onClick={prevMonthNav} className="btn btn-ghost btn-sm btn-icon"><ChevronLeft size={16} /></button>
@@ -274,15 +285,32 @@ export default function CalendarPage() {
                             </div>
 
                             {/* Day headers */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 0, padding: isMobile ? '4px 0' : '8px 12px 0' }}>
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', 
+                                gap: 0, 
+                                background: '#f8fafc',
+                                borderBottom: '1px solid var(--border-light)',
+                                padding: '10px 0'
+                            }}>
                                 {DAYS.map(d => (
-                                    <div key={d} style={{ textAlign: 'center', fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '6px 0', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d}</div>
+                                    <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{d}</div>
                                 ))}
                             </div>
 
                             {/* Date grid */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: isMobile ? 1 : 2, padding: isMobile ? '0 4px 8px' : '0 10px 12px' }}>
-                                {Array.from({ length: startDay }).map((_, i) => <div key={`e-${i}`} />)}
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', 
+                                gap: '1px', 
+                                background: 'var(--border-light)',
+                                borderBottomLeftRadius: 'var(--border-radius-lg)',
+                                borderBottomRightRadius: 'var(--border-radius-lg)',
+                                overflow: 'hidden'
+                            }}>
+                                {Array.from({ length: startDay }).map((_, i) => (
+                                    <div key={`e-${i}`} style={{ background: '#f8fafc', minHeight: isMobile ? 65 : 100 }} />
+                                ))}
                                 {Array.from({ length: totalDays }).map((_, i) => {
                                     const day = i + 1;
                                     const dateStr = toDateStr(year, month, day);
@@ -300,46 +328,91 @@ export default function CalendarPage() {
                                             onDragLeave={() => setDragOverDate(null)}
                                             onDrop={(e) => handleDrop(e, dateStr)}
                                             style={{
-                                                minHeight: isMobile ? 65 : 85, padding: isMobile ? '2px' : '4px', borderRadius: 'var(--border-radius-md)',
-                                                background: dragOverDate === dateStr ? 'rgba(59,99,184,0.15)' : isSelected ? 'var(--navy-50)' : isToday ? 'rgba(59,99,184,0.04)' : 'transparent',
-                                                border: `1.5px solid ${dragOverDate === dateStr ? 'var(--navy-600)' : isSelected ? 'var(--navy-300)' : isToday ? 'var(--navy-200)' : 'transparent'}`,
-                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                minHeight: isMobile ? 65 : 100, 
+                                                padding: isMobile ? '4px' : '8px', 
+                                                background: dragOverDate === dateStr 
+                                                    ? 'rgba(59,99,184,0.08)' 
+                                                    : isSelected 
+                                                        ? 'rgba(99,102,241,0.04)' 
+                                                        : isToday 
+                                                            ? 'rgba(37,99,235,0.04)' 
+                                                            : 'white',
+                                                boxShadow: isSelected 
+                                                    ? 'inset 0 0 0 2px #2563eb' 
+                                                    : dragOverDate === dateStr 
+                                                        ? 'inset 0 0 0 2px #3b82f6' 
+                                                        : 'none',
+                                                cursor: 'pointer', 
+                                                transition: 'all 0.15s',
                                                 position: 'relative',
-                                                boxShadow: dragOverDate === dateStr ? 'inset 0 0 10px rgba(59,99,184,0.1)' : 'none',
-                                                transform: dragOverDate === dateStr ? 'scale(1.02)' : 'none',
-                                                zIndex: dragOverDate === dateStr ? 10 : 1
+                                                zIndex: isSelected || dragOverDate === dateStr ? 10 : 1
                                             }}
-                                            onMouseEnter={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = 'var(--slate-50)'; }}
-                                            onMouseLeave={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = isToday ? 'rgba(59,99,184,0.04)' : 'transparent'; }}
+                                            onMouseEnter={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = '#f8fafc'; }}
+                                            onMouseLeave={e => { if (!isSelected && !draggingEvent) e.currentTarget.style.background = isToday ? 'rgba(37,99,235,0.04)' : 'white'; }}
                                         >
-                                            {/* Day number */}
+                                            {/* Cell Header: Day Number + Event Badge */}
                                             <div style={{
-                                                width: 24, height: 24, borderRadius: '50%', marginBottom: 3, marginLeft: 'auto',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                background: isToday ? 'var(--navy-600)' : 'transparent',
-                                                color: isToday ? 'white' : isWeekend ? 'var(--accent-rose)' : isPast ? 'var(--text-muted)' : 'var(--text-primary)',
-                                                fontSize: '0.78rem', fontWeight: isToday ? 800 : 600,
-                                            }}>{day}</div>
-                                            {/* Event dots */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minHeight: isMobile ? 32 : 40 }}>
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                marginBottom: 8,
+                                                padding: '2px 2px 0'
+                                            }}>
+                                                {/* Day number */}
+                                                <div style={{
+                                                    width: 24, height: 24, borderRadius: '50%',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: isToday ? '#2563eb' : 'transparent',
+                                                    color: isToday ? 'white' : isWeekend ? '#ef4444' : isPast ? '#94a3b8' : '#1e293b',
+                                                    fontSize: '0.8rem', fontWeight: isToday ? 800 : 700,
+                                                }}>{day}</div>
+
+                                                {/* Event count badge */}
+                                                {dayEvents.length > 0 && (
+                                                    <div style={{
+                                                        minWidth: 18, height: 18, borderRadius: '50%',
+                                                        background: '#f59e0b',
+                                                        color: 'white',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.68rem', fontWeight: 800,
+                                                        padding: '0 4px',
+                                                        boxShadow: '0 1px 4px rgba(245,158,11,0.3)',
+                                                    }}>{dayEvents.length}</div>
+                                                )}
+                                            </div>
+
+                                            {/* Event items */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minHeight: isMobile ? 32 : 40 }}>
                                                 {dayEvents.slice(0, isMobile ? 2 : 3).map((ev, j) => {
                                                     const ec = EVENT_TYPE[ev.type] || EVENT_TYPE.Meeting;
+                                                    const estyles = getEventStyles(ev, ec);
                                                     return (
                                                         <div 
                                                             key={j} 
                                                             draggable="true"
                                                             onDragStart={(e) => handleDragStart(e, { ...ev, date: dateStr })}
                                                             style={{
-                                                                fontSize: '0.62rem', fontWeight: 700, padding: '1px 4px',
-                                                                borderRadius: 3, background: ec.bg, color: ec.color,
-                                                                overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                                                                fontSize: '0.7rem', 
+                                                                fontWeight: 700, 
+                                                                padding: '3px 8px',
+                                                                borderRadius: 5, 
+                                                                background: estyles.bg, 
+                                                                color: estyles.color,
+                                                                overflow: 'hidden', 
+                                                                whiteSpace: 'nowrap', 
+                                                                textOverflow: 'ellipsis',
                                                                 cursor: 'grab',
+                                                                border: `1px solid ${estyles.color}15`,
                                                                 opacity: draggingEvent?.id === ev.id ? 0.4 : 1,
-                                                            }}>{ec.icon} {isMobile ? '' : ev.title}</div>
+                                                            }}
+                                                            title={`${ev.title} (${ev.type})`}
+                                                        >
+                                                            {isMobile ? ec.icon : `${ev.title} - ${ec.icon}`}
+                                                        </div>
                                                     );
                                                 })}
                                                 {dayEvents.length > (isMobile ? 2 : 3) && (
-                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 700, textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', fontWeight: 700, textAlign: 'center', marginTop: 2 }}>
                                                         {isMobile ? `+${dayEvents.length - 2}` : `+${dayEvents.length - 3} more`}
                                                     </div>
                                                 )}
