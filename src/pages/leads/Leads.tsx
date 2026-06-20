@@ -220,10 +220,10 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
             onMouseLeave={() => setHovered(false)} 
             style={{ cursor: 'pointer', background: isSelected ? 'var(--navy-50)' : undefined }}
         >
-            <td onClick={e => e.stopPropagation()} style={{ paddingRight: 0 }}>
+            <td onClick={e => e.stopPropagation()} style={{ padding: '5px 0 5px 8px' }}>
                 <input type="checkbox" className="ll-checkbox" checked={isSelected} onChange={() => onSelect(lead.id)} />
             </td>
-            <td style={{ padding: '8px 8px' }}>
+            <td style={{ padding: '5px 8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div className="ll-avatar-ring">
                         <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
@@ -239,7 +239,7 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                     </div>
                 </div>
             </td>
-            <td style={{ padding: '8px 8px', textAlign: 'center' }}>
+            <td style={{ padding: '5px 8px', textAlign: 'center' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
@@ -255,14 +255,14 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                     </div>
                 </div>
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            <td style={{ textAlign: 'center', padding: '5px' }}>
                 <span className={`ll-status-pill ll-status-${statusKey}`}>{lead.status || 'Active'}</span>
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            <td style={{ textAlign: 'center', padding: '5px' }}>
                 <span className="ll-stage-pill" style={{ '--ll-stage-dot': stageDotColor, '--ll-stage-bg': stageBgColor, '--ll-stage-border': `${stageDotColor}25`, '--ll-stage-color': stageDotColor } as any}>{lead.stage || '—'}</span>
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            <td style={{ textAlign: 'center', padding: '5px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
+            <td style={{ textAlign: 'center', padding: '5px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div className={`ll-score-ring ${scoreClass}`}>
                         <svg width="38" height="38" viewBox="0 0 38 38" className="ll-score-svg">
@@ -281,34 +281,34 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
             </td>
             {filterNurtureDue && (
                 <>
-                    <td style={{ textAlign: 'center', padding: '8px' }}>
+                    <td style={{ textAlign: 'center', padding: '5px' }}>
                         <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-rose)', background: 'var(--rose-50)', borderRadius: 6, padding: '2px 4px' }}>
                             {lead.reconnect_date ? new Date(lead.reconnect_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Today'}
                         </div>
                     </td>
-                    <td style={{ textAlign: 'center', padding: '8px' }}>
+                    <td style={{ textAlign: 'center', padding: '5px' }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--slate-600)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={lead.nurture_reason}>
                             {lead.nurture_reason || '—'}
                         </div>
                     </td>
                 </>
             )}
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            <td style={{ textAlign: 'center', padding: '5px' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name || 'System'}</span>
             </td>
-            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
+            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px' }}>
                 {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }} title={lead.assigned_to_name || 'Unassigned'}>
+            <td style={{ textAlign: 'center', padding: '5px' }} title={lead.assigned_to_name || 'Unassigned'}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
                     <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>{lead.agent_avatar || '?'}</div>
                     <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
                 </div>
             </td>
-            <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
+            <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px' }}>
                 {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
             </td>
-            <td onClick={e => e.stopPropagation()} className="ll-actions-sticky" style={{ textAlign: 'center', padding: '4px 6px' }}>
+            <td onClick={e => e.stopPropagation()} className="ll-actions-sticky" style={{ textAlign: 'center', padding: '3px 6px' }}>
                 <div style={{ display: 'flex', gap: 4, justifyContent: 'center', minWidth: '90px' }}>
                     <button className="ll-action-btn ll-action-call" onClick={() => onCall(lead.id, lead.phone, lead.name)} aria-label="Call lead"><Phone size={14} style={{ color: '#00a38d' }} /></button>
                     <button className="ll-action-btn ll-action-edit" onClick={() => onEdit(lead)} aria-label="Edit lead"><Edit2 size={14} /></button>
@@ -646,7 +646,7 @@ export default function Leads() {
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <span className="ll-count-hero">
                                 {leadsRes?.total || 0}
@@ -663,7 +663,7 @@ export default function Leads() {
                         </div>
                         {/* Telemetry Quality Bar */}
                         {leads.length > 0 && (
-                            <div className="ll-telemetry-container" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }} title="Lead Quality Split (Hot / Warm / Cold)">
+                            <div className="ll-telemetry-container" style={{ display: 'flex', alignItems: 'center', gap: 8 }} title="Lead Quality Split (Hot / Warm / Cold)">
                                 <div className="ll-telemetry-bar" style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', background: '#e2e8f0', width: 140 }}>
                                     <div style={{ width: `${scoreCounts.hotPct}%`, background: '#10b981' }} />
                                     <div style={{ width: `${scoreCounts.warmPct}%`, background: '#f59e0b' }} />
@@ -907,7 +907,7 @@ export default function Leads() {
                     </div>
                 )}
 
-                <div className={`table-wrapper ll-scroll ll-density-${density}`} style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
+                <div className={`table-wrapper ll-scroll ll-density-${density}`} style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 235px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
                     {leads.length === 0 && !leadsLoading ? (
                         <div className="ll-empty-state">
                             <div className="ll-empty-icon">🔍</div>
@@ -999,7 +999,7 @@ export default function Leads() {
                 {/* Pagination Section - Now ALWAYS stable and positioned correctly */}
                 <div className="ll-pagination" style={{
                     display: 'flex', justifyContent: isMobile ? 'center' : 'space-between', alignItems: 'center',
-                    padding: isMobile ? '10px 12px' : '12px 20px',
+                    padding: isMobile ? (density === 'compact' ? '4px 12px' : '6px 12px') : (density === 'compact' ? '5px 20px' : '8px 20px'),
                     borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: isMobile ? 8 : 12,
                     zIndex: 100, position: 'relative',
                     flexDirection: isMobile ? 'column' : 'row'

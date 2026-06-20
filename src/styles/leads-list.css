@@ -107,7 +107,7 @@
   font-weight: 800 !important;
   letter-spacing: 0.04em !important;
   color: var(--slate-500) !important;
-  padding: 12px 4px !important;
+  padding: 8px 4px !important;
   border-bottom: 2px solid transparent !important;
   border-image: linear-gradient(90deg, #6366f1, #06b6d4, #6366f1) 1 !important;
   text-transform: uppercase;
@@ -870,9 +870,13 @@
 }
 
 /* Visual Density compact mode overrides */
-.ll-density-compact td {
+.ll-density-compact .ll-thead-premium th {
   padding: 5px 4px !important;
-  height: 38px !important;
+}
+
+.ll-density-compact td {
+  padding: 3px 4px !important;
+  height: 32px !important;
 }
 
 .ll-density-compact .avatar {
