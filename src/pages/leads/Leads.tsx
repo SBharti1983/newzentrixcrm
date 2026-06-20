@@ -76,9 +76,28 @@ const SOURCES = [
 ];
 const NURTURE_REASONS = ['Budget issue', 'Timeline delay', 'No response', 'Inventory mismatch', 'Contacted - Follow up later', 'Looking for better options'];
 
+const highlightText = (text: string, searchStr: string) => {
+    if (!searchStr) return <>{text}</>;
+    try {
+        const parts = text.split(new RegExp(`(${searchStr.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')})`, 'gi'));
+        return (
+            <>
+                {parts.map((part, i) => 
+                    part.toLowerCase() === searchStr.toLowerCase() ? (
+                        <mark key={i} className="ll-highlight">{part}</mark>
+                    ) : part
+                )}
+            </>
+        );
+    } catch (e) {
+        return <>{text}</>;
+    }
+};
+
 interface MobileLeadCardProps {
     lead: any;
     isSelected: boolean;
+    search: string;
     onSelect: (id: any) => void;
     onDelete: (id: any) => void;
     onEdit: (lead: any) => void;
@@ -87,7 +106,7 @@ interface MobileLeadCardProps {
 }
 
 // Mobile Card Component
-const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onCall, onNavigate }: MobileLeadCardProps) => {
+const MobileLeadCard = memo(({ lead, isSelected, search, onSelect, onDelete, onEdit, onCall, onNavigate }: MobileLeadCardProps) => {
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
     return (
         <div 
@@ -115,7 +134,7 @@ const MobileLeadCard = memo(({ lead, isSelected, onSelect, onDelete, onEdit, onC
                     </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.name || '—'}</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{highlightText(lead.name || '—', search)}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1 }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
                 </div>
                 <span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.65rem', padding: '2px 8px', flexShrink: 0 }}>{lead.stage || '—'}</span>
@@ -172,6 +191,7 @@ interface LeadRowProps {
     isSelected: boolean;
     filterNurtureDue: boolean;
     rowIndex: number;
+    search: string;
     onSelect: (id: any) => void;
     onPreview: (id: any) => void;
     onDelete: (id: any) => void;
@@ -181,7 +201,7 @@ interface LeadRowProps {
 }
 
 // Optimized Memoized Row Component
-const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: LeadRowProps) => {
+const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, onSelect, onPreview, onDelete, onEdit, onCall, onNavigate }: LeadRowProps) => {
     const [hovered, setHovered] = useState(false);
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
     const scoreClass = leadScore > 80 ? 'll-score-high' : leadScore > 50 ? 'll-score-mid' : 'll-score-low';
@@ -214,7 +234,7 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, onSelect, 
                         <div style={{ height: 14, opacity: hovered ? 1 : 0, visibility: hovered ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
                             <button onClick={(e) => { e.stopPropagation(); onPreview(lead.id); }} style={{ background: '#ffffff', border: '1px solid #cbd6e2', borderRadius: 3, padding: '0px 4px', fontSize: '9px', color: '#516f90', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: '1.2' }}>Preview</button>
                         </div>
-                        <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{lead.name || '—'}</div>
+                        <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{highlightText(lead.name || '—', search)}</div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
                     </div>
                 </div>
@@ -279,7 +299,7 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, onSelect, 
             <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '8px' }}>
                 {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </td>
-            <td style={{ textAlign: 'center', padding: '8px' }}>
+            <td style={{ textAlign: 'center', padding: '8px' }} title={lead.assigned_to_name || 'Unassigned'}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
                     <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>{lead.agent_avatar || '?'}</div>
                     <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
@@ -331,6 +351,7 @@ export default function Leads() {
     const [sortField, setSortField] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
     const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
+    const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
 
     // Bulk Selection State
     const [selectedIds, setSelectedIds] = useState(new Set());
@@ -407,6 +428,34 @@ export default function Leads() {
         });
         return sorted;
     }, [rawLeads, sortField, sortDir]);
+
+    const scoreCounts = useMemo(() => {
+        let hot = 0, warm = 0, cold = 0;
+        leads.forEach(l => {
+            const s = typeof l.score === 'number' ? l.score : 0;
+            if (s > 80) hot++;
+            else if (s > 50) warm++;
+            else cold++;
+        });
+        const total = leads.length || 1;
+        return { hot, warm, cold, hotPct: (hot / total) * 100, warmPct: (warm / total) * 100, coldPct: (cold / total) * 100 };
+    }, [leads]);
+
+    const hasActiveFilters = useMemo(() => {
+        return filterStage !== 'All' || filterStatus !== 'All' || filterSource !== 'All' || filterAgent !== 'All' || filterNurtureDue || startDate || endDate || search;
+    }, [filterStage, filterStatus, filterSource, filterAgent, filterNurtureDue, startDate, endDate, search]);
+
+    const resetAllFilters = useCallback(() => {
+        setFilterStage('All');
+        setFilterStatus('All');
+        setFilterSource('All');
+        setFilterAgent('All');
+        setFilterNurtureDue(false);
+        setStartDate('');
+        setEndDate('');
+        setSearch('');
+        setPage(1);
+    }, []);
 
     const handleSort = useCallback((field: string) => {
         if (sortField === field) { setSortDir(d => d === 'asc' ? 'desc' : 'asc'); }
@@ -597,18 +646,33 @@ export default function Leads() {
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: 'wrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="ll-count-hero">
-                            {leadsRes?.total || 0}
-                        </span>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            total leads
-                        </span>
-                        {lastFetchTime && (
-                            <span className="ll-freshness">
-                                <span className="ll-freshness-dot" />
-                                {freshnessTxt}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span className="ll-count-hero">
+                                {leadsRes?.total || 0}
                             </span>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                total leads
+                             </span>
+                            {lastFetchTime && (
+                                <span className="ll-freshness">
+                                    <span className="ll-freshness-dot" />
+                                    {freshnessTxt}
+                                </span>
+                            )}
+                        </div>
+                        {/* Telemetry Quality Bar */}
+                        {leads.length > 0 && (
+                            <div className="ll-telemetry-container" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }} title="Lead Quality Split (Hot / Warm / Cold)">
+                                <div className="ll-telemetry-bar" style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', background: '#e2e8f0', width: 140 }}>
+                                    <div style={{ width: `${scoreCounts.hotPct}%`, background: '#10b981' }} />
+                                    <div style={{ width: `${scoreCounts.warmPct}%`, background: '#f59e0b' }} />
+                                    <div style={{ width: `${scoreCounts.coldPct}%`, background: '#f43f5e' }} />
+                                </div>
+                                <span className="ll-telemetry-label" style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                    🔥 {scoreCounts.hot} · ⚡ {scoreCounts.warm} · ❄️ {scoreCounts.cold}
+                                </span>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -619,6 +683,18 @@ export default function Leads() {
                     <button className="btn btn-secondary btn-sm" onClick={() => fetchLeads()} title="Refresh Data" style={{ flex: isMobile ? 1 : 'none' }}>
                         <RotateCw size={14} className={leadsLoading ? 'animate-spin' : ''} /> Refresh
                     </button>
+                    {/* Visual Density Toggle */}
+                    {!isMobile && (
+                        <button 
+                            className="btn btn-secondary btn-sm" 
+                            onClick={() => setDensity(d => d === 'comfortable' ? 'compact' : 'comfortable')} 
+                            title={density === 'comfortable' ? 'Compact density' : 'Comfortable density'} 
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                            {density === 'comfortable' ? <Layout size={14} /> : <Table size={14} />}
+                            {density === 'comfortable' ? 'Comfort' : 'Compact'}
+                        </button>
+                    )}
                     <button className="btn btn-secondary btn-sm" onClick={() => fileInputRef.current?.click()} disabled={bulkLoading} style={{ flex: isMobile ? 1 : 'none' }}>
                         <Upload size={14} /> Import
                     </button>
@@ -690,20 +766,11 @@ export default function Leads() {
                         )}
                     </button>
                     
-                    {(filterStage !== 'All' || filterStatus !== 'All' || filterSource !== 'All' || filterAgent !== 'All' || filterNurtureDue || startDate || endDate || search) && (
+                    {hasActiveFilters && (
                         <button 
                             className="btn btn-ghost btn-sm" 
                             style={{ color: 'var(--accent-rose)', whiteSpace: 'nowrap', flexShrink: 0 }}
-                            onClick={() => {
-                                setFilterStage('All');
-                                setFilterStatus('All');
-                                setFilterSource('All');
-                                setFilterAgent('All');
-                                setFilterNurtureDue(false);
-                                setStartDate('');
-                                setEndDate('');
-                                setSearch('');
-                            }}
+                            onClick={resetAllFilters}
                         >
                             <X size={14} /> Clear Active Filters
                         </button>
@@ -755,6 +822,57 @@ export default function Leads() {
                 </div>
                     )}
             </div>
+            {/* Quick clear chips */}
+            {hasActiveFilters && (
+                <div className="ll-chips-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 12px 4px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: 4, letterSpacing: '0.03em' }}>Active Filters:</span>
+                    {filterStage !== 'All' && (
+                        <span className="ll-filter-chip">
+                            Stage: {filterStage}
+                            <button onClick={() => setFilterStage('All')} aria-label="Clear stage filter"><X size={10} /></button>
+                        </span>
+                    )}
+                    {filterStatus !== 'All' && (
+                        <span className="ll-filter-chip">
+                            Status: {filterStatus}
+                            <button onClick={() => setFilterStatus('All')} aria-label="Clear status filter"><X size={10} /></button>
+                        </span>
+                    )}
+                    {filterSource !== 'All' && (
+                        <span className="ll-filter-chip">
+                            Source: {filterSource}
+                            <button onClick={() => setFilterSource('All')} aria-label="Clear source filter"><X size={10} /></button>
+                        </span>
+                    )}
+                    {filterAgent !== 'All' && (
+                        <span className="ll-filter-chip">
+                            Agent: {agents.find(a => String(a.id) === String(filterAgent))?.name || 'Unassigned'}
+                            <button onClick={() => setFilterAgent('All')} aria-label="Clear agent filter"><X size={10} /></button>
+                        </span>
+                    )}
+                    {search && (
+                        <span className="ll-filter-chip">
+                            Search: "{search}"
+                            <button onClick={() => setSearch('')} aria-label="Clear search"><X size={10} /></button>
+                        </span>
+                    )}
+                    {(startDate || endDate) && (
+                        <span className="ll-filter-chip">
+                            Date: {startDate || '*'} to {endDate || '*'}
+                            <button onClick={() => { setStartDate(''); setEndDate(''); }} aria-label="Clear date range"><X size={10} /></button>
+                        </span>
+                    )}
+                    {filterNurtureDue && (
+                        <span className="ll-filter-chip">
+                            Nurture Due Today
+                            <button onClick={() => setFilterNurtureDue(false)} aria-label="Clear nurture filter"><X size={10} /></button>
+                        </span>
+                    )}
+                    <button className="btn btn-ghost btn-xs" style={{ fontSize: '0.66rem', color: 'var(--accent-rose)', fontWeight: 800, padding: '2px 6px' }} onClick={resetAllFilters}>
+                        Clear All
+                    </button>
+                </div>
+            )}
         </div>
             <div className="leads-table-card" style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {leadsLoading && (
@@ -789,7 +907,7 @@ export default function Leads() {
                     </div>
                 )}
 
-                <div className="table-wrapper ll-scroll" style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
+                <div className={`table-wrapper ll-scroll ll-density-${density}`} style={{ overflowX: isMobile ? 'hidden' : 'auto', overflowY: 'scroll', maxHeight: isMobile ? 'calc(100vh - 220px)' : 'calc(100vh - 260px)', background: isMobile ? 'transparent' : 'white', padding: isMobile ? '0 4px' : 0 }}>
                     {leads.length === 0 && !leadsLoading ? (
                         <div className="ll-empty-state">
                             <div className="ll-empty-icon">🔍</div>
@@ -805,6 +923,7 @@ export default function Leads() {
                                     key={lead.id}
                                     lead={lead}
                                     isSelected={selectedIds.has(lead.id)}
+                                    search={search}
                                     onSelect={toggleSelect}
                                     onDelete={deleteLead}
                                     onEdit={openEdit}
@@ -863,6 +982,7 @@ export default function Leads() {
                                         isSelected={selectedIds.has(lead.id)}
                                         filterNurtureDue={filterNurtureDue}
                                         rowIndex={i}
+                                        search={search}
                                         onSelect={toggleSelect}
                                         onPreview={setPreviewLeadId}
                                         onDelete={deleteLead}
