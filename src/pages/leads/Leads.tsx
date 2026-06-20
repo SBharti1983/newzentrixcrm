@@ -725,7 +725,7 @@ export default function Leads() {
                                 type="date" 
                                 style={{ 
                                     border: 'none', background: 'transparent', fontSize: '0.72rem', 
-                                    padding: 0, color: startDate ? '#1e293b' : '#94a3b8', width: 75,
+                                    padding: 0, color: startDate ? '#1e293b' : '#94a3b8', width: 100,
                                     fontWeight: startDate ? 700 : 500, cursor: 'pointer', outline: 'none'
                                 }} 
                                 value={startDate}
@@ -745,7 +745,7 @@ export default function Leads() {
                                 type="date" 
                                 style={{ 
                                     border: 'none', background: 'transparent', fontSize: '0.72rem', 
-                                    padding: 0, color: endDate ? '#1e293b' : '#94a3b8', width: 75,
+                                    padding: 0, color: endDate ? '#1e293b' : '#94a3b8', width: 100,
                                     fontWeight: endDate ? 700 : 500, cursor: 'pointer', outline: 'none'
                                 }} 
                                 value={endDate}
