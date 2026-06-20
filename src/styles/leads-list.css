@@ -298,17 +298,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  font-size: 0.75rem;
+  min-width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 0.72rem;
   font-weight: 700;
   border: 1px solid var(--border-light);
   background: white;
   color: var(--navy-600);
   cursor: pointer;
   transition: all 0.2s ease;
-  padding: 0 10px;
+  padding: 0 8px;
 }
 
 .ll-page-btn:hover:not(:disabled) {
@@ -713,3 +713,108 @@
   animation: ll-livePulse 2s ease-in-out infinite;
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
 }
+
+/* ─── PHASE 4: Premium Select & Custom Filter Polish ────────────── */
+.ll-filter-bar select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  padding-right: 28px !important;
+  background-color: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: var(--navy-800) !important;
+  height: 32px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  outline: none !important;
+}
+
+.ll-filter-bar select:hover {
+  border-color: #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.ll-filter-bar select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Custom Search Input wrapper */
+.ll-filter-bar .search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+  height: 32px !important;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+}
+
+.ll-filter-bar .search-bar:focus-within {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+.ll-filter-bar .search-bar input {
+  border: none !important;
+  outline: none !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--navy-800) !important;
+  width: 100%;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+/* Pagination Page Limit Dropdown matching height */
+.ll-pagination select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  padding: 0 20px 0 8px !important;
+  background-color: white !important;
+  border: 1px solid var(--border-light) !important;
+  border-radius: 8px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  color: var(--navy-600) !important;
+  height: 30px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  outline: none !important;
+}
+
+.ll-pagination select:hover {
+  border-color: #6366f1 !important;
+  color: #6366f1;
+}
+
+/* Pill scale animation on hover */
+.ll-status-pill,
+.ll-stage-pill,
+.ll-score-ring {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.ll-status-pill:hover,
+.ll-stage-pill:hover,
+.ll-score-ring:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06) !important;
+}
+

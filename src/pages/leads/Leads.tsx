@@ -893,7 +893,7 @@ export default function Leads() {
                             <span>Rows:</span>
                             <select 
                                 className="form-control form-control-sm" 
-                                style={{ width: 65, height: 28, fontSize: '0.75rem', padding: '0 8px', cursor: 'pointer' }}
+                                style={{ width: 65, cursor: 'pointer' }}
                                 value={limit}
                                 onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
                             >
