@@ -24,7 +24,7 @@ export const authenticateToken = async function(req: any, res: Response, next: N
     
     const token = authHeader.split(' ')[1];
     try {
-        const payload: any = jwt.verify(token, process.env.JWT_SECRET as string);
+        const payload: any = jwt.verify(token, (process.env.JWT_SECRET as string) || 'secret');
         req.user = payload;
         
         // --- STRICT SUPERADMIN ACCESS ---
