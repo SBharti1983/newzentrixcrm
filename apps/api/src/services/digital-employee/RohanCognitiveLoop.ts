@@ -6,8 +6,8 @@
  * 2. Asynchronous Track B (Reasoning Path): Analyzes intent/emotions, updates CRM and working states
  */
 
-import pool from '../../db/pool';
-import { logger } from '../../utils/logger';
+import { pool } from '@zentrix/database';
+import { logger } from '@zentrix/logger';
 import rohanPersonaEngine from './RohanPersonaEngine';
 import rohanMemory from './RohanMemory';
 import { generateAIResponse } from '../../utils/ai';
@@ -20,7 +20,7 @@ import {
     RohanContext,
     EscalationType,
     SupportedLanguage,
-} from './rohan.types';
+} from '@zentrix/types';
 
 class RohanCognitiveLoop {
     /**

@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+**/dist/
+.turbo/
+coverage/
 *.local
 
 # Editor directories and files
@@ -46,9 +49,9 @@ tmp/
 !apps/crm-web/public/manifest.json
 *.txt
 *.hprof
-wti-app/build/
-wti-app/.gradle/
-wti-app/wti-app/build/
+apps/wti-app/build/
+apps/wti-app/.gradle/
+apps/wti-app/wti-app/build/
 **/bin/
 **/obj/
 .gradle/

@@ -1,13 +1,126 @@
 /**
- * Rohan AI Digital Employee — Type Definitions
- * 
- * These types mirror the PostgreSQL schema in rohan_ai_employee_v1.sql
- * and define the contracts between the Persona Engine, Memory Layer,
- * Cognitive Loop, and Channel Adapters.
+ * ZentrixCRM — Server-side Model Type Definitions & AI Contracts
+ * Mirror of the PostgreSQL schema and AI Employee configurations
  */
 
 // ═══════════════════════════════════════════════════════════════════
-// Database Row Types (mirror of SQL schema)
+// Core Database Row Types (mirror of SQL schema)
+// ═══════════════════════════════════════════════════════════════════
+
+export interface DbUser {
+  id: string;
+  tenant_id: string;
+  name: string;
+  email: string;
+  password_hash: string;
+  role: 'admin' | 'sales_manager' | 'team_leader' | 'agent' | 'customer' | 'broker' | 'superadmin';
+  avatar?: string;
+  phone?: string;
+  department?: string;
+  is_active: boolean;
+  last_login_at?: Date;
+  reports_to?: string | null;
+  telephony_agent_id?: string | null;
+  xp?: number;
+  created_at: Date;
+  updated_at?: Date;
+}
+
+export interface DbTenant {
+  id: string;
+  name: string;
+  subdomain: string;
+  logo_url?: string;
+  primary_color?: string;
+  max_users: number;
+  plan?: string;
+  is_active: boolean;
+  features?: Record<string, boolean>;
+  created_at: Date;
+}
+
+export interface DbLead {
+  id: string;
+  tenant_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  status: string;
+  source?: string;
+  project_id?: string;
+  budget_min?: number;
+  budget_max?: number;
+  assigned_to?: string;
+  notes?: string;
+  tags?: string[];
+  ai_score?: number;
+  ai_summary?: string;
+  ai_recommendation?: string;
+  sentiment?: string;
+  nurture_stage?: string;
+  last_interaction_at?: Date;
+  next_followup_at?: Date;
+  created_at: Date;
+  updated_at?: Date;
+}
+
+export interface DbProject {
+  id: string;
+  tenant_id: string;
+  name: string;
+  location?: string;
+  type?: string;
+  status?: string;
+  total_units?: number;
+  available_units?: number;
+  price_range_min?: number;
+  price_range_max?: number;
+  amenities?: string[];
+  description?: string;
+  image_url?: string;
+  created_at: Date;
+}
+
+export interface DbBooking {
+  id: string;
+  tenant_id: string;
+  lead_id: string;
+  project_id: string;
+  unit_id?: string;
+  amount: number;
+  status: string;
+  booking_date: Date;
+  created_at: Date;
+}
+
+export interface DbNotification {
+  id: string;
+  tenant_id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  from_user_id?: string;
+  to_user_id?: string;
+  lead_id?: string;
+  metadata?: Record<string, unknown>;
+  created_at: Date;
+}
+
+export interface DbAuditLog {
+  id: string;
+  tenant_id?: string;
+  user_id?: string;
+  action: string;
+  entity_type?: string;
+  entity_id?: string;
+  details?: Record<string, unknown>;
+  ip_address?: string;
+  created_at: Date;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AI Employee Database Row Types
 // ═══════════════════════════════════════════════════════════════════
 
 export interface DbAIEmployeePersona {
@@ -181,12 +294,6 @@ export type EmotionLabel =
 // Reasoning Output (Track B — Chain-of-Thought)
 // ═══════════════════════════════════════════════════════════════════
 
-/**
- * The structured output of Rohan's background reasoning track.
- * This is generated asynchronously (Track B) and does NOT block
- * the fast response (Track A). It enriches the context for the
- * NEXT conversation turn.
- */
 export interface ReasoningOutput {
     intent: string;
     emotion: EmotionLabel;
@@ -256,10 +363,6 @@ export interface CRMUpdate {
 // Cognitive Loop Input/Output Contracts
 // ═══════════════════════════════════════════════════════════════════
 
-/**
- * The unified input that any channel (voice, WhatsApp, outbound)
- * sends to the Cognitive Loop.
- */
 export interface CognitiveInput {
     tenant_id: number;
     persona_id: string;
@@ -276,10 +379,6 @@ export interface CognitiveInput {
     };
 }
 
-/**
- * The fast response from Track A — returned immediately to the caller.
- * This is what gets spoken (TTS) or sent (WhatsApp) right away.
- */
 export interface FastResponse {
     text: string;                  // the response text
     language: SupportedLanguage;   // language to respond in
@@ -288,11 +387,6 @@ export interface FastResponse {
     latency_ms: number;            // actual measured latency
 }
 
-/**
- * The complete result of a cognitive cycle.
- * Track A (fast) is returned synchronously.
- * Track B (reasoning) is returned as a promise that resolves later.
- */
 export interface CognitiveResult {
     fast_response: FastResponse;
     reasoning_promise: Promise<ReasoningOutput>;  // resolves in background
@@ -304,11 +398,6 @@ export interface CognitiveResult {
 // Context Bundle (loaded at conversation start)
 // ═══════════════════════════════════════════════════════════════════
 
-/**
- * Everything Rohan needs to know before responding.
- * Assembled by the Memory Layer from Redis (short-term),
- * PostgreSQL (working memory), and Vector DB (long-term).
- */
 export interface RohanContext {
     persona: DbAIEmployeePersona;
     lead?: {
@@ -351,39 +440,6 @@ export interface RohanContext {
         score: number;
         metadata?: Record<string, unknown>;
     }>;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// Channel Adapter Contracts
-// ═══════════════════════════════════════════════════════════════════
-
-export interface VoiceAdapterConfig {
-    media_server_url: string;      // FreeSWITCH WebSocket URL
-    asr_provider: 'sarvam' | 'deepgram' | 'whisper';
-    asr_api_key?: string;
-    tts_provider: 'sarvam' | 'cartesia' | 'elevenlabs';
-    tts_api_key?: string;
-    sample_rate: number;            // 16000
-    vad_threshold: number;          // 0.5 default
-    barge_in_enabled: boolean;
-}
-
-export interface WhatsAppAdapterConfig {
-    // Uses existing whatsapp.ts sendWhatsappMessage
-    inbound_webhook_path: string;   // '/api/rohan/whatsapp/webhook'
-    auto_reply_delay_ms: number;     // simulate human typing delay
-    max_message_length: number;      // WhatsApp limit ~4096
-}
-
-export interface OutboundAdapterConfig {
-    sip_provider: 'exotel' | 'twilio' | 'jio';
-    sip_api_key?: string;
-    max_concurrent_calls: number;
-    calling_hours: {
-        start: number;  // 9 (9 AM)
-        end: number;    // 21 (9 PM)
-    };
-    timezone: string;  // 'Asia/Kolkata'
 }
 
 // ═══════════════════════════════════════════════════════════════════

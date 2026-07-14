@@ -11,8 +11,8 @@
  * The persona is the "who" — the Cognitive Loop is the "how".
  */
 
-import pool from '../../db/pool';
-import { logger } from '../../utils/logger';
+import { pool } from '@zentrix/database';
+import { logger } from '@zentrix/logger';
 import {
     DbAIEmployeePersona,
     PersonaConfig,
@@ -24,7 +24,7 @@ import {
     RohanContext,
     SupportedLanguage,
     PersonaNotFoundError,
-} from './rohan.types';
+} from '@zentrix/types';
 
 // ── In-memory persona cache (refreshed every 5 min) ─────────────────
 interface PersonaCacheEntry {

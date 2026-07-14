@@ -11,8 +11,8 @@
  */
 
 import { createClient, RedisClientType } from 'redis';
-import pool from '../../db/pool';
-import { logger } from '../../utils/logger';
+import { pool } from '@zentrix/database';
+import { logger } from '@zentrix/logger';
 import {
     RohanContext,
     ConversationState,
@@ -22,7 +22,7 @@ import {
     ChannelType,
     SupportedLanguage,
     MemoryLoadError,
-} from './rohan.types';
+} from '@zentrix/types';
 
 // ── Redis Key Helpers ───────────────────────────────────────────────
 const REDIS_KEY_PREFIX = 'rohan';

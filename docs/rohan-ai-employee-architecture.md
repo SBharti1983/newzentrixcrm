@@ -53,14 +53,14 @@ The key innovation is the **Two-Track Parallel Architecture** that achieves both
 
 ## Components
 
-### 1. RohanPersonaEngine (`server/src/services/rohan/RohanPersonaEngine.ts`)
+### 1. RohanPersonaEngine ([RohanPersonaEngine.ts](file:///c:/Users/Sikandar%20Bharti/Desktop/ZentrixCRM/apps/api/src/services/digital-employee/RohanPersonaEngine.ts))
 - Loads persona identity from PostgreSQL (`ai_employee_personas` table)
 - Builds system prompts for Track A (condensed) and Track B (full CoT)
 - Evaluates escalation rules
 - Manages voice configuration per language
 - Generates greetings and filler words
 
-### 2. RohanMemory (`server/src/services/rohan/RohanMemory.ts`)
+### 2. RohanMemory ([RohanMemory.ts](file:///c:/Users/Sikandar%20Bharti/Desktop/ZentrixCRM/apps/api/src/services/digital-employee/RohanMemory.ts))
 Three-tier memory:
 - **Tier 1 (Redis):** Live conversation state, sub-ms access, 1h TTL
 - **Tier 2 (PostgreSQL):** Lead profile, interaction history, conversation_state
@@ -68,7 +68,7 @@ Three-tier memory:
 
 Graceful degradation: If Redis is down, falls back to PostgreSQL-only.
 
-### 3. RohanCognitiveLoop (`server/src/services/rohan/RohanCognitiveLoop.ts`)
+### 3. RohanCognitiveLoop ([RohanCognitiveLoop.ts](file:///c:/Users/Sikandar%20Bharti/Desktop/ZentrixCRM/apps/api/src/services/digital-employee/RohanCognitiveLoop.ts))
 The "brain" — orchestrates the two-track pipeline:
 - Loads context via Memory
 - Generates fast response (Track A) — synchronous, on critical path
@@ -76,15 +76,30 @@ The "brain" — orchestrates the two-track pipeline:
 - Updates conversation state and CRM
 - Triggers escalations when needed
 
-### 4. RohanChannelAdapters (`server/src/services/rohan/RohanChannelAdapters.ts`)
+### 4. RohanChannelAdapters (Future adapter plans)
 Channel-specific I/O:
 - **Voice:** FreeSWITCH WebSocket → streaming ASR → TTS
 - **WhatsApp:** Meta Cloud API webhook → text response
 - **Outbound:** SIP dial-out with contextual script generation
 
+## Monorepo Architecture Boundaries
+
+To ensure that responsibilities do not overlap between the main backend application and your microservices, we follow a strict boundary definition:
+
+### 1. `apps/api` (The public Gateway & BFF)
+* **Responsibility**: Serving user authentication, serving client UI dashboards, accepting webhooks, authorization roles, and initial request routing.
+* **Network visibility**: Exposed to public internet.
+* **Internal connection**: Triggers background queues, publishes message events, or makes HTTP calls to internal services/ workers.
+
+### 2. `services/` (Isolated background workers)
+* **Responsibility**: Specific tasks requiring heavy computing or persistent asynchronous streaming (e.g. `services/voice` handles real-time RTMP/LiveKit calls; `services/notification` consumes job messages to send WhatsApp alerts).
+* **Network visibility**: Private. No public ingress allowed. Communicates purely via internal Redis queues, RabbitMQ/BullMQ, or internal port mappings.
+
+---
+
 ## Database Schema
 
-See: `server/src/migrations/rohan_ai_employee_v1.sql`
+See: `apps/api/src/db/schema.ts` (using PostgreSQL Drizzle ORM)
 
 Tables:
 - `ai_employee_personas` — identity, voice, knowledge, escalation rules
@@ -121,7 +136,7 @@ Code-mixing (Hindi-English) is handled natively — the ASR outputs verbatim, an
 - [x] Type definitions (`rohan.types.ts`)
 - [x] Memory layer (`RohanMemory.ts`)
 - [x] Persona engine (`RohanPersonaEngine.ts`)
-- [ ] Cognitive loop (`RohanCognitiveLoop.ts`)
-- [ ] Channel adapters (`RohanChannelAdapters.ts`)
+- [x] Cognitive loop (`RohanCognitiveLoop.ts`)
+- [ ] Channel adapters
 - [ ] Barrel export (`index.ts`)
 - [ ] Integration with existing services
