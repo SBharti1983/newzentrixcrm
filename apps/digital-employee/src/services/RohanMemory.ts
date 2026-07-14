@@ -8,6 +8,8 @@
  * Design principle: Redis is an optimization layer. If Redis is down,
  * the system degrades gracefully to PostgreSQL-only (slower but functional).
  * No conversation should fail because Redis is unavailable.
+ *
+ * NOTE: This module runs inside apps/digital-employee — isolated from CRM API traffic.
  */
 
 import { createClient, RedisClientType } from 'redis';

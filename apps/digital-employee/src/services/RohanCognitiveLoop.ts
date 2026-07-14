@@ -4,13 +4,15 @@
  * Orchestrates the execution of Rohan's AI Digital Employee loop:
  * 1. Synchronous Track A (Fast Path): Generates instant user response (~200ms)
  * 2. Asynchronous Track B (Reasoning Path): Analyzes intent/emotions, updates CRM and working states
+ *
+ * NOTE: This module lives inside apps/digital-employee to run on a dedicated
+ * Node.js event loop, isolated from the CRM API traffic in apps/api.
  */
 
 import { pool } from '@zentrix/database';
 import { logger } from '@zentrix/logger';
 import rohanPersonaEngine from './RohanPersonaEngine';
 import rohanMemory from './RohanMemory';
-import { generateAIResponse } from '../../utils/ai';
 import {
     CognitiveInput,
     CognitiveResult,
@@ -21,6 +23,9 @@ import {
     EscalationType,
     SupportedLanguage,
 } from '@zentrix/types';
+
+// ── Local AI helper (lightweight, avoids coupling to apps/api) ──────
+import { generateAIResponse } from '../utils/ai';
 
 class RohanCognitiveLoop {
     /**

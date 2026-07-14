@@ -79,7 +79,7 @@ const cacheDb = {
                 // Batch delete
                 await withTimeout(redisClient.del(keys), 2000);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.warn('[REDIS DEL ERR]', e.message);
         }
     }

@@ -9,6 +9,8 @@
  * 5. Applying persona tone/voice settings to responses
  *
  * The persona is the "who" — the Cognitive Loop is the "how".
+ *
+ * NOTE: This module runs inside apps/digital-employee — isolated from CRM API traffic.
  */
 
 import { pool } from '@zentrix/database';

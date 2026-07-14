@@ -10,9 +10,9 @@
  */
 
 import assert from 'assert';
-import rohanPersonaEngine from '../../apps/api/src/services/digital-employee/RohanPersonaEngine';
-import rohanMemory, { createDefaultConversationState } from '../../apps/api/src/services/digital-employee/RohanMemory';
-import rohanCognitiveLoop from '../../apps/api/src/services/digital-employee/RohanCognitiveLoop';
+import rohanPersonaEngine from '../../apps/digital-employee/src/services/RohanPersonaEngine';
+import rohanMemory, { createDefaultConversationState } from '../../apps/digital-employee/src/services/RohanMemory';
+import rohanCognitiveLoop from '../../apps/digital-employee/src/services/RohanCognitiveLoop';
 import {
     DbAIEmployeePersona,
     RohanContext,
