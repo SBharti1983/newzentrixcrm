@@ -24,31 +24,31 @@ dist-ssr
 *.sw?
 
 # Server
-server/.env
-server/uploads/
+apps/api/.env
+apps/api/uploads/
 
 # Scratch & Temporary
 .gemini/
 scratch/
-server/scratch/
+apps/api/scratch/
 tmp/
 *.json
 !package.json
 !package-lock.json
-!frontend/package.json
-!frontend/package-lock.json
-!server/package.json
-!server/package-lock.json
-!frontend/vercel.json
+!apps/crm-web/package.json
+!apps/crm-web/package-lock.json
+!apps/api/package.json
+!apps/api/package-lock.json
+!apps/crm-web/vercel.json
 !railway.json
-!frontend/tsconfig.json
-!server/tsconfig.json
-!frontend/public/manifest.json
+!apps/crm-web/tsconfig.json
+!apps/api/tsconfig.json
+!apps/crm-web/public/manifest.json
 *.txt
 *.hprof
-WTIApp/build/
-WTIApp/.gradle/
-WTIApp/wti-app/build/
+wti-app/build/
+wti-app/.gradle/
+wti-app/wti-app/build/
 **/bin/
 **/obj/
 .gradle/
