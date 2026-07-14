@@ -41,6 +41,7 @@ tmp/
 !railway.json
 !tsconfig.json
 !server/tsconfig.json
+!public/manifest.json
 *.txt
 *.hprof
 WTIApp/build/
