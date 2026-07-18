@@ -38,6 +38,7 @@ tmp/
 *.json
 !package.json
 !package-lock.json
+!turbo.json
 !apps/crm-web/package.json
 !apps/crm-web/package-lock.json
 !apps/api/package.json
