@@ -13,8 +13,11 @@ const isLocal = window.location.hostname === 'localhost' ||
 // we use relative '/api' so that requests are proxied server-side.
 // This resolves local DNS resolution blocks on *.up.railway.app and eliminates CORS issues.
 const defaultApiUrl = '/api';
-export let BASE_URL = import.meta.env.VITE_API_URL || defaultApiUrl;
-BASE_URL = BASE_URL.replace(/\/$/, '');
+let rawApiUrl = import.meta.env.VITE_API_URL || defaultApiUrl;
+if (rawApiUrl.startsWith('http') && !rawApiUrl.includes('/api')) {
+    rawApiUrl = `${rawApiUrl}/api`;
+}
+export let BASE_URL = rawApiUrl.replace(/\/$/, '');
 // API base URL configuration removed for production hardening
 
 
