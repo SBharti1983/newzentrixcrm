@@ -173,6 +173,18 @@ export default function Login() {
 
     const PRIMARY_COLOR = branding?.primary_color || '#6366f1';
     const [subdomain] = useState(getSubdomain());
+
+    // ── Route Prefetching: Download post-login bundles while user types credentials ──
+    // This eliminates the loading spinner when navigating after login.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            import('../dashboard/Dashboard');
+            import('../leads/Leads');
+            import('../communications/Inbox');
+            import('../leads/Pipeline');
+        }, 1000); // Wait 1s for login page to render first
+        return () => clearTimeout(timer);
+    }, []);
     
     // Derived branding states
     const tenantName = branding?.company_name || 'Zentrix CRM';

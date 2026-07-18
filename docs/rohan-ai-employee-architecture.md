@@ -121,22 +121,70 @@ Code-mixing (Hindi-English) is handled natively — the ASR outputs verbatim, an
 
 ## Integration with Existing ZentrixCRM
 
-| Existing Service | Rohan Integration |
-|---|---|
-| `aiScreener.ts` | Rohan's first outreach (handshake) |
-| `chatbotService.ts` | Rohan's WhatsApp brain (upgraded with memory + CoT) |
-| `NurtureAutoPilot.ts` | Rohan's followup scheduler |
-| `automationEngine.ts` | Rohan's trigger system |
-| `telephony.ts` | Rohan's voice channel + post-call logging |
-| `aiService.ts` | Rohan's post-call reflection (feeds back to memory) |
+The CRM API (`apps/api`) and the digital-employee voice service are
+separate processes. Rohan's persona + memory live in the digital-employee,
+so the CRM API talks to it over an **HTTP bridge** rather than importing
+internal modules directly. This keeps the service boundary clean and lets
+each side scale independently.
+
+### Bridge Architecture
+
+```
+apps/api (CRM API)                         apps/digital-employee (voice)
+┌──────────────────────────┐               ┌─────────────────────────────┐
+│ RohanBridgeClient        │  HTTP POST    │ rohanBridge.ts              │
+│  (axios + graceful       │ ────────────► │  /rohan/handshake           │
+│   fallback, 8s timeout,  │  /rohan/*     │  /rohan/followup            │
+│   30s cooldown on fail)  │ ◄──────────── │  /rohan/recall              │
+└──────────┬───────────────┘   JSON        │  /rohan/log-call            │
+           │                                │  /rohan/health              │
+           ▼                                └──────────┬──────────────────┘
+   AiScreenerService                                   │
+   NurtureAutoPilot                          RohanPersonaEngine + RohanMemory
+   InboundRoutes                            (three-tier: Redis → PG → pgvector)
+```
+
+**Graceful degradation**: every bridge call returns `null` on failure
+(network error, 503, timeout). Callers fall back to their existing
+generic AI path, so the CRM keeps working even if the voice service is
+down. The client enters a 30-second cooldown after a failure to avoid
+thundering-herd retries.
+
+### Wired Services
+
+| Existing Service | Rohan Integration | Bridge Endpoint |
+|---|---|---|
+| `AiScreenerService.ts` | Persona-driven first outreach (handshake) — falls back to generic prompt | `POST /rohan/handshake` |
+| `NurtureAutoPilot.ts` | Memory-aware nurture follow-ups — falls back to `aiService.generateSuggestedMessage` | `POST /rohan/followup` |
+| `InboundRoutes.ts` | Post-call logging to memory + pgvector; pre-call semantic recall for agent context | `POST /rohan/log-call`, `GET /rohan/recall` |
+| `chatbotService.ts` | *(pending)* Rohan's WhatsApp brain (upgraded with memory + CoT) | — |
+| `automationEngine.ts` | *(pending)* Rohan's trigger system | — |
+| `aiService.ts` | *(pending)* Rohan's post-call reflection (feeds back to memory) | — |
+
+### Configuration
+
+| Env Var | Default | Description |
+|---------|---------|-------------|
+| `ROHAN_BRIDGE_URL` | `http://localhost:5061` | Digital-employee health server base URL |
+| `ROHAN_BRIDGE_TIMEOUT_MS` | `8000` | Per-request timeout before fallback |
 
 ## Implementation Status
 
 - [x] SQL migration (`rohan_ai_employee_v1.sql`)
 - [x] Type definitions (`rohan.types.ts`)
-- [x] Memory layer (`RohanMemory.ts`)
+- [x] Memory layer (`RohanMemory.ts`) — three-tier Redis → PG → pgvector with graceful degradation
 - [x] Persona engine (`RohanPersonaEngine.ts`)
 - [x] Cognitive loop (`RohanCognitiveLoop.ts`)
-- [ ] Channel adapters
-- [ ] Barrel export (`index.ts`)
-- [ ] Integration with existing services
+- [x] Channel adapters (`RohanChannelAdapters.ts` for Voice/WhatsApp/Outbound)
+- [x] Barrel export (`index.ts`)
+- [x] pgvector RAG Integration (`@zentrix/rag` for dynamic long-term memory)
+- [x] Three-tier memory with circuit breakers + degradation telemetry (`MemoryProvenance`, `MemoryDegradationMetrics`)
+- [x] Conversation embedding ingestion (`@zentrix/rag` conversationMemory module + `add_conversation_embeddings.sql` migration)
+- [x] HTTP bridge endpoints on digital-employee (`rohanBridge.ts` — handshake, followup, recall, log-call, chat, health)
+- [x] RohanBridge client in CRM API (`RohanBridgeClient.ts` — axios + graceful fallback + cooldown)
+- [x] AiScreenerService wired to Rohan handshake (persona-driven, falls back to generic prompt)
+- [x] NurtureAutoPilot wired to Rohan followup (memory-aware, falls back to aiService)
+- [x] Telephony inbound wired to Rohan log-call + recall (post-call indexing, pre-call context)
+- [x] ChatbotService wired to Rohan chat (phone→lead resolution, persona-driven WhatsApp brain, falls back to Gemini)
+- [x] AutomationService wired to Rohan followup (memory-aware post-site-visit feedback, falls back to aiService.generateFeedbackRequest)
+- [x] AiService wired to Rohan log-call (post-call reflection feeds analysis back to memory, fire-and-forget, backward-compatible optional callMeta)

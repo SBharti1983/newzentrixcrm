@@ -976,3 +976,32 @@ export const referrals = pgTable("referrals", {
 			name: "referrals_referrer_id_fkey"
 		}),
 ]);
+
+export const aiEmployeePersonas = pgTable("ai_employee_personas", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	tenantId: uuid("tenant_id"),
+	employeeName: text("employee_name").default("Rohan Mishra"),
+	employeeCode: text("employee_code").default("ZEN-AI-001"),
+	role: text("role").default("Senior Sales Associate"),
+	avatarUrl: text("avatar_url"),
+	personaConfig: jsonb("persona_config").default({}),
+	voiceConfig: jsonb("voice_config").default({}),
+	knowledgeScope: jsonb("knowledge_scope").default({}),
+	escalationRules: jsonb("escalation_rules").default({}),
+	isActive: boolean("is_active").default(true),
+	shiftStartTime: text("shift_start_time"),
+	shiftEndTime: text("shift_end_time"),
+	cooldownSeconds: integer("cooldown_seconds").default(45),
+	maxConcurrentCalls: integer("max_concurrent_calls").default(2),
+	currentStatus: text("current_status").default("offline"),
+	userId: uuid("user_id"),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+}, (table) => [
+	foreignKey({
+		columns: [table.tenantId],
+		foreignColumns: [tenants.id],
+		name: "ai_employee_personas_tenant_id_fkey"
+	}).onDelete("cascade"),
+]);
+

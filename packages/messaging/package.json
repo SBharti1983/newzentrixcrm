@@ -1,0 +1,18 @@
+{
+  "name": "@zentrix/messaging",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@zentrix/events": "*",
+    "@zentrix/logger": "*",
+    "redis": "^5.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

@@ -1,0 +1,26 @@
+# Global Owners (Fallback)
+*                       @zentrix-admin @zentrix-leads
+
+# Shared Infrastructure Packages
+/packages/database/     @zentrix-db-team
+/packages/cache/        @zentrix-infra-team
+/packages/rag/          @zentrix-ai-team
+/packages/events/       @zentrix-infra-team
+/packages/messaging/    @zentrix-infra-team
+/packages/observability/ @zentrix-infra-team
+/packages/contracts/    @zentrix-leads
+/packages/core/         @zentrix-leads
+/packages/feature-flags/ @zentrix-leads
+/packages/sdk/          @zentrix-leads
+
+# Applications
+/apps/crm-web/          @zentrix-frontend-team
+/apps/digital-employee/ @zentrix-ai-team
+/apps/worker/           @zentrix-infra-team
+
+# Feature API Modules
+/apps/api/src/modules/leads/       @zentrix-sales-leads
+/apps/api/src/modules/ai/          @zentrix-ai-team
+/apps/api/src/modules/telephony/   @zentrix-voice-team
+/apps/api/src/modules/billing/     @zentrix-finance-team
+/apps/api/src/modules/automation/  @zentrix-infra-team

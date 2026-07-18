@@ -28,7 +28,8 @@ export const cacheResponse = (durationSeconds = 300, customKeyGenerator: ((req: 
             
             if (cachedData) {
                 console.log(`[CACHE HIT] Delivering fast response for ${req.originalUrl}`);
-                return res.json(JSON.parse(cachedData));
+                const dataStr = typeof cachedData === 'string' ? cachedData : cachedData.toString();
+                return res.json(JSON.parse(dataStr));
             }
 
             console.log(`[CACHE MISS] Querying DB for ${req.originalUrl}`);

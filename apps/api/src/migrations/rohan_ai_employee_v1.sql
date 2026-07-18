@@ -137,7 +137,7 @@ SELECT
     t.id,
     'Rohan Mishra',
     'ZEN-AI-001',
-    'Senior Sales Associate',
+    'rohan',
     -- persona_config
     '{
         "personality": "warm, professional, patient",

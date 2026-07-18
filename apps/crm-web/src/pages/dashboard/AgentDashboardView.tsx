@@ -694,17 +694,8 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
 
 
             {/* Bottom Section */}
-            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1.5fr 1.5fr 1.2fr', gap: '16px' }}>
+            <div className="agent-dash-bottom-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr 1fr', gap: '16px' }}>
                 
-                {/* Academy Progress Card */}
-                <AcademyCard 
-                    xp={stats.academy?.total_xp} 
-                    level={stats.academy?.level} 
-                    certifications={stats.academy?.certifications} 
-                    score={stats.academy?.avg_sim_score}
-                    onClick={() => navigate('/academy')} 
-                />
-
                 {/* Weekly Leaderboard Widget */}
                 <LeaderboardWidget 
                     data={stats.academy?.leaderboard} 

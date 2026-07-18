@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Users, Building2, UserCheck, Calendar,
     MapPin, BookOpen, BarChart3, Settings, ChevronLeft,
     ChevronRight, LogOut, Bell, Handshake, CreditCard,
-    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy, RotateCw
+    FileCheck, CalendarDays, ExternalLink, X, MessageSquare, Zap, IndianRupee, Target, History, Phone, Sparkles, Mic, Trophy, RotateCw, Bot, Calculator
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useBranding } from '../../context/BrandingContext';
@@ -59,6 +59,8 @@ const NAV_SECTIONS = [
             { path: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
             { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
             { path: '/voice-analytics', label: 'Voice Telemetry', icon: Mic },
+            { path: '/rohan-dashboard', label: 'AI Employee', icon: Bot },
+            { path: '/neha-dashboard', label: 'Neha Orchestration', icon: Calculator },
             { path: '/academy', label: 'Zentrix Academy', icon: Sparkles },
             { path: '/reports', label: 'Custom Reports', icon: FileCheck },
         ],
@@ -82,6 +84,7 @@ const NAV_SECTIONS = [
     {
         label: 'Admin',
         items: [
+            { path: '/ai-command-center', label: 'AI Command Center', icon: Bot },
             { path: '/automation-distribution', label: 'Auto-Distribute', icon: Zap },
             { path: '/automations', label: 'Automations', icon: Zap },
             { path: '/integrations', label: 'Integrations', icon: ExternalLink },
@@ -98,6 +101,7 @@ const ROLE_LABELS: Record<string, string> = {
     sales_manager: 'Manager',
     team_leader: 'Team Leader',
     agent: 'Agent',
+    ai_employee: 'AI Employee',
     customer: 'Customer',
 };
 
@@ -107,6 +111,7 @@ const ROLE_COLORS: Record<string, { color: string, bg: string }> = {
     sales_manager: { color: '#0070f3', bg: 'rgba(0,112,243,0.1)' },
     team_leader: { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)' },
     agent: { color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+    ai_employee: { color: '#6366f1', bg: 'rgba(99,102,241,0.15)' },
     customer: { color: '#64748b', bg: 'rgba(100,116,139,0.15)' },
 };
 

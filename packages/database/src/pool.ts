@@ -4,19 +4,34 @@ import { logger } from '@zentrix/logger';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// ── Query Logging Control ───────────────────────────────────────────
+// Per-query logging + Sentry spans are expensive on the hot path.
+// Only enable when explicitly requested via env to avoid taxing every query.
+const DB_LOG_QUERIES = process.env.DB_LOG_QUERIES === 'true';
+const DB_TRACE_QUERIES = process.env.DB_TRACE_QUERIES === 'true';
+// Sample rate (0–1) for query logging when enabled, to cap overhead under load.
+const DB_LOG_SAMPLE_RATE = Math.min(1, Math.max(0, parseFloat(process.env.DB_LOG_SAMPLE_RATE || '1')));
+
 // ── Writer (Primary) Configuration ──────────────────────────────────
 let writerUrl = process.env.DATABASE_URL;
 let readerUrl = process.env.READ_REPLICA_URL || writerUrl; // Fallback to writer if no replica exists
 
 const isSupabase = writerUrl && (writerUrl.includes('supabase.co') || writerUrl.includes('supabase.com'));
-let sslConfig = isSupabase ? { rejectUnauthorized: false } : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false);
+let sslConfig = process.env.DB_SSL === 'true'
+    ? { rejectUnauthorized: false }
+    : (process.env.DB_SSL === 'false'
+        ? false
+        : (isSupabase ? { rejectUnauthorized: false } : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false)));
 
 // ── Supabase Optimization Helper ────────────────────────────────────
 function optimizeConnectionString(urlStr: string, name: string) {
+    if (urlStr && urlStr.includes('pooler.supabase.com') && urlStr.includes(':6543')) {
+        return urlStr; // Already optimized, avoid URL object parsing which can distort custom protocols
+    }
     if (urlStr && (urlStr.includes('supabase.co') || urlStr.includes('supabase.com'))) {
         try {
             const url = new URL(urlStr);
-            
+
             // Auto-patch IPv4 pooler issue for Railway
             if (url.hostname === 'db.uvnkbewvpewocaqzysqb.supabase.co') {
                 url.hostname = 'aws-1-ap-south-1.pooler.supabase.com';
@@ -25,7 +40,7 @@ function optimizeConnectionString(urlStr: string, name: string) {
                     url.username = 'postgres.uvnkbewvpewocaqzysqb';
                 }
             }
-            
+
             // Use transaction pooler port 6543 instead of 5432 if supported
             if (url.port === '5432' && urlStr.includes('pooler.supabase.com')) {
                 url.port = '6543';
@@ -38,16 +53,16 @@ function optimizeConnectionString(urlStr: string, name: string) {
     return urlStr;
 }
 
-const finalWriterUrl = optimizeConnectionString(writerUrl, 'Writer');
-const finalReaderUrl = optimizeConnectionString(readerUrl, 'Reader');
+const finalWriterUrl = optimizeConnectionString(writerUrl ?? '', 'Writer');
+const finalReaderUrl = optimizeConnectionString(readerUrl ?? '', 'Reader');
 
 // ── WRITER POOL (For INSERT/UPDATE/DELETE) ──────────────────────────
 export const writerPool = new Pool({
     connectionString: finalWriterUrl,
-    max: 20, 
+    max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
-    ssl: { rejectUnauthorized: false }, // Force SSL for security
+    ssl: sslConfig, // Dynamic SSL configuration
     allowExitOnIdle: true
 });
 
@@ -61,7 +76,7 @@ export const readerPool = new Pool({
     max: isProduction ? 40 : 20, // Replicas handle more concurrency
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 15000,
-    ssl: { rejectUnauthorized: false },
+    ssl: sslConfig,
     allowExitOnIdle: true
 });
 
@@ -70,16 +85,28 @@ readerPool.on('error', (err, client) => {
 });
 
 // ── Verification ────────────────────────────────────────────────────
-writerPool.connect((err) => {
+writerPool.connect((err, client, release) => {
     if (err) logger.error(`❌ Writer Database connection failed: ${err.message}`);
-    else logger.info('✅ WRITER Database Connected (Master)');
+    else {
+        logger.info('✅ WRITER Database Connected (Master)');
+        if (release) release();
+    }
 });
 
 if (readerUrl !== writerUrl) {
-    readerPool.connect((err) => {
+    readerPool.connect((err, client, release) => {
         if (err) logger.error(`❌ Reader Replica connection failed: ${err.message}`);
-        else logger.info('✅ READER Replica Connected (Scale Mode)');
+        else {
+            logger.info('✅ READER Replica Connected (Scale Mode)');
+            if (release) release();
+        }
     });
+}
+
+function isSelectStatement(sql: string): boolean {
+    if (!sql) return false;
+    const cleaned = sql.trim().replace(/^\/\*[\s\S]*?\*\//, '').trim();
+    return cleaned.toUpperCase().startsWith('SELECT');
 }
 
 /**
@@ -98,6 +125,9 @@ class SplitPool {
     /**
      * Intercept and route SQL queries.
      * Routes SELECT to read replica (readerPool) and other statements to primary (writerPool).
+     *
+     * Performance: per-query logging and Sentry spans are gated behind env flags
+     * (DB_LOG_QUERIES / DB_TRACE_QUERIES) so the hot path stays cheap by default.
      */
     query(text: any, params?: any, callback?: any): any {
         let sqlText = '';
@@ -107,21 +137,29 @@ class SplitPool {
             sqlText = text.text;
         }
 
-        // Clean query text by trimming leading whitespace and removing inline/block comments
-        const cleanedSql = sqlText.trim().replace(/^\/\*[\s\S]*?\*\//, '').trim();
-        const isRead = cleanedSql.toUpperCase().startsWith('SELECT');
-
+        // Cheap read/write detection: scan for the first non-whitespace char and
+        // check whether the statement starts with SELECT (case-insensitive). This
+        // avoids the full trim()+regex() cleanup unless we actually need to log/trace.
+        const isRead = isSelectStatement(sqlText);
         const targetPool = isRead ? this.reader : this.writer;
-        
-        if (cleanedSql) {
-            logger.info(`[DB ROUTER] Routing to ${isRead ? 'READER' : 'WRITER'}: ${cleanedSql.substring(0, 120).replace(/\n/g, ' ')}...`);
+
+        // Only build the cleaned SQL string when we're going to use it.
+        const wantLog = DB_LOG_QUERIES && Math.random() < DB_LOG_SAMPLE_RATE;
+        const wantTrace = DB_TRACE_QUERIES && !!process.env.SENTRY_DSN;
+
+        let cleanedSql = '';
+        if (wantLog || wantTrace) {
+            cleanedSql = sqlText.trim().replace(/^\/\*[\s\S]*?\*\//, '').trim();
+            if (wantLog && cleanedSql) {
+                logger.info(`[DB ROUTER] Routing to ${isRead ? 'READER' : 'WRITER'}: ${cleanedSql.substring(0, 120).replace(/\n/g, ' ')}...`);
+            }
         }
 
-        // --- SENTRY PERFORMANCE APM ---
-        const activeSpan = Sentry.getActiveSpan();
+        // --- SENTRY PERFORMANCE APM (opt-in) ---
+        const activeSpan = wantTrace ? Sentry.getActiveSpan() : null;
         let dbSpan: any = null;
-        
-        if (activeSpan && process.env.SENTRY_DSN) {
+
+        if (activeSpan) {
             dbSpan = Sentry.startInactiveSpan({
                 name: `db: ${cleanedSql.substring(0, 60)}`,
                 op: 'db.query',
@@ -134,14 +172,14 @@ class SplitPool {
             });
         }
 
-        const startTime = Date.now();
+        const startTime = (dbSpan || wantLog) ? Date.now() : 0;
         const queryPromise: any = targetPool.query(text, params, callback);
 
         // Measure query duration and complete the Sentry span
         if (queryPromise && typeof queryPromise.then === 'function') {
             queryPromise.then(() => {
-                const duration = Date.now() - startTime;
                 if (dbSpan) {
+                    const duration = Date.now() - startTime;
                     dbSpan.setAttribute('db.duration_ms', duration);
                     dbSpan.end();
                 }

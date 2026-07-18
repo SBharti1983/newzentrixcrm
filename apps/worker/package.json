@@ -1,0 +1,16 @@
+{
+  "name": "zentrixcrm-worker",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@zentrix/database": "*",
+    "@zentrix/events": "*",
+    "@zentrix/messaging": "*",
+    "@zentrix/logger": "*"
+  }
+}

@@ -12,9 +12,20 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "npx tsx tests/unit/rohanHuman.test.ts"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "turbo": "^2.0.0",
+    "vitest": "^3.2.0"
+  },
+  "overrides": {
+    "vitest": "^3.2.0",
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "opusscript": "^0.1.1"
   }
 }

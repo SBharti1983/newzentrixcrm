@@ -213,7 +213,10 @@ BEGIN
         'synced_recordings', COUNT(*) FILTER (WHERE note ILIKE '%Recording Link%')
     ) INTO v_telephony
     FROM interactions
-    WHERE tenant_id = p_tenant_id AND user_id = p_user_id AND type = 'Call';
+    WHERE tenant_id = p_tenant_id 
+      AND (NOT p_is_personal OR user_id = p_user_id)
+      AND (p_is_personal OR array_length(p_downline_ids, 1) IS NULL OR user_id = ANY(p_downline_ids))
+      AND type = 'Call';
 
     -- ── Active Deals ──
     SELECT COALESCE(json_agg(row_to_json(d)), '[]'::json) INTO v_active_deals

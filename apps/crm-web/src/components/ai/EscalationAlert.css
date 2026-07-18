@@ -1,0 +1,202 @@
+/* ═══════════════════════════════════════════════════════════════════
+   EscalationAlert — Glassmorphism Modal Styles for Live AI Handoff
+   ═══════════════════════════════════════════════════════════════════ */
+
+.escalation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 17, 26, 0.7);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fade-in 0.3s ease-out;
+}
+
+.escalation-modal {
+    width: 100%;
+    max-width: 520px;
+    background: linear-gradient(145deg, #16192b 0%, #0d0f1a 100%);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    box-shadow: 0 24px 64px rgba(239, 68, 68, 0.15), 0 0 0 1px rgba(239, 68, 68, 0.1) inset;
+    border-radius: 20px;
+    overflow: hidden;
+    color: var(--text-primary);
+    animation: scale-up 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.escalation-header {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, transparent 100%);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.escalation-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: heartbeat 2s ease-in-out infinite;
+}
+
+.escalation-title-area h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0;
+    color: white;
+    letter-spacing: -0.02em;
+}
+
+.escalation-title-area p {
+    font-size: 0.8rem;
+    color: #fca5a5;
+    margin: 4px 0 0;
+    font-weight: 600;
+}
+
+/* ── Body ───────────────────────────────────────────────────────── */
+.escalation-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.escalation-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.meta-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meta-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.meta-value {
+    font-size: 0.85rem;
+    color: white;
+    font-weight: 600;
+}
+
+.escalation-brief-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.escalation-brief-section h4 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 0;
+    font-weight: 700;
+}
+
+.brief-content {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+    border-left: 3px solid var(--accent-indigo);
+}
+
+/* ── Footer / Actions ───────────────────────────────────────────── */
+.escalation-footer {
+    padding: 20px 24px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.escalation-btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid transparent;
+}
+
+.escalation-btn.dismiss {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.escalation-btn.dismiss:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.escalation-btn.accept-call {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.escalation-btn.accept-call:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.escalation-btn.open-chat {
+    background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-violet) 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+}
+
+.escalation-btn.open-chat:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────── */
+@keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scale-up {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 12px rgba(239, 68, 68, 0.4); }
+}

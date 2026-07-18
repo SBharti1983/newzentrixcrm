@@ -1,88 +1,188 @@
 /**
- * BargeInHandler — Interruption Detection
+ * BargeInHandler — Interruption Detection with Silero VAD (ONNX)
  *
- * Detects when a caller starts speaking while Rohan is still responding (TTS playing).
- * This triggers an immediate stop of TTS playback so Rohan can listen.
+ * Replaces ZCR and RMS energy heuristics with the highly accurate,
+ * noise-resilient Silero VAD v5 ONNX model.
  *
- * Uses simple VAD (Voice Activity Detection) on incoming audio energy levels.
- * Future: Replace with a proper WebRTC VAD or Silero VAD model.
+ * Supports:
+ *   - Asynchronous real-time frame processing
+ *   - Callbacks for immediate turn interruption
+ *   - Clean backward-compatible metrics/API
  */
 
 import { logger } from '@zentrix/logger';
 
-// Configurable thresholds
-const ENERGY_THRESHOLD = 0.02;       // Minimum RMS energy to consider "speech"
-const SPEECH_FRAMES_REQUIRED = 3;    // Consecutive frames above threshold to trigger
-const SILENCE_FRAMES_REQUIRED = 10;  // Consecutive frames below threshold to reset
+export interface VadConfig {
+    positiveSpeechThreshold: number;
+    negativeSpeechThreshold: number;
+    redemptionFrames: number;
+    sampleRate: number;
+}
+
+const DEFAULT_CONFIG: VadConfig = {
+    positiveSpeechThreshold: 0.5,
+    negativeSpeechThreshold: 0.35,
+    redemptionFrames: 8,
+    sampleRate: 8000, // Zoiper defaults to 8kHz linear PCM
+};
 
 export class BargeInHandler {
-    private speechFrameCount = 0;
-    private silenceFrameCount = 0;
-    private bargeInDetected = false;
+    private config: VadConfig;
+    private vad: any = null;
+    private initPromise: Promise<void> | null = null;
+    private onBargeInCallback?: () => void;
+
+    // States
     private ttsIsPlaying = false;
+    private isSpeakingState = false;
+    private bargeInDetected = false;
+
+    // Metrics (for dashboard compatibility)
+    private totalFrames = 0;
+    private speechFrames = 0;
+    private bargeInCount = 0;
+
+    constructor(config: Partial<VadConfig> = {}) {
+        this.config = { ...DEFAULT_CONFIG, ...config };
+        logger.info(
+            `[BargeIn] Initialized Silero VAD: posThr=${this.config.positiveSpeechThreshold} ` +
+            `negThr=${this.config.negativeSpeechThreshold} sampleRate=${this.config.sampleRate}`
+        );
+    }
 
     /**
-     * Feed raw audio data for VAD analysis.
-     * Call this with each incoming audio frame from the caller.
+     * Lazily imports and instantiates the avr-vad RealTimeVAD.
+     * Prevents process startup delay until the first audio frame arrives.
+     */
+    private async initVad(): Promise<void> {
+        if (this.initPromise) return this.initPromise;
+        this.initPromise = (async () => {
+            try {
+                const { RealTimeVAD } = await import('avr-vad');
+                this.vad = await RealTimeVAD.new({
+                    model: 'v5',
+                    positiveSpeechThreshold: this.config.positiveSpeechThreshold,
+                    negativeSpeechThreshold: this.config.negativeSpeechThreshold,
+                    redemptionFrames: this.config.redemptionFrames,
+                    sampleRate: this.config.sampleRate,
+                    onSpeechStart: () => {
+                        this.isSpeakingState = true;
+                        if (this.ttsIsPlaying) {
+                            this.bargeInDetected = true;
+                            this.bargeInCount++;
+                            logger.info('[BargeIn] Interruption detected via Silero VAD.');
+                            if (this.onBargeInCallback) {
+                                this.onBargeInCallback();
+                            }
+                        }
+                    },
+                    onSpeechEnd: () => {
+                        this.isSpeakingState = false;
+                        this.bargeInDetected = false;
+                    },
+                    // Disable CUDA/GPU warning noise by not providing custom providers
+                });
+                logger.info('[BargeIn] Silero VAD model loaded successfully.');
+            } catch (err: any) {
+                logger.error(`[BargeIn] Failed to load Silero VAD model: ${err.message}`);
+                throw err;
+            }
+        })();
+        return this.initPromise;
+    }
+
+    /**
+     * Register a callback to trigger immediately on speech activity when TTS is active.
+     */
+    setOnBargeIn(callback: () => void): void {
+        this.onBargeInCallback = callback;
+    }
+
+    /**
+     * Feed raw 16-bit PCM audio for VAD analysis.
+     * Processes Float32 samples asynchronously.
      */
     feedAudio(audioChunk: Buffer): void {
-        const energy = this.calculateRMSEnergy(audioChunk);
+        if (audioChunk.length < 2) return;
+        this.totalFrames++;
 
-        if (energy > ENERGY_THRESHOLD) {
-            this.speechFrameCount++;
-            this.silenceFrameCount = 0;
+        // Convert 16-bit linear PCM buffer to Float32Array normalized between [-1.0, 1.0]
+        const sampleCount = Math.floor(audioChunk.length / 2);
+        const float32Samples = new Float32Array(sampleCount);
+        for (let i = 0; i < sampleCount; i++) {
+            const sample16 = audioChunk.readInt16LE(i * 2);
+            float32Samples[i] = sample16 / 32768.0;
+        }
 
-            // Trigger barge-in if TTS is playing and we detect sustained speech
-            if (this.ttsIsPlaying && this.speechFrameCount >= SPEECH_FRAMES_REQUIRED) {
-                this.bargeInDetected = true;
-                logger.info(`[BargeIn] Detected! Energy: ${energy.toFixed(4)}, frames: ${this.speechFrameCount}`);
+        // Fire-and-forget async execution
+        this.processAudioAsync(float32Samples);
+    }
+
+    private async processAudioAsync(float32Samples: Float32Array): Promise<void> {
+        try {
+            if (!this.vad) {
+                await this.initVad();
             }
-        } else {
-            this.silenceFrameCount++;
-            if (this.silenceFrameCount >= SILENCE_FRAMES_REQUIRED) {
-                this.speechFrameCount = 0;
-                this.bargeInDetected = false;
+            if (this.vad) {
+                await this.vad.processAudio(float32Samples);
+                if (this.isSpeakingState) {
+                    this.speechFrames++;
+                }
             }
+        } catch (err: any) {
+            logger.error(`[BargeIn] VAD process audio error: ${err.message}`);
         }
     }
 
     /**
-     * Check if a barge-in has been detected.
+     * Check if a barge-in has been detected (edge-triggered: resets after read).
      */
     isBargeIn(): boolean {
         const result = this.bargeInDetected;
-        if (result) {
-            this.bargeInDetected = false; // Reset after reading
-        }
+        if (result) this.bargeInDetected = false;
         return result;
     }
 
     /**
-     * Notify the handler that TTS playback has started.
+     * Notify the handler that TTS playback has started/stopped.
      */
     setTTSPlaying(playing: boolean): void {
         this.ttsIsPlaying = playing;
         if (!playing) {
             this.bargeInDetected = false;
-            this.speechFrameCount = 0;
+            if (this.vad) {
+                this.vad.reset();
+            }
         }
     }
 
     /**
-     * Calculate RMS (Root Mean Square) energy of a 16-bit PCM audio buffer.
-     * This is a simple measure of "loudness" for VAD purposes.
+     * Whether the caller is currently speaking.
      */
-    private calculateRMSEnergy(buffer: Buffer): number {
-        if (buffer.length < 2) return 0;
+    isSpeaking(): boolean {
+        return this.isSpeakingState;
+    }
 
-        let sumSquares = 0;
-        const sampleCount = Math.floor(buffer.length / 2);
+    getMetrics() {
+        return {
+            totalFrames: this.totalFrames,
+            speechFrames: this.speechFrames,
+            speechRatio: this.totalFrames ? this.speechFrames / this.totalFrames : 0,
+            bargeInCount: this.bargeInCount,
+            noiseFloor: 0.0,
+            ttsPlaying: this.ttsIsPlaying,
+        };
+    }
 
-        for (let i = 0; i < buffer.length - 1; i += 2) {
-            const sample = buffer.readInt16LE(i) / 32768; // Normalize to [-1, 1]
-            sumSquares += sample * sample;
+    /**
+     * Cleanup native resources.
+     */
+    async destroy(): Promise<void> {
+        if (this.vad) {
+            await this.vad.destroy();
+            this.vad = null;
         }
-
-        return Math.sqrt(sumSquares / sampleCount);
     }
 }
+
+export default BargeInHandler;

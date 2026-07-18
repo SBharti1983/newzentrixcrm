@@ -1,0 +1,1724 @@
+/* ═══════════════════════════════════════════════════════════════════
+   NehaDashboard.css — Neha Orchestration Platform
+   Real-time monitoring dashboard for Neha (AI Digital Accountant)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.neha-dashboard {
+    padding: 24px;
+    max-width: 1600px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    color: #1f2937;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden; /* Prevent page-level horizontal overflow scroll */
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.neha-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 16px;
+    color: #f8fafc;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+}
+
+.neha-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.neha-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.neha-header h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.neha-header p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.neha-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.neha-live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.neha-live-badge.live {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.neha-live-badge.offline {
+    background: rgba(107, 114, 128, 0.15);
+    color: #9ca3af;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.neha-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.neha-live-badge.live .neha-live-dot {
+    animation: neha-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes neha-pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(1.3);
+    }
+}
+
+.neha-refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.neha-refresh-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.neha-refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.neha-refresh-btn .spinning {
+    animation: neha-spin 1s linear infinite;
+}
+
+@keyframes neha-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── KPI Cards ─────────────────────────────────────────────────── */
+.neha-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.neha-kpi-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    border-top: 4px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.neha-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.neha-kpi-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.neha-kpi-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.neha-kpi-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #0f172a;
+}
+
+.neha-kpi-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.neha-kpi-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* ── Panels (shared) ────────────────────────────────────────────── */
+.neha-panel {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.neha-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.neha-panel-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    flex: 1;
+}
+
+.neha-event-count {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    background: #f1f5f9;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.neha-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+.neha-empty p {
+    margin: 12px 0 4px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+.neha-empty span {
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+/* ── Main Grid: Live Activity + Reasoning ──────────────────────── */
+.neha-main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.neha-live-panel,
+.neha-reasoning-panel {
+    max-height: 520px;
+}
+
+.neha-live-stream,
+.neha-reasoning-list,
+.neha-handoff-list,
+.neha-calls-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 12px;
+}
+
+/* ── Live Event Items ───────────────────────────────────────────── */
+.neha-live-event {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border-left: 3px solid #e5e7eb;
+    animation: neha-slide-in 0.3s ease-out;
+}
+
+@keyframes neha-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.neha-event-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.neha-event-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.neha-event-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.neha-event-type {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.neha-event-time {
+    font-size: 11px;
+    color: #94a3b8;
+    font-variant-numeric: tabular-nums;
+}
+
+.neha-event-detail {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.5;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.neha-event-response {
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+    border: 1px solid #f1f5f9;
+}
+
+/* ── Reasoning Stream ───────────────────────────────────────────── */
+.neha-reasoning-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border-left: 3px solid #8b5cf6;
+}
+
+.neha-reasoning-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.neha-turn-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6366f1;
+    background: #eef2ff;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.neha-action-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #f59e0b;
+    background: #fef3c7;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.neha-intent-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #3b82f6;
+    background: #dbeafe;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.neha-emotion-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ec4899;
+    background: #fce7f3;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.neha-reasoning-time {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+.neha-reasoning-input {
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.neha-reasoning-response {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 4px;
+    line-height: 1.4;
+}
+
+.neha-reasoning-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+/* ── Filings Kanban ─────────────────────────────────────────────── */
+.neha-kanban-panel {
+    margin-bottom: 24px;
+}
+
+.neha-kanban-board {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    overflow-x: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.neha-kanban-column {
+    flex: 0 0 240px;
+    background: #f8fafc;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-height: 400px;
+}
+
+.neha-kanban-col-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-top: 3px solid #e5e7eb;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+    color: #334155;
+}
+
+.neha-kanban-count {
+    background: #e2e8f0;
+    color: #475569;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+}
+
+.neha-kanban-cards {
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.neha-filing-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.15s;
+}
+
+.neha-filing-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.neha-filing-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.neha-filing-badge {
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+}
+
+.neha-gst-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.neha-filing-period {
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 4px;
+}
+
+.neha-filing-docs {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+
+.neha-filing-time {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+/* ── Bottom Grid: Handoffs + Live Calls ─────────────────────────── */
+.neha-bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.neha-handoff-panel,
+.neha-calls-panel {
+    max-height: 400px;
+}
+
+.neha-handoff-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: #fef2f2;
+    border-left: 3px solid #ef4444;
+}
+
+.neha-handoff-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.neha-handoff-type {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b91c1c;
+    text-transform: capitalize;
+}
+
+.neha-handoff-status {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+}
+
+.neha-handoff-status.pending,
+.neha-handoff-status.open {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.neha-handoff-status.resolved,
+.neha-handoff-status.closed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.neha-handoff-status.acknowledged {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.neha-handoff-reason {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.neha-handoff-time {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+/* ── Live Calls ─────────────────────────────────────────────────── */
+.neha-call-item {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    background: #f0f9ff;
+    border-left: 3px solid #06b6d4;
+}
+
+.neha-call-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.neha-call-channel {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0e7490;
+    text-transform: capitalize;
+}
+
+.neha-call-turns {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0891b2;
+    background: #cffafe;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.neha-call-lang,
+.neha-call-goal,
+.neha-call-action {
+    font-size: 12px;
+    color: #475569;
+    margin-bottom: 3px;
+}
+
+.neha-call-time {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* ── Action Distribution ────────────────────────────────────────── */
+.neha-action-dist {
+    margin-bottom: 24px;
+}
+
+.neha-dist-bars {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.neha-dist-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.neha-dist-label {
+    flex: 0 0 140px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: capitalize;
+}
+
+.neha-dist-bar-track {
+    flex: 1;
+    height: 24px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.neha-dist-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+    border-radius: 6px;
+    transition: width 0.4s ease-out;
+    min-width: 4px;
+}
+
+.neha-dist-count {
+    flex: 0 0 40px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: right;
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────── */
+.neha-live-stream::-webkit-scrollbar,
+.neha-reasoning-list::-webkit-scrollbar,
+.neha-handoff-list::-webkit-scrollbar,
+.neha-calls-list::-webkit-scrollbar,
+.neha-kanban-cards::-webkit-scrollbar,
+.neha-kanban-board::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.neha-live-stream::-webkit-scrollbar-thumb,
+.neha-reasoning-list::-webkit-scrollbar-thumb,
+.neha-handoff-list::-webkit-scrollbar-thumb,
+.neha-calls-list::-webkit-scrollbar-thumb,
+.neha-kanban-cards::-webkit-scrollbar-thumb,
+.neha-kanban-board::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.neha-live-stream::-webkit-scrollbar-track,
+.neha-reasoning-list::-webkit-scrollbar-track,
+.neha-handoff-list::-webkit-scrollbar-track,
+.neha-calls-list::-webkit-scrollbar-track,
+.neha-kanban-cards::-webkit-scrollbar-track,
+.neha-kanban-board::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+    .neha-header {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 16px;
+    }
+
+    .neha-header-left {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .neha-header-right {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .neha-main-grid,
+    .neha-bottom-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* ── Playboard: entire section scrolls horizontally as one unit ── */
+    .neha-dashboard .neha-playboard-panel {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .neha-dashboard .neha-playboard-content {
+        grid-template-columns: auto auto;
+        min-width: 1140px; /* Precise total width for horizontal canvas */
+        padding: 0 16px 16px;
+        gap: 20px;
+    }
+
+    .neha-dashboard .neha-browser-mockup {
+        width: 832px; /* Holds the simulator screen + checklist */
+        flex-shrink: 0;
+    }
+
+    .neha-dashboard .neha-browser-body {
+        padding: 16px;
+    }
+
+    /* The inner GST split keeps simulator and checklist side-by-side */
+    .neha-dashboard .neha-browser-split {
+        grid-template-columns: 500px 280px !important;
+        gap: 20px;
+        height: auto;
+    }
+
+    .neha-dashboard .neha-gst-screen-container {
+        height: 480px;
+    }
+
+    .neha-dashboard .neha-queue-container {
+        width: 288px;
+        flex-shrink: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    .neha-dashboard {
+        padding: 12px;
+    }
+
+    .neha-kpi-grid {
+        grid-template-columns: 1fr 1fr; /* 2 columns, 2 rows! */
+        gap: 10px;
+    }
+
+    .neha-kpi-card {
+        padding: 12px 10px;
+        gap: 8px;
+    }
+
+    .neha-kpi-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+
+    .neha-kpi-icon svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .neha-kpi-value {
+        font-size: 20px;
+    }
+
+    .neha-kpi-label {
+        font-size: 11px;
+    }
+
+    .neha-kpi-sub {
+        font-size: 9px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .neha-kanban-column {
+        flex: 0 0 200px;
+    }
+
+    .neha-dist-label {
+        flex: 0 0 100px;
+        font-size: 11px;
+    }
+}
+
+/* ── Playboard Panel & Queue ─────────────────────────────────────── */
+.neha-playboard-panel {
+    margin-top: 24px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.neha-playboard-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-top: 16px;
+}
+
+/* Browser Mockup */
+.neha-browser-mockup {
+    background: #0f172a;
+    border-radius: 12px;
+    border: 1px solid #334155;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.neha-browser-header {
+    background: #1e293b;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #334155;
+}
+
+.neha-browser-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.neha-browser-dots .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.neha-browser-dots .dot.red { background: #ef4444; }
+.neha-browser-dots .dot.yellow { background: #eab308; }
+.neha-browser-dots .dot.green { background: #22c55e; }
+
+.neha-browser-address-bar {
+    background: #0f172a;
+    border-radius: 6px;
+    padding: 4px 12px;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #94a3b8;
+    border: 1px solid #334155;
+}
+
+.neha-browser-body {
+    padding: 24px;
+    flex: 1;
+    color: #e2e8f0;
+}
+
+.neha-browser-active-task {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.neha-active-task-meta {
+    border-bottom: 1px solid #334155;
+    padding-bottom: 14px;
+}
+
+.neha-active-task-meta .task-badge {
+    background: #eab308;
+    color: #0f172a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.neha-active-task-meta h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #f8fafc;
+}
+
+.neha-active-task-meta p {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.neha-playboard-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.neha-playboard-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.neha-playboard-step.active {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.neha-playboard-step.done {
+    opacity: 0.8;
+}
+
+.step-indicator {
+    flex: 0 0 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.step-icon-done {
+    color: #10b981;
+}
+
+.step-icon-active-pulse {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    display: inline-block;
+    box-shadow: 0 0 10px #8b5cf6;
+    animation: step-pulse-active 1.2s infinite;
+}
+
+@keyframes step-pulse-active {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+.step-icon-pending {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #475569;
+    display: inline-block;
+}
+
+.step-text {
+    flex: 1;
+}
+
+.step-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+}
+
+.neha-playboard-step.active .step-label {
+    color: #c084fc;
+}
+
+.step-desc {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.neha-playboard-step.active .step-desc {
+    color: #cbd5e1;
+}
+
+/* Progress bar section */
+.neha-playboard-progress-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 10px;
+    border-top: 1px solid #334155;
+    padding-top: 16px;
+}
+
+.progress-bar-container {
+    flex: 1;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%);
+    border-radius: 4px;
+    transition: width 0.5s ease-out;
+}
+
+.progress-pct {
+    font-size: 12px;
+    font-weight: 700;
+    color: #f8fafc;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Idle state */
+.neha-browser-idle {
+    padding: 60px 20px;
+    text-align: center;
+    color: #64748b;
+}
+
+.idle-bot-icon {
+    margin-bottom: 16px;
+    color: #475569;
+}
+
+.neha-browser-idle h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #94a3b8;
+}
+
+.neha-browser-idle p {
+    margin: 6px 0 0;
+    font-size: 12px;
+}
+
+/* Filing Queue Panel */
+.neha-queue-container {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+}
+
+.neha-queue-container h3 {
+    margin: 0 0 16px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e293b;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.neha-queue-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    max-height: 480px;
+    flex: 1;
+}
+
+.neha-queue-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.neha-queue-item:hover {
+    border-color: #cbd5e1;
+}
+
+.queue-badge {
+    background: #e2e8f0;
+    color: #475569;
+    font-weight: 800;
+    font-size: 11px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.queue-item-details {
+    flex: 1;
+}
+
+.queue-item-details h4 {
+    margin: 0;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.queue-item-details p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.queue-status-waiting {
+    background: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.neha-queue-empty {
+    padding: 60px 20px;
+    text-align: center;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.neha-queue-empty p {
+    font-size: 12px;
+    margin: 0;
+}
+
+/* ── Interactive GST Portal Simulator ────────────────────────────── */
+.neha-browser-split {
+    display: grid;
+    grid-template-columns: 5fr 3fr;
+    gap: 20px;
+    height: 100%;
+}
+
+.neha-gst-screen-container {
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    overflow: hidden;
+    height: 480px;
+    position: relative;
+    color: #1e293b;
+}
+
+.neha-playboard-steps-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+/* Simulated GST Portal screens */
+.gst-portal-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background: #f1f5f9;
+    overflow: hidden;
+    position: relative;
+}
+
+.gst-portal-header-bar {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    font-size: 11px;
+    border-bottom: 2px solid #ef4444; /* orange-red line */
+}
+
+.gst-portal-header-bar .gov-text {
+    color: #38bdf8;
+}
+
+.gst-portal-content-body {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.gst-portal-content-body h4 {
+    margin: 0;
+    font-size: 13px;
+    color: #1e293b;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 6px;
+    font-weight: 700;
+}
+
+/* Form inputs on GST screen */
+.gst-login-form {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 20px;
+    width: 280px;
+    margin: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.gst-login-form h4 {
+    margin: 0 0 4px 0;
+    text-align: center;
+    color: #0f172a;
+    font-size: 13px;
+}
+
+.gst-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gst-form-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-align: left;
+}
+
+.gst-form-group input, 
+.gst-form-group select {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    color: #1e293b;
+    background: #f8fafc;
+}
+
+.captcha-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.captcha-box {
+    background: #e2e8f0;
+    font-family: monospace;
+    font-weight: 900;
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 2px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px dashed #94a3b8;
+    color: #0f172a;
+    user-select: none;
+}
+
+.captcha-group input {
+    flex: 1;
+}
+
+/* Button simulator */
+.gst-btn {
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.gst-btn-blue {
+    background: #1d4ed8;
+    color: #ffffff;
+}
+
+.gst-btn-blue:hover {
+    background: #1e40af;
+}
+
+.gst-btn-orange {
+    background: #ea580c;
+    color: #ffffff;
+}
+
+.gst-btn-green {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+/* Dashboard returns select screen */
+.dashboard-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: flex-end;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.returns-grid {
+    margin-top: 10px;
+}
+
+.return-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.return-card.active {
+    border-left: 4px solid #ea580c;
+    text-align: left;
+}
+
+.return-card h5 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.return-card p {
+    margin: 4px 0 12px 0;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* Upload page simulator */
+.upload-box-simulated {
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 30px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.upload-icon {
+    font-size: 32px;
+}
+
+.upload-box-simulated p {
+    margin: 0;
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 13px;
+}
+
+.upload-status-text {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.upload-bar-container {
+    width: 80%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.upload-bar-fill {
+    height: 100%;
+    background: #10b981;
+    width: 100%;
+    animation: upload-loading-simulation 3.8s linear infinite;
+}
+
+@keyframes upload-loading-simulation {
+    0% { width: 0%; }
+    50% { width: 60%; }
+    80% { width: 90%; }
+    100% { width: 100%; }
+}
+
+.uploaded-tables-mock {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: left;
+}
+
+.uploaded-tables-mock .table-header {
+    font-weight: 700;
+    font-size: 11px;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 4px;
+}
+
+.uploaded-tables-mock .table-row {
+    font-size: 11px;
+    font-family: monospace;
+    color: #334155;
+    padding: 2px 0;
+}
+
+/* Verification totals summary */
+.summary-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+}
+
+.sum-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+}
+
+.sum-card h6 {
+    margin: 0;
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.sum-card p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.sum-card.text-purple p {
+    color: #7c3aed;
+}
+
+.summary-actions {
+    margin-top: 16px;
+    text-align: center;
+}
+
+/* OTP modal */
+.otp-modal-simulated {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 24px;
+    width: 320px;
+    margin: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+}
+
+.otp-modal-simulated h6 {
+    margin: 0;
+    font-size: 12px;
+    color: #475569;
+    font-weight: 700;
+}
+
+.otp-modal-simulated input {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-align: center;
+    width: 140px;
+    background: #f8fafc;
+    font-family: monospace;
+}
+
+/* Success details screen */
+.success-body {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+}
+
+.success-stamp {
+    border: 3px double #10b981;
+    color: #10b981;
+    font-size: 20px;
+    font-weight: 900;
+    padding: 4px 16px;
+    border-radius: 4px;
+    transform: rotate(-8deg);
+    display: inline-block;
+    letter-spacing: 2px;
+    animation: stamp-pop 0.3s ease-out;
+}
+
+@keyframes stamp-pop {
+    0% { transform: scale(3) rotate(-30deg); opacity: 0; }
+    100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+}
+
+.success-body h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #0f172a;
+}
+
+.arn-text {
+    font-family: monospace;
+    font-size: 12px;
+    background: #e2e8f0;
+    padding: 4px 12px;
+    border-radius: 4px;
+    color: #1e293b;
+    margin: 0;
+}
+
+.notif-text {
+    font-size: 11px;
+    color: #16a34a;
+    margin: 0;
+}
+
+/* Simulated Whatsapp Notification */
+.whatsapp-mockup {
+    border: 1px solid #86efac;
+    background: #e8f5e9;
+    border-radius: 6px;
+    width: 280px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    margin-top: 10px;
+}
+
+.whatsapp-mockup .wa-header {
+    background: #128c7e;
+    color: #ffffff;
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: left;
+}
+
+.whatsapp-mockup .wa-message {
+    padding: 10px;
+    font-size: 11px;
+    text-align: left;
+    color: #2e7d32;
+    background: #d4edda;
+    border-radius: 6px;
+    margin: 8px;
+    border-left: 3px solid #28a745;
+}
+
+/* Mouse cursor simulation animations */
+.gst-cursor-simulation {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M8 2v14.5l3.5-3.5 3 7 2-1-3-7H19L8 2z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* Cursor path for login page */
+.cursor-login {
+    animation: move-cursor-login 4s ease-in-out infinite;
+}
+
+@keyframes move-cursor-login {
+    0% { left: 80%; top: 80%; }
+    40% { left: 45%; top: 38%; } /* hovers username input */
+    70% { left: 45%; top: 50%; } /* hovers password input */
+    90% { left: 45%; top: 76%; } /* clicks login button */
+    100% { left: 45%; top: 76%; }
+}
+
+/* Cursor path for returns selection */
+.cursor-dashboard {
+    animation: move-cursor-dashboard 4s ease-in-out infinite;
+}
+
+@keyframes move-cursor-dashboard {
+    0% { left: 10%; top: 90%; }
+    30% { left: 75%; top: 40%; } /* hovers search btn */
+    70% { left: 50%; top: 80%; } /* hovers prepare online button */
+    100% { left: 50%; top: 80%; }
+}
+
+/* Cursor path for validation screen */
+.cursor-verify {
+    animation: move-cursor-verify 4s ease-in-out infinite;
+}
+
+@keyframes move-cursor-verify {
+    0% { left: 90%; top: 90%; }
+    60% { left: 50%; top: 80%; } /* hovers verify & proceed button */
+    100% { left: 50%; top: 80%; }
+}
+
+/* Cursor path for filing screen */
+.cursor-file {
+    animation: move-cursor-file 4s ease-in-out infinite;
+}
+
+@keyframes move-cursor-file {
+    0% { left: 10%; top: 10%; }
+    60% { left: 50%; top: 68%; } /* hovers verify & file button */
+    100% { left: 50%; top: 68%; }
+}

@@ -2,8 +2,8 @@ import { createClient } from 'redis';
 
 // In production (Railway), REDIS_URL will be provided. In dev, it tries localhost.
 // Fallback to internal Railway hostname if REDIS_URL is missing but we're on Railway.
-const redisUrl = process.env.REDIS_URL || 
-                 (process.env.RAILWAY_STATIC_URL ? 'redis://redis.railway.internal:6379' : 'redis://localhost:6379');
+const redisUrl = process.env.REDIS_URL ||
+    (process.env.RAILWAY_STATIC_URL ? 'redis://redis.railway.internal:6379' : 'redis://localhost:6379');
 
 const redisClient = createClient({
     url: redisUrl,
@@ -37,18 +37,18 @@ redisClient.connect().catch((err) => {
 });
 
 // Helper to wrap promise with a timeout
-const withTimeout = (promise, ms) => {
-    return Promise.race([
-        promise,
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis timeout')), ms))
-    ]);
+const withTimeout = <T>(promise: Promise<T>, ms: number): Promise<T> => {
+    const timeout: Promise<never> = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Redis timeout')), ms)
+    );
+    return Promise.race([promise, timeout]);
 };
 
 /**
  * Safe execution wrapper. If Redis is down, it bypasses silently.
  */
 const cacheDb = {
-    async get(key) {
+    async get(key: string) {
         if (!redisClient.isReady) return null;
         try {
             return await withTimeout(redisClient.get(key), 2000);
@@ -56,7 +56,7 @@ const cacheDb = {
             return null;
         }
     },
-    async setEx(key, seconds, value) {
+    async setEx(key: string, seconds: number, value: string) {
         if (!redisClient.isReady) return;
         try {
             await withTimeout(redisClient.setEx(key, seconds, value), 2000);
@@ -64,9 +64,9 @@ const cacheDb = {
             // ignore
         }
     },
-    async del(keyPattern) {
+    async del(keyPattern: string) {
         if (!redisClient.isReady) return;
-        
+
         try {
             // For simple keys
             if (!keyPattern.includes('*')) {

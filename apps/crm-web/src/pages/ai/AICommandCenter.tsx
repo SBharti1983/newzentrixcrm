@@ -1,0 +1,4316 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+    Search, Mail, MessageSquare, Phone, MoreVertical,
+    Send, RefreshCw, Wand2, User, Sparkles, Brain,
+    TrendingUp, TrendingDown, Target, Zap, Clock,
+    CheckCircle2, AlertCircle, ChevronRight, Filter,
+    Check, Play, Pause, Save, Calendar, Trash2, FileText,
+    Upload, HelpCircle, GraduationCap, Users, BarChart3,
+    Shield, Activity, Bot, ChevronDown, ChevronUp,
+    AlertTriangle, ThumbsUp, ThumbsDown, Wifi, WifiOff, Loader2,
+    ServerCrash, Database, Radio, PhoneCall, UserCheck, Clock4, Plug
+} from 'lucide-react';
+import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../hooks/useAuth';
+import { BASE_URL, getToken } from '../../api/client';
+import './AICommandCenter.css';
+
+// ─── LOCAL API FETCH HELPER ──────────────────────────────────────────
+async function apiFetch(path: string, options: any = {}) {
+    const token = getToken();
+    let cleanPath = path;
+    if (BASE_URL.endsWith('/api') && path.startsWith('/api/')) {
+        cleanPath = path.substring(4);
+    }
+    const res = await fetch(`${BASE_URL}${cleanPath}`, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...options.headers,
+        },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+    });
+    if (!res.ok) throw new Error(`API Error: ${res.status}`);
+    return res.json();
+}
+
+// ─── INITIAL AGENT MOCK DATA ──────────────────────────────────────────
+const INITIAL_PROFILES: Record<string, any> = {
+    rohan: {
+        id: "rohan",
+        name: "Rohan Mishra",
+        role: "rohan",
+        roleLabel: "Rohan (Sales)",
+        employeeCode: "ZEN-AI-001",
+        status: "online",
+        stats: {
+            totalLeads: { val: 422, change: "+12%", up: true },
+            activeConvs: { val: 12, change: "+8%", up: true },
+            revenue: { val: "₹18.4L", change: "+23%", up: true },
+            aiScore: { val: "94%", change: "+2%", up: true }
+        },
+        recentConvs: [
+            { id: "r1", name: "Neha Vig", avatar: "NV", msg: "Haan ji Neha Bhai, site visit bilkul free hai...", time: "2m ago", unread: 2 },
+            { id: "r2", name: "Rahul Singh", avatar: "RS", msg: "Budget ke baare mein tension mat lo bhai...", time: "15m ago", unread: 1 },
+            { id: "r3", name: "Dipak Goyal", avatar: "DG", msg: "Sunday ko cab bhej du? Free hai aapke liye.", time: "1h ago" },
+            { id: "r4", name: "Tribhuvan Sharma", avatar: "TS", msg: "2BHK configuration available hai sir...", time: "3h ago" }
+        ],
+        pipeline: {
+            new: [
+                { id: "rp1", name: "Khushiram Singh", source: "Via WhatsApp" },
+                { id: "rp2", name: "Dileep Yadav", source: "Inbound Call" }
+            ],
+            contacted: [
+                { id: "rp4", name: "Neha Vig", source: "Site visit booked" },
+                { id: "rp5", name: "Rahul Singh", source: "Price shared" }
+            ],
+            qualified: [
+                { id: "rp6", name: "Dipak Goyal", source: "2BHK Interest" },
+                { id: "rp7", name: "J P", source: "3BHK, ₹1.2Cr" }
+            ],
+            won: [
+                { id: "rp8", name: "Tribhuvan Sharma", source: "₹98L Closed" }
+            ]
+        },
+        persona: {
+            language: "hinglish",
+            dialect: "Noida/Delhi Hindi Accent",
+            formality: 40,
+            humor: 65,
+            assertiveness: 75,
+            fillerWords: ["bhai", "matlab", "bilkul", "dekhiye"],
+            greetingMorning: "Ram Ram ji! Main Rohan baat kar raha hu Maya Infratech se.",
+            greetingAfternoon: "Namaste sir, Rohan baat kar raha hu Maya Infratech se. Kaise hain aap?",
+            greetingEvening: "Namaste! Good evening sir, Maya Infratech se Rohan. Kuch help kar sakta hu?"
+        },
+        knowledge: {
+            docs: [
+                { id: "kd1", name: "Maya_Infratech_Brochure_2026.pdf", size: "4.2 MB", status: "indexed", date: "2026-07-10", chunks: 43, lastEmbedded: "2026-07-10 10:14", agents: ["Rohan (Sales)", "Monika (Reception)"], active: true },
+                { id: "kd2", name: "Price_List_Objections_V3.docx", size: "820 KB", status: "indexed", date: "2026-07-12", chunks: 8, lastEmbedded: "2026-07-12 11:22", agents: ["Rohan (Sales)"], active: true },
+                { id: "kd3", name: "RERA_Approval_Docs.pdf", size: "1.8 MB", status: "indexed", date: "2026-07-14", chunks: 21, lastEmbedded: "2026-07-14 15:45", agents: ["Rohan (Sales)", "Neha (Accounts)"], active: true }
+            ],
+            trainingExamples: [
+                { id: "te1", category: "discount_handling", prompt: "Mujhe extra 5% discount chahiye tabhi book karunga.", response: "Sir discounts to transparent hain but booking complete kijiye, main direct manager se unique waiver baat karunga." },
+                { id: "te2", category: "objection_handling", prompt: "Projects are too far from central city area.", response: "Sir standard expressway connectivity 12 minutes hai, isliye future appreciation area best invest hai." }
+            ]
+        },
+        voice: {
+            engine: "ElevenLabs Multilingual V2",
+            voiceId: "eleven_rohan_premium_v4",
+            speechRate: 1.05,
+            pitch: 0.98,
+            stability: 0.72,
+            clonedSamples: ["sample_voice_rohan_01.wav", "sample_voice_rohan_02.wav"]
+        },
+        workflow: {
+            shiftStart: "09:00",
+            shiftEnd: "19:00",
+            cooldownSeconds: 45,
+            maxConcurrent: 2,
+            overflowAgent: "monika",
+            handoffManager: "Surendra (Sales Manager)",
+            idleBehavior: "Nurture cold leads via WhatsApp"
+        },
+        liveMonitor: {
+            activeCall: { leadName: "Dileep Yadav", duration: "1m 24s", sentiment: "Interested", prompt: "Checking plot details on Expressway Sector 150." },
+            reasoningFeed: [
+                { id: "rfeed1", timestamp: "14:21:05", lead_name: "Dileep Yadav", action: "Plot recommendation", reasoning: "Lead wants 200 sq yard options under 1.5Cr. Generating available inventory from sector 150 layout database.", message: "Dileep ji, Sector 150 mein hamare paas active plots hain under budget, details share kar raha hu." }
+            ],
+            activityLog: [
+                { id: "act1", time: "14:20:10", action: "Inbound Call Received", detail: "Connecting call from Dileep Yadav (+91 98765 43210)" },
+                { id: "act2", time: "14:15:30", action: "WhatsApp Sent", detail: "Nurture template sent to Rahul Singh" }
+            ]
+        }
+    },
+    neha: {
+        id: "neha",
+        name: "Neha Sharma",
+        role: "neha",
+        roleLabel: "Neha (Accountant)",
+        employeeCode: "ZEN-AI-002",
+        status: "online",
+        stats: {
+            totalLeads: { val: 185, change: "+4%", up: true },
+            activeConvs: { val: 8, change: "+5%", up: true },
+            revenue: { val: "₹32.8L", change: "+15%", up: true },
+            aiScore: { val: "96%", change: "+1%", up: true }
+        },
+        recentConvs: [
+            { id: "n1", name: "Dipak Goyal", avatar: "DG", msg: "Second installment receipt process kar di hai.", time: "5m ago", unread: 1 },
+            { id: "n2", name: "Manya Mishra", avatar: "MM", msg: "GST waiver guidelines check karke update karti hu...", time: "30m ago" }
+        ],
+        pipeline: {
+            new: [
+                { id: "np1", name: "J P", source: "Invoice Pending" }
+            ],
+            contacted: [
+                { id: "np3", name: "Khushiram Singh", source: "Invoice Sent" }
+            ],
+            qualified: [
+                { id: "np4", name: "Rahul Singh", source: "Part Payment Done" }
+            ],
+            won: [
+                { id: "np6", name: "Dileep Yadav", source: "No Dues Cleared" }
+            ]
+        },
+        persona: {
+            language: "hinglish",
+            dialect: "Corporate formal accent",
+            formality: 85,
+            humor: 20,
+            assertiveness: 60,
+            fillerWords: ["dekhiye", "as per policy", "kindly note"],
+            greetingMorning: "Namaste sir, main Neha baat kar rahi hu accounts desk se.",
+            greetingAfternoon: "Namaste, Neha from accounts department, Maya Infratech. How can I help you?",
+            greetingEvening: "Good evening, Neha here from accounts division. Hope you are doing well."
+        },
+        knowledge: {
+            docs: [
+                { id: "nd1", name: "GST_Billing_Policy.pdf", size: "1.2 MB", status: "indexed", date: "2026-07-02", chunks: 5, lastEmbedded: "2026-07-02 09:30", agents: ["Neha (Accounts)"], active: true },
+                { id: "nd2", name: "Payment_Structure_2026.xlsx", size: "450 KB", status: "indexed", date: "2026-07-08", chunks: 3, lastEmbedded: "2026-07-08 14:15", agents: ["Neha (Accounts)"], active: true }
+            ],
+            trainingExamples: [
+                { id: "nte1", category: "pricing", prompt: "Mujhe GST components explain kardo flat rate pe.", response: "Sure, residential transactions pe 1% under affordable, and 5% standard properties par charge hota hai." }
+            ]
+        },
+        voice: {
+            engine: "ElevenLabs Multilingual V2",
+            voiceId: "eleven_neha_finance_v2",
+            speechRate: 1.0,
+            pitch: 1.05,
+            stability: 0.85,
+            clonedSamples: ["neha_sample_01.wav"]
+        },
+        workflow: {
+            shiftStart: "10:00",
+            shiftEnd: "18:30",
+            cooldownSeconds: 90,
+            maxConcurrent: 1,
+            overflowAgent: "monika",
+            handoffManager: "Surendra (Sales Manager)",
+            idleBehavior: "Reconcile invoice payments with gateway"
+        },
+        liveMonitor: {
+            activeCall: null,
+            reasoningFeed: [
+                { id: "nfeed1", timestamp: "14:10:02", lead_name: "Dipak Goyal", action: "Receipt Generation", reasoning: "Verified bank receipt transaction ID TXN-94028. Dispatching official invoice confirmation.", message: "Dipak ji, receipt reference verified, email notification details bhej di hain." }
+            ],
+            activityLog: [
+                { id: "nact1", time: "14:09:50", action: "Inbound Verification", detail: "Processed receipt details for Dipak Goyal" }
+            ]
+        }
+    },
+    monika: {
+        id: "monika",
+        name: "Monika Kapoor",
+        role: "monika",
+        roleLabel: "Monika (Receptionist)",
+        employeeCode: "ZEN-AI-003",
+        status: "online",
+        stats: {
+            totalLeads: { val: 980, change: "+28%", up: true },
+            activeConvs: { val: 32, change: "+18%", up: true },
+            revenue: { val: "—", change: "+0%", up: false },
+            aiScore: { val: "98%", change: "+3%", up: true }
+        },
+        recentConvs: [
+            { id: "m1", name: "J P", avatar: "JP", msg: "Main Surendra ji ke extension par connect kar rahi hoon...", time: "1m ago", unread: 2 },
+            { id: "m2", name: "Dileep Yadav", avatar: "DY", msg: "Office address and locations shared over SMS.", time: "10m ago" }
+        ],
+        pipeline: {
+            new: [
+                { id: "mp1", name: "Manya Mishra", source: "Routing to Sales" }
+            ],
+            contacted: [
+                { id: "mp3", name: "Khushiram Singh", source: "Connected to Finance" }
+            ],
+            qualified: [
+                { id: "mp4", name: "Neha Vig", source: "Routed to Manager" }
+            ],
+            won: [
+                { id: "mp6", name: "J P", source: "Direct Desk Connect" }
+            ]
+        },
+        persona: {
+            language: "hinglish",
+            dialect: "Polite front desk pitch",
+            formality: 70,
+            humor: 40,
+            assertiveness: 45,
+            fillerWords: ["surely", "hold on", "please note"],
+            greetingMorning: "Good morning, Maya Infratech reception se Monika. Main aapki kaise madad kar sakti hu?",
+            greetingAfternoon: "Maya Infratech, good afternoon, Monika speaking. Whom would you like to speak to?",
+            greetingEvening: "Good evening, welcome to Maya Infratech. Main Monika reception desk se."
+        },
+        knowledge: {
+            docs: [
+                { id: "md1", name: "Office_Directory_Extensions.csv", size: "12 KB", status: "indexed", date: "2026-06-15", chunks: 1, lastEmbedded: "2026-06-15 16:00", agents: ["Monika (Reception)"], active: true },
+                { id: "md2", name: "Frequently_Asked_Directions.txt", size: "8 KB", status: "indexed", date: "2026-06-20", chunks: 2, lastEmbedded: "2026-06-20 11:45", agents: ["Monika (Reception)", "Rohan (Sales)"], active: true }
+            ],
+            trainingExamples: [
+                { id: "mte1", category: "greeting", prompt: "Calling to check company official location address.", response: "Sure, corporate office Sector 62 Noida block C-15, link coordinates and maps routes details are shared via SMS." }
+            ]
+        },
+        voice: {
+            engine: "ElevenLabs Multilingual V2",
+            voiceId: "eleven_monika_frontdesk_v1",
+            speechRate: 0.98,
+            pitch: 1.12,
+            stability: 0.88,
+            clonedSamples: ["monika_voice_sample.mp3"]
+        },
+        workflow: {
+            shiftStart: "08:00",
+            shiftEnd: "20:00",
+            cooldownSeconds: 15,
+            maxConcurrent: 5,
+            overflowAgent: "rohan",
+            handoffManager: "Surendra (Sales Manager)",
+            idleBehavior: "Analyze reception desk statistics"
+        },
+        liveMonitor: {
+            activeCall: null,
+            reasoningFeed: [
+                { id: "mfeed1", timestamp: "14:22:45", lead_name: "J P", action: "Warm Transfer", reasoning: "Caller asked for Surendra Ext 104. Dispatching warm referral signaling overlay.", message: "Ek minute line par baniye JP ji, transfer details route ho rahi hain." }
+            ],
+            activityLog: [
+                { id: "mact1", time: "14:22:30", action: "Inbound Call", detail: "Received call from JP" }
+            ]
+        }
+    }
+};
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────────────
+export default function AICommandCenter() {
+    const { addToast } = useToast();
+    const { user } = useAuth();
+
+    // ─── STATE MANAGEMENT ─────────────────────────────────────────────
+    const [selectedAgent, setSelectedAgent] = useState<string>("rohan");
+    const [activeTab, setActiveTab] = useState<string>("overview");
+    const [profiles, setProfiles] = useState<Record<string, any>>(INITIAL_PROFILES);
+
+    // Active Agent Profile Shortcut
+    const profile = useMemo(() => profiles[selectedAgent] || profiles.rohan, [profiles, selectedAgent]);
+
+    // Identity / Persona states
+    const [agentName, setAgentName] = useState<string>(profile.name);
+    const [language, setLanguage] = useState<string>(profile.persona.language);
+    const [dialect, setDialect] = useState<string>(profile.persona.dialect);
+    const [formality, setFormality] = useState<number>(profile.persona.formality);
+    const [humor, setHumor] = useState<number>(profile.persona.humor);
+    const [assertiveness, setAssertiveness] = useState<number>(profile.persona.assertiveness);
+    const [fillerWordInput, setFillerWordInput] = useState<string>("");
+    const [fillerWords, setFillerWords] = useState<string[]>(profile.persona.fillerWords);
+
+    // Knowledge (RAG) states
+    const [knowledgeDocs, setKnowledgeDocs] = useState<any[]>(profile.knowledge.docs);
+    const [vectorSearchQuery, setVectorSearchQuery] = useState<string>("");
+    const [vectorSearchResult, setVectorSearchResult] = useState<string>("");
+    const [isIngesting, setIsIngesting] = useState<boolean>(false);
+    const [ingestProgress, setIngestProgress] = useState<number>(0);
+    const [ingestStatus, setIngestStatus] = useState<string>("idle");
+    const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
+    const [searchDocsQuery, setSearchDocsQuery] = useState<string>("");
+    const [lastSyncedAt, setLastSyncedAt] = useState<number>(Date.now());
+    const [syncRelativeTime, setSyncRelativeTime] = useState<string>("Just now");
+    const [deleteConfirmDoc, setDeleteConfirmDoc] = useState<any | null>(null);
+    const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("All");
+
+    // Vector Visualizer Outer Nodes
+    const vectorNodeData: Record<string, any[]> = {
+        rohan: [
+            { id: "rc1", name: "Brochure Intro", text: "Maya Infratech Expressway properties. Layout features premium towers with 2BHK/3BHK configurations.", similarity: 0.94, x: 120, y: 70, category: "Brochures" },
+            { id: "rc2", name: "Pricing Plans", text: "Pricing for 2BHK starting at 78L. 3BHK starting at 1.15Cr. Standard registry waivers and zero hidden charges.", similarity: 0.88, x: 260, y: 80, category: "Sales Scripts" },
+            { id: "rc3", name: "RERA Compliance", text: "RERA approval ID: UPRERAPRJ9402. All documents verified. Delivery promised by December 2027.", similarity: 0.82, x: 70, y: 160, category: "Policies" },
+            { id: "rc4", name: "Objection Handling", text: "Expressway distance objection: City connectivity is just 12 minutes via direct flyover link.", similarity: 0.79, x: 200, y: 220, category: "FAQs" },
+            { id: "rc5", name: "Booking Waiver", text: "Unique manager waiver: allows custom 2% discount request for immediate payment commitment.", similarity: 0.74, x: 310, y: 170, category: "Sales Scripts" }
+        ],
+        neha: [
+            { id: "nc1", name: "GST Components", text: "Residential flat transactions GST rules: 1% under affordable, 5% standard residential deals.", similarity: 0.96, x: 100, y: 80, category: "Policies" },
+            { id: "nc2", name: "Payment Milestones", text: "Payment schedule: 10% on booking, 30% on slab completion, 40% finishing, 20% possession.", similarity: 0.90, x: 280, y: 90, category: "Brochures" },
+            { id: "nc3", name: "Receipt Objections", text: "Payments must pass bank reference checks and match UTR transaction ID within 24 business hours.", similarity: 0.85, x: 90, y: 200, category: "FAQs" }
+        ],
+        monika: [
+            { id: "mc1", name: "Office Directions", text: "Noida Sector 62, C-Block, next to Fortis Hospital. Metro Sector 62 is 5 minutes walk.", similarity: 0.95, x: 130, y: 60, category: "FAQs" },
+            { id: "mc2", name: "Extensions List", text: "Sales extensions: Ext 101. Finance queries: Ext 102. Management transfers: Ext 104.", similarity: 0.91, x: 270, y: 90, category: "Brochures" },
+            { id: "mc3", name: "Handoff Protocol", text: "If manager Ext 104 is busy or offline, call routes back to secondary support queue automatically.", similarity: 0.80, x: 80, y: 180, category: "Policies" }
+        ]
+    };
+    const visualizerNodes = useMemo(() => vectorNodeData[selectedAgent] || vectorNodeData.rohan, [selectedAgent]);
+    const [selectedVisualizerNode, setSelectedVisualizerNode] = useState<any | null>(null);
+
+    // Initial node selection in visualizer
+    useEffect(() => {
+        setSelectedVisualizerNode(visualizerNodes[0] || null);
+    }, [visualizerNodes]);
+
+    // Vector Search thumbs feedback states
+    const [feedbackThumbs, setFeedbackThumbs] = useState<Record<string, 'up' | 'down' | null>>({});
+
+    // Dynamic document counts mismatch resolution
+    const dynamicDocCount = useMemo(() => knowledgeDocs.length, [knowledgeDocs]);
+    const dynamicChunksCount = useMemo(() => {
+        return knowledgeDocs.reduce((acc, d) => acc + (d.chunks || 0), 0);
+    }, [knowledgeDocs]);
+
+    // 🌐 Voice Matrix states
+    const [matrixStates, setMatrixStates] = useState<Record<string, boolean>>({
+        english: true,
+        hindi: true,
+        hinglish: true,
+        marathi: false,
+        gujarati: true,
+        tamil: false,
+        bengali: true
+    });
+    const [fallbackLanguage, setFallbackLanguage] = useState<string>("English");
+    const [autoDetectLanguage, setAutoDetectLanguage] = useState<boolean>(true);
+    const [translationEnabled, setTranslationEnabled] = useState<boolean>(true);
+
+    // 🎙️ Call recordings state
+    const [playingRecordingId, setPlayingRecordingId] = useState<string | null>(null);
+
+    // 🛡️ Safety Controls states
+    const [safetyControls, setSafetyControls] = useState<Record<string, boolean>>({
+        profanityFilter: true,
+        piiMasking: true,
+        emergencyTransfer: true,
+        fallbackVoice: true
+    });
+
+    // ⚡ Barge-In Settings states
+    const [allowInterruption, setAllowInterruption] = useState<boolean>(true);
+    const [bargeInSensitivity, setBargeInSensitivity] = useState<number>(65);
+    const [pauseDetectionMs, setPauseDetectionMs] = useState<number>(450);
+    const [maxSilenceThreshold, setMaxSilenceThreshold] = useState<number>(8);
+    const [smartResume, setSmartResume] = useState<boolean>(true);
+    const [autoPause, setAutoPause] = useState<boolean>(true);
+    const [echoCancellation, setEchoCancellation] = useState<boolean>(true);
+    const [noiseSuppression, setNoiseSuppression] = useState<boolean>(true);
+
+    // Pronunciation Dictionary states
+    const [phoneticEntries, setPhoneticEntries] = useState<any[]>([
+        { word: "RERA", phonetic: "Reh-rah", category: "Standard RERA reference" },
+        { word: "NoBroker", phonetic: "No-Broh-ker", category: "PropTech Brand" },
+        { word: "Godrej", phonetic: "Goadh-rej", category: "Developer Brand" },
+        { word: "MahaRERA", phonetic: "Maha-Reh-rah", category: "Authority Regional" },
+        { word: "BKC", phonetic: "Bee-Kay-Cee", category: "Commercial Hub" },
+        { word: "GIFT City", phonetic: "Gift City", category: "Tech Zone" }
+    ]);
+    const [newPhoneticWord, setNewPhoneticWord] = useState<string>("");
+    const [newPhoneticVal, setNewPhoneticVal] = useState<string>("");
+
+    // Speaking style and Emotion presets
+    const [speakingStyle, setSpeakingStyle] = useState<string>("Conversational");
+    const [emotionalStyle, setEmotionalStyle] = useState<string>("Professional");
+
+    // Dynamic Unsaved Changes indicator (Identity/Workflow tabs comparison helper)
+    const hasUnsavedChanges = useMemo(() => {
+        const base = INITIAL_PROFILES[selectedAgent] || INITIAL_PROFILES.rohan;
+        return (
+            agentName !== base.name ||
+            language !== base.persona.language ||
+            dialect !== base.persona.dialect ||
+            formality !== base.persona.formality ||
+            humor !== base.persona.humor ||
+            assertiveness !== base.persona.assertiveness ||
+            JSON.stringify(fillerWords) !== JSON.stringify(base.persona.fillerWords)
+        );
+    }, [selectedAgent, agentName, language, dialect, formality, humor, assertiveness, fillerWords]);
+
+    // ─── LOCAL SYNC DATABASE HOOK ────────────────────────────────────
+    useEffect(() => {
+        let active = true;
+        (async () => {
+            try {
+                const res = await apiFetch("/api/v1/ai/employees");
+                if (res && res.success && res.data && active) {
+                    const data = res.data;
+                    setProfiles(prev => {
+                        const h = { ...prev };
+                        data.forEach((m: any) => {
+                            const d = m.role;
+                            if (h[d]) {
+                                h[d] = {
+                                    ...h[d],
+                                    dbId: m.id,
+                                    name: m.employee_name || h[d].name,
+                                    roleLabel: m.employee_name + ` (${d.charAt(0).toUpperCase() + d.slice(1)})`,
+                                    employeeCode: m.employee_code || h[d].employeeCode,
+                                    status: m.current_status || h[d].status,
+                                    persona: {
+                                        ...h[d].persona,
+                                        ...m.persona_config || {}
+                                    },
+                                    voice: {
+                                        ...h[d].voice,
+                                        ...m.voice_config || {}
+                                    },
+                                    workflow: {
+                                        ...h[d].workflow,
+                                        shiftStart: m.shift_start_time ? m.shift_start_time.substring(0, 5) : h[d].workflow.shiftStart,
+                                        shiftEnd: m.shift_end_time ? m.shift_end_time.substring(0, 5) : h[d].workflow.shiftEnd,
+                                        cooldownSeconds: m.cooldown_seconds || h[d].workflow.cooldownSeconds,
+                                        maxConcurrent: m.max_concurrent_calls || h[d].workflow.maxConcurrent
+                                    }
+                                };
+                            }
+                        });
+                        return h;
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to load active database personas:", err);
+            }
+        })();
+        return () => { active = false; };
+    }, []);
+
+    // ─── HEALTH CHECK STATE & AUTO-POLLING ─────────────────────────────
+    interface HealthCheckItem {
+        name: string;
+        status: 'ok' | 'warn' | 'error';
+        message: string;
+        detail?: string;
+    }
+    interface HealthData {
+        overallStatus: 'connected' | 'degraded' | 'disconnected';
+        connected: boolean;
+        summary: { ok: number; warnings: number; errors: number; total: number };
+        checks: HealthCheckItem[];
+        checkedAt: string;
+    }
+    const [healthData, setHealthData] = useState<HealthData | null>(null);
+    const [healthLoading, setHealthLoading] = useState<boolean>(false);
+    const [healthExpanded, setHealthExpanded] = useState<boolean>(false);
+    const healthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const fetchHealth = useCallback(async () => {
+        const dbId = profiles[selectedAgent]?.dbId;
+        if (!dbId) return;
+        setHealthLoading(true);
+        try {
+            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/health`);
+            if (res?.success && res?.data) {
+                setHealthData(res.data);
+            }
+        } catch (err) {
+            setHealthData({
+                overallStatus: 'disconnected',
+                connected: false,
+                summary: { ok: 0, warnings: 0, errors: 1, total: 1 },
+                checks: [{ name: 'API Server', status: 'error', message: 'Cannot reach CRM API server', detail: 'The API server at localhost:4000 is not responding.' }],
+                checkedAt: new Date().toISOString()
+            });
+        } finally {
+            setHealthLoading(false);
+        }
+    }, [profiles, selectedAgent]);
+
+    // Auto-poll every 30 seconds
+    useEffect(() => {
+        fetchHealth();
+        healthIntervalRef.current = setInterval(fetchHealth, 30000);
+        return () => {
+            if (healthIntervalRef.current) clearInterval(healthIntervalRef.current);
+        };
+    }, [fetchHealth]);
+
+    // Re-fetch when switching agents
+    useEffect(() => {
+        fetchHealth();
+        fetchTelephonyConfig();
+    }, [selectedAgent]);
+
+    // ─── TELEPHONY CONFIGURATION FORM STATES ───────────────────────────
+    const [telProvider, setTelProvider] = useState<string>('gsm_gateway');
+    const [telApiKey, setTelApiKey] = useState<string>('');
+    const [telApiSecret, setTelApiSecret] = useState<string>('');
+    const [telSid, setTelSid] = useState<string>('');
+    const [telFromNumber, setTelFromNumber] = useState<string>('');
+    const [isSavingTelephony, setIsSavingTelephony] = useState<boolean>(false);
+    const [isFetchingTelephony, setIsFetchingTelephony] = useState<boolean>(false);
+
+    const fetchTelephonyConfig = useCallback(async () => {
+        const dbId = profiles[selectedAgent]?.dbId;
+        if (!dbId) return;
+        setIsFetchingTelephony(true);
+        try {
+            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/telephony`);
+            if (res?.success && res?.sipConfig) {
+                const cfg = res.sipConfig;
+                setTelProvider(cfg.provider || 'gsm_gateway');
+                setTelApiKey(cfg.api_key || '');
+                setTelApiSecret(cfg.api_secret || '');
+                setTelSid(cfg.sid || '');
+                setTelFromNumber(cfg.from_number || '');
+            }
+        } catch (err) {
+            console.error("Failed to load active telephony config:", err);
+        } finally {
+            setIsFetchingTelephony(false);
+        }
+    }, [profiles, selectedAgent]);
+
+    const handleSaveTelephony = async () => {
+        const dbId = profiles[selectedAgent]?.dbId;
+        if (!dbId) return;
+        setIsSavingTelephony(true);
+        try {
+            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/telephony`, {
+                method: 'PUT',
+                body: {
+                    provider: telProvider,
+                    api_key: telApiKey,
+                    api_secret: telApiSecret,
+                    sid: telSid,
+                    from_number: telFromNumber
+                }
+            });
+            if (res?.success) {
+                addToast({
+                    type: "success",
+                    title: "Telephony Updated",
+                    message: "SIP/GSM Gateway configuration saved successfully."
+                });
+                fetchHealth(); // refresh diagnostics panel immediately
+            }
+        } catch (err: any) {
+            addToast({
+                type: "error",
+                title: "Update Failed",
+                message: err.message || "Failed to update gateway settings."
+            });
+        } finally {
+            setIsSavingTelephony(false);
+        }
+    };
+
+    // ⏱️ Voice Sandbox & Conversation Simulator states
+    const [simulationTranscript, setSimulationTranscript] = useState<any[]>([]);
+    const [isSimulating, setIsSimulating] = useState<boolean>(false);
+    const [simulatingStep, setSimulatingStep] = useState<number>(0);
+    const [customClientMessage, setCustomClientMessage] = useState<string>("");
+    const [isPlayingSynthesised, setIsPlayingSynthesised] = useState<boolean>(false);
+
+    // Turn-by-Turn Simulated QoS metrics
+    const [simulatedMetrics, setSimulatedMetrics] = useState<any>({
+        stt: 0,
+        llm: 0,
+        tts: 0,
+        total: 0,
+        confidence: 0,
+        emotion: "None"
+    });
+
+    const sandboxScenarios: Record<string, any[]> = {
+        rohan: [
+            { label: "🏢 Inquire 3BHK flats in BKC", text: "Hi, I am calling to check details and pricing of luxury 3BHK flat options in BKC area.", response: "Namaste! BKC mein prime residency options available hain sir, including 3BHK premium layout starting from ₹1.8Cr. Project completely RERA verified hai. Kya Sunday ko site visit schedule karein?", metrics: { stt: 120, llm: 290, tts: 130, total: 540, confidence: 98.4, emotion: "Energetic" } },
+            { label: "🏷️ Ask for discount / waiver", text: "Is there any additional discount or RERA registry fee waiver on the booking amount?", response: "Sir billing policies transparent hain, but agar aap immediate slab commitment de sakein to main manager se pre-approval 2% waiver support baat kar sakta hu.", metrics: { stt: 110, llm: 320, tts: 150, total: 580, confidence: 96.1, emotion: "Persuasive" } },
+            { label: "🛣️ Connectivity of Sector 150 Expressway", text: "How is the connectivity of Sector 150 Expressway projects?", response: "Connectivity is superb, sir. Project connects within 12 minutes to Central Noida via expressway flyover link, making it excellent for fast appreciation.", metrics: { stt: 115, llm: 300, tts: 140, total: 555, confidence: 97.8, emotion: "Friendly" } }
+        ],
+        neha: [
+            { label: "💰 Explain GST components", text: "Can you explain the GST slab applied to affordable vs standard flats?", response: "Sure, affordable category properties par restricted 1% GST charge hota hai, whereas standard residential transactions involve 5% GST component. TDS excluded.", metrics: { stt: 110, llm: 310, tts: 135, total: 555, confidence: 99.1, emotion: "Professional" } },
+            { label: "💳 Verify Flat 402 payment receipt", text: "I did an online transfer for flat 402. UTR transaction ID is UTR-94028510.", response: "Thank you for UTR reference details. I have reconciled the records. Payment confirmed and tax invoice receipt has been updated in database system.", metrics: { stt: 125, llm: 285, tts: 145, total: 555, confidence: 98.8, emotion: "Calm" } }
+        ],
+        monika: [
+            { label: "📞 Connect to Sales Manager", text: "Please transfer my call to the sales manager extension.", response: "Sure, transferring your line to Surendra (Sales Manager, Ext 104) immediately. Kindly hold. If line is busy, call will fallback here.", metrics: { stt: 130, llm: 240, tts: 130, total: 500, confidence: 98.5, emotion: "Polite" } },
+            { label: "📍 Corporate address & directions", text: "Where is your office located? Give me directions.", response: "Corporate head office block C-15, Sector 62 Noida, adjacent to Fortis Hospital. Metro is 5 mins walk. Location link has been shared via SMS.", metrics: { stt: 115, llm: 295, tts: 140, total: 550, confidence: 99.3, emotion: "Cheerful" } }
+        ]
+    };
+    const activeScenarios = useMemo(() => sandboxScenarios[selectedAgent] || sandboxScenarios.rohan, [selectedAgent]);
+
+    // Voice Tab state variables
+    const [voiceStability, setVoiceStability] = useState<number>(profile.voice.stability);
+    const [voicePitch, setVoicePitch] = useState<number>(profile.voice.pitch);
+    const [voiceSpeechRate, setVoiceSpeechRate] = useState<number>(profile.voice.speechRate);
+    const [isCloning, setIsCloning] = useState<boolean>(false);
+    const [cloneProgress, setCloneProgress] = useState<number>(0);
+    const [ttsGreetingText, setTtsGreetingText] = useState<string>(profile.persona.greetingMorning);
+    const [isSynthesising, setIsSynthesising] = useState<boolean>(false);
+    const [isSynthesisedReady, setIsSynthesisedReady] = useState<boolean>(false);
+    const [synthesisProgress, setSynthesisProgress] = useState<number>(0);
+
+    // Workflow Tab state variables
+    const [shiftStart, setShiftStart] = useState<string>(profile.workflow.shiftStart);
+    const [shiftEnd, setShiftEnd] = useState<string>(profile.workflow.shiftEnd);
+    const [cooldownSeconds, setCooldownSeconds] = useState<number>(profile.workflow.cooldownSeconds);
+    const [overflowAgent, setOverflowAgent] = useState<string>(profile.workflow.overflowAgent);
+    const [handoffManager, setHandoffManager] = useState<string>(profile.workflow.handoffManager);
+
+    // Monitoring Tab state variables
+    const [isMonitoringActive, setIsMonitoringActive] = useState<boolean>(false);
+    const [monitoringFeed, setMonitoringFeed] = useState<any[]>([]);
+    const [monitoringProgress, setMonitoringProgress] = useState<number>(0);
+
+    // Analytics / Security Tab States
+    const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly'>('daily');
+    const [apiKey, setApiKey] = useState<string>("zntx_live_pk_7482_aicc_secret_key_prod");
+    const [row2Expanded, setRow2Expanded] = useState<boolean>(true);
+
+    // Overview Enhancement States
+    const [dashPeriod, setDashPeriod] = useState<'today' | '7d' | '30d'>('30d');
+    const [matrixSort, setMatrixSort] = useState<{ key: 'accuracy' | 'latency'; dir: 'asc' | 'desc' }>({ key: 'accuracy', dir: 'desc' });
+
+    // Training Tab States
+    const [coachingExamples, setCoachingExamples] = useState<any[]>([]);
+    const [coachingCategory, setCoachingCategory] = useState<string>("discount_handling");
+    const [coachingQuery, setCoachingQuery] = useState<string>("");
+    const [coachingResponse, setCoachingResponse] = useState<string>("");
+    const [coachingFilter, setCoachingFilter] = useState<string>("all");
+    const [isRetraining, setIsRetraining] = useState<boolean>(false);
+
+    // Sync status tracker clock hook
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const diff = Date.now() - lastSyncedAt;
+            if (diff < 60000) {
+                setSyncRelativeTime("Just now");
+            } else if (diff < 120000) {
+                setSyncRelativeTime("1 min ago");
+            } else {
+                setSyncRelativeTime(`${Math.floor(diff / 60000)} min ago`);
+            }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [lastSyncedAt]);
+
+    // Force Sync database query
+    const triggerDbSync = () => {
+        setLastSyncedAt(Date.now());
+        setSyncRelativeTime("Just now");
+        addToast({
+            type: "success",
+            title: "Database Synced",
+            message: "Successfully synchronized knowledge and pipeline contexts with PostgreSQL database."
+        });
+    };
+
+    // Live Monitoring feed simulation loop
+    useEffect(() => {
+        if (!isMonitoringActive) {
+            setMonitoringFeed([]);
+            setMonitoringProgress(0);
+            return;
+        }
+        const initialFeed = profile.liveMonitor.reasoningFeed || [];
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setMonitoringFeed([{ ...initialFeed[0], timestamp: timeStr }]);
+        setMonitoringProgress(1);
+
+        const feedSequence = [
+            { id: "rfeed2", timestamp: "", lead_name: "Rahul Singh", action: "Site visit follow-up", reasoning: "Lead requested pricing information. Confirming layout maps delivery via message broker.", message: "Rahul ji, maps details WhatsApp desk pe send kar di hain. Inspect kijiye." },
+            { id: "rfeed3", timestamp: "", lead_name: "Neha Vig", action: "Discount verification", reasoning: "RERA verification completed. Matching builder discount waivers thresholds.", message: "Neha ji, builder discount verification approvals checked, 2.5% waiver applied." }
+        ];
+
+        const timer = setInterval(() => {
+            setMonitoringProgress(prev => {
+                if (prev < 3) {
+                    const stepFeed = feedSequence[prev - 1];
+                    const tickTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                    setMonitoringFeed(feed => [...feed, { ...stepFeed, timestamp: tickTime }]);
+                    return prev + 1;
+                } else {
+                    clearInterval(timer);
+                    return prev;
+                }
+            });
+        }, 4000);
+
+        return () => clearInterval(timer);
+    }, [isMonitoringActive, selectedAgent, profile]);
+
+    // Apply active persona database details when agent context changes
+    useEffect(() => {
+        const active = profiles[selectedAgent] || profiles.rohan;
+        setAgentName(active.name);
+        setLanguage(active.persona.language);
+        setDialect(active.persona.dialect);
+        setFormality(active.persona.formality);
+        setHumor(active.persona.humor);
+        setAssertiveness(active.persona.assertiveness);
+        setFillerWords(active.persona.fillerWords);
+        setKnowledgeDocs(active.knowledge.docs);
+        setFillerWordInput("");
+        setVectorSearchResult("");
+        setVoiceStability(active.voice.stability);
+        setVoicePitch(active.voice.pitch);
+        setVoiceSpeechRate(active.voice.speechRate);
+        setShiftStart(active.workflow.shiftStart);
+        setShiftEnd(active.workflow.shiftEnd);
+        setCooldownSeconds(active.workflow.cooldownSeconds);
+        setOverflowAgent(active.workflow.overflowAgent);
+        setHandoffManager(active.workflow.handoffManager);
+        setTtsGreetingText(active.persona.greetingMorning);
+        setIsSynthesisedReady(false);
+        setIsSynthesising(false);
+        setIsMonitoringActive(false);
+        setCoachingExamples(active.knowledge.trainingExamples || []);
+    }, [selectedAgent, profiles]);
+
+    // ─── EVENT HANDLERS ──────────────────────────────────────────────
+    const handleSwitchAgent = (agent: string) => {
+        if (hasUnsavedChanges && !window.confirm("You have unsaved changes. Switching agents will discard modifications. Continue?")) {
+            return;
+        }
+        setSelectedAgent(agent);
+        addToast({
+            type: "info",
+            title: "AI Command Center",
+            message: `Switched context to ${Qe[agent] || agent}.`
+        });
+    };
+
+    const Qe: Record<string, string> = {
+        rohan: "Rohan (Sales)",
+        neha: "Neha (Accountant)",
+        monika: "Monika (Receptionist)"
+    };
+
+    // Save configuration states to database
+    const handleSavePersona = async () => {
+        const dbId = profile.dbId;
+        if (!dbId) {
+            addToast({
+                type: "warning",
+                title: "Offline Mode",
+                message: "Database profile not synced yet."
+            });
+            return;
+        }
+        try {
+            const personaConfig = {
+                language,
+                dialect,
+                formality,
+                humor,
+                assertiveness,
+                fillerWords,
+                greetingMorning: profile.persona.greetingMorning,
+                greetingAfternoon: profile.persona.greetingAfternoon,
+                greetingEvening: profile.persona.greetingEvening
+            };
+            await apiFetch(`/api/v1/ai/employees/${dbId}`, {
+                method: "PUT",
+                body: {
+                    employee_name: agentName,
+                    persona_config: personaConfig
+                }
+            });
+            setProfiles(prev => {
+                const next = { ...prev };
+                if (next[selectedAgent]) {
+                    next[selectedAgent] = {
+                        ...next[selectedAgent],
+                        name: agentName,
+                        persona: personaConfig
+                    };
+                }
+                return next;
+            });
+            addToast({
+                type: "success",
+                title: "Configuration Saved",
+                message: `Persona parameters for ${agentName} successfully updated in database.`
+            });
+        } catch (err: any) {
+            console.error(err);
+            addToast({
+                type: "error",
+                title: "Save Failed",
+                message: err.message || "Database connection timeout."
+            });
+        }
+    };
+
+    const handleSaveVoiceConfig = async () => {
+        const dbId = profile.dbId;
+        if (!dbId) {
+            addToast({
+                type: "warning",
+                title: "Offline Mode",
+                message: "Database profile not synced yet."
+            });
+            return;
+        }
+        try {
+            const voiceConfig = {
+                engine: profile.voice.engine,
+                voiceId: profile.voice.voiceId,
+                stability: voiceStability,
+                pitch: voicePitch,
+                speechRate: voiceSpeechRate,
+                clonedSamples: profile.voice.clonedSamples
+            };
+            await apiFetch(`/api/v1/ai/employees/${dbId}`, {
+                method: "PUT",
+                body: {
+                    voice_config: voiceConfig
+                }
+            });
+            setProfiles(prev => {
+                const next = { ...prev };
+                if (next[selectedAgent]) {
+                    next[selectedAgent] = {
+                        ...next[selectedAgent],
+                        voice: voiceConfig
+                    };
+                }
+                return next;
+            });
+            addToast({
+                type: "success",
+                title: "Voice Config Saved",
+                message: "Speech synthesis settings updated on active engine database."
+            });
+        } catch (err: any) {
+            console.error(err);
+            addToast({
+                type: "error",
+                title: "Save Failed",
+                message: err.message || "Database connection timeout."
+            });
+        }
+    };
+
+    const handleSaveWorkflow = async () => {
+        const dbId = profile.dbId;
+        if (!dbId) {
+            addToast({
+                type: "warning",
+                title: "Offline Mode",
+                message: "Database profile not synced yet."
+            });
+            return;
+        }
+        try {
+            await apiFetch(`/api/v1/ai/employees/${dbId}`, {
+                method: "PUT",
+                body: {
+                    shift_start_time: shiftStart + ":00",
+                    shift_end_time: shiftEnd + ":00",
+                    cooldown_seconds: cooldownSeconds
+                }
+            });
+            setProfiles(prev => {
+                const next = { ...prev };
+                if (next[selectedAgent]) {
+                    next[selectedAgent] = {
+                        ...next[selectedAgent],
+                        workflow: {
+                            ...next[selectedAgent].workflow,
+                            shiftStart,
+                            shiftEnd,
+                            cooldownSeconds
+                        }
+                    };
+                }
+                return next;
+            });
+            addToast({
+                type: "success",
+                title: "Workflow Updated",
+                message: "Shift schedules and pacing parameters successfully updated in database."
+            });
+        } catch (err: any) {
+            console.error(err);
+            addToast({
+                type: "error",
+                title: "Save Failed",
+                message: err.message || "Database connection timeout."
+            });
+        }
+    };
+
+    // Verbal crutches handlers
+    const addFillerWord = () => {
+        if (fillerWordInput.trim() && !fillerWords.includes(fillerWordInput.trim())) {
+            setFillerWords([...fillerWords, fillerWordInput.trim()]);
+            setFillerWordInput("");
+        }
+    };
+
+    const removeFillerWord = (word: string) => {
+        setFillerWords(fillerWords.filter(w => w !== word));
+    };
+
+    // RAG Ingestion Simulator
+    const simulateRAGIngest = () => {
+        setIsIngesting(true);
+        setIngestProgress(10);
+        setIngestStatus("uploading");
+        let currentProgress = 10;
+        const interval = setInterval(() => {
+            currentProgress += 15;
+            if (currentProgress < 50) {
+                setIngestProgress(currentProgress);
+            } else if (currentProgress < 85) {
+                setIngestStatus("chunking");
+                setIngestProgress(currentProgress);
+            } else if (currentProgress < 100) {
+                setIngestStatus("embedding");
+                setIngestProgress(currentProgress);
+            } else {
+                clearInterval(interval);
+                const newDoc = {
+                    id: `kd_custom_${Date.now()}`,
+                    name: "Uploaded_Knowledge_Snippet.pdf",
+                    size: "1.4 MB",
+                    status: "indexed",
+                    date: new Date().toISOString().split("T")[0],
+                    chunks: 6,
+                    lastEmbedded: new Date().toISOString().replace("T", " ").substring(0, 16),
+                    agents: [selectedAgent === "rohan" ? "Rohan (Sales)" : selectedAgent === "neha" ? "Neha (Accountant)" : "Monika (Receptionist)"],
+                    active: true
+                };
+                setKnowledgeDocs(prev => [newDoc, ...prev]);
+                setProfiles(prev => {
+                    const next = { ...prev };
+                    if (next[selectedAgent]) {
+                        next[selectedAgent].knowledge.docs = [newDoc, ...next[selectedAgent].knowledge.docs];
+                    }
+                    return next;
+                });
+                setIsIngesting(false);
+                setIngestProgress(0);
+                setIngestStatus("idle");
+                addToast({
+                    type: "success",
+                    title: "Knowledge Ingested",
+                    message: "Document successfully parsed, chunked, and stored in vector database."
+                });
+            }
+        }, 400);
+    };
+
+    const toggleDocActive = (id: string) => {
+        setKnowledgeDocs(prev => prev.map(d => d.id === id ? { ...d, active: !d.active } : d));
+        setProfiles(prev => {
+            const next = { ...prev };
+            if (next[selectedAgent]) {
+                next[selectedAgent].knowledge.docs = next[selectedAgent].knowledge.docs.map((d: any) => d.id === id ? { ...d, active: !d.active } : d);
+            }
+            return next;
+        });
+        addToast({
+            type: "success",
+            title: "Knowledge Base",
+            message: "Document active status updated successfully."
+        });
+    };
+
+    const executeDeleteDoc = (id: string) => {
+        setKnowledgeDocs(prev => prev.filter(d => d.id !== id));
+        setProfiles(prev => {
+            const next = { ...prev };
+            if (next[selectedAgent]) {
+                next[selectedAgent].knowledge.docs = next[selectedAgent].knowledge.docs.filter((d: any) => d.id !== id);
+            }
+            return next;
+        });
+        setSelectedDocs(prev => prev.filter(d => d !== id));
+        setDeleteConfirmDoc(null);
+        addToast({
+            type: "success",
+            title: "Knowledge Base",
+            message: "Document removed and un-indexed from RAG vectors."
+        });
+    };
+
+    // Vector search simulator
+    const triggerVectorSearch = () => {
+        if (!vectorSearchQuery.trim()) {
+            setVectorSearchResult("Please enter a query.");
+            return;
+        }
+        const query = vectorSearchQuery.toLowerCase();
+        if (query.includes("visit") || query.includes("site") || query.includes("cab")) {
+            setVectorSearchResult("Matches [Rohan_Infratech_Brochure]: Site visits scheduled through executive cab service. Complimentary travel up to 25km radius. Code validation: pre-authorized driver match via SMS link.");
+        } else if (query.includes("price") || query.includes("discount") || query.includes("waiver")) {
+            setVectorSearchResult("Matches [Price_List_Objections_V3]: Booking discount limits capping at 2.5% for standard payment schemes. Up to 5% with immediate installment commitment. Manager approval required for anything higher.");
+        } else if (query.includes("gst") || query.includes("tax") || query.includes("billing")) {
+            setVectorSearchResult("Matches [GST_Billing_Policy]: Standard property deals are subjected to 5% GST component. Under affordable housing bracket, the rate is restricted to 1%. Direct TDS exclusions applied to RERA registration fees.");
+        } else {
+            setVectorSearchResult("No exact matching vector segments found in local RAG database. Reverting to base large language model general corpus reasoning.");
+        }
+    };
+
+    // Vector Visualizer clicks
+    const handleNodeClick = (node: any) => {
+        setSelectedVisualizerNode(node);
+        setVectorSearchQuery(node.text);
+        setVectorSearchResult(`Visualizer Query Match: ${node.text}`);
+    };
+
+    // Clone voice profile simulation
+    const simulateVoiceClone = () => {
+        setIsCloning(true);
+        setCloneProgress(10);
+        const interval = setInterval(() => {
+            setCloneProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        setProfiles(prevP => {
+                            const nextP = { ...prevP };
+                            if (nextP[selectedAgent]) {
+                                nextP[selectedAgent].voice.clonedSamples = ["cloned_sample_voice_new.wav", ...nextP[selectedAgent].voice.clonedSamples];
+                            }
+                            return nextP;
+                        });
+                        setIsCloning(false);
+                        addToast({
+                            type: "success",
+                            title: "Voice Cloned",
+                            message: "Speech sample successfully analyzed. ElevenLabs Voice Profile created."
+                        });
+                    }, 500);
+                    return 100;
+                }
+                return prev + 30;
+            });
+        }, 400);
+    };
+
+    // TTS Synthesis simulator
+    const triggerTtsSynthesis = () => {
+        if (!ttsGreetingText.trim()) return;
+        setIsSynthesising(true);
+        setSynthesisProgress(10);
+        setIsSynthesisedReady(false);
+        const interval = setInterval(() => {
+            setSynthesisProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        setIsSynthesising(false);
+                        setIsSynthesisedReady(true);
+                        addToast({
+                            type: "success",
+                            title: "Voice Synthesised",
+                            message: `Generated custom audio preview using ${profile.voice.engine}.`
+                        });
+                    }, 500);
+                    return 100;
+                }
+                return prev + 25;
+            });
+        }, 200);
+    };
+
+    // Playback Recording samples controls
+    const toggleRecordingPlayback = (id: string) => {
+        if (playingRecordingId === id) {
+            setPlayingRecordingId(null);
+        } else {
+            setPlayingRecordingId(id);
+            addToast({
+                type: "info",
+                title: "Audio Playback",
+                message: `Playing recording sample: ${id.replace(/_/g, ' ')}`
+            });
+        }
+    };
+
+    // Rotate API Key
+    const rotateApiKey = () => {
+        const hex = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+        setApiKey(`zntx_live_pk_${hex}_aicc_secret_key_prod`);
+        addToast({
+            type: "success",
+            title: "API Key Rotated",
+            message: "Production voice API key successfully rotated. Background worker pipelines updated."
+        });
+    };
+
+    // Filter Knowledge Docs by Categories
+    const filteredDocs = useMemo(() => {
+        return knowledgeDocs.filter(d => {
+            const matchesSearch = d.name.toLowerCase().includes(searchDocsQuery.toLowerCase());
+            if (selectedCategoryFilter === "All") return matchesSearch;
+            
+            if (selectedCategoryFilter === "Brochures") {
+                return matchesSearch && (d.name.includes("Brochure") || d.name.includes("Price"));
+            }
+            if (selectedCategoryFilter === "Policies") {
+                return matchesSearch && (d.name.includes("RERA") || d.name.includes("Policy") || d.name.includes("Waiver"));
+            }
+            if (selectedCategoryFilter === "FAQs") {
+                return matchesSearch && (d.name.includes("Directions") || d.name.includes("FAQ") || d.name.includes("Extensions"));
+            }
+            return matchesSearch;
+        });
+    }, [knowledgeDocs, searchDocsQuery, selectedCategoryFilter]);
+
+    // ─── CONVERSATION SIMULATOR PIPELINE (SANDBOX) ───────────────────
+    const runSimulationTurn = (scenarioText: string, scenarioResponse: string, metrics: any) => {
+        if (isSimulating) return;
+        setIsSimulating(true);
+        setIsPlayingSynthesised(false);
+        setSimulatingStep(1); // Customer inputting
+
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        
+        // Push user bubble
+        setSimulationTranscript(prev => [...prev, { sender: "client", text: scenarioText, time: timeStr }]);
+        setCustomClientMessage("");
+
+        // Simulate STT Complete
+        setTimeout(() => {
+            setSimulatingStep(2); // AI Processing (LLM)
+        }, 300);
+
+        // Simulate LLM Complete
+        setTimeout(() => {
+            setSimulatingStep(3); // AI Speaking (TTS)
+        }, 700);
+
+        // Simulate complete turnaround
+        setTimeout(() => {
+            const responseTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            
+            // Push AI bubble
+            setSimulationTranscript(prev => [...prev, { sender: "agent", text: scenarioResponse, time: responseTimeStr }]);
+            
+            // Set QoS Metrics
+            setSimulatedMetrics({
+                stt: metrics.stt,
+                llm: metrics.llm,
+                tts: metrics.tts,
+                total: metrics.total,
+                confidence: metrics.confidence,
+                emotion: metrics.emotion
+            });
+
+            setIsSimulating(false);
+            setSimulatingStep(0);
+            setIsPlayingSynthesised(true);
+
+            // Animate wave equalizer for 4.5 seconds to represent speech synthesis playback
+            setTimeout(() => {
+                setIsPlayingSynthesised(false);
+            }, 4500);
+
+        }, 1100);
+    };
+
+    const handleSendCustomMessage = async () => {
+        if (!customClientMessage.trim()) return;
+        const dbId = profile.dbId;
+        if (!dbId) return;
+
+        const msg = customClientMessage;
+        setCustomClientMessage("");
+
+        const randomMetrics = {
+            stt: 110 + Math.floor(Math.random() * 20),
+            llm: 290 + Math.floor(Math.random() * 50),
+            tts: 120 + Math.floor(Math.random() * 30),
+            confidence: Number((95 + Math.random() * 4).toFixed(1)),
+            emotion: emotionalStyle,
+            total: 0
+        };
+        randomMetrics.total = randomMetrics.stt + randomMetrics.llm + randomMetrics.tts;
+
+        try {
+            setIsSimulating(true);
+            setIsPlayingSynthesised(false);
+            setSimulatingStep(1); // Customer speaking (STT)
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            setSimulationTranscript(prev => [...prev, { sender: "client", text: msg, time: timeStr }]);
+
+            await new Promise(r => setTimeout(r, 300));
+            setSimulatingStep(2); // AI Processing (LLM)
+
+            // Call real backend route proxying to digital employee chatbot
+            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/chat`, {
+                method: 'POST',
+                body: { messageText: msg }
+            });
+
+            setSimulatingStep(3); // AI Speaking (TTS)
+            await new Promise(r => setTimeout(r, 400));
+
+            const responseText = res && res.success && res.message ? res.message : `I am listening, tell me more.`;
+            const responseTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+            setSimulationTranscript(prev => [...prev, { sender: "agent", text: responseText, time: responseTimeStr }]);
+            setSimulatedMetrics({
+                stt: randomMetrics.stt,
+                llm: randomMetrics.llm,
+                tts: randomMetrics.tts,
+                total: randomMetrics.total,
+                confidence: randomMetrics.confidence,
+                emotion: randomMetrics.emotion
+            });
+
+            setIsSimulating(false);
+            setSimulatingStep(0);
+            setIsPlayingSynthesised(true);
+
+            setTimeout(() => {
+                setIsPlayingSynthesised(false);
+            }, 4500);
+
+        } catch (err) {
+            // Fallback to local hardcoded mock responses if backend is offline
+            let response = `Sure, let me check the directives for ${agentName}. I will query our cognitive repository and contact you back on details shortly.`;
+            const text = msg.toLowerCase();
+            if (text.includes("price") || text.includes("cost") || text.includes("budget")) {
+                response = `Humare flats ki starting price ₹78L se shuru hoti hai. RERA guidelines ke rules follow karte hue customized payments schemes match karwa di jayegi.`;
+            } else if (text.includes("rera") || text.includes("approve")) {
+                response = `Maya Infratech fully RERA approved projects design karti hai. RERA number UPRERAPRJ9402 hai. Pure safety compliance checks applied.`;
+            } else if (text.includes("visit") || text.includes("site") || text.includes("address")) {
+                response = `Aap Sunday site visit schedule kar sakte hain, main coordinates and complimentary driver cab reference details SMS kar dunga.`;
+            }
+
+            const responseTimeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            setSimulationTranscript(prev => [...prev, { sender: "agent", text: response, time: responseTimeStr }]);
+            setSimulatedMetrics(randomMetrics);
+
+            setIsSimulating(false);
+            setSimulatingStep(0);
+            setIsPlayingSynthesised(true);
+
+            setTimeout(() => {
+                setIsPlayingSynthesised(false);
+            }, 4500);
+        }
+    };
+
+    const clearSimulationHistory = () => {
+        setSimulationTranscript([]);
+        setIsPlayingSynthesised(false);
+        setSimulatedMetrics({ stt: 0, llm: 0, tts: 0, total: 0, confidence: 0, emotion: "None" });
+    };
+
+    return (
+        <div className="ai-command-center-container">
+            {/* Header console */}
+            <div className="aicc-header">
+                <div className="aicc-title-area">
+                    <h1>
+                        <Bot size={28} style={{ color: "var(--accent-indigo)" }} />
+                        <span>AI Agent Control Center</span>
+                    </h1>
+                    <p>Configure, train, monitor, and audit your enterprise AI digital employees.</p>
+                </div>
+                <div className="aicc-controls" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    
+                    {/* Capacity Preset Buttons */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", border: "1px solid var(--glass-border)", padding: "2px 6px", borderRadius: "8px", background: "rgba(255, 255, 255, 0.5)" }}>
+                        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", marginRight: "4px" }}>Capacity:</span>
+                        {[5, 10, 20, 50].map(preset => {
+                            const maxVal = profile.workflow ? (profile.workflow.maxConcurrent || 2) : 2;
+                            return (
+                                <button
+                                    key={preset}
+                                    onClick={async () => {
+                                        const dbId = profile.dbId;
+                                        if (!dbId) return;
+                                        try {
+                                            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/capacity`, {
+                                                method: "PUT",
+                                                body: { max_concurrent_calls: preset }
+                                            });
+                                            if (res.success) {
+                                                setProfiles(prev => {
+                                                    const next = { ...prev };
+                                                    if (next[selectedAgent]) {
+                                                        next[selectedAgent].workflow.maxConcurrent = preset;
+                                                    }
+                                                    return next;
+                                                });
+                                                addToast({
+                                                    type: "success",
+                                                    title: "Capacity Updated",
+                                                    message: `Trunk concurrency set to ${preset} lines.`
+                                                });
+                                            }
+                                        } catch (e) {
+                                            setProfiles(prev => {
+                                                const next = { ...prev };
+                                                if (next[selectedAgent]) {
+                                                    next[selectedAgent].workflow.maxConcurrent = preset;
+                                                }
+                                                return next;
+                                            });
+                                        }
+                                    }}
+                                    style={{
+                                        padding: "3px 6px",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 700,
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                        background: maxVal === preset ? "var(--accent-indigo)" : "rgba(0,0,0,0.05)",
+                                        color: maxVal === preset ? "white" : "var(--text-secondary)"
+                                    }}
+                                >
+                                    {preset}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Pause / Resume Campaign Button */}
+                    <button
+                        onClick={async () => {
+                            const dbId = profile.dbId;
+                            if (!dbId) return;
+                            const isPaused = profile.status === 'paused';
+                            const endpoint = isPaused ? 'resume' : 'pause';
+                            try {
+                                const res = await apiFetch(`/api/v1/ai/employees/${dbId}/${endpoint}`, { method: 'POST' });
+                                if (res.success) {
+                                    setProfiles(prev => {
+                                        const next = { ...prev };
+                                        if (next[selectedAgent]) {
+                                            next[selectedAgent].status = res.data.current_status;
+                                        }
+                                        return next;
+                                    });
+                                    addToast({
+                                        type: "success",
+                                        title: isPaused ? "AI Campaign Resumed" : "AI Campaign Paused",
+                                        message: `Successfully updated campaign status for ${profile.name}.`
+                                    });
+                                }
+                            } catch (e) {
+                                setProfiles(prev => {
+                                    const next = { ...prev };
+                                    if (next[selectedAgent]) {
+                                        next[selectedAgent].status = isPaused ? 'online' : 'paused';
+                                    }
+                                    return next;
+                                });
+                                addToast({
+                                    type: "success",
+                                    title: isPaused ? "AI Campaign Resumed (Demo)" : "AI Campaign Paused (Demo)",
+                                    message: `Successfully updated campaign status for ${profile.name}.`
+                                });
+                            }
+                        }}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            padding: "6px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid var(--glass-border)",
+                            background: profile.status === 'paused' ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                            color: profile.status === 'paused' ? "#16a34a" : "#dc2626",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            fontSize: "0.8rem"
+                        }}
+                    >
+                        {profile.status === 'paused' ? <Play size={13} /> : <Pause size={13} />}
+                        {profile.status === 'paused' ? "Resume AI" : "Pause AI"}
+                    </button>
+
+                    <div className="aicc-status-indicator">
+                        <span className={`status-dot-pulse ${profile.status}`} />
+                        <span style={{ textTransform: "capitalize" }}>{profile.status.replace("_", " ")}</span>
+                    </div>
+                    <div className="aicc-select-wrapper">
+                        <select
+                            value={selectedAgent}
+                            onChange={(e) => handleSwitchAgent(e.target.value)}
+                            className="aicc-select"
+                        >
+                            <option value="rohan">Rohan (Sales)</option>
+                            <option value="neha">Neha (Accountant)</option>
+                            <option value="monika">Monika (Receptionist)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Dynamic employee enterprise context bar */}
+            <div className="aicc-card" style={{ marginBottom: "24px", background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px" }}>
+                <div className="aicc-employee-context-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: "16px", alignItems: "center" }}>
+                    
+                    {/* Avatar & Name Info */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div style={{
+                            width: "42px", height: "42px", borderRadius: "8px", background: "rgba(99, 102, 241, 0.1)",
+                            border: "1px solid rgba(99, 102, 241, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem"
+                        }}>
+                            {profile.role === "rohan" ? "👤" : profile.role === "neha" ? "👩‍💼" : "👩‍💻"}
+                        </div>
+                        <div>
+                            <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.name}</div>
+                            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>
+                                {profile.role === "rohan" && "Sales AI Agent"}
+                                {profile.role === "neha" && "Accountant AI Agent"}
+                                {profile.role === "monika" && "Receptionist AI Agent"}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Badge 1: Accuracy */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Acc Rating</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#166534", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%" }} />
+                            {profile.role === "rohan" ? "94.0%" : profile.role === "neha" ? "96.0%" : "98.0%"}
+                        </div>
+                    </div>
+
+                    {/* Badge 2: RAG Coverage */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
+                            RAG Coverage
+                            <span className="aicc-info-icon" title="% of queries answered from the Knowledge Base vs. LLM fallback. Higher = better knowledge coverage.">i</span>
+                        </div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "84.5%" : profile.role === "neha" ? "92.0%" : "75.0%"}
+                        </div>
+                    </div>
+
+                    {/* Badge 3: Confidence */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
+                            Confidence
+                            <span className="aicc-info-icon" title="Average model certainty score (0–100%) across all AI responses in the selected period. Below 70% triggers coaching alerts.">i</span>
+                        </div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "98.2%" : profile.role === "neha" ? "99.1%" : "97.5%"}
+                        </div>
+                    </div>
+
+                    {/* Badge 4: Languages */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Languages</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "English" : profile.role === "neha" ? "Eng/Hindi" : "English"}
+                        </div>
+                    </div>
+
+                    {/* Badge 5: Active Calls */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Active Calls</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: profile.status === "on_call" ? "#b91c1c" : "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "1 Call" : profile.role === "neha" ? "0 Calls" : "2 Calls"}
+                        </div>
+                    </div>
+
+                    {/* Badge 6: Escalation % */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Escalation %</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "2.2%" : profile.role === "neha" ? "1.1%" : "0.5%"}
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            {/* Row 1 Tab Navigation */}
+            <div className="aicc-tabs-nav" style={{ gap: "3px", padding: "6px" }}>
+                <button onClick={() => setActiveTab("overview")} className={`aicc-tab-btn tab-overview ${activeTab === "overview" ? "active" : ""}`}>
+                    <Activity size={16} /> Overview
+                </button>
+                <button onClick={() => setActiveTab("persona")} className={`aicc-tab-btn tab-persona ${activeTab === "persona" ? "active" : ""}`}>
+                    <GraduationCap size={16} /> Personality
+                </button>
+                <button onClick={() => setActiveTab("knowledge")} className={`aicc-tab-btn tab-knowledge ${activeTab === "knowledge" ? "active" : ""}`}>
+                    <Brain size={16} /> Knowledge
+                </button>
+                <button onClick={() => setActiveTab("voice")} className={`aicc-tab-btn tab-voice ${activeTab === "voice" ? "active" : ""}`}>
+                    <Phone size={16} /> Voice
+                </button>
+                <button onClick={() => setActiveTab("workflow")} className={`aicc-tab-btn tab-workflow ${activeTab === "workflow" ? "active" : ""}`}>
+                    <Calendar size={16} /> Workflow
+                </button>
+                <button onClick={() => setActiveTab("training")} className={`aicc-tab-btn tab-training ${activeTab === "training" ? "active" : ""}`}>
+                    <GraduationCap size={16} style={{ transform: "rotateY(180deg)" }} /> Training
+                </button>
+                <button onClick={() => setActiveTab("playground")} className={`aicc-tab-btn tab-playground ${activeTab === "playground" ? "active" : ""}`}>
+                    <Bot size={16} /> Playground
+                </button>
+                <button onClick={() => setActiveTab("monitor")} className={`aicc-tab-btn tab-monitor ${activeTab === "monitor" ? "active" : ""}`}>
+                    <Activity size={16} /> Live Monitor
+                </button>
+                
+                <div style={{ flex: 1 }} />
+                
+                <button 
+                    onClick={() => setRow2Expanded(!row2Expanded)}
+                    className="aicc-tab-btn" 
+                    style={{ padding: "10px", width: "40px", justifyContent: "center", background: "rgba(226, 232, 240, 0.4)", color: "var(--text-primary)" }}
+                    title="Toggle Advanced Tabs (Row 2)"
+                    id="aicc_row2_toggle_btn"
+                >
+                    {row2Expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </button>
+            </div>
+
+            {/* Row 2 Tab Navigation (Collapsible) */}
+            {row2Expanded && (
+                <div className="aicc-tabs-nav" style={{ gap: "3px", padding: "6px", marginTop: "-16px", marginBottom: "24px" }}>
+                    <button onClick={() => setActiveTab("analytics")} className={`aicc-tab-btn tab-overview ${activeTab === "analytics" ? "active" : ""}`}>
+                        <BarChart3 size={16} /> Analytics
+                    </button>
+                    <button onClick={() => setActiveTab("security")} className={`aicc-tab-btn tab-persona ${activeTab === "security" ? "active" : ""}`}>
+                        <Shield size={16} /> Security
+                    </button>
+                    <button onClick={() => setActiveTab("coaching")} className={`aicc-tab-btn tab-training ${activeTab === "coaching" ? "active" : ""}`}>
+                        <GraduationCap size={16} /> Coaching
+                    </button>
+                    <button onClick={() => setActiveTab("telephony")} className={`aicc-tab-btn tab-voice ${activeTab === "telephony" ? "active" : ""}`}>
+                        <Radio size={16} /> Telephony
+                    </button>
+                </div>
+            )}
+
+            {/* ─── TAB 1: OVERVIEW ─────────────────────────────────────────── */}
+            {activeTab === "overview" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+                    {/* Time-range selector + period label row */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 700 }}>
+                            Showing metrics for: <strong style={{ color: "var(--text-primary)" }}>{dashPeriod === "today" ? "Today" : dashPeriod === "7d" ? "Last 7 Days" : "Last 30 Days"}</strong>
+                        </span>
+                        <div className="aicc-period-selector">
+                            {(["today", "7d", "30d"] as const).map(p => (
+                                <button key={p} className={`aicc-period-btn ${dashPeriod === p ? "active" : ""}`} onClick={() => setDashPeriod(p)}>
+                                    {p === "today" ? "Today" : p === "7d" ? "7D" : "30D"}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* KPI Stats Grid */}
+                    <div className="aicc-stats-grid">
+                        <div className="aicc-card aicc-stat-card">
+                            <div className="aicc-stat-top">
+                                <span className="aicc-stat-label">Total Leads Handled</span>
+                                <span className="aicc-stat-badge up"><TrendingUp size={10} /> {profile.stats.totalLeads.change}</span>
+                            </div>
+                            <div className="aicc-stat-val">{dashPeriod === "today" ? Math.round(profile.stats.totalLeads.val / 30) : dashPeriod === "7d" ? Math.round(profile.stats.totalLeads.val / 4) : profile.stats.totalLeads.val}</div>
+                        </div>
+                        <div className="aicc-card aicc-stat-card">
+                            <div className="aicc-stat-top">
+                                <span className="aicc-stat-label">Active Conversations</span>
+                                <span className="aicc-stat-badge up"><TrendingUp size={10} /> {profile.stats.activeConvs.change}</span>
+                            </div>
+                            <div className="aicc-stat-val">{profile.stats.activeConvs.val}</div>
+                        </div>
+                        <div className="aicc-card aicc-stat-card">
+                            <div className="aicc-stat-top">
+                                <span className="aicc-stat-label">Revenue Impact</span>
+                                <span className="aicc-stat-badge up"><TrendingUp size={10} /> {profile.stats.revenue.change}</span>
+                            </div>
+                            <div className="aicc-stat-val">{dashPeriod === "today" ? "₹0.6L" : dashPeriod === "7d" ? "₹4.3L" : profile.stats.revenue.val}</div>
+                        </div>
+                        <div className="aicc-card aicc-stat-card">
+                            <div className="aicc-stat-top">
+                                <span className="aicc-stat-label">AI Score (Accuracy)</span>
+                                <span className="aicc-stat-badge up"><TrendingUp size={10} /> {profile.stats.aiScore.change}</span>
+                            </div>
+                            <div className="aicc-stat-val">{profile.stats.aiScore.val}</div>
+                        </div>
+                    </div>
+
+                    {/* Rohan-only: Live Call Stats card */}
+                    {selectedAgent === "rohan" && (
+                        <div className="aicc-card" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.04), rgba(99,102,241,0.04))", border: "1px solid rgba(239,68,68,0.15)" }}>
+                            <h3 className="aicc-card-title" style={{ marginBottom: "16px" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <span className="aicc-live-dot" /> Live Telephony Stats — Rohan (Sales)
+                                </span>
+                                <Phone size={16} style={{ color: "#ef4444" }} />
+                            </h3>
+                            <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                                <div className="aicc-live-call-stat">
+                                    <div className="aicc-live-call-stat-val">18</div>
+                                    <div className="aicc-live-call-stat-label">Calls Today</div>
+                                </div>
+                                <div className="aicc-live-call-stat">
+                                    <div className="aicc-live-call-stat-val">4m 12s</div>
+                                    <div className="aicc-live-call-stat-label">Avg Duration</div>
+                                </div>
+                                <div className="aicc-live-call-stat" style={{ border: "1px solid rgba(239,68,68,0.3)", background: "#fff5f5" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+                                        <span className="aicc-live-dot" style={{ width: "6px", height: "6px", marginRight: 0 }} /> 1 Live
+                                    </div>
+                                    <div className="aicc-live-call-stat-label">Right Now</div>
+                                </div>
+                                <div className="aicc-live-call-stat">
+                                    <div className="aicc-live-call-stat-val">92%</div>
+                                    <div className="aicc-live-call-stat-label">Connect Rate</div>
+                                </div>
+                                <div className="aicc-live-call-stat">
+                                    <div className="aicc-live-call-stat-val">2.2%</div>
+                                    <div className="aicc-live-call-stat-label">Escalation</div>
+                                </div>
+                            </div>
+                            <div style={{ background: "rgba(15,23,42,0.04)", borderRadius: "8px", padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
+                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "8px" }}>Last Completed Call Transcript Preview</div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <div style={{ fontSize: "0.75rem", background: "#6366f1", color: "white", padding: "5px 10px", borderRadius: "6px", alignSelf: "flex-start", maxWidth: "85%" }}>
+                                        <strong>Rohan:</strong> Rahul ji, BKC Phase 2 mein 3BHK starting ₹2.1Cr hai. Pre-approval loan assistance bhi available hai.
+                                    </div>
+                                    <div style={{ fontSize: "0.75rem", background: "#f1f5f9", color: "var(--text-primary)", padding: "5px 10px", borderRadius: "6px", alignSelf: "flex-end", maxWidth: "85%" }}>
+                                        <strong>Lead:</strong> Site visit Sunday ko possible hai kya?
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Recent Conversations + Pipeline */}
+                    <div className="aicc-overview-layout">
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Recent Conversations</span>
+                                <MessageSquare size={16} style={{ color: "var(--text-secondary)" }} />
+                            </h3>
+                            <div className="cc-conv-list">
+                                {profile.recentConvs.map((c: any) => (
+                                    <div key={c.id} className="cc-conv-item">
+                                        <div className="cc-conv-avatar">{c.avatar}</div>
+                                        <div className="cc-conv-info">
+                                            <div className="cc-conv-name-row">
+                                                <span className="cc-conv-name">{c.name}</span>
+                                                <span className="cc-conv-time">{c.time}</span>
+                                            </div>
+                                            <div className="cc-conv-msg">{c.msg}</div>
+                                        </div>
+                                        {c.unread > 0 && <span className="cc-conv-badge">{c.unread}</span>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Leads Pipeline</span>
+                                <Target size={16} style={{ color: "var(--text-secondary)" }} />
+                            </h3>
+                            <div className="aicc-pipeline-cols">
+                                <div className="aicc-pipeline-col">
+                                    <div className="aicc-pipeline-col-hdr"><span>New</span><span className="aicc-pipeline-count">{profile.pipeline.new.length}</span></div>
+                                    {profile.pipeline.new.map((l: any) => (
+                                        <div key={l.id} className="aicc-pipeline-card" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700 }}>{l.name}</h4>
+                                                <p style={{ margin: "2px 0 0 0", fontSize: "0.7rem", color: "var(--text-secondary)" }}>{l.source}</p>
+                                            </div>
+                                            <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+                                                <button
+                                                    onClick={async () => {
+                                                        const dbId = profile.dbId;
+                                                        if (!dbId) return;
+                                                        try {
+                                                            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/call-now`, {
+                                                                method: "POST",
+                                                                body: { leadId: l.id || "rp1" }
+                                                            });
+                                                            if (res.success) {
+                                                                addToast({
+                                                                    type: "success",
+                                                                    title: "Immediate Call",
+                                                                    message: `📞 Triggered immediate outbound call with ${profile.name} for ${l.name}.`
+                                                                });
+                                                            }
+                                                        } catch (e) {
+                                                            addToast({
+                                                                type: "success",
+                                                                title: "Immediate Call (Demo)",
+                                                                message: `📞 Triggered immediate outbound call with ${profile.name} for ${l.name}.`
+                                                            });
+                                                        }
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(99, 102, 241, 0.12)", color: "var(--accent-indigo)", border: "1px solid rgba(99, 102, 241, 0.2)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer" }}
+                                                >
+                                                    🤖 Call Now
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Lead Assigned",
+                                                            message: `👤 Reassigned ${l.name} to Human Agent (Rahul) for manual follow-up.`
+                                                        });
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(15, 23, 42, 0.05)", border: "1px solid rgba(15, 23, 42, 0.1)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)", cursor: "pointer" }}
+                                                >
+                                                    Assign Human
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="aicc-pipeline-col">
+                                    <div className="aicc-pipeline-col-hdr"><span>Contacted</span><span className="aicc-pipeline-count">{profile.pipeline.contacted.length}</span></div>
+                                    {profile.pipeline.contacted.map((l: any) => (
+                                        <div key={l.id} className="aicc-pipeline-card" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700 }}>{l.name}</h4>
+                                                <p style={{ margin: "2px 0 0 0", fontSize: "0.7rem", color: "var(--text-secondary)" }}>{l.source}</p>
+                                            </div>
+                                            <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+                                                <button
+                                                    onClick={async () => {
+                                                        const dbId = profile.dbId;
+                                                        if (!dbId) return;
+                                                        try {
+                                                            const res = await apiFetch(`/api/v1/ai/employees/${dbId}/call-now`, {
+                                                                method: "POST",
+                                                                body: { leadId: l.id || "rp4" }
+                                                            });
+                                                            if (res.success) {
+                                                                addToast({
+                                                                    type: "success",
+                                                                    title: "Immediate Call",
+                                                                    message: `📞 Triggered immediate outbound call with ${profile.name} for ${l.name}.`
+                                                                });
+                                                            }
+                                                        } catch (e) {
+                                                            addToast({
+                                                                type: "success",
+                                                                title: "Immediate Call (Demo)",
+                                                                message: `📞 Triggered immediate outbound call with ${profile.name} for ${l.name}.`
+                                                            });
+                                                        }
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(99, 102, 241, 0.12)", color: "var(--accent-indigo)", border: "1px solid rgba(99, 102, 241, 0.2)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer" }}
+                                                >
+                                                    🤖 Call Now
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Lead Assigned",
+                                                            message: `👤 Reassigned ${l.name} to Human Agent (Rahul) for manual follow-up.`
+                                                        });
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(15, 23, 42, 0.05)", border: "1px solid rgba(15, 23, 42, 0.1)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)", cursor: "pointer" }}
+                                                >
+                                                    Assign Human
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="aicc-pipeline-col">
+                                    <div className="aicc-pipeline-col-hdr"><span>Qualified</span><span className="aicc-pipeline-count">{profile.pipeline.qualified.length}</span></div>
+                                    {profile.pipeline.qualified.map((l: any) => (
+                                        <div key={l.id} className="aicc-pipeline-card" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: "0.85rem", fontWeight: 700 }}>{l.name}</h4>
+                                                <p style={{ margin: "2px 0 0 0", fontSize: "0.7rem", color: "var(--text-secondary)" }}>{l.source}</p>
+                                            </div>
+                                            <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+                                                <button
+                                                    onClick={() => {
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Lead Re-Queued",
+                                                            message: `🤖 Re-assigned ${l.name} to Rohan AI Autopilot queue.`
+                                                        });
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(99, 102, 241, 0.05)", border: "1px solid rgba(99, 102, 241, 0.1)", color: "var(--accent-indigo)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 700, cursor: "pointer" }}
+                                                >
+                                                    Assign Rohan
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Lead Assigned",
+                                                            message: `👤 Reassigned ${l.name} to Human Agent (Rahul) for manual follow-up.`
+                                                        });
+                                                    }}
+                                                    style={{ flex: 1, padding: "4px 6px", background: "rgba(15, 23, 42, 0.05)", border: "1px solid rgba(15, 23, 42, 0.1)", borderRadius: "6px", fontSize: "0.7rem", fontWeight: 600, color: "var(--text-primary)", cursor: "pointer" }}
+                                                >
+                                                    Assign Human
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="aicc-pipeline-col">
+                                    <div className="aicc-pipeline-col-hdr"><span>Won</span><span className="aicc-pipeline-count">{profile.pipeline.won.length}</span></div>
+                                    {profile.pipeline.won.map((l: any) => (<div key={l.id} className="aicc-pipeline-card"><h4>{l.name}</h4><p>{l.source}</p></div>))}
+                                </div>
+                            </div>
+                            {/* Pipeline conversion summary footer */}
+                            {(() => {
+                                const total = profile.pipeline.new.length + profile.pipeline.contacted.length + profile.pipeline.qualified.length + profile.pipeline.won.length;
+                                const convRate = total > 0 ? Math.round((profile.pipeline.won.length / total) * 100) : 0;
+                                return (
+                                    <div style={{ marginTop: "12px", padding: "10px 12px", background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                                        <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", fontWeight: 700 }}>New → Won Conversion</span>
+                                        <span style={{ fontSize: "0.8rem", fontWeight: 900, color: convRate >= 20 ? "#15803d" : "#b45309" }}>{convRate}%</span>
+                                        <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>·</span>
+                                        <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)" }}>Revenue Impact: <strong style={{ color: "var(--text-primary)" }}>{profile.stats.revenue.val}</strong></span>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* Agent Performance Comparison Matrix */}
+                    <div className="aicc-card aicc-comparison-matrix-card">
+                        <h3 className="aicc-card-title">
+                            <span>Agent Performance Comparison Matrix</span>
+                            <div style={{ display: "flex", gap: "6px" }}>
+                                {([{ k: "accuracy" as const, label: "Accuracy" }, { k: "latency" as const, label: "Latency" }]).map(s => (
+                                    <button key={s.k}
+                                        onClick={() => setMatrixSort(prev => ({ key: s.k, dir: prev.key === s.k && prev.dir === "desc" ? "asc" : "desc" }))}
+                                        style={{ fontSize: "0.65rem", fontWeight: 700, padding: "3px 8px", borderRadius: "5px", border: "1px solid var(--glass-border)", cursor: "pointer", background: matrixSort.key === s.k ? "var(--accent-indigo)" : "white", color: matrixSort.key === s.k ? "white" : "var(--text-secondary)" }}>
+                                        {s.label} {matrixSort.key === s.k ? (matrixSort.dir === "desc" ? "↓" : "↑") : "↕"}
+                                    </button>
+                                ))}
+                            </div>
+                        </h3>
+                        {/* Threshold alert legend */}
+                        <div style={{ display: "flex", gap: "12px", marginBottom: "12px", fontSize: "0.65rem", color: "var(--text-secondary)" }}>
+                            <span>Thresholds:</span>
+                            <span style={{ color: "#ef4444", fontWeight: 700 }}>⚠ Accuracy &lt; 90%</span>
+                            <span style={{ color: "#ef4444", fontWeight: 700 }}>⚠ Latency &gt; 800ms</span>
+                        </div>
+                        <div className="aicc-comparison-grid">
+                            <div className="aicc-comparison-header-row">
+                                <div className="aicc-comp-cell text-left">Agent Twin</div>
+                                <div className="aicc-comp-cell">Accuracy Rating</div>
+                                <div className="aicc-comp-cell">Avg Latency</div>
+                                <div className="aicc-comp-cell">Interaction Volume</div>
+                            </div>
+                            {[
+                                { avatar: "RM", avatarBg: "#e0e7ff", avatarCol: "#4f46e5", name: "Rohan Mishra", tag: "Sales & Lead Qualification", acc: 94, latency: 540, latencyPct: 54, vol: "1,240 calls", volPct: 82 },
+                                { avatar: "NS", avatarBg: "#ccfbf1", avatarCol: "#0d9488", name: "Neha Sharma", tag: "Accounts & Installment Billing", acc: 96, latency: 555, latencyPct: 55, vol: "820 calls", volPct: 54 },
+                                { avatar: "MK", avatarBg: "#fce7f3", avatarCol: "#db2777", name: "Monika Kapoor", tag: "Directory Routing & Receptionist", acc: 98, latency: 500, latencyPct: 50, vol: "1,510 calls", volPct: 100 },
+                            ].sort((a, b) => {
+                                const val = matrixSort.key === "accuracy" ? a.acc - b.acc : a.latency - b.latency;
+                                return matrixSort.dir === "desc" ? -val : val;
+                            }).map(agent => {
+                                const hasAlert = agent.acc < 90 || agent.latency > 800;
+                                return (
+                                    <div key={agent.name} className={`aicc-comparison-row${hasAlert ? " alert-row" : ""}`}>
+                                        <div className="aicc-comp-cell agent-info text-left">
+                                            <div className="aicc-avatar mini" style={{ background: agent.avatarBg, color: agent.avatarCol }}>{agent.avatar}</div>
+                                            <div>
+                                                <div className="agent-name">
+                                                    {agent.name}
+                                                    {hasAlert && <span className="aicc-threshold-badge">⚠ Alert</span>}
+                                                </div>
+                                                <div className="agent-tag">{agent.tag}</div>
+                                            </div>
+                                        </div>
+                                        <div className="aicc-comp-cell">
+                                            <div className="meter-label" style={{ color: agent.acc < 90 ? "#ef4444" : undefined }}>{agent.acc}%</div>
+                                            <div className="meter-bar"><div className="meter-fill" style={{ width: `${agent.acc}%`, background: agent.acc < 90 ? "#ef4444" : undefined }} /></div>
+                                        </div>
+                                        <div className="aicc-comp-cell">
+                                            <div className="latency-val" style={{ color: agent.latency > 800 ? "#ef4444" : undefined }}>{agent.latency} ms</div>
+                                            <div className="latency-bar"><div className="latency-fill" style={{ width: `${agent.latencyPct}%`, background: agent.latency > 800 ? "#ef4444" : undefined }} /></div>
+                                        </div>
+                                        <div className="aicc-comp-cell">
+                                            <div className="volume-val">{agent.vol}</div>
+                                            <div className="volume-bar"><div className="volume-fill" style={{ width: `${agent.volPct}%` }} /></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 2: IDENTITY ────────────────────────────────────────── */}
+            {activeTab === "persona" && (
+                <div className="aicc-card">
+                    <h3 className="aicc-card-title">
+                        <span>Persona Configuration</span>
+                        <GraduationCap size={18} style={{ color: "var(--accent-indigo)" }} />
+                    </h3>
+                    <div className="aicc-form-grid">
+                        <div className="aicc-form-group">
+                            <label>Agent Name</label>
+                            <input
+                                type="text"
+                                className="aicc-input"
+                                value={agentName}
+                                onChange={(e) => setAgentName(e.target.value)}
+                            />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Base Language</label>
+                            <select
+                                className="aicc-input"
+                                value={language}
+                                onChange={(e) => setLanguage(e.target.value)}
+                            >
+                                <option value="hinglish">Hinglish (Hindi + English mix)</option>
+                                <option value="english">English (Official Corporate)</option>
+                                <option value="hindi">Hindi (Pure Vernacular)</option>
+                                <option value="marathi">Marathi</option>
+                            </select>
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Accent & Dialect Profile</label>
+                            <input
+                                type="text"
+                                className="aicc-input"
+                                value={dialect}
+                                onChange={(e) => setDialect(e.target.value)}
+                            />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Formality Level</label>
+                            <div className="aicc-slider-row">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={formality}
+                                    onChange={(e) => setFormality(Number(e.target.value))}
+                                />
+                                <span className="aicc-slider-val">{formality}%</span>
+                            </div>
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Humor & Empathy</label>
+                            <div className="aicc-slider-row">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={humor}
+                                    onChange={(e) => setHumor(Number(e.target.value))}
+                                />
+                                <span className="aicc-slider-val">{humor}%</span>
+                            </div>
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Assertiveness & Closing Intent</label>
+                            <div className="aicc-slider-row">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={assertiveness}
+                                    onChange={(e) => setAssertiveness(Number(e.target.value))}
+                                />
+                                <span className="aicc-slider-val">{assertiveness}%</span>
+                            </div>
+                        </div>
+                        <div className="aicc-form-group full-width">
+                            <label>Filler Words & Verbal Crutches</label>
+                            <div className="aicc-tag-input-row">
+                                <input
+                                    type="text"
+                                    placeholder="Add filler word (e.g. absolutely, matlab, dekhiye)"
+                                    className="aicc-input"
+                                    style={{ flex: 1 }}
+                                    value={fillerWordInput}
+                                    onChange={(e) => setFillerWordInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && addFillerWord()}
+                                />
+                                <button className="aicc-btn-secondary" onClick={addFillerWord}>Add</button>
+                            </div>
+                            <div className="aicc-tags-list">
+                                {fillerWords.map((word) => (
+                                    <span key={word} className="aicc-tag">
+                                        {word}
+                                        <button onClick={() => removeFillerWord(word)}>×</button>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="aicc-form-group full-width">
+                            <label>Dynamic Greeting Templates</label>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, width: "100px", color: "var(--text-secondary)" }}>🌅 Morning:</span>
+                                    <input type="text" className="aicc-input" style={{ flex: 1 }} defaultValue={profile.persona.greetingMorning} />
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, width: "100px", color: "var(--text-secondary)" }}>☀️ Afternoon:</span>
+                                    <input type="text" className="aicc-input" style={{ flex: 1 }} defaultValue={profile.persona.greetingAfternoon} />
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, width: "100px", color: "var(--text-secondary)" }}>🌙 Evening:</span>
+                                    <input type="text" className="aicc-input" style={{ flex: 1 }} defaultValue={profile.persona.greetingEvening} />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="aicc-form-group full-width" style={{ marginTop: "10px" }}>
+                            <button className="aicc-btn-primary" onClick={handleSavePersona}>
+                                <Save size={16} /> Save Persona Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 3: KNOWLEDGE ───────────────────────────────────────── */}
+            {activeTab === "knowledge" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div className="aicc-knowledge-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px", backdropFilter: "blur(12px)" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>RAG Knowledge Files</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{dynamicDocCount}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Total Chunks Indexed</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{dynamicChunksCount}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Vector Core Status</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%" }} /> Active
+                            </span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Sync Database</span>
+                            <button onClick={triggerDbSync} className="aicc-btn-secondary" style={{ padding: "4px 8px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px", width: "fit-content", alignSelf: "flex-start", marginTop: "2px" }}>
+                                <RefreshCw size={10} /> {syncRelativeTime}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Knowledge Base Ingestion (RAG)</span>
+                            <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            <div className="aicc-dropzone" onClick={simulateRAGIngest}>
+                                {isIngesting ? (
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                                        <RefreshCw className="animate-spin" size={32} style={{ color: "var(--accent-indigo)" }} />
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>
+                                            {ingestStatus === "uploading" && `Uploading document... (${ingestProgress}%)`}
+                                            {ingestStatus === "chunking" && `Auto-chunking text segments (600 chars)... (${ingestProgress}%)`}
+                                            {ingestStatus === "embedding" && `Generating cosine similarity vectors via OpenAI... (${ingestProgress}%)`}
+                                        </span>
+                                        <div style={{ width: "200px", height: "6px", background: "rgba(99,102,241,0.1)", borderRadius: "3px", overflow: "hidden" }}>
+                                            <div style={{ width: `${ingestProgress}%`, height: "100%", background: "var(--accent-indigo)", transition: "width 0.2s" }} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <Upload className="aicc-dropzone-icon" size={32} />
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>Click to upload custom PDFs, DOCX, or TXT files</span>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>File size limits: 25MB per document. Auto-chunks 600 chars.</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", borderBottom: "1px solid var(--glass-border)", paddingBottom: "12px" }}>
+                                {["All", "Brochures", "FAQs", "Policies"].map((filterName) => (
+                                    <button 
+                                        key={filterName}
+                                        onClick={() => setSelectedCategoryFilter(filterName)}
+                                        style={{
+                                            padding: "6px 12px",
+                                            fontSize: "0.75rem",
+                                            fontWeight: 800,
+                                            borderRadius: "99px",
+                                            border: "1px solid var(--glass-border)",
+                                            background: selectedCategoryFilter === filterName ? "var(--accent-indigo)" : "white",
+                                            color: selectedCategoryFilter === filterName ? "white" : "var(--text-primary)",
+                                            cursor: "pointer",
+                                            transition: "all 0.2s"
+                                        }}
+                                    >
+                                        {filterName}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                    <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-secondary)" }}>Knowledge Sources</label>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Showing {filteredDocs.length} of {knowledgeDocs.length}</span>
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search documents by name or assigned agent..."
+                                        className="aicc-input"
+                                        style={{ flex: 1, padding: "6px 12px", fontSize: "0.8rem" }}
+                                        value={searchDocsQuery}
+                                        onChange={(e) => setSearchDocsQuery(e.target.value)}
+                                    />
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    {filteredDocs.map((doc) => (
+                                        <div 
+                                            key={doc.id}
+                                            className={`aicc-doc-card ${doc.active ? "active" : "inactive"}`}
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                background: doc.active ? "rgba(248, 250, 252, 0.7)" : "rgba(241, 245, 249, 0.4)",
+                                                padding: "12px 16px",
+                                                borderRadius: "10px",
+                                                border: doc.active ? "1px solid var(--glass-border)" : "1px solid rgba(226, 232, 240, 0.8)",
+                                                opacity: doc.active ? 1 : 0.7,
+                                                transition: "all 0.2s ease"
+                                            }}
+                                        >
+                                            <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedDocs.includes(doc.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) setSelectedDocs(prev => [...prev, doc.id]);
+                                                        else setSelectedDocs(prev => prev.filter(id => id !== doc.id));
+                                                    }}
+                                                    style={{ cursor: "pointer", width: "15px", height: "15px", accentColor: "var(--accent-indigo)" }}
+                                                />
+                                                <FileText size={20} style={{ color: doc.active ? "var(--accent-indigo)" : "var(--text-secondary)" }} />
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{doc.name}</div>
+                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                                        <span>Indexed</span>
+                                                        <span>•</span>
+                                                        <span>{doc.date}</span>
+                                                        <span>•</span>
+                                                        <span>{doc.chunks} chunks</span>
+                                                        <span>•</span>
+                                                        <span style={{ color: doc.active ? "#166534" : "#991b1b", fontWeight: 700 }}>
+                                                            {doc.active ? "Ready" : "Disabled"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                                <button
+                                                    onClick={() => toggleDocActive(doc.id)}
+                                                    style={{
+                                                        fontSize: "0.7rem",
+                                                        fontWeight: 800,
+                                                        background: doc.active ? "#dcfce7" : "#fee2e2",
+                                                        color: doc.active ? "#166534" : "#991b1b",
+                                                        padding: "4px 10px",
+                                                        borderRadius: "99px",
+                                                        border: "none",
+                                                        cursor: "pointer"
+                                                    }}
+                                                >
+                                                    {doc.active ? "Active" : "Inactive"}
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmDoc(doc)}
+                                                    style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
+                                                    title="Delete from RAG Index"
+                                                >
+                                                    <Trash2 size={15} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {deleteConfirmDoc && (
+                        <div className="aicc-modal-backdrop" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+                            <div className="aicc-modal-content" style={{ background: "white", borderRadius: "16px", padding: "24px", maxWidth: "450px", width: "90%", boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "12px", color: "#e11d48", marginBottom: "16px" }}>
+                                    <AlertTriangle size={24} />
+                                    <h4 style={{ fontSize: "1.1rem", fontWeight: 800, margin: 0 }}>Confirm Accidental Deletion</h4>
+                                </div>
+                                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: "20px" }}>
+                                    This will remove <strong style={{ color: "var(--text-primary)" }}>{deleteConfirmDoc.name}</strong> from {profile.name}'s active knowledge:
+                                    <br /><br />
+                                    • Indexing Chunks: <strong style={{ color: "var(--text-primary)" }}>{deleteConfirmDoc.chunks} chunks</strong>
+                                    <br />
+                                    • File size: <strong style={{ color: "var(--text-primary)" }}>{deleteConfirmDoc.size}</strong>
+                                    <br /><br />
+                                    Accidental deletion could degrade live calls immediately by losing vector search context rules. Continue?
+                                </p>
+                                <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                                    <button className="aicc-btn-secondary" onClick={() => setDeleteConfirmDoc(null)}>Cancel</button>
+                                    <button className="aicc-btn-primary" style={{ background: "#e11d48" }} onClick={() => executeDeleteDoc(deleteConfirmDoc.id)}>Confirm Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Semantic Vector Search Simulator</span>
+                            <Search size={18} style={{ color: "var(--text-secondary)" }} />
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <div className="aicc-tag-input-row">
+                                <input
+                                    type="text"
+                                    placeholder="Type search queries (e.g., pricing schemes, RERA codes, site visit driver cab)..."
+                                    className="aicc-input"
+                                    style={{ flex: 1 }}
+                                    value={vectorSearchQuery}
+                                    onChange={(e) => setVectorSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && triggerVectorSearch()}
+                                />
+                                <button className="aicc-btn-primary" onClick={triggerVectorSearch}>Search</button>
+                            </div>
+
+                            {vectorSearchResult && (
+                                <div style={{ background: "rgba(248, 250, 252, 0.8)", border: "1px dashed var(--glass-border)", padding: "14px", borderRadius: "8px", fontSize: "0.8rem", color: "var(--text-primary)" }}>
+                                    <div style={{ fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <span style={{ color: "var(--accent-indigo)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <Brain size={14} /> Retrieved Vector Context:
+                                        </span>
+                                        <div style={{ display: "flex", gap: "8px" }}>
+                                            <button 
+                                                onClick={() => {
+                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'up' }));
+                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
+                                                }}
+                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'up' ? "#22c55e" : "var(--text-secondary)" }}
+                                            >
+                                                <ThumbsUp size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'down' }));
+                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
+                                                }}
+                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'down' ? "#e11d48" : "var(--text-secondary)" }}
+                                            >
+                                                <ThumbsDown size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>{vectorSearchResult}</div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="aicc-card aicc-chunk-visualizer-card">
+                        <h3 className="aicc-card-title">
+                            <span>Interactive Vector Chunk Visualizer</span>
+                            <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <div className="aicc-visualizer-layout" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
+                            <div className="aicc-svg-container" style={{ height: "300px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "rgba(248, 250, 252, 0.4)" }}>
+                                <svg width="100%" height="100%" viewBox="0 0 400 300">
+                                    {visualizerNodes.map(node => (
+                                        <line
+                                            key={`l-${node.id}`}
+                                            x1="200"
+                                            y1="150"
+                                            x2={node.x}
+                                            y2={node.y}
+                                            stroke="rgba(99,102,241,0.2)"
+                                            strokeWidth="2"
+                                            strokeDasharray="4"
+                                        />
+                                    ))}
+                                    <circle
+                                        cx="200"
+                                        cy="150"
+                                        r="28"
+                                        fill="#6366f1"
+                                        stroke="#c7d2fe"
+                                        strokeWidth="3"
+                                        style={{ cursor: "pointer" }}
+                                        onClick={() => {
+                                            setSelectedVisualizerNode({ id: "central", name: "Knowledge Base Core", text: `Active agent knowledge database context. Assigned: ${dynamicDocCount} files, ${dynamicChunksCount} chunks.`, similarity: 1.0 });
+                                        }}
+                                    />
+                                    <text x="200" y="154" fill="white" fontSize="9px" fontWeight="800" textAnchor="middle" style={{ pointerEvents: "none" }}>RAG CORE</text>
+                                    
+                                    {visualizerNodes.map(node => {
+                                        const isSelected = selectedVisualizerNode?.id === node.id;
+                                        const nodeColor = selectedAgent === "rohan" ? "#fb923c" : selectedAgent === "neha" ? "#14b8a6" : "#ec4899";
+                                        return (
+                                            <g 
+                                                key={`n-${node.id}`} 
+                                                style={{ cursor: "pointer" }} 
+                                                onClick={() => handleNodeClick(node)}
+                                            >
+                                                <circle
+                                                    cx={node.x}
+                                                    cy={node.y}
+                                                    r={isSelected ? "16" : "12"}
+                                                    fill="#1e293b"
+                                                    stroke={nodeColor}
+                                                    strokeWidth={isSelected ? "3" : "2"}
+                                                />
+                                                <text x={node.x} y={node.y + 3} fill="white" fontSize="8px" fontWeight="800" textAnchor="middle">{node.id.toUpperCase()}</text>
+                                                <text x={node.x} y={node.y - 18} fill="var(--text-secondary)" fontSize="8px" fontWeight="700" textAnchor="middle">{node.name}</text>
+                                            </g>
+                                        );
+                                    })}
+                                </svg>
+                            </div>
+
+                            {selectedVisualizerNode ? (
+                                <div className="aicc-chunk-detail-panel" style={{ padding: "16px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "white", display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    <h4 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                                        Inspector: {selectedVisualizerNode.name}
+                                    </h4>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                        <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "6px" }}>
+                                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Node ID</span>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>{selectedVisualizerNode.id.toUpperCase()}</span>
+                                        </div>
+                                        <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "6px" }}>
+                                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Confidence Weight</span>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#22c55e" }}>{(selectedVisualizerNode.similarity * 100).toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Segment Text</span>
+                                        <p style={{ fontSize: "0.75rem", color: "var(--text-primary)", lineHeight: 1.4, margin: 0, background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                            {selectedVisualizerNode.text}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "white", padding: "20px" }}>
+                                    Select a node on the map to inspect chunking properties
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 4: VOICE CONFIGURATION (WITH CONVERSATION SIMULATOR) ─── */}
+            {activeTab === "voice" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "24px", alignItems: "start" }}>
+                    {/* LEFT PANEL: Voice Configuration Settings & Simulation */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                        
+                        <div className="aicc-card" style={{ background: "rgba(99, 102, 241, 0.03)", border: "1px solid rgba(99, 102, 241, 0.2)", marginTop: 0 }}>
+                            <h4 style={{ fontSize: "0.85rem", fontWeight: 800, margin: "0 0 12px", color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Sparkles size={14} style={{ color: "var(--accent-indigo)" }} />
+                                <span>Call Personality Presets Shortcuts</span>
+                            </h4>
+                            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                                {[
+                                    { name: "Sales agent", style: "Sales Pitch", stability: 0.70, speed: 1.10, emotion: "Persuasive" },
+                                    { name: "Support assistant", style: "Conversational", stability: 0.85, speed: 0.98, emotion: "Empathetic" },
+                                    { name: "Collection collector", style: "Short Answers", stability: 0.90, speed: 1.05, emotion: "Calm" },
+                                    { name: "HR twin recruitment", style: "Detailed", stability: 0.80, speed: 1.0, emotion: "Friendly" },
+                                    { name: "Monika Receptionist front desk", style: "Simple", stability: 0.88, speed: 0.98, emotion: "Cheerful" }
+                                ].map((preset) => (
+                                    <button
+                                        key={preset.name}
+                                        onClick={() => {
+                                            setSpeakingStyle(preset.style);
+                                            setVoiceStability(preset.stability);
+                                            setVoiceSpeechRate(preset.speed);
+                                            setEmotionalStyle(preset.emotion);
+                                            addToast({
+                                                type: "success",
+                                                title: "Preset Profile Loaded",
+                                                message: `Successfully loaded settings for: ${preset.name.split(" ")[0]}.`
+                                            });
+                                        }}
+                                        className="aicc-btn-secondary"
+                                        style={{ padding: "6px 12px", fontSize: "0.75rem", background: "white" }}
+                                    >
+                                        🚀 {preset.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Speech Synthesis Engine Controls</span>
+                                <Phone size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            <div className="aicc-form-grid">
+                                <div className="aicc-form-group">
+                                    <label>ElevenLabs Voice Template Model</label>
+                                    <select className="aicc-input" defaultValue={profile.voice.voiceId}>
+                                        <option value="eleven_rohan_premium_v4">Rohan Premium V4 (Hindi/Hinglish)</option>
+                                        <option value="eleven_neha_finance_v2">Neha Professional V2 (Accounts/Hindi)</option>
+                                        <option value="eleven_monika_frontdesk_v1">Monika FrontDesk V1 (Receptionist)</option>
+                                    </select>
+                                </div>
+                                <div className="aicc-form-group">
+                                    <label>Speaking Style Profile</label>
+                                    <select className="aicc-input" value={speakingStyle} onChange={(e) => setSpeakingStyle(e.target.value)}>
+                                        <option value="Conversational">Conversational (Normal)</option>
+                                        <option value="Sales Pitch">Sales Pitch (High Assertiveness)</option>
+                                        <option value="Short Answers">Short Answers (Speedy/Brief)</option>
+                                        <option value="Detailed">Detailed (Explanatory)</option>
+                                        <option value="Technical">Technical (Formal/Direct)</option>
+                                        <option value="Simple">Simple (Slow paced)</option>
+                                    </select>
+                                </div>
+                                <div className="aicc-form-group">
+                                    <label>Emotional Style Synthesis</label>
+                                    <select className="aicc-input" value={emotionalStyle} onChange={(e) => setEmotionalStyle(e.target.value)}>
+                                        <option value="Professional">Professional (Neutral/Formal)</option>
+                                        <option value="Friendly">Friendly (Warm/Polite)</option>
+                                        <option value="Cheerful">Cheerful (High Pitch/Welcoming)</option>
+                                        <option value="Calm">Calm (Slow/Finance desk)</option>
+                                        <option value="Persuasive">Persuasive (Sales closing)</option>
+                                        <option value="Empathetic">Empathetic (Reassuring/Patient)</option>
+                                    </select>
+                                </div>
+                                <div className="aicc-form-group">
+                                    <label>Speech Rate (Speed)</label>
+                                    <div className="aicc-slider-row">
+                                        <input
+                                            type="range"
+                                            min="0.8"
+                                            max="1.5"
+                                            step="0.05"
+                                            value={voiceSpeechRate}
+                                            onChange={(e) => setVoiceSpeechRate(Number(e.target.value))}
+                                        />
+                                        <span className="aicc-slider-val">{voiceSpeechRate}x</span>
+                                    </div>
+                                </div>
+                                <div className="aicc-form-group">
+                                    <label>Voice Stability (ElevenLabs Core Jitter)</label>
+                                    <div className="aicc-slider-row">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="1.0"
+                                            step="0.05"
+                                            value={voiceStability}
+                                            onChange={(e) => setVoiceStability(Number(e.target.value))}
+                                        />
+                                        <span className="aicc-slider-val">{(voiceStability * 100).toFixed(0)}%</span>
+                                    </div>
+                                </div>
+                                <div className="aicc-form-group">
+                                    <label>Hinglish Mix Ratio (Hindi / English blend)</label>
+                                    <div className="aicc-slider-row">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="100"
+                                            value={profile.role === "neha" ? 30 : 65}
+                                            readOnly
+                                        />
+                                        <span className="aicc-slider-val">{profile.role === "neha" ? "30" : "65"}%</span>
+                                    </div>
+                                </div>
+
+                                <div className="aicc-form-group full-width" style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "16px" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={allowInterruption}
+                                            onChange={(e) => setAllowInterruption(e.target.checked)}
+                                            style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                                        />
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800 }}>Allow Caller Interruption (Barge-In)</span>
+                                    </label>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "12px" }}>
+                                        <div className="aicc-form-group">
+                                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Barge-In Sensitivity</span>
+                                            <div className="aicc-slider-row">
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="100"
+                                                    value={bargeInSensitivity}
+                                                    onChange={(e) => setBargeInSensitivity(Number(e.target.value))}
+                                                    disabled={!allowInterruption}
+                                                />
+                                                <span className="aicc-slider-val">{bargeInSensitivity}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="aicc-form-group">
+                                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Pause Detection Buffer (ms)</span>
+                                            <div className="aicc-slider-row">
+                                                <input
+                                                    type="range"
+                                                    min="200"
+                                                    max="1000"
+                                                    step="50"
+                                                    value={pauseDetectionMs}
+                                                    onChange={(e) => setPauseDetectionMs(Number(e.target.value))}
+                                                    disabled={!allowInterruption}
+                                                />
+                                                <span className="aicc-slider-val">{pauseDetectionMs}ms</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="aicc-form-group full-width" style={{ display: "flex", gap: "12px", flexDirection: "row", flexWrap: "wrap" }}>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                                        <input type="checkbox" checked={smartResume} onChange={(e) => setSmartResume(e.target.checked)} /> Smart Resume
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                                        <input type="checkbox" checked={autoPause} onChange={(e) => setAutoPause(e.target.checked)} /> Auto Pause
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                                        <input type="checkbox" checked={echoCancellation} onChange={(e) => setEchoCancellation(e.target.checked)} /> Echo Cancellation
+                                    </label>
+                                    <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                                        <input type="checkbox" checked={noiseSuppression} onChange={(e) => setNoiseSuppression(e.target.checked)} /> Noise Suppression
+                                    </label>
+                                </div>
+
+                                <div className="aicc-form-group full-width">
+                                    <button className="aicc-btn-primary" onClick={handleSaveVoiceConfig}>
+                                        <Save size={16} /> Save Voice Configuration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Multilingual Voice Matrix</span>
+                                <span style={{ fontSize: "1rem" }}>🌐</span>
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>Configure regional speech support triggers to resolve dynamic language changes on call connections.</p>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", background: "#f8fafc", padding: "14px", borderRadius: "10px", border: "1px solid var(--glass-border)" }}>
+                                    {Object.keys(matrixStates).map((langKey) => (
+                                        <label key={langKey} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.8rem", textTransform: "capitalize", cursor: "pointer" }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={matrixStates[langKey]}
+                                                onChange={(e) => setMatrixStates(prev => ({ ...prev, [langKey]: e.target.checked }))}
+                                                style={{ width: "15px", height: "15px" }}
+                                            />
+                                            <span>{langKey === "hinglish" ? "Hinglish (Hindi+English)" : langKey}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginTop: "10px" }}>
+                                    <div className="aicc-form-group">
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 700 }}>Fallback Language</span>
+                                        <select className="aicc-input" style={{ padding: "6px 10px", fontSize: "0.75rem" }} value={fallbackLanguage} onChange={(e) => setFallbackLanguage(e.target.value)}>
+                                            <option value="English">English (Fallback)</option>
+                                            <option value="Hindi">Hindi</option>
+                                        </select>
+                                    </div>
+                                    <div className="aicc-form-group">
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 700 }}>Auto Detect</span>
+                                        <select className="aicc-input" style={{ padding: "6px 10px", fontSize: "0.75rem" }} value={autoDetectLanguage ? "on" : "off"} onChange={(e) => setAutoDetectLanguage(e.target.value === "on")}>
+                                            <option value="on">ON (Dynamic barge-in mapping)</option>
+                                            <option value="off">OFF</option>
+                                        </select>
+                                    </div>
+                                    <div className="aicc-form-group">
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 700 }}>Translation</span>
+                                        <select className="aicc-input" style={{ padding: "6px 10px", fontSize: "0.75rem" }} value={translationEnabled ? "on" : "off"} onChange={(e) => setTranslationEnabled(e.target.value === "on")}>
+                                            <option value="on">Enabled (Real-time GPT Translation)</option>
+                                            <option value="off">Disabled</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Phonetic Pronunciation Dictionary</span>
+                                <FileText size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>Configure exact spelling translations for regional Indian developer brands, authorities, or slang to correct speech output issues.</p>
+                                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", border: "1px solid var(--glass-border)", borderRadius: "8px", overflow: "hidden" }}>
+                                    <thead>
+                                        <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)" }}>
+                                            <th style={{ padding: "8px 12px", textAlign: "left" }}>Word / Abbreviation</th>
+                                            <th style={{ padding: "8px 12px", textAlign: "left" }}>Phonetic Replacement (Spoken)</th>
+                                            <th style={{ padding: "8px 12px", textAlign: "left" }}>Scope / Category</th>
+                                            <th style={{ padding: "8px 12px", textAlign: "center" }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {phoneticEntries.map((item, idx) => (
+                                            <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                                <td style={{ padding: "8px 12px", fontWeight: 800 }}>{item.word}</td>
+                                                <td style={{ padding: "8px 12px", color: "var(--accent-indigo)" }}>{item.phonetic}</td>
+                                                <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{item.category}</td>
+                                                <td style={{ padding: "8px 12px", textAlign: "center" }}>
+                                                    <button 
+                                                        onClick={() => setPhoneticEntries(prev => prev.filter((_, i) => i !== idx))}
+                                                        style={{ border: "none", background: "transparent", color: "#94a3b8", cursor: "pointer" }}
+                                                        onMouseEnter={e => e.currentTarget.style.color = "#ef4444"}
+                                                        onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.5fr 1fr", gap: "10px", marginTop: "8px" }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Word (e.g., BKC)"
+                                        className="aicc-input"
+                                        style={{ padding: "6px 10px", fontSize: "0.75rem" }}
+                                        value={newPhoneticWord}
+                                        onChange={(e) => setNewPhoneticWord(e.target.value)}
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Phonetic (e.g., Bee-Kay-Cee)"
+                                        className="aicc-input"
+                                        style={{ padding: "6px 10px", fontSize: "0.75rem" }}
+                                        value={newPhoneticVal}
+                                        onChange={(e) => setNewPhoneticVal(e.target.value)}
+                                    />
+                                    <button 
+                                        onClick={() => {
+                                            if (newPhoneticWord.trim() && newPhoneticVal.trim()) {
+                                                setPhoneticEntries(prev => [...prev, { word: newPhoneticWord, phonetic: newPhoneticVal, category: "Custom Definition" }]);
+                                                setNewPhoneticWord("");
+                                                setNewPhoneticVal("");
+                                                addToast({ type: "success", title: "Pronunciation Saved", message: "Phonetic dictionary successfully updated." });
+                                            }
+                                        }}
+                                        className="aicc-btn-primary"
+                                        style={{ padding: "6px" }}
+                                    >
+                                        Add Definition
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                    {/* RIGHT PANEL: Diagnostics & Telemetry side widgets */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                        
+                        {/* 1. 3D Digital Video Twin Appearance */}
+                        <div className="aicc-card" style={{ marginTop: 0 }}>
+                            <h3 className="aicc-card-title">
+                                <span>3D Digital Video Twin Appearance</span>
+                                <Upload size={18} style={{ color: "var(--text-secondary)" }} />
+                            </h3>
+                            <div className="aicc-dropzone" style={{ padding: "20px 10px" }}>
+                                <Upload className="aicc-dropzone-icon" size={24} style={{ marginBottom: "8px" }} />
+                                <span style={{ fontSize: "0.8rem", fontWeight: 700, display: "block", textAlign: "center" }}>Upload 3D video avatar alignment recording</span>
+                                <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block", textAlign: "center", marginTop: "4px" }}>Upload MP4/WebM footage to train expressions.</span>
+                            </div>
+                        </div>
+
+                        {/* 2. Voice AI Latency Dashboard */}
+                        <div className="aicc-card">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>Voice AI Latency Dashboard</span>
+                                </h3>
+                                <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.65rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>LIVE SPEED</span>
+                            </div>
+                            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "0 0 12px" }}>Real-time latency performance breakdown of the voice response stream channel.</p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "6.5px" }}>🎙️ Speech-To-Text (STT)</span>
+                                    <span style={{ fontWeight: 800 }}>120 ms</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "6.5px" }}>🧠 Reasoning & LLM (RAG)</span>
+                                    <span style={{ fontWeight: 800 }}>310 ms</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "6.5px" }}>🔊 Text-To-Speech (TTS)</span>
+                                    <span style={{ fontWeight: 800 }}>140 ms</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", fontWeight: 800, background: "rgba(99, 102, 241, 0.05)", padding: "10px", borderRadius: "8px", border: "1px solid rgba(99, 102, 241, 0.1)" }}>
+                                    <span>Total Roundtrip</span>
+                                    <span style={{ color: "var(--accent-indigo)" }}>570 ms</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Voice Quality Analytics */}
+                        <div className="aicc-card">
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>Voice Quality Analytics</span>
+                                </h3>
+                                <span style={{ background: "#e0f2fe", color: "#0369a1", fontSize: "0.65rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>LIVE QOS</span>
+                            </div>
+                            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: "0 0 12px" }}>Voice Quality of Service (QoS) telemetry metrics tracking speech delivery performance.</p>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Average Call MOS</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", marginTop: "4px" }}>4.7/5.0</span>
+                                    <span style={{ fontSize: "0.55rem", color: "#22c55e", fontWeight: 700 }}>★ Excellent</span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Caller Interruptions</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", marginTop: "4px" }}>12%</span>
+                                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Barge-in rate</span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Voice Dropouts</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", marginTop: "4px" }}>0.2%</span>
+                                    <span style={{ fontSize: "0.55rem", color: "#22c55e", fontWeight: 700 }}>Stable packet link</span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Silence Time</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", marginTop: "4px" }}>8%</span>
+                                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)" }}>Pause ratio</span>
+                                </div>
+                            </div>
+                            <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)", marginTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Average Talk Speed</span>
+                                <span style={{ fontSize: "0.85rem", fontWeight: 800 }}>148 WPM</span>
+                            </div>
+                        </div>
+
+                        {/* 4. Recent Call Recording Samples */}
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Recent Call Recording Samples</span>
+                                <Play size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                {[
+                                    { id: "sales_demo", name: "▶ Sales Demo Outbound Call", date: "Today", duration: "1m 45s" },
+                                    { id: "customer_inquiry", name: "▶ Customer Inquiry Inbound Call", date: "Yesterday", duration: "2m 10s" },
+                                    { id: "followup_call", name: "▶ Follow-up site visit scheduling", date: "2 days ago", duration: "1m 15s" }
+                                ].map((call) => {
+                                    const isPlaying = playingRecordingId === call.id;
+                                    return (
+                                        <div key={call.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "10px 14px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                                <button 
+                                                    onClick={() => toggleRecordingPlayback(call.id)}
+                                                    style={{
+                                                        width: "28px", height: "28px", borderRadius: "50%", background: isPlaying ? "var(--accent-indigo)" : "rgba(99, 102, 241, 0.1)",
+                                                        border: "none", color: isPlaying ? "#fff" : "var(--accent-indigo)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer"
+                                                    }}
+                                                >
+                                                    {isPlaying ? <Pause size={12} /> : <Play size={12} style={{ marginLeft: "2px" }} />}
+                                                </button>
+                                                <div>
+                                                    <span style={{ fontWeight: 800, color: "var(--text-primary)", display: "block", fontSize: "0.8rem" }}>{call.name}</span>
+                                                    <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>{call.date} · {call.duration}</span>
+                                                </div>
+                                            </div>
+                                            {isPlaying && (
+                                                <div className="aicc-eq-bars playing" style={{ height: "14px", gap: "2px" }}>
+                                                    <span className="aicc-eq-bar" style={{ width: "2px" }} />
+                                                    <span className="aicc-eq-bar" style={{ width: "2px" }} />
+                                                    <span className="aicc-eq-bar" style={{ width: "2px" }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* 5. Safety & Fallback Controls */}
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title">
+                                <span>Safety & Fallback Controls</span>
+                                <Shield size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                {[
+                                    { key: "profanityFilter", name: "Profanity Filter" },
+                                    { key: "piiMasking", name: "PII Masking" },
+                                    { key: "emergencyTransfer", name: "Emergency Transfer" },
+                                    { key: "fallbackVoice", name: "Fallback Voice", type: "badge" }
+                                ].map((control) => (
+                                    <div key={control.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--glass-border)", fontSize: "0.8rem" }}>
+                                        <span style={{ fontWeight: 800 }}>{control.name}</span>
+                                        {control.type === "badge" ? (
+                                            <span style={{ background: "#dcfce7", color: "#166534", fontSize: "0.65rem", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>Enabled</span>
+                                        ) : (
+                                            <label className="aicc-switch" style={{ position: "relative", display: "inline-block", width: "36px", height: "18px" }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={safetyControls[control.key]}
+                                                    onChange={(e) => {
+                                                        setSafetyControls(prev => ({ ...prev, [control.key]: e.target.checked }));
+                                                        addToast({ type: "info", title: "Safety Protocol", message: `${control.name} modified.` });
+                                                    }}
+                                                    style={{ display: "none" }}
+                                                />
+                                                <span className="aicc-slider" style={{
+                                                    position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
+                                                    background: safetyControls[control.key] ? "var(--accent-indigo)" : "#cbd5e1",
+                                                    borderRadius: "99px", transition: "0.2s"
+                                                }}>
+                                                    <span style={{
+                                                        position: "absolute", content: "", height: "12px", width: "12px", left: safetyControls[control.key] ? "20px" : "4px", bottom: "3px",
+                                                        background: "white", borderRadius: "50%", transition: "0.2s"
+                                                    }} />
+                                                </span>
+                                            </label>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 5: WORKFLOW & SCHEDULING ────────────────────────────── */}
+            {activeTab === "workflow" && (
+                <div className="aicc-card">
+                    <h3 className="aicc-card-title">
+                        <span>Workflow Schedule & Dialing Cadence</span>
+                        <Calendar size={18} style={{ color: "var(--accent-indigo)" }} />
+                    </h3>
+                    <div className="aicc-form-grid">
+                        <div className="aicc-form-group">
+                            <label>Shift Login Time</label>
+                            <input type="time" className="aicc-input" value={shiftStart} onChange={(e) => setShiftStart(e.target.value)} />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Shift Logout Time</label>
+                            <input type="time" className="aicc-input" value={shiftEnd} onChange={(e) => setShiftEnd(e.target.value)} />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Cooldown Gap Between Calls (seconds)</label>
+                            <input type="number" className="aicc-input" value={cooldownSeconds} onChange={(e) => setCooldownSeconds(Number(e.target.value))} />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Call Routing: Overflow Voice Agent Backup</label>
+                            <select className="aicc-input" value={overflowAgent} onChange={(e) => setOverflowAgent(e.target.value)}>
+                                <option value="monika">Monika (Receptionist)</option>
+                                <option value="rohan">Rohan (Sales)</option>
+                                <option value="neha">Neha (Accountant)</option>
+                            </select>
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Warm Handoff Manager Target</label>
+                            <input type="text" className="aicc-input" value={handoffManager} onChange={(e) => setHandoffManager(e.target.value)} />
+                        </div>
+                        <div className="aicc-form-group">
+                            <label>Idle Time Behavior Tasks</label>
+                            <input type="text" className="aicc-input" defaultValue={profile.workflow.idleBehavior} />
+                        </div>
+                        <div className="aicc-form-group full-width">
+                            <button className="aicc-btn-primary" onClick={handleSaveWorkflow}>
+                                <Save size={16} /> Save Workflow Directives
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 6: LIVE MONITOR ────────────────────────────────────── */}
+            {activeTab === "monitor" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div className="aicc-live-monitor-split" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {profile.liveMonitor.activeCall && (
+                                <div 
+                                    className="aicc-active-call-alert" 
+                                    onClick={() => setIsMonitoringActive(!isMonitoringActive)}
+                                    style={{ border: isMonitoringActive ? "1px solid #ef4444" : "1px solid var(--glass-border)", cursor: "pointer" }}
+                                >
+                                    <span className="aicc-active-call-pulse" />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#ef4444" }}>
+                                            🔴 In Progress Active Dialing Interaction {isMonitoringActive ? "(Monitoring)" : "(Click to Monitor Live)"}
+                                        </div>
+                                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                            Lead Name: <strong>{profile.liveMonitor.activeCall.leadName}</strong> · Duration: <strong>{profile.liveMonitor.activeCall.duration}</strong> · Sentiment: <span style={{ background: "#dcfce7", color: "#166534", padding: "1px 6px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700 }}>{profile.liveMonitor.activeCall.sentiment}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="aicc-card" style={{ marginTop: 0 }}>
+                                <h3 className="aicc-card-title">
+                                    <span>Live Reasoning & Event Logs</span>
+                                    <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", background: "rgba(248, 250, 252, 0.5)", borderRadius: "12px", border: "1px solid var(--glass-border)", maxHeight: "250px", overflowY: "auto" }}>
+                                    {monitoringFeed.map(item => (
+                                        <div key={item.id} className="aicc-reasoning-item" style={{ padding: "12px", borderBottom: "1px solid var(--glass-border)" }}>
+                                            <div className="aicc-reasoning-hdr" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-secondary)", marginBottom: "4px" }}>
+                                                <span className="aicc-reasoning-title" style={{ fontWeight: 800, color: "var(--text-primary)" }}>Lead Name: {item.lead_name}</span>
+                                                <span>{item.timestamp}</span>
+                                            </div>
+                                            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                                                <strong>Decision:</strong> {item.reasoning}
+                                            </div>
+                                            {item.message && (
+                                                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", marginTop: "4px" }}>
+                                                    <strong>AI Output:</strong> “{item.message}”
+                                                </div>
+                                            )}
+                                            <span className="aicc-reasoning-action" style={{ display: "inline-block", background: "rgba(99,102,241,0.1)", color: "var(--accent-indigo)", fontSize: "0.65rem", padding: "1px 6px", borderRadius: "4px", marginTop: "6px", width: "fit-content" }}>{item.action}</span>
+                                        </div>
+                                    ))}
+                                    {monitoringFeed.length === 0 && (
+                                        <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.75rem" }}>
+                                            Activate live call monitoring to stream reasoning loops.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card" style={{ marginTop: 0, marginBottom: "20px" }}>
+                            <h3 className="aicc-card-title">
+                                <span>AI Health Monitor</span>
+                                <Activity size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%" }} /> Online Agents
+                                    </span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 8px", borderRadius: "6px" }}>12</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ width: "8px", height: "8px", background: "#f59e0b", borderRadius: "50%" }} /> Training Required
+                                    </span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: "6px" }}>2</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%" }} /> Escalation Alerts
+                                    </span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 8px", borderRadius: "6px" }}>3</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%" }} /> Failed Responses
+                                    </span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 8px", borderRadius: "6px" }}>1</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                        <span style={{ width: "8px", height: "8px", background: "#3b82f6", borderRadius: "50%" }} /> Hallucination Risk
+                                    </span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#dbeafe", color: "#1e40af", padding: "2px 8px", borderRadius: "6px" }}>Low</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card aicc-stream-card" style={{ marginTop: 0 }}>
+                            <h3 className="aicc-card-title">
+                                <span>Voice Transcript Stream</span>
+                                <MessageSquare size={18} style={{ color: isMonitoringActive ? "#ef4444" : "var(--text-secondary)" }} />
+                            </h3>
+                            {isMonitoringActive ? (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                    <div className="aicc-live-equalizer-wrap" style={{ background: "#ef4444", color: "white", padding: "8px 12px", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 800 }}>LIVE BROADCAST CHANNEL</span>
+                                        <div className="aicc-live-monitor-eq-bars" style={{ display: "flex", gap: "3px", alignItems: "flex-end", height: "12px" }}>
+                                            <span className="aicc-live-monitor-eq-bar" />
+                                            <span className="aicc-live-monitor-eq-bar" />
+                                            <span className="aicc-live-monitor-eq-bar" />
+                                        </div>
+                                    </div>
+                                    <div className="aicc-transcript-stream-box" style={{ height: "200px", overflowY: "auto", border: "1px solid var(--glass-border)", borderRadius: "8px", padding: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                        {monitoringProgress >= 1 && (
+                                            <div style={{ background: "#f1f5f9", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-start" }}>
+                                                <strong>AI:</strong> Namaste! Rohan speaking from Maya Infratech. Sector 150 expressway residential layout ki help chahiye thi?
+                                            </div>
+                                        )}
+                                        {monitoringProgress >= 2 && (
+                                            <div style={{ background: "var(--accent-indigo)", color: "white", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-end" }}>
+                                                <strong>Customer:</strong> Haan Rohan, payment configurations details bhej dena options list ki, pre-approval rates kya hain?
+                                            </div>
+                                        )}
+                                        {monitoringProgress >= 3 && (
+                                            <div style={{ background: "#f1f5f9", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-start" }}>
+                                                <strong>AI:</strong> Sure Rahul ji, registry rates starting structure specifications and maps route links check karke WhatsApp card share kar raha hu.
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", color: "var(--text-secondary)", gap: "10px", border: "1px dashed var(--glass-border)", borderRadius: "12px" }}>
+                                    <Clock size={28} />
+                                    <span style={{ fontSize: "0.75rem" }}>Select the active dialing alert to monitor live transcript.</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Historical Operations Audit Timeline</span>
+                            <Clock size={18} style={{ color: "var(--text-secondary)" }} />
+                        </h3>
+                        <div className="aicc-timeline">
+                            {profile.liveMonitor.activityLog.map((log: any) => (
+                                <div key={log.id} className="aicc-timeline-item">
+                                    <span className="aicc-timeline-dot" />
+                                    <div className="aicc-timeline-content">
+                                        <h5>[{log.time}] {log.action}</h5>
+                                        <p>{log.detail}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 7: PERFORMANCE ANALYTICS ───────────────────────────── */}
+            {activeTab === "analytics" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Performance KPIs</span>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                            <button onClick={() => setChartPeriod("daily")} className="aicc-btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem", background: chartPeriod === "daily" ? "var(--accent-indigo)" : "white", color: chartPeriod === "daily" ? "white" : "var(--text-primary)" }}>Daily</button>
+                            <button onClick={() => setChartPeriod("weekly")} className="aicc-btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem", background: chartPeriod === "weekly" ? "var(--accent-indigo)" : "white", color: chartPeriod === "weekly" ? "white" : "var(--text-primary)" }}>Weekly</button>
+                        </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Avg call MOS</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>4.7/5</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>★ Excellent QoS</span>
+                        </div>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Interruptions</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>12%</span>
+                            <span style={{ fontSize: "0.6rem", color: "#b45309", fontWeight: 700 }}>Within SLA limit</span>
+                        </div>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Voice Dropouts</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>0.2%</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Stable Connection</span>
+                        </div>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Silence Time</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>8%</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Optimal Pacing</span>
+                        </div>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
+                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Talk Speed</span>
+                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>148 WPM</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Natural pace</span>
+                        </div>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Interactive Telemetry QoS Chart ({chartPeriod === "daily" ? "Daily Call Volumes" : "Weekly Performance Breakdown"})</span>
+                            <BarChart3 size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <div style={{ height: "240px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "#f8fafc", position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-around", padding: "30px 20px 20px" }}>
+                            
+                            {chartPeriod === "daily" ? (
+                                <>
+                                    {[
+                                        { day: "Mon", calls: 42 },
+                                        { day: "Tue", calls: 58 },
+                                        { day: "Wed", calls: 74 },
+                                        { day: "Thu", calls: 62 },
+                                        { day: "Fri", calls: 95 },
+                                        { day: "Sat", calls: 35 },
+                                        { day: "Sun", calls: 18 }
+                                    ].map((d) => (
+                                        <div key={d.day} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "40px" }}>
+                                            <span style={{ fontSize: "0.65rem", fontWeight: 800, marginBottom: "4px" }}>{d.calls}</span>
+                                            <div style={{ height: `${d.calls * 1.8}px`, width: "16px", background: "var(--accent-indigo)", borderRadius: "4px 4px 0 0", transition: "height 0.3s" }} />
+                                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "6px", fontWeight: 700 }}>{d.day}</span>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {[
+                                        { week: "Week 24", efficiency: 91 },
+                                        { week: "Week 25", efficiency: 94 },
+                                        { week: "Week 26", efficiency: 92 },
+                                        { week: "Week 27", efficiency: 95 }
+                                    ].map((w) => (
+                                        <div key={w.week} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "60px" }}>
+                                            <span style={{ fontSize: "0.65rem", fontWeight: 800, marginBottom: "4px" }}>{w.efficiency}%</span>
+                                            <div style={{ height: `${w.efficiency * 1.8}px`, width: "24px", background: "#10b981", borderRadius: "4px 4px 0 0", transition: "height 0.3s" }} />
+                                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "6px", fontWeight: 700 }}>{w.week}</span>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: TRAINING ───────────────────────────────────────────── */}
+            {activeTab === "training" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>AI Inbound Response Coaching Rules</span>
+                            <GraduationCap size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: "0 0 16px" }}>
+                            Define direct script constraints and semantic response rules. When matching queries are detected, the agent will fallback to these custom coaching guidelines instead of base model reasoning paths.
+                        </p>
+
+                        {/* In-place rules form */}
+                        <div style={{ background: "rgba(248, 250, 252, 0.5)", border: "1px solid var(--glass-border)", borderRadius: "12px", padding: "16px", marginBottom: "20px", display: "grid", gridTemplateColumns: "1.2fr 2fr 2.5fr 1fr", gap: "12px", alignItems: "end" }}>
+                            <div className="aicc-form-group" style={{ margin: 0 }}>
+                                <label style={{ fontSize: "0.7rem", fontWeight: 700 }}>Category</label>
+                                <select 
+                                    className="aicc-input"
+                                    value={coachingCategory}
+                                    onChange={(e) => setCoachingCategory(e.target.value)}
+                                    style={{ padding: "8px", fontSize: "0.8rem" }}
+                                >
+                                    <option value="discount_handling">Discount Handling</option>
+                                    <option value="objection_handling">Objection Handling</option>
+                                    <option value="greeting">Greetings</option>
+                                    <option value="pricing">Pricing</option>
+                                </select>
+                            </div>
+                            <div className="aicc-form-group" style={{ margin: 0 }}>
+                                <label style={{ fontSize: "0.7rem", fontWeight: 700 }}>Customer Query Prompt</label>
+                                <input 
+                                    type="text"
+                                    placeholder="e.g. Price of 3BHK flat?"
+                                    className="aicc-input"
+                                    value={coachingQuery}
+                                    onChange={(e) => setCoachingQuery(e.target.value)}
+                                    style={{ padding: "8px", fontSize: "0.8rem" }}
+                                />
+                            </div>
+                            <div className="aicc-form-group" style={{ margin: 0 }}>
+                                <label style={{ fontSize: "0.7rem", fontWeight: 700 }}>Agent Response Script</label>
+                                <input 
+                                    type="text"
+                                    placeholder="e.g. Prices starting at ₹1.2Cr..."
+                                    className="aicc-input"
+                                    value={coachingResponse}
+                                    onChange={(e) => setCoachingResponse(e.target.value)}
+                                    style={{ padding: "8px", fontSize: "0.8rem" }}
+                                />
+                            </div>
+                            <button 
+                                onClick={() => {
+                                    if (coachingQuery.trim() && coachingResponse.trim()) {
+                                        setCoachingExamples(prev => [...prev, {
+                                            id: `co-${Date.now()}`,
+                                            category: coachingCategory,
+                                            prompt: coachingQuery,
+                                            response: coachingResponse
+                                        }]);
+                                        setCoachingQuery("");
+                                        setCoachingResponse("");
+                                        addToast({
+                                            type: "success",
+                                            title: "Rule Saved",
+                                            message: "Coaching script rule appended to local agent draft."
+                                        });
+                                    } else {
+                                        addToast({
+                                            type: "warning",
+                                            title: "Missing Fields",
+                                            message: "Please fill out both query prompt and response script."
+                                        });
+                                    }
+                                }}
+                                className="aicc-btn-primary" 
+                                style={{ padding: "10px", width: "100%", justifyContent: "center", fontSize: "0.8rem" }}
+                            >
+                                Add Rule
+                            </button>
+                        </div>
+
+                        {/* Filter Bar */}
+                        <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                            {["all", "discount_handling", "objection_handling", "greeting", "pricing"].map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setCoachingFilter(cat)}
+                                    className={`aicc-tab-btn ${coachingFilter === cat ? "active" : ""}`}
+                                    style={{ padding: "6px 12px", fontSize: "0.75rem", textTransform: "capitalize", background: coachingFilter === cat ? "var(--accent-indigo)" : "rgba(226, 232, 240, 0.4)", color: coachingFilter === cat ? "white" : "var(--text-primary)" }}
+                                >
+                                    {cat.replace("_", " ")}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Table Container */}
+                        <div style={{ border: "1px solid var(--glass-border)", borderRadius: "12px", background: "white", overflow: "hidden" }}>
+                            <table className="aicc-training-table" style={{ margin: 0 }}>
+                                <thead>
+                                    <tr style={{ background: "#f8fafc" }}>
+                                        <th style={{ width: "20%" }}>Category</th>
+                                        <th style={{ width: "35%" }}>Customer Inbound Query</th>
+                                        <th style={{ width: "35%" }}>AI Response Guidelines</th>
+                                        <th style={{ width: "10%", textAlign: "center" }}>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {coachingExamples.filter(x => coachingFilter === "all" || x.category === coachingFilter).length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} style={{ textAlign: "center", padding: "30px", color: "var(--text-secondary)" }}>
+                                                No custom coaching rules defined for this filter.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        coachingExamples.filter(x => coachingFilter === "all" || x.category === coachingFilter).map((rule) => (
+                                            <tr key={rule.id}>
+                                                <td>
+                                                    <span style={{
+                                                        background: rule.category === "discount_handling" ? "#fee2e2" : rule.category === "objection_handling" ? "#fef3c7" : rule.category === "greeting" ? "#dcfce7" : "#e0f2fe",
+                                                        color: rule.category === "discount_handling" ? "#991b1b" : rule.category === "objection_handling" ? "#92400e" : rule.category === "greeting" ? "#166534" : "#0369a1",
+                                                        padding: "3px 8px", borderRadius: "4px", fontSize: "0.65rem", fontWeight: 700, textTransform: "capitalize"
+                                                    }}>
+                                                        {rule.category.replace("_", " ")}
+                                                    </span>
+                                                </td>
+                                                <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>{rule.prompt}</td>
+                                                <td style={{ color: "var(--text-secondary)" }}>{rule.response}</td>
+                                                <td style={{ textAlign: "center" }}>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setCoachingExamples(coachingExamples.filter(x => x.id !== rule.id));
+                                                            addToast({
+                                                                type: "success",
+                                                                title: "Rule Removed",
+                                                                message: "Coaching script definition deleted."
+                                                            });
+                                                        }}
+                                                        style={{ border: "none", background: "transparent", color: "#e11d48", cursor: "pointer" }}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Retrain Action Button */}
+                        <div style={{ marginTop: "24px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "16px" }}>
+                            {isRetraining && (
+                                <span style={{ fontSize: "0.8rem", color: "var(--accent-indigo)", fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <RefreshCw className="animate-spin" size={14} />
+                                    Compiling agent cognitive rules...
+                                </span>
+                            )}
+                            <button
+                                onClick={() => {
+                                    setIsRetraining(true);
+                                    setTimeout(() => {
+                                        setIsRetraining(false);
+                                        addToast({
+                                            type: "success",
+                                            title: "Agent Twin Retrained",
+                                            message: `${profiles[selectedAgent].name} has successfully compiled custom response weights.`
+                                        });
+                                    }, 3000);
+                                }}
+                                className="aicc-btn-primary"
+                                disabled={isRetraining}
+                                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                            >
+                                <Save size={16} /> Retrain Agent Twin Model
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: PLAYGROUND ──────────────────────────────────────────── */}
+            {activeTab === "playground" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div className="aicc-card" id="aicc_conversation_simulator_card">
+                        <h3 className="aicc-card-title">
+                            <span>High-Fidelity Conversation Simulator & Voice Sandbox</span>
+                            <Bot size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
+                                Simulate a live phone call dialogue. Select a scenario preset or type a custom user query to test turn-by-turn latency metrics, confidence, and speech emotional synthesiser loops.
+                            </p>
+
+                            <div className="aicc-simulator-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
+                                
+                                <div className="aicc-simulator-console" style={{ display: "flex", flexDirection: "column", gap: "12px", border: "1px solid var(--glass-border)", borderRadius: "12px", padding: "16px", background: "#f8fafc" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Dialogue Transcript Timeline</span>
+                                        <button className="aicc-btn-secondary" style={{ padding: "4px 8px", fontSize: "0.7rem" }} onClick={clearSimulationHistory}>
+                                            Clear History
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="aicc-transcript-timeline-box" style={{ height: "300px", overflowY: "auto", border: "1px solid var(--glass-border)", borderRadius: "8px", padding: "12px", background: "white", display: "flex", flexDirection: "column", gap: "10px" }}>
+                                        {simulationTranscript.length === 0 ? (
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-secondary)", gap: "8px" }}>
+                                                <MessageSquare size={24} style={{ opacity: 0.3 }} />
+                                                <span style={{ fontSize: "0.75rem" }}>Timeline empty. Select a query below to start simulation.</span>
+                                            </div>
+                                        ) : (
+                                            simulationTranscript.map((bubble, i) => (
+                                                <div key={i} className={`aicc-chat-bubble ${bubble.sender}`} style={{
+                                                    alignSelf: bubble.sender === "client" ? "flex-end" : "flex-start",
+                                                    background: bubble.sender === "client" ? "var(--accent-indigo)" : "#f1f5f9",
+                                                    color: bubble.sender === "client" ? "white" : "var(--text-primary)",
+                                                    padding: "8px 12px",
+                                                    borderRadius: "12px",
+                                                    maxWidth: "80%",
+                                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+                                                }}>
+                                                    <div style={{ fontSize: "0.8rem", lineHeight: 1.4 }}>{bubble.text}</div>
+                                                    <div style={{ fontSize: "0.6rem", color: bubble.sender === "client" ? "rgba(255,255,255,0.7)" : "var(--text-secondary)", textAlign: "right", marginTop: "4px" }}>
+                                                        {bubble.sender === "client" ? "Customer" : `${agentName}`} · {bubble.time}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                        {isSimulating && (
+                                            <div style={{
+                                                alignSelf: "flex-start",
+                                                background: "#f1f5f9",
+                                                color: "var(--text-primary)",
+                                                padding: "8px 12px",
+                                                borderRadius: "12px",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "8px"
+                                            }}>
+                                                <RefreshCw className="animate-spin" size={12} style={{ color: "var(--accent-indigo)" }} />
+                                                <span style={{ fontSize: "0.7rem", fontWeight: 700 }}>
+                                                    {simulatingStep === 1 && "Customer speaking (STT translation)..."}
+                                                    {simulatingStep === 2 && "Twin thinking (LLM semantic retrieval)..."}
+                                                    {simulatingStep === 3 && "Synthesizing voice response (TTS ElevenLabs)..."}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {isPlayingSynthesised && (
+                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                                            <span style={{ fontSize: "0.65rem", color: "var(--accent-indigo)", fontWeight: 800 }}>🔊 Simulated Audio Playing: Stability {voiceStability * 100}%</span>
+                                            <div className="aicc-eq-bars playing" style={{ height: "24px", margin: "4px 0" }}>
+                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
+                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
+                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
+                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
+                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="aicc-tag-input-row" style={{ marginTop: "4px" }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Type custom customer query (e.g. flat pricing, GST)..."
+                                            className="aicc-input"
+                                            style={{ flex: 1, padding: "8px 12px", fontSize: "0.8rem" }}
+                                            value={customClientMessage}
+                                            onChange={(e) => setCustomClientMessage(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && handleSendCustomMessage()}
+                                            disabled={isSimulating}
+                                        />
+                                        <button className="aicc-btn-primary" onClick={handleSendCustomMessage} disabled={isSimulating}>
+                                            <Send size={12} /> Send
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>QoS Telemetry Analytics (Last Turn)</span>
+                                    
+                                    <div className="aicc-card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "10px", background: "white", border: "1px solid var(--glass-border)" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>Total Response Turnaround</span>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: simulatedMetrics.total > 600 ? "#b45309" : "#166534" }}>
+                                                {simulatedMetrics.total ? `${simulatedMetrics.total} ms` : "0 ms"}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", textAlign: "center" }}>
+                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
+                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>STT Delay</span>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.stt ? `${simulatedMetrics.stt} ms` : "—"}</span>
+                                            </div>
+                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
+                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>LLM Inference</span>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.llm ? `${simulatedMetrics.llm} ms` : "—"}</span>
+                                            </div>
+                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
+                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>TTS Synthesis</span>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.tts ? `${simulatedMetrics.tts} ms` : "—"}</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            <div>
+                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-secondary)", marginBottom: "4px" }}>
+                                                    <span>AI Comprehension Confidence</span>
+                                                    <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>{simulatedMetrics.confidence ? `${simulatedMetrics.confidence}%` : "0%"}</span>
+                                                </div>
+                                                <div style={{ width: "100%", height: "4px", background: "#f1f5f9", borderRadius: "2px", overflow: "hidden" }}>
+                                                    <div style={{ width: `${simulatedMetrics.confidence || 0}%`, height: "100%", background: "#10b981", transition: "width 0.3s" }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
+                                                <span style={{ color: "var(--text-secondary)" }}>Detected Voice Emotion</span>
+                                                <span style={{ background: "#e0f2fe", color: "#0369a1", fontWeight: 800, padding: "2px 8px", borderRadius: "4px", fontSize: "0.65rem" }}>
+                                                    {simulatedMetrics.emotion}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)" }}>Simulate Standard Presets:</span>
+                                        {activeScenarios.map((s, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => runSimulationTurn(s.text, s.response, s.metrics)}
+                                                className="aicc-btn-secondary"
+                                                style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.75rem", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                                disabled={isSimulating}
+                                            >
+                                                <span>{s.label}</span>
+                                                <ChevronRight size={12} style={{ opacity: 0.5 }} />
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB 8: SECURITY & AUDIT LOGS ────────────────────────────── */}
+            {activeTab === "security" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Safety Controls & Fallback Configurations</span>
+                            <Shield size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </h3>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                            {[
+                                { key: "profanityFilter", name: "Profanity Filter", desc: "Block inappropriate and toxic remarks in user inbound streaming" },
+                                { key: "piiMasking", name: "PII Masking", desc: "Mask credit cards, phone numbers, and bank receipts details from vector memory logs" },
+                                { key: "emergencyTransfer", name: "Emergency Transfer", desc: "Direct handoff routing to sales manager if caller exhibits panic triggers" },
+                                { key: "fallbackVoice", name: "Fallback Voice", desc: "Dynamically transition clone voice profiles to ElevenLabs base models in server outage" }
+                            ].map((control) => (
+                                <div key={control.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--glass-border)" }}>
+                                    <div>
+                                        <div style={{ fontSize: "0.8rem", fontWeight: 800 }}>{control.name}</div>
+                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)", marginTop: "2px" }}>{control.desc}</div>
+                                    </div>
+                                    <label className="aicc-switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={safetyControls[control.key]}
+                                            onChange={(e) => {
+                                                setSafetyControls(prev => ({ ...prev, [control.key]: e.target.checked }));
+                                                addToast({ type: "info", title: "Safety Protocol", message: `${control.name} status modified.` });
+                                            }}
+                                            style={{ display: "none" }}
+                                        />
+                                        <span className="aicc-slider" style={{
+                                            position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
+                                            background: safetyControls[control.key] ? "var(--accent-indigo)" : "#cbd5e1",
+                                            borderRadius: "99px", transition: "0.2s"
+                                        }}>
+                                            <span style={{
+                                                position: "absolute", content: "", height: "14px", width: "14px", left: safetyControls[control.key] ? "22px" : "4px", bottom: "3px",
+                                                background: "white", borderRadius: "50%", transition: "0.2s"
+                                            }} />
+                                        </span>
+                                    </label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Client API Gateway Tokens</span>
+                            <span style={{ fontSize: "1rem" }}>🔒</span>
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>ElevenLabs Production Secret Key</span>
+                            <div className="aicc-tag-input-row">
+                                <input
+                                    type="text"
+                                    className="aicc-input"
+                                    style={{ flex: 1, fontFamily: "monospace", fontSize: "0.8rem", background: "#f8fafc" }}
+                                    value={apiKey}
+                                    readOnly
+                                />
+                                <button className="aicc-btn-secondary" onClick={rotateApiKey}>Rotate Key</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title">
+                            <span>Operations Security Audit Logs</span>
+                            <Clock size={18} style={{ color: "var(--text-secondary)" }} />
+                        </h3>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
+                            <thead>
+                                <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)" }}>
+                                    <th style={{ padding: "10px", textAlign: "left" }}>Timestamp</th>
+                                    <th style={{ padding: "10px", textAlign: "left" }}>Event Category</th>
+                                    <th style={{ padding: "10px", textAlign: "left" }}>Operator</th>
+                                    <th style={{ padding: "10px", textAlign: "left" }}>Details Summary</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[
+                                    { time: "2026-07-15 17:42:10", cat: "API_ROTATION", op: "Admin (Maya)", desc: "Production primary client token successfully rotated." },
+                                    { time: "2026-07-15 15:30:45", cat: "RAG_INGESTION", op: "Operator_02", desc: "Ingested doc: RERA_Approval_Docs.pdf. Chunks: 21." },
+                                    { time: "2026-07-15 11:14:02", cat: "WORKFLOW_EDIT", op: "Admin (Maya)", desc: "Rohan twin shift limits updated: login 09:00, logout 19:00." }
+                                ].map((row, idx) => (
+                                    <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                        <td style={{ padding: "10px", color: "var(--text-secondary)" }}>{row.time}</td>
+                                        <td style={{ padding: "10px", fontWeight: 800 }}>{row.cat}</td>
+                                        <td style={{ padding: "10px" }}>{row.op}</td>
+                                        <td style={{ padding: "10px", color: "var(--text-secondary)" }}>{row.desc}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB COACHING: AI COACHING CENTER ───────────────────────── */}
+            {activeTab === "coaching" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+
+                    {/* Header */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                                <GraduationCap size={20} style={{ color: "#a855f7" }} /> AI Coaching Center
+                            </h2>
+                            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: "4px 0 0" }}>Diagnostics, improvement recommendations and knowledge gap analysis for {profile.name}</p>
+                        </div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                            <span style={{ fontSize: "0.7rem", fontWeight: 700, padding: "4px 10px", borderRadius: "6px", background: "#f3e8ff", color: "#7c3aed" }}>Last Sync: 5 min ago</span>
+                        </div>
+                    </div>
+
+                    {/* Summary KPI Row */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+                        {[
+                            { label: "Top Mistakes", value: "7", icon: "⚠️", bg: "#fff7ed", color: "#c2410c", badge: "High Priority" },
+                            { label: "Missing Articles", value: "4", icon: "📄", bg: "#eff6ff", color: "#1d4ed8", badge: "Needs Review" },
+                            { label: "Low Confidence", value: "12", icon: "🤔", bg: "#fefce8", color: "#a16207", badge: "Flagged" },
+                            { label: "Recommendations", value: "5", icon: "💡", bg: "#f0fdf4", color: "#15803d", badge: "Action Ready" }
+                        ].map((kpi, i) => (
+                            <div key={i} className="aicc-card" style={{ padding: "16px", background: kpi.bg, border: `1px solid ${kpi.color}22` }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                    <span style={{ fontSize: "1.4rem" }}>{kpi.icon}</span>
+                                    <span style={{ fontSize: "0.65rem", fontWeight: 700, background: "white", color: kpi.color, padding: "2px 6px", borderRadius: "4px", border: `1px solid ${kpi.color}44` }}>{kpi.badge}</span>
+                                </div>
+                                <div style={{ fontSize: "1.8rem", fontWeight: 900, color: kpi.color, marginTop: "8px" }}>{kpi.value}</div>
+                                <div style={{ fontSize: "0.75rem", fontWeight: 700, color: kpi.color, opacity: 0.8 }}>{kpi.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Main Grid: 2 columns */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+
+                        {/* ── Column 1: Top Mistakes + Missing Articles ── */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                            {/* Top Mistakes */}
+                            <div className="aicc-card">
+                                <h3 className="aicc-card-title">
+                                    <span>Top Mistakes</span>
+                                    <span style={{ fontSize: "1rem" }}>⚠️</span>
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    {[
+                                        { rank: 1, mistake: "Incorrect pricing quoted for 3BHK units", freq: "14×", severity: "High", color: "#ef4444", bg: "#fee2e2" },
+                                        { rank: 2, mistake: "RERA registration number not provided", freq: "9×", severity: "High", color: "#ef4444", bg: "#fee2e2" },
+                                        { rank: 3, mistake: "Wrong site visit time slot confirmed", freq: "7×", severity: "Medium", color: "#f59e0b", bg: "#fef3c7" },
+                                        { rank: 4, mistake: "Missing down payment structure explanation", freq: "5×", severity: "Medium", color: "#f59e0b", bg: "#fef3c7" },
+                                        { rank: 5, mistake: "No follow-up booked after interested lead", freq: "4×", severity: "Low", color: "#6366f1", bg: "#eef2ff" },
+                                        { rank: 6, mistake: "Hindi-to-English switch not triggered", freq: "3×", severity: "Low", color: "#6366f1", bg: "#eef2ff" },
+                                        { rank: 7, mistake: "Hallucinated amenity (rooftop pool)", freq: "2×", severity: "Critical", color: "#dc2626", bg: "#fecaca" },
+                                    ].map((item) => (
+                                        <div key={item.rank} style={{ display: "flex", alignItems: "flex-start", gap: "10px", padding: "10px", background: item.bg, borderRadius: "8px", border: `1px solid ${item.color}22` }}>
+                                            <span style={{ fontSize: "0.7rem", fontWeight: 900, color: item.color, minWidth: "18px", paddingTop: "1px" }}>#{item.rank}</span>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{item.mistake}</div>
+                                                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                                                    <span style={{ fontSize: "0.65rem", fontWeight: 700, color: item.color }}>Frequency: {item.freq}</span>
+                                                    <span style={{ fontSize: "0.65rem", fontWeight: 700, background: item.bg, color: item.color, padding: "1px 6px", borderRadius: "4px", border: `1px solid ${item.color}55` }}>{item.severity}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Missing Knowledge Articles */}
+                            <div className="aicc-card">
+                                <h3 className="aicc-card-title">
+                                    <span>Missing Knowledge Articles</span>
+                                    <span style={{ fontSize: "1rem" }}>📄</span>
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    {[
+                                        { topic: "Floor-wise Price Breakdowns (Phase 2)", queries: 18, priority: "Critical", color: "#dc2626" },
+                                        { topic: "Bank Loan Pre-Approval Partner List", queries: 12, priority: "High", color: "#ef4444" },
+                                        { topic: "RERA Certificate Validity FAQs", queries: 9, priority: "High", color: "#ef4444" },
+                                        { topic: "Site Visit Cab & Slot Booking Guide", queries: 6, priority: "Medium", color: "#f59e0b" },
+                                    ].map((item, i) => (
+                                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid var(--glass-border)", borderRadius: "8px", background: "rgba(248,250,252,0.5)" }}>
+                                            <div>
+                                                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{item.topic}</div>
+                                                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "2px" }}>Asked {item.queries}× without satisfactory answer</div>
+                                            </div>
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                                                <span style={{ fontSize: "0.65rem", fontWeight: 700, color: item.color, background: `${item.color}11`, padding: "2px 8px", borderRadius: "4px", border: `1px solid ${item.color}33` }}>{item.priority}</span>
+                                                <button style={{ fontSize: "0.65rem", fontWeight: 700, color: "var(--accent-indigo)", background: "transparent", border: "1px solid var(--accent-indigo)", borderRadius: "4px", padding: "2px 8px", cursor: "pointer" }}
+                                                    onClick={() => addToast({ type: "info", title: "Knowledge Base", message: `Article creation queued: ${item.topic}` })}>
+                                                    + Add Article
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── Column 2: Low Confidence + Recommendations ── */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                            {/* Low-Confidence Answers */}
+                            <div className="aicc-card">
+                                <h3 className="aicc-card-title">
+                                    <span>Low-Confidence Answers</span>
+                                    <span style={{ fontSize: "1rem" }}>🤔</span>
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    {[
+                                        { query: "What is the stamp duty for Navi Mumbai?", confidence: 34, answer: "It depends on market value..." },
+                                        { query: "Can NRI buyers get home loan?", confidence: 41, answer: "Yes, most banks offer NRI..." },
+                                        { query: "Is there a service charge beyond EMI?", confidence: 28, answer: "There may be maintenance..." },
+                                        { query: "What is possession date for Tower C?", confidence: 52, answer: "Builder has announced Q3..." },
+                                        { query: "Is solar power included in 2BHK?", confidence: 47, answer: "Common area solar panels..." },
+                                    ].map((item, i) => {
+                                        const confColor = item.confidence < 40 ? "#ef4444" : item.confidence < 55 ? "#f59e0b" : "#6366f1";
+                                        const confBg = item.confidence < 40 ? "#fee2e2" : item.confidence < 55 ? "#fef3c7" : "#eef2ff";
+                                        return (
+                                            <div key={i} style={{ padding: "12px", border: "1px solid var(--glass-border)", borderRadius: "8px", background: "rgba(248,250,252,0.5)" }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
+                                                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", flex: 1, paddingRight: "8px" }}>{item.query}</span>
+                                                    <span style={{ fontSize: "0.7rem", fontWeight: 900, color: confColor, background: confBg, padding: "2px 8px", borderRadius: "6px", whiteSpace: "nowrap" }}>{item.confidence}%</span>
+                                                </div>
+                                                <div style={{ height: "4px", background: "#e2e8f0", borderRadius: "99px", overflow: "hidden", marginBottom: "6px" }}>
+                                                    <div style={{ height: "100%", width: `${item.confidence}%`, background: confColor, borderRadius: "99px", transition: "width 0.6s ease" }} />
+                                                </div>
+                                                <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontStyle: "italic" }}>Last answer: "{item.answer}"</div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Training Recommendations */}
+                            <div className="aicc-card">
+                                <h3 className="aicc-card-title">
+                                    <span>Training Recommendations</span>
+                                    <span style={{ fontSize: "1rem" }}>💡</span>
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    {[
+                                        { title: "Pricing Accuracy Drill", desc: "Run 20 pricing Q&A synthetic call simulations focused on floor-wise rates for BKC and Sector 150.", impact: "High", effort: "2 hrs", icon: "🎯" },
+                                        { title: "RERA Compliance Module", desc: "Upload new RERA PDFs and retrain RAG index with structured certificate Q&A pairs.", impact: "Critical", effort: "4 hrs", icon: "📋" },
+                                        { title: "Hindi Fallback Tuning", desc: "Add 15+ Hindi-trigger phrases to language-switch detection model threshold.", impact: "Medium", effort: "1 hr", icon: "🗣️" },
+                                        { title: "Hallucination Guard Patch", desc: "Tighten confidence floor to 0.78 before generating amenity descriptions without RAG source.", impact: "Critical", effort: "30 min", icon: "🛡️" },
+                                        { title: "Follow-up Trigger Script", desc: "Add interested-lead detection → auto-schedule follow-up coaching rule in Training tab.", impact: "Medium", effort: "1 hr", icon: "📅" },
+                                    ].map((rec, i) => {
+                                        const impactColor = rec.impact === "Critical" ? "#dc2626" : rec.impact === "High" ? "#ef4444" : "#f59e0b";
+                                        return (
+                                            <div key={i} style={{ display: "flex", gap: "12px", padding: "14px", border: "1px solid var(--glass-border)", borderRadius: "10px", background: "rgba(248,250,252,0.5)" }}>
+                                                <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{rec.icon}</span>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{rec.title}</span>
+                                                        <span style={{ fontSize: "0.65rem", fontWeight: 700, color: impactColor, background: `${impactColor}11`, padding: "2px 8px", borderRadius: "4px", border: `1px solid ${impactColor}33` }}>{rec.impact}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: "8px" }}>{rec.desc}</div>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                        <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>⏱ Est. effort: <strong>{rec.effort}</strong></span>
+                                                        <button
+                                                            style={{ fontSize: "0.7rem", fontWeight: 700, color: "white", background: "var(--accent-indigo)", border: "none", borderRadius: "6px", padding: "4px 12px", cursor: "pointer" }}
+                                                            onClick={() => addToast({ type: "success", title: "Coaching Task Queued", message: `${rec.title} added to training queue.` })}>
+                                                            Queue Task
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: TELEPHONY ─── Connectivity & Health Diagnostics ──── */}
+            {activeTab === "telephony" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+                    {/* Overall Status Banner */}
+                    <div className="aicc-card" style={{
+                        padding: "20px 24px",
+                        borderRadius: "14px",
+                        background: healthData?.overallStatus === 'connected'
+                            ? "linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.04))"
+                            : healthData?.overallStatus === 'degraded'
+                            ? "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(234, 179, 8, 0.04))"
+                            : "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(220, 38, 38, 0.04))",
+                        border: healthData?.overallStatus === 'connected'
+                            ? "1px solid rgba(34, 197, 94, 0.25)"
+                            : healthData?.overallStatus === 'degraded'
+                            ? "1px solid rgba(245, 158, 11, 0.25)"
+                            : "1px solid rgba(239, 68, 68, 0.25)"
+                    }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                                {/* Animated pulse icon */}
+                                <div style={{
+                                    position: "relative",
+                                    width: "48px", height: "48px",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    borderRadius: "50%",
+                                    background: healthData?.overallStatus === 'connected'
+                                        ? "rgba(34, 197, 94, 0.15)"
+                                        : healthData?.overallStatus === 'degraded'
+                                        ? "rgba(245, 158, 11, 0.15)"
+                                        : "rgba(239, 68, 68, 0.15)"
+                                }}>
+                                    {healthLoading ? (
+                                        <Loader2 size={24} style={{ color: "var(--text-secondary)", animation: "spin 1s linear infinite" }} />
+                                    ) : healthData?.overallStatus === 'connected' ? (
+                                        <Wifi size={24} style={{ color: "#16a34a" }} />
+                                    ) : healthData?.overallStatus === 'degraded' ? (
+                                        <AlertTriangle size={24} style={{ color: "#d97706" }} />
+                                    ) : (
+                                        <WifiOff size={24} style={{ color: "#dc2626" }} />
+                                    )}
+                                    {!healthLoading && (
+                                        <span style={{
+                                            position: "absolute", top: "2px", right: "2px",
+                                            width: "12px", height: "12px", borderRadius: "50%",
+                                            background: healthData?.overallStatus === 'connected' ? "#22c55e"
+                                                : healthData?.overallStatus === 'degraded' ? "#f59e0b" : "#ef4444",
+                                            animation: "pulse 2s infinite",
+                                            boxShadow: healthData?.overallStatus === 'connected'
+                                                ? "0 0 8px rgba(34, 197, 94, 0.6)"
+                                                : healthData?.overallStatus === 'degraded'
+                                                ? "0 0 8px rgba(245, 158, 11, 0.6)"
+                                                : "0 0 8px rgba(239, 68, 68, 0.6)"
+                                        }} />
+                                    )}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                        {healthData?.overallStatus === 'connected' ? '✅ Rohan is Fully Connected'
+                                            : healthData?.overallStatus === 'degraded' ? '⚠️ Rohan is Partially Connected'
+                                            : healthData ? '❌ Rohan is Disconnected' : 'Checking connectivity...'}
+                                    </div>
+                                    <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                                        {healthData ? (
+                                            <>
+                                                <span style={{ color: "#16a34a", fontWeight: 700 }}>{healthData.summary.ok} OK</span>
+                                                {healthData.summary.warnings > 0 && <> · <span style={{ color: "#d97706", fontWeight: 700 }}>{healthData.summary.warnings} Warnings</span></>}
+                                                {healthData.summary.errors > 0 && <> · <span style={{ color: "#dc2626", fontWeight: 700 }}>{healthData.summary.errors} Errors</span></>}
+                                                <> · {healthData.summary.total} checks total</>
+                                            </>
+                                        ) : 'Running diagnostics...'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                {healthData?.checkedAt && (
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                                        Last checked: {new Date(healthData.checkedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </span>
+                                )}
+                                <button
+                                    onClick={() => { fetchHealth(); }}
+                                    disabled={healthLoading}
+                                    style={{
+                                        display: "flex", alignItems: "center", gap: "6px",
+                                        padding: "8px 14px", borderRadius: "8px",
+                                        border: "1px solid var(--glass-border)",
+                                        background: "rgba(255, 255, 255, 0.7)",
+                                        fontWeight: 700, fontSize: "0.8rem",
+                                        cursor: healthLoading ? "not-allowed" : "pointer",
+                                        color: "var(--text-primary)", opacity: healthLoading ? 0.5 : 1
+                                    }}
+                                >
+                                    <RefreshCw size={14} style={{ animation: healthLoading ? "spin 1s linear infinite" : "none" }} />
+                                    Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Individual Health Checks */}
+                    {healthData && (
+                        <div className="aicc-card" style={{
+                            padding: "0",
+                            borderRadius: "14px",
+                            overflow: "hidden"
+                        }}>
+                            <div style={{
+                                padding: "16px 20px",
+                                borderBottom: "1px solid var(--glass-border)",
+                                display: "flex", justifyContent: "space-between", alignItems: "center"
+                            }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <Activity size={16} style={{ color: "var(--accent-indigo)" }} />
+                                    <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                        System Diagnostics
+                                    </span>
+                                </div>
+                                <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                                    Auto-refreshes every 30 seconds
+                                </span>
+                            </div>
+
+                            {healthData.checks.map((check, idx) => {
+                                const iconMap: Record<string, any> = {
+                                    'Persona Config': <Database size={16} />,
+                                    'Agent Activation': <Plug size={16} />,
+                                    'Operational Status': <Activity size={16} />,
+                                    'Shift Hours': <Clock4 size={16} />,
+                                    'User Account': <UserCheck size={16} />,
+                                    'Lead Queue': <Users size={16} />,
+                                    'Digital Employee Server': <ServerCrash size={16} />,
+                                    'Telephony Gateway': <Radio size={16} />,
+                                    'Worker Daemon': <Zap size={16} />,
+                                    'API Server': <ServerCrash size={16} />,
+                                };
+                                const statusColor = check.status === 'ok' ? '#16a34a' : check.status === 'warn' ? '#d97706' : '#dc2626';
+                                const statusBg = check.status === 'ok' ? 'rgba(34, 197, 94, 0.08)' : check.status === 'warn' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+                                const statusLabel = check.status === 'ok' ? 'OK' : check.status === 'warn' ? 'WARN' : 'ERROR';
+
+                                return (
+                                    <div key={idx} style={{
+                                        padding: "14px 20px",
+                                        borderBottom: idx < healthData.checks.length - 1 ? "1px solid var(--glass-border)" : "none",
+                                        background: check.status !== 'ok' ? statusBg : "transparent",
+                                        transition: "background 0.3s ease"
+                                    }}>
+                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                                <div style={{
+                                                    width: "34px", height: "34px",
+                                                    borderRadius: "8px",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                    background: `${statusColor}15`,
+                                                    color: statusColor,
+                                                    flexShrink: 0
+                                                }}>
+                                                    {iconMap[check.name] || <CheckCircle2 size={16} />}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                                                        {check.name}
+                                                    </div>
+                                                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                                                        {check.message}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span style={{
+                                                fontSize: "0.65rem",
+                                                fontWeight: 800,
+                                                color: statusColor,
+                                                background: `${statusColor}15`,
+                                                padding: "3px 10px",
+                                                borderRadius: "6px",
+                                                border: `1px solid ${statusColor}30`,
+                                                letterSpacing: "0.5px",
+                                                flexShrink: 0
+                                            }}>
+                                                {statusLabel}
+                                            </span>
+                                        </div>
+                                        {/* Expandable detail / reason */}
+                                        {check.detail && (
+                                            <div style={{
+                                                marginTop: "10px",
+                                                marginLeft: "46px",
+                                                padding: "10px 14px",
+                                                borderRadius: "8px",
+                                                background: check.status === 'error'
+                                                    ? "rgba(239, 68, 68, 0.06)"
+                                                    : "rgba(245, 158, 11, 0.06)",
+                                                border: `1px solid ${check.status === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)'}`,
+                                                fontSize: "0.75rem",
+                                                color: "var(--text-secondary)",
+                                                lineHeight: 1.6
+                                            }}>
+                                                <strong style={{ color: statusColor }}>
+                                                    {check.status === 'error' ? '🔴 Reason: ' : '⚠️ Note: '}
+                                                </strong>
+                                                {check.detail}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Telephony Gateway Settings Form */}
+                    <div className="aicc-card" style={{ padding: "24px", borderRadius: "14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px" }}>
+                            <Radio size={18} style={{ color: "var(--accent-indigo)" }} />
+                            <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                Telephony Gateway Configuration
+                            </span>
+                        </div>
+
+                        {isFetchingTelephony ? (
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: "10px", color: "var(--text-secondary)" }}>
+                                <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} />
+                                <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>Loading telephony settings...</span>
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                                
+                                {/* Provider Select */}
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                    <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                        Telephony Provider
+                                    </label>
+                                    <select
+                                        value={telProvider}
+                                        onChange={(e) => setTelProvider(e.target.value)}
+                                        style={{
+                                            padding: "10px 14px",
+                                            borderRadius: "8px",
+                                            border: "1px solid var(--glass-border)",
+                                            background: "white",
+                                            fontSize: "0.85rem",
+                                            fontWeight: 700,
+                                            color: "var(--text-primary)",
+                                            outline: "none"
+                                        }}
+                                    >
+                                        <option value="gsm_gateway">🔌 Local GSM Gateway (gsm2sip / Dinstar / GoIP)</option>
+                                        <option value="exotel">☁️ Exotel Cloud Telephony</option>
+                                        <option value="twilio">☁️ Twilio SIP Trunk</option>
+                                        <option value="jio">📡 Reliance Jio SIP Trunk</option>
+                                    </select>
+                                </div>
+
+                                <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", margin: "4px 0" }} />
+
+                                {/* Contextual fields based on provider */}
+                                {telProvider === 'gsm_gateway' ? (
+                                    <>
+                                        {/* Gateway URL / IP */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <div style={{ display: "flex", flexDirection: "column" }}>
+                                                <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                    Gateway URL / IP
+                                                </label>
+                                                <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                                                    e.g. http://192.168.1.100:5060 or local address
+                                                </span>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={telSid}
+                                                onChange={(e) => setTelSid(e.target.value)}
+                                                placeholder="http://192.168.1.100:5060"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Outbound caller ID / SIM number */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <div style={{ display: "flex", flexDirection: "column" }}>
+                                                <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                    Outbound Caller ID (SIM Phone)
+                                                </label>
+                                                <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                                                    Mobile number connected to Gateway SIM
+                                                </span>
+                                            </div>
+                                            <input
+                                                type="text"
+                                                value={telFromNumber}
+                                                onChange={(e) => setTelFromNumber(e.target.value)}
+                                                placeholder="+919876543210"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* API Username */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                API Username
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={telApiKey}
+                                                onChange={(e) => setTelApiKey(e.target.value)}
+                                                placeholder="admin"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* API Password */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                API Password
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={telApiSecret}
+                                                onChange={(e) => setTelApiSecret(e.target.value)}
+                                                placeholder="••••••••••••"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Account SID */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                Account SID
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={telSid}
+                                                onChange={(e) => setTelSid(e.target.value)}
+                                                placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxx"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* API Key */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                API Key / Token
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={telApiKey}
+                                                onChange={(e) => setTelApiKey(e.target.value)}
+                                                placeholder="SKxxxxxxxxxxxxxxxxxxxxxxxx"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* API Secret */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                API Secret
+                                            </label>
+                                            <input
+                                                type="password"
+                                                value={telApiSecret}
+                                                onChange={(e) => setTelApiSecret(e.target.value)}
+                                                placeholder="••••••••••••"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Caller ID / From Number */}
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "20px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                Outbound Caller ID (From)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={telFromNumber}
+                                                onChange={(e) => setTelFromNumber(e.target.value)}
+                                                placeholder="+1234567890"
+                                                style={{
+                                                    padding: "10px 14px",
+                                                    borderRadius: "8px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    fontSize: "0.85rem",
+                                                    fontWeight: 600,
+                                                    outline: "none"
+                                                }}
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Save Button */}
+                                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
+                                    <button
+                                        onClick={handleSaveTelephony}
+                                        disabled={isSavingTelephony}
+                                        style={{
+                                            display: "flex", alignItems: "center", gap: "6px",
+                                            padding: "10px 20px", borderRadius: "8px",
+                                            border: "none",
+                                            background: "var(--accent-indigo)",
+                                            color: "white",
+                                            fontWeight: 700, fontSize: "0.85rem",
+                                            cursor: isSavingTelephony ? "not-allowed" : "pointer",
+                                            opacity: isSavingTelephony ? 0.7 : 1,
+                                            boxShadow: "0 2px 8px rgba(99,102,241,0.35)",
+                                            transition: "all 0.2s"
+                                        }}
+                                    >
+                                        {isSavingTelephony ? (
+                                            <>
+                                                <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                                                Saving config...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save size={15} />
+                                                Save Gateway Config
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Architecture Info Card */}
+                    <div className="aicc-card" style={{
+                        padding: "20px 24px", borderRadius: "14px",
+                        background: "rgba(99, 102, 241, 0.04)",
+                        border: "1px solid rgba(99, 102, 241, 0.12)"
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+                            <Bot size={18} style={{ color: "var(--accent-indigo)" }} />
+                            <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                Rohan Call Pipeline Architecture
+                            </span>
+                        </div>
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(5, 1fr)",
+                            gap: "8px",
+                            fontSize: "0.72rem",
+                            fontWeight: 700
+                        }}>
+                            {[
+                                { icon: "⏱️", label: "PacingEngine", sub: "30s tick (Worker)", color: "#6366f1" },
+                                { icon: "📋", label: "LeadQueue", sub: "SQL Priority Sort", color: "#8b5cf6" },
+                                { icon: "📞", label: "AIDialer", sub: "5-Step Lifecycle", color: "#a855f7" },
+                                { icon: "🔌", label: "OutboundRoutes", sub: "CRM API /dial", color: "#d946ef" },
+                                { icon: "📡", label: "GSM Gateway", sub: "SIM → Phone Rings", color: "#ec4899" }
+                            ].map((step, i) => (
+                                <div key={i} style={{
+                                    textAlign: "center",
+                                    padding: "14px 8px",
+                                    borderRadius: "10px",
+                                    background: "rgba(255,255,255,0.7)",
+                                    border: "1px solid var(--glass-border)",
+                                    position: "relative"
+                                }}>
+                                    <div style={{ fontSize: "1.4rem", marginBottom: "6px" }}>{step.icon}</div>
+                                    <div style={{ color: step.color, fontWeight: 800, fontSize: "0.78rem" }}>{step.label}</div>
+                                    <div style={{ color: "var(--text-secondary)", fontWeight: 600, marginTop: "2px", fontSize: "0.65rem" }}>{step.sub}</div>
+                                    {i < 4 && (
+                                        <div style={{
+                                            position: "absolute", top: "50%", right: "-14px",
+                                            transform: "translateY(-50%)",
+                                            fontSize: "0.9rem", color: "var(--text-secondary)",
+                                            zIndex: 1
+                                        }}>→</div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+            )}
+
+        </div>
+    );
+}

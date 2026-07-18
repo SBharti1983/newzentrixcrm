@@ -17,6 +17,7 @@ import { BrandingProvider, useBranding } from './context/BrandingContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 import { PageProvider } from './context/PageContext';
+import EscalationAlert from './components/ai/EscalationAlert';
 
 // --- Lazy Loaded Pages (domain-grouped) ---
 // Auth
@@ -30,6 +31,7 @@ const PublicSignup = lazy(() => import('./pages/auth/PublicSignup'));
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const AdminDashboardView = lazy(() => import('./pages/dashboard/AdminDashboardView'));
 const CommandCenter = lazy(() => import('./pages/dashboard/CommandCenter'));
+const AICommandCenter = lazy(() => import('./pages/ai/AICommandCenter'));
 
 // Leads & Pipeline
 const Leads = lazy(() => import('./pages/leads/Leads'));
@@ -59,6 +61,10 @@ const Reports = lazy(() => import('./pages/analytics/Reports'));
 const VoiceAnalytics = lazy(() => import('./pages/analytics/VoiceAnalytics'));
 const TeamHierarchy = lazy(() => import('./pages/analytics/TeamHierarchy'));
 const Academy = lazy(() => import('./pages/analytics/Academy'));
+
+// AI
+const RohanDashboard = lazy(() => import('./pages/ai/RohanDashboard'));
+const NehaDashboard = lazy(() => import('./pages/ai/NehaDashboard'));
 
 // Finance
 const Billing = lazy(() => import('./pages/finance/Billing'));
@@ -95,7 +101,7 @@ import { PageLoader } from './components/feedback/Feedback';
 function LockoutOverlay() {
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 10000, 
+      position: 'fixed', inset: 0, zIndex: 10000,
       background: 'rgba(10, 22, 40, 0.95)', backdropFilter: 'blur(12px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center'
     }}>
@@ -103,7 +109,7 @@ function LockoutOverlay() {
         <div style={{ fontSize: '4rem', marginBottom: 20 }}>❄️</div>
         <h2 style={{ color: 'white', fontWeight: 900, marginBottom: 16 }}>Operational Lockout</h2>
         <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.6 }}>
-          This workspace has been temporarily suspended by the Zentrix Systems administrator. 
+          This workspace has been temporarily suspended by the Zentrix Systems administrator.
           Please settle outstanding dues or contact support to restore access.
         </p>
       </div>
@@ -159,7 +165,7 @@ function ProtectedApp() {
   // Handle Notifications selectively through context socket
   useEffect(() => {
     if (!socket) return;
-    
+
     const onNotify = (data) => {
       addToast({
         type: 'info',
@@ -172,6 +178,26 @@ function ProtectedApp() {
     socket.on('notification', onNotify);
     return () => socket.off('notification', onNotify);
   }, [socket, addToast]);
+
+  const [activeEscalation, setActiveEscalation] = useState<any>(null);
+
+  // Handle live AI escalations from Rohan
+  useEffect(() => {
+    if (!socket) return;
+
+    const onEscalation = (data: any) => {
+      // Show escalation overlay modal
+      setActiveEscalation(data);
+      // Play alert sound if available
+      try {
+        const audio = new Audio('/sounds/escalation-alert.mp3');
+        audio.play().catch(() => { });
+      } catch (e) { }
+    };
+
+    socket.on('rohan:escalation_alert', onEscalation);
+    return () => socket.off('rohan:escalation_alert', onEscalation);
+  }, [socket]);
 
   // Listen for resize
   useEffect(() => {
@@ -203,77 +229,86 @@ function ProtectedApp() {
     <>
       {isLocked && <LockoutOverlay />}
       <div className="app-layout">
-      {/* Mobile backdrop */}
-      {isMobile && mobileOpen && (
-        <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
-      )}
-      <Sidebar
-        collapsed={isMobile ? false : sidebarCollapsed}
-        isMobile={isMobile}
-        mobileOpen={mobileOpen}
-        onToggle={handleNavToggle}
-        onLogout={logout}
-        onNavigate={closeMobileSidebar}
-      />
-      <div className={`main-content${sidebarCollapsed && !isMobile ? ' sidebar-collapsed' : ''}${isMobile ? ' mobile' : ''}`}>
-        <Header
-          collapsed={sidebarCollapsed}
+        {/* Mobile backdrop */}
+        {isMobile && mobileOpen && (
+          <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />
+        )}
+        <Sidebar
+          collapsed={isMobile ? false : sidebarCollapsed}
           isMobile={isMobile}
+          mobileOpen={mobileOpen}
           onToggle={handleNavToggle}
+          onLogout={logout}
+          onNavigate={closeMobileSidebar}
         />
-        <main className="page-content" style={isMobile ? { paddingBottom: 80 } : undefined}>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-            <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : <Dashboard />}</RoleGuard>} />
-            <Route path="/dashboard" element={<Navigate to="/" replace />} />
-            <Route path="/leads" element={<RoleGuard path="/leads"><Leads /></RoleGuard>} />
-            <Route path="/nurture-leads" element={<RoleGuard path="/nurture-leads"><NurtureLeads /></RoleGuard>} />
-            <Route path="/leads/:id" element={<RoleGuard path="/leads"><ContactDetails /></RoleGuard>} />
-            <Route path="/pipeline" element={<RoleGuard path="/pipeline"><Pipeline /></RoleGuard>} />
-            <Route path="/projects" element={<RoleGuard path="/projects"><Projects /></RoleGuard>} />
-            <Route path="/inventory" element={<RoleGuard path="/inventory"><Inventory /></RoleGuard>} />
-            <Route path="/customers" element={<RoleGuard path="/customers"><Customers /></RoleGuard>} />
-            <Route path="/bookings" element={<RoleGuard path="/bookings"><Bookings /></RoleGuard>} />
-            <Route path="/payment-tracker" element={<RoleGuard path="/payment-tracker"><PaymentTracker /></RoleGuard>} />
-            <Route path="/agreements" element={<RoleGuard path="/agreements"><Agreements /></RoleGuard>} />
-            <Route path="/followups" element={<RoleGuard path="/followups"><Followups /></RoleGuard>} />
-            <Route path="/site-visits" element={<RoleGuard path="/site-visits"><SiteVisits /></RoleGuard>} />
-            <Route path="/notifications" element={<RoleGuard path="/notifications"><Notifications /></RoleGuard>} />
-            <Route path="/channel-partners" element={<RoleGuard path="/channel-partners"><ChannelPartners /></RoleGuard>} />
-            <Route path="/analytics" element={<RoleGuard path="/analytics"><Analytics /></RoleGuard>} />
-            <Route path="/team-hierarchy" element={<RoleGuard path="/team-hierarchy"><TeamHierarchy /></RoleGuard>} />
-            <Route path="/leaderboard" element={<RoleGuard path="/leaderboard"><Leaderboard /></RoleGuard>} />
-            <Route path="/reports" element={<RoleGuard path="/reports"><Reports /></RoleGuard>} />
-            <Route path="/admin" element={<RoleGuard path="/admin"><Admin /></RoleGuard>} />
-            <Route path="/calendar" element={<RoleGuard path="/calendar"><CalendarPage /></RoleGuard>} />
-            <Route path="/superadmin" element={<RoleGuard path="/superadmin"><SuperAdmin /></RoleGuard>} />
-            <Route path="/workspace-management" element={<RoleGuard path="/superadmin"><WorkspaceManagement /></RoleGuard>} />
-            <Route path="/customer-portal" element={<RoleGuard path="/customer-portal"><CustomerPortal /></RoleGuard>} />
-            <Route path="/broker-portal" element={<RoleGuard path="/broker-portal"><BrokerPortal /></RoleGuard>} />
-            <Route path="/inbox" element={<RoleGuard path="/inbox"><Inbox /></RoleGuard>} />
-            <Route path="/automations" element={<RoleGuard path="/automations"><Automations /></RoleGuard>} />
-            <Route path="/automation-distribution" element={<RoleGuard path="/automation-distribution"><AutomationDistribution /></RoleGuard>} />
-            <Route path="/integrations" element={<RoleGuard path="/integrations"><Integrations /></RoleGuard>} />
-            <Route path="/commissions" element={<RoleGuard path="/commissions"><Commissions /></RoleGuard>} />
-            <Route path="/call-records" element={<RoleGuard path="/call-records"><CallRecords /></RoleGuard>} />
-            <Route path="/voice-analytics" element={<RoleGuard path="/voice-analytics"><VoiceAnalytics /></RoleGuard>} />
-            <Route path="/lead-scoring" element={<RoleGuard path="/lead-scoring"><LeadScoreStatus /></RoleGuard>} />
-            <Route path="/marketing" element={<RoleGuard path="/marketing"><Marketing /></RoleGuard>} />
-            <Route path="/whatsapp-marketing" element={<RoleGuard path="/whatsapp-marketing"><WhatsAppMarketing /></RoleGuard>} />
-            <Route path="/billing" element={<RoleGuard path="/billing"><Billing /></RoleGuard>} />
-            <Route path="/command-center" element={<RoleGuard path="/command-center"><CommandCenter /></RoleGuard>} />
-            <Route path="/academy" element={<RoleGuard path="/academy"><Academy /></RoleGuard>} />
-            <Route path="/billing/success" element={<BillingSuccess />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </Suspense>
-        </main>
+        <div className={`main-content${sidebarCollapsed && !isMobile ? ' sidebar-collapsed' : ''}${isMobile ? ' mobile' : ''}`}>
+          <Header
+            collapsed={sidebarCollapsed}
+            isMobile={isMobile}
+            onToggle={handleNavToggle}
+          />
+          {activeEscalation && (
+            <EscalationAlert
+              alertData={activeEscalation}
+              onClose={() => setActiveEscalation(null)}
+            />
+          )}
+          <main className="page-content" style={isMobile ? { paddingBottom: 80 } : undefined}>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                <Route path="/" element={<RoleGuard path="/">{user?.role === 'customer' ? <Navigate to="/customer-portal" replace /> : user?.role === 'broker' ? <Navigate to="/broker-portal" replace /> : user?.role === 'ai_employee' ? <Navigate to="/rohan-dashboard" replace /> : <Dashboard />}</RoleGuard>} />
+                <Route path="/dashboard" element={<Navigate to="/" replace />} />
+                <Route path="/leads" element={<RoleGuard path="/leads"><Leads /></RoleGuard>} />
+                <Route path="/nurture-leads" element={<RoleGuard path="/nurture-leads"><NurtureLeads /></RoleGuard>} />
+                <Route path="/leads/:id" element={<RoleGuard path="/leads"><ContactDetails /></RoleGuard>} />
+                <Route path="/pipeline" element={<RoleGuard path="/pipeline"><Pipeline /></RoleGuard>} />
+                <Route path="/projects" element={<RoleGuard path="/projects"><Projects /></RoleGuard>} />
+                <Route path="/inventory" element={<RoleGuard path="/inventory"><Inventory /></RoleGuard>} />
+                <Route path="/customers" element={<RoleGuard path="/customers"><Customers /></RoleGuard>} />
+                <Route path="/bookings" element={<RoleGuard path="/bookings"><Bookings /></RoleGuard>} />
+                <Route path="/payment-tracker" element={<RoleGuard path="/payment-tracker"><PaymentTracker /></RoleGuard>} />
+                <Route path="/agreements" element={<RoleGuard path="/agreements"><Agreements /></RoleGuard>} />
+                <Route path="/followups" element={<RoleGuard path="/followups"><Followups /></RoleGuard>} />
+                <Route path="/site-visits" element={<RoleGuard path="/site-visits"><SiteVisits /></RoleGuard>} />
+                <Route path="/notifications" element={<RoleGuard path="/notifications"><Notifications /></RoleGuard>} />
+                <Route path="/channel-partners" element={<RoleGuard path="/channel-partners"><ChannelPartners /></RoleGuard>} />
+                <Route path="/analytics" element={<RoleGuard path="/analytics"><Analytics /></RoleGuard>} />
+                <Route path="/team-hierarchy" element={<RoleGuard path="/team-hierarchy"><TeamHierarchy /></RoleGuard>} />
+                <Route path="/leaderboard" element={<RoleGuard path="/leaderboard"><Leaderboard /></RoleGuard>} />
+                <Route path="/reports" element={<RoleGuard path="/reports"><Reports /></RoleGuard>} />
+                <Route path="/admin" element={<RoleGuard path="/admin"><Admin /></RoleGuard>} />
+                <Route path="/calendar" element={<RoleGuard path="/calendar"><CalendarPage /></RoleGuard>} />
+                <Route path="/superadmin" element={<RoleGuard path="/superadmin"><SuperAdmin /></RoleGuard>} />
+                <Route path="/workspace-management" element={<RoleGuard path="/superadmin"><WorkspaceManagement /></RoleGuard>} />
+                <Route path="/customer-portal" element={<RoleGuard path="/customer-portal"><CustomerPortal /></RoleGuard>} />
+                <Route path="/broker-portal" element={<RoleGuard path="/broker-portal"><BrokerPortal /></RoleGuard>} />
+                <Route path="/inbox" element={<RoleGuard path="/inbox"><Inbox /></RoleGuard>} />
+                <Route path="/automations" element={<RoleGuard path="/automations"><Automations /></RoleGuard>} />
+                <Route path="/automation-distribution" element={<RoleGuard path="/automation-distribution"><AutomationDistribution /></RoleGuard>} />
+                <Route path="/integrations" element={<RoleGuard path="/integrations"><Integrations /></RoleGuard>} />
+                <Route path="/commissions" element={<RoleGuard path="/commissions"><Commissions /></RoleGuard>} />
+                <Route path="/call-records" element={<RoleGuard path="/call-records"><CallRecords /></RoleGuard>} />
+                <Route path="/voice-analytics" element={<RoleGuard path="/voice-analytics"><VoiceAnalytics /></RoleGuard>} />
+                <Route path="/lead-scoring" element={<RoleGuard path="/lead-scoring"><LeadScoreStatus /></RoleGuard>} />
+                <Route path="/marketing" element={<RoleGuard path="/marketing"><Marketing /></RoleGuard>} />
+                <Route path="/whatsapp-marketing" element={<RoleGuard path="/whatsapp-marketing"><WhatsAppMarketing /></RoleGuard>} />
+                <Route path="/billing" element={<RoleGuard path="/billing"><Billing /></RoleGuard>} />
+                <Route path="/command-center" element={<RoleGuard path="/command-center"><CommandCenter /></RoleGuard>} />
+                <Route path="/ai-command-center" element={<RoleGuard path="/ai-command-center"><AICommandCenter /></RoleGuard>} />
+                <Route path="/academy" element={<RoleGuard path="/academy"><Academy /></RoleGuard>} />
+                <Route path="/rohan-dashboard" element={<RoleGuard path="/rohan-dashboard"><RohanDashboard /></RoleGuard>} />
+                <Route path="/neha-dashboard" element={<RoleGuard path="/neha-dashboard"><NehaDashboard /></RoleGuard>} />
+                <Route path="/billing/success" element={<BillingSuccess />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </main>
+        </div>
+        {(user?.role === 'agent' || user?.role === 'sales_manager') && !isMobile && <AgentCopilotWidget />}
+        {isMobile && <MobileBottomNav onOpenSidebar={() => setMobileOpen(true)} />}
+        <PWAInstallManager isMobile={isMobile} />
       </div>
-      {(user?.role === 'agent' || user?.role === 'sales_manager') && !isMobile && <AgentCopilotWidget />}
-      {isMobile && <MobileBottomNav onOpenSidebar={() => setMobileOpen(true)} />}
-      <PWAInstallManager isMobile={isMobile} />
-    </div>
-    <Dialer />
+      <Dialer />
     </>
   );
 }
@@ -284,33 +319,33 @@ export default function App() {
   return (
     <AuthProvider>
       <ThemeProvider>
-      <ToastProvider>
-        <PresenceProvider>
-          <BrandingProvider>
-          <PageProvider>
-          <ErrorBoundary>
-            <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/login" element={<LoginRedirect />} />
-                  <Route path="/register" element={<RegisterRedirect />} />
-                  <Route path="/signup" element={<PublicSignup />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/enquiry" element={<Enquiry />} />
-                  <Route path="/project/:projectId" element={<ProjectMicrosite />} />
-                  <Route path="/referral/:partnerId" element={<PartnerReferral />} />
-                  <Route path="/kiosk" element={<Kiosk />} />
-                  {/* All other routes — protected */}
-                  <Route path="/*" element={<ProtectedApp />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </ErrorBoundary>
-          </PageProvider>
-          </BrandingProvider>
-        </PresenceProvider>
-      </ToastProvider>
+        <ToastProvider>
+          <PresenceProvider>
+            <BrandingProvider>
+              <PageProvider>
+                <ErrorBoundary>
+                  <BrowserRouter>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/login" element={<LoginRedirect />} />
+                        <Route path="/register" element={<RegisterRedirect />} />
+                        <Route path="/signup" element={<PublicSignup />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        <Route path="/enquiry" element={<Enquiry />} />
+                        <Route path="/project/:projectId" element={<ProjectMicrosite />} />
+                        <Route path="/referral/:partnerId" element={<PartnerReferral />} />
+                        <Route path="/kiosk" element={<Kiosk />} />
+                        {/* All other routes — protected */}
+                        <Route path="/*" element={<ProtectedApp />} />
+                      </Routes>
+                    </Suspense>
+                  </BrowserRouter>
+                </ErrorBoundary>
+              </PageProvider>
+            </BrandingProvider>
+          </PresenceProvider>
+        </ToastProvider>
       </ThemeProvider>
     </AuthProvider>
   );
@@ -322,6 +357,7 @@ function LoginRedirect() {
   if (user) {
     if (user.role === 'customer') return <Navigate to="/customer-portal" replace />;
     if (user.role === 'broker') return <Navigate to="/broker-portal" replace />;
+    if (user.role === 'ai_employee') return <Navigate to="/rohan-dashboard" replace />;
     return <Navigate to="/" replace />;
   }
   return <Login />;

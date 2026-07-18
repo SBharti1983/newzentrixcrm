@@ -1,0 +1,16 @@
+- [x] Expose `loadDbProfiles` and add manual re-sync click trigger with Toast notifications
+- [x] Add `lastSyncedAt` state with interval to update relative timestamp dynamically next to title
+- [x] Design and render custom Delete Confirmation Modal with file metadata (pages, chunks, impact)
+- [x] Implement relevance thumbs up/down quality feedback loop in the Semantic Vector Search Simulator
+- [x] Implement Category Filters (All, Brochure, FAQ, Policies, Sales Scripts) filtering the active document rows
+- [x] Support Indexing status indicators (processing, failed, retry button) in the document rows
+- [x] Expand SVG Visualizer to make the central document node clickable to show document summary metrics
+- [x] Link Top Card Files and Chunks count metrics dynamically
+- [x] Implement business-focused Top Statistics row (Failed Queries, Avg Response Time, Accuracy, Confidence, Coverage)
+- [x] Upgrade Digital AI Employee Card with advanced metrics (Health, Languages, Active Calls, Average Rating, Escalation %, Retraining Status)
+- [x] Revamp Upload Section dropzone layout with Drag & Drop prompts, format chips (PDF, DOCX, TXT, CSV, OCR, ZIP) and Recently Uploaded list
+- [x] Add sub-grid of 9 Enterprise Metadata Columns in document cards (Size, Chunks, Model, Version, Owner, Department, Confidence, Last Used, Questions)
+- [x] Implement hover-activated link line highlighting and scale transitions in SVG chunk network map
+- [x] Render Enterprise AI RAG Health Dashboard card showing metrics (Coverage, Latency, Risk, Failed, Retraining status)
+- [x] Design and insert Knowledge Ingest Pipeline Audit Trail Timeline logs
+- [x] Verify frontend build and manually verify visual changes

@@ -5,7 +5,7 @@ export const ROLE_ACCESS = {
         bg: 'rgba(139,92,246,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/academy'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/academy', '/rohan-dashboard', '/neha-dashboard', '/ai-command-center'],
     },
     sales_manager: {
         label: 'Manager',
@@ -13,7 +13,7 @@ export const ROLE_ACCESS = {
         bg: 'var(--navy-50)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/academy'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/academy', '/rohan-dashboard', '/neha-dashboard'],
     },
     team_leader: {
         label: 'Team Leader',
@@ -28,6 +28,12 @@ export const ROLE_ACCESS = {
         bg: 'rgba(16,185,129,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/followups', '/site-visits',
             '/customers', '/bookings', '/notifications', '/calendar', '/customer-portal', '/inbox', '/lead-scoring', '/call-records', '/voice-analytics', '/marketing', '/command-center', '/leaderboard', '/analytics', '/team-hierarchy', '/agreements', '/academy'],
+    },
+    ai_employee: {
+        label: 'AI Digital Employee',
+        color: 'var(--accent-indigo)',
+        bg: 'rgba(99,102,241,0.1)',
+        pages: ['/', '/rohan-dashboard', '/neha-dashboard', '/leads', '/nurture-leads', '/followups', '/notifications', '/analytics', '/leaderboard'],
     },
     customer: {
         label: 'Customer',
@@ -47,6 +53,6 @@ export const ROLE_ACCESS = {
         bg: 'rgba(139,92,246,0.1)',
         pages: ['/', '/leads', '/nurture-leads', '/pipeline', '/projects', '/inventory', '/customers',
             '/bookings', '/payment-tracker', '/agreements', '/followups',
-            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/superadmin', '/academy'],
+            '/site-visits', '/notifications', '/channel-partners', '/analytics', '/team-hierarchy', '/voice-analytics', '/reports', '/admin', '/calendar', '/enquiry', '/billing', '/customer-portal', '/broker-portal', '/inbox', '/automations', '/commissions', '/lead-scoring', '/automation-distribution', '/call-records', '/voice-analytics', '/whatsapp-marketing', '/marketing', '/integrations', '/command-center', '/leaderboard', '/superadmin', '/academy', '/rohan-dashboard', '/neha-dashboard', '/ai-command-center'],
     },
 };

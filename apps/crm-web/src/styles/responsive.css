@@ -74,6 +74,8 @@
   /* ─ Main content: full width on mobile ─ */
   .main-content.mobile {
     margin-left: 0 !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
   }
 
   /* ─ Header: full width on mobile ─ */
@@ -92,6 +94,8 @@
   /* ─ Page content ─ */
   .page-content {
     padding: 16px 14px;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
   }
 
   /* ─ Stat cards ─ */
