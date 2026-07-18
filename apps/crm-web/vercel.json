@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://zentrixcrmindia-production.up.railway.app/api/$1"
+      "destination": "https://zentrixcrm-server-production.up.railway.app/api/$1"
     },
     {
       "source": "/((?!api|manifest.json|sw.js|zentrix_fav.png|.*\\..*).*)",
