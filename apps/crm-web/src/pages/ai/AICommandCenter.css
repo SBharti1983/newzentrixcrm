@@ -1867,3 +1867,80 @@
     100% { transform: scaleY(1); }
 }
 
+/* ─── RESPONSIVE: TABLET (max-width: 1024px) ─── */
+@media (max-width: 1024px) {
+    .ai-command-center-container {
+        padding: 16px;
+    }
+    .aicc-tabs-nav {
+        gap: 4px;
+        padding: 6px 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .aicc-tab-btn {
+        padding: 8px 14px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .aicc-card {
+        padding: 16px;
+    }
+    .aicc-title-area h1 {
+        font-size: 1.4rem;
+    }
+}
+
+/* ─── RESPONSIVE: MOBILE (max-width: 768px) ─── */
+@media (max-width: 768px) {
+    .ai-command-center-container {
+        padding: 12px;
+    }
+    .aicc-title-area h1 {
+        font-size: 1.2rem;
+    }
+    .aicc-title-area p {
+        font-size: 0.75rem;
+    }
+    .aicc-card {
+        padding: 14px;
+        border-radius: 10px;
+    }
+    .aicc-input {
+        font-size: 0.78rem !important;
+        padding: 8px 10px !important;
+    }
+    .aicc-btn-primary,
+    .aicc-btn-secondary {
+        font-size: 0.78rem;
+        padding: 8px 14px;
+    }
+    .aicc-dropzone {
+        padding: 14px 10px;
+    }
+}
+
+/* ─── RESPONSIVE: SMALL MOBILE (max-width: 480px) ─── */
+@media (max-width: 480px) {
+    .ai-command-center-container {
+        padding: 8px;
+    }
+    .aicc-tabs-nav {
+        padding: 4px 6px;
+        gap: 2px;
+    }
+    .aicc-tab-btn {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+    }
+    .aicc-card {
+        padding: 12px;
+        border-radius: 8px;
+    }
+    .aicc-title-area h1 {
+        font-size: 1rem;
+    }
+}
+
+

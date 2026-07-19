@@ -5,14 +5,16 @@ import monikaPersonaEngine from '../../employees/Monika/Persona';
 export async function executeMonikaReasoning(
     persona: DbAIEmployeePersona,
     context: MonikaContext,
-    userMessage: string
+    userMessage: string,
+    signal?: AbortSignal
 ): Promise<ReceptionistReasoningOutput> {
     const reasoningPrompt = monikaPersonaEngine.buildSystemPrompt(persona, context, 'reasoning');
 
     const reasoningRaw = await ModelRouter.generateResponse(
         `System Prompt:\n${reasoningPrompt}\n\nCaller Message: ${userMessage}\n\nGenerate structured analysis JSON:`,
         true,
-        'reasoning'
+        'reasoning',
+        signal
     );
 
     return reasoningRaw as ReceptionistReasoningOutput;

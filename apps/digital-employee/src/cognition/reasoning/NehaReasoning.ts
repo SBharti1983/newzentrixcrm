@@ -22,14 +22,16 @@ import nehaPersonaEngine from '../../employees/Neha/Persona';
 export async function executeNehaReasoning(
     persona: DbAIEmployeePersona,
     context: NehaContext,
-    userMessage: string
+    userMessage: string,
+    signal?: AbortSignal
 ): Promise<AccountantReasoningOutput> {
     const reasoningPrompt = nehaPersonaEngine.buildSystemPrompt(persona, context, 'reasoning');
 
     const reasoningRaw = await ModelRouter.generateResponse(
         `System Prompt:\n${reasoningPrompt}\n\nCaller Message: ${userMessage}\n\nGenerate structured analysis JSON:`,
         true,
-        'reasoning'
+        'reasoning',
+        signal
     );
 
     return normalizeNehaReasoning(reasoningRaw);

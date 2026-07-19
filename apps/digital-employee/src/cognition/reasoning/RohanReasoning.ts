@@ -7,7 +7,8 @@ import rohanHindiPersona from '../../employees/Rohan/HindiPersona';
 export async function executeRohanReasoning(
     persona: DbAIEmployeePersona,
     context: RohanContext,
-    userMessage: string
+    userMessage: string,
+    signal?: AbortSignal
 ): Promise<ReasoningOutput> {
     const lang = context.conversation_state.language_detected || 'hinglish';
     let engine = rohanPersonaEngine;
@@ -22,7 +23,8 @@ export async function executeRohanReasoning(
     const reasoningRaw = await ModelRouter.generateResponse(
         `System Prompt:\n${reasoningPrompt}\n\nLead Message: ${userMessage}\n\nGenerate structured analysis JSON:`,
         true,
-        'reasoning'
+        'reasoning',
+        signal
     );
 
     return reasoningRaw as ReasoningOutput;

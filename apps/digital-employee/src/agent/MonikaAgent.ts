@@ -108,9 +108,11 @@ class MonikaCognitiveLoop extends BaseCognitiveLoop<
         persona: DbAIEmployeePersona,
         context: MonikaContext,
         userMessage: string,
-        _signal?: AbortSignal
+        signal?: AbortSignal
     ): Promise<ReceptionistReasoningOutput> {
-        return executeMonikaReasoning(persona, context, userMessage);
+        // Forward the abort signal so Track B timeout / barge-in can cancel
+        // the in-flight reasoning request (items 1.3 / 3.3).
+        return executeMonikaReasoning(persona, context, userMessage, signal);
     }
 
     protected validateReasoningOutput(raw: any): ReasoningValidationResult {

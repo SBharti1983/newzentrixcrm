@@ -553,6 +553,65 @@ export default function AICommandCenter() {
         return () => { active = false; };
     }, []);
 
+    // ─── HYDRATE VOICE TAB STATES FROM DB PROFILE ────────────────────
+    useEffect(() => {
+        const vc = profile?.voice;
+        if (!vc || !profile?.dbId) return; // skip if no DB data loaded
+
+        // Core voice sliders
+        if (vc.stability !== undefined) setVoiceStability(vc.stability);
+        if (vc.pitch !== undefined) setVoicePitch(vc.pitch);
+        if (vc.speechRate !== undefined) setVoiceSpeechRate(vc.speechRate);
+
+        // Speaking style & emotion
+        if (vc.speakingStyle) setSpeakingStyle(vc.speakingStyle);
+        if (vc.emotionalStyle) setEmotionalStyle(vc.emotionalStyle);
+
+        // Conversation behaviour
+        if (vc.conversationBehaviour) {
+            const cb = vc.conversationBehaviour;
+            if (cb.allowInterruption !== undefined) setAllowInterruption(cb.allowInterruption);
+            if (cb.autoPause !== undefined) setAutoPause(cb.autoPause);
+            if (cb.smartResume !== undefined) setSmartResume(cb.smartResume);
+            if (cb.noiseSuppression !== undefined) setNoiseSuppression(cb.noiseSuppression);
+            if (cb.echoCancellation !== undefined) setEchoCancellation(cb.echoCancellation);
+        }
+
+        // Barge-in tuning
+        if (vc.bargeInSensitivity !== undefined) setBargeInSensitivity(vc.bargeInSensitivity);
+        if (vc.pauseDetectionMs !== undefined) setPauseDetectionMs(vc.pauseDetectionMs);
+        if (vc.maxSilenceThreshold !== undefined) setMaxSilenceThreshold(vc.maxSilenceThreshold);
+
+        // Language configuration
+        if (vc.languageConfig) {
+            const lc = vc.languageConfig;
+            if (lc.matrixStates) setMatrixStates(lc.matrixStates);
+            if (lc.fallbackLanguage) setFallbackLanguage(lc.fallbackLanguage);
+            if (lc.autoDetectLanguage !== undefined) setAutoDetectLanguage(lc.autoDetectLanguage);
+            if (lc.translationEnabled !== undefined) setTranslationEnabled(lc.translationEnabled);
+        }
+
+        // Pronunciation dictionary
+        if (vc.pronunciationDictionary && Array.isArray(vc.pronunciationDictionary)) {
+            setPhoneticEntries(vc.pronunciationDictionary);
+        }
+
+        // Safety controls
+        if (vc.safetyControls) setSafetyControls(vc.safetyControls);
+
+        // Twin appearance
+        if (vc.twinAppearance) {
+            const ta = vc.twinAppearance;
+            if (ta.avatarId) setSelectedTwinAvatar(ta.avatarId);
+            if (ta.lipSync !== undefined) setTwinLipSync(ta.lipSync);
+            if (ta.eyeContact !== undefined) setTwinEyeContact(ta.eyeContact);
+            if (ta.gestures !== undefined) setTwinGestures(ta.gestures);
+            if (ta.background) setTwinBackground(ta.background);
+            if (ta.expressionStyle) setTwinExpressionStyle(ta.expressionStyle);
+            if (ta.cameraAngle) setTwinCameraAngle(ta.cameraAngle);
+        }
+    }, [profiles, selectedAgent]);
+
     // ─── HEALTH CHECK STATE & AUTO-POLLING ─────────────────────────────
     interface HealthCheckItem {
         name: string;
@@ -1225,12 +1284,57 @@ export default function AICommandCenter() {
         }
         try {
             const voiceConfig = {
+                // Core voice engine settings
                 engine: profile.voice.engine,
                 voiceId: profile.voice.voiceId,
                 stability: voiceStability,
                 pitch: voicePitch,
                 speechRate: voiceSpeechRate,
-                clonedSamples: profile.voice.clonedSamples
+                clonedSamples: profile.voice.clonedSamples,
+
+                // Speaking style & emotion
+                speakingStyle,
+                emotionalStyle,
+
+                // Conversation behaviour toggles
+                conversationBehaviour: {
+                    allowInterruption,
+                    autoPause,
+                    smartResume,
+                    detectLongSilence: maxSilenceThreshold > 0,
+                    noiseSuppression,
+                    echoCancellation
+                },
+
+                // Barge-in tuning
+                bargeInSensitivity,
+                pauseDetectionMs,
+                maxSilenceThreshold,
+
+                // Language configuration
+                languageConfig: {
+                    matrixStates,
+                    fallbackLanguage,
+                    autoDetectLanguage,
+                    translationEnabled
+                },
+
+                // Pronunciation dictionary
+                pronunciationDictionary: phoneticEntries,
+
+                // Safety controls
+                safetyControls,
+
+                // Twin appearance
+                twinAppearance: {
+                    avatarId: selectedTwinAvatar,
+                    lipSync: twinLipSync,
+                    eyeContact: twinEyeContact,
+                    gestures: twinGestures,
+                    background: twinBackground,
+                    expressionStyle: twinExpressionStyle,
+                    cameraAngle: twinCameraAngle
+                }
             };
             await apiFetch(`/api/v1/ai/employees/${dbId}`, {
                 method: "PUT",
@@ -1251,7 +1355,7 @@ export default function AICommandCenter() {
             addToast({
                 type: "success",
                 title: "Voice Config Saved",
-                message: "Speech synthesis settings updated on active engine database."
+                message: "Full voice + behaviour + language configuration persisted to database."
             });
         } catch (err: any) {
             console.error(err);

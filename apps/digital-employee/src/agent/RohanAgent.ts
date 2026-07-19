@@ -85,10 +85,12 @@ class RohanCognitiveLoop extends BaseCognitiveLoop<
         persona: DbAIEmployeePersona,
         context: RohanContext,
         userMessage: string,
-        _signal?: AbortSignal
+        signal?: AbortSignal
     ): Promise<ReasoningOutput> {
         // executeRohanReasoning already selects the language-specific engine.
-        return executeRohanReasoning(persona, context, userMessage);
+        // `signal` lets BaseCognitiveLoop cancel a hung reasoning request
+        // (Track B timeout, item 1.3) or a barge-in (item 3.3).
+        return executeRohanReasoning(persona, context, userMessage, signal);
     }
 
     /**

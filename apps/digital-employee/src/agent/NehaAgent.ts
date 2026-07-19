@@ -117,9 +117,11 @@ class NehaCognitiveLoop extends BaseCognitiveLoop<
         persona: DbAIEmployeePersona,
         context: NehaContext,
         userMessage: string,
-        _signal?: AbortSignal
+        signal?: AbortSignal
     ): Promise<AccountantReasoningOutput> {
-        return executeNehaReasoning(persona, context, userMessage);
+        // Forward the abort signal so Track B timeout / barge-in can cancel
+        // the in-flight reasoning request (items 1.3 / 3.3).
+        return executeNehaReasoning(persona, context, userMessage, signal);
     }
 
     protected validateReasoningOutput(raw: any): ReasoningValidationResult {
