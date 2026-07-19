@@ -1706,6 +1706,18 @@ export default function AICommandCenter() {
         }, 1500);
     };
 
+    const getTwinAvatarSrc = (avatarKey: string) => {
+        switch (avatarKey) {
+            case 'receptionist_model_b':
+                return '/media/rohan_avatar.png';
+            case 'trainer_model_c':
+                return '/media/monika_avatar.png';
+            case 'receptionist_model_a':
+            default:
+                return '/media/neha_avatar.png';
+        }
+    };
+
     const handleStartTwinCall = async () => {
         if (twinCallState === 'connected') {
             setTwinCallState('idle');
@@ -6456,12 +6468,16 @@ export default function AICommandCenter() {
                                 {twinCallState === 'idle' && (
                                     <div style={{ textAlign: "center", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                                         <div style={{ 
-                                            width: "74px", height: "74px", borderRadius: "50%", 
+                                            width: "80px", height: "80px", borderRadius: "50%", 
                                             background: "rgba(99,102,241,0.15)", border: "2px solid var(--accent-indigo)",
                                             display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "2.2rem"
+                                            overflow: "hidden"
                                         }}>
-                                            👩‍💼
+                                            <img 
+                                                src={getTwinAvatarSrc(selectedTwinAvatar)} 
+                                                alt="Twin Standby" 
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                            />
                                         </div>
                                         <div>
                                             <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "white", display: "block" }}>Twin Avatar Standby</span>
@@ -6486,13 +6502,17 @@ export default function AICommandCenter() {
                                     <>
                                         {/* Avatar Animation Grid */}
                                         <div style={{ 
-                                            width: "120px", height: "120px", borderRadius: "50%", 
-                                            background: "rgba(16,185,129,0.1)", border: "3px solid #10b981",
+                                            width: "140px", height: "140px", borderRadius: "50%", 
+                                            background: "rgba(16,185,129,0.1)", border: "4px solid #10b981",
                                             display: "flex", alignItems: "center", justifyContent: "center",
-                                            fontSize: "3.5rem",
-                                            animation: "pulse 2s infinite"
+                                            animation: "pulse 2s infinite",
+                                            overflow: "hidden"
                                         }}>
-                                            👩‍💼
+                                            <img 
+                                                src={getTwinAvatarSrc(selectedTwinAvatar)} 
+                                                alt="Twin Live" 
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                            />
                                         </div>
                                         <div style={{ 
                                             position: "absolute", bottom: "10px", left: "10px", right: "10px",
