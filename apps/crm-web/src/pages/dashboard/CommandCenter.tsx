@@ -328,7 +328,7 @@ export default function CommandCenter() {
     if (loading) return <CommandCenterSkeleton />;
 
     return (
-        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '80px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 10, margin: isMobile ? '0' : '-16px -28px -16px -28px' }}>
+        <div className="command-center-root animate-fadeIn" style={{ height: isMobile ? 'auto' : 'calc(100vh - 64px)', paddingBottom: isMobile ? '80px' : '0px', marginBottom: '0px', overflowX: 'hidden', paddingTop: 20, margin: isMobile ? '0' : '-16px -28px -16px -28px' }}>
             {/* ─── Premium Keyframe styles ─── */}
             <style>{`
                 @keyframes calPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.65; transform: scale(0.97); } }

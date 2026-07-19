@@ -14,9 +14,10 @@
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  transition: transform var(--transition-normal), width var(--transition-normal);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform var(--transition-normal);
   overflow: hidden;
-  box-shadow: 4px 0 20px rgba(10, 22, 40, 0.15);
+  box-shadow: 4px 0 24px rgba(10, 22, 40, 0.2);
 }
 
 .sidebar.collapsed {
@@ -32,6 +33,7 @@
   transform: translateX(0);
 }
 
+/* ─── Logo ──────────────────────────────────────────────────────── */
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -64,14 +66,23 @@
   color: white;
   letter-spacing: -0.02em;
   white-space: nowrap;
+  /* Slide-out on collapse */
+  max-width: 160px;
   opacity: 1;
-  transition: opacity var(--transition-normal);
+  transform: translateX(0);
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s ease,
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .sidebar.collapsed .sidebar-logo-text {
+  max-width: 0;
   opacity: 0;
+  transform: translateX(-8px);
 }
 
+/* ─── Nav container ─────────────────────────────────────────────── */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
@@ -79,6 +90,7 @@
   padding: 12px 8px;
 }
 
+/* ─── Section label ─────────────────────────────────────────────── */
 .nav-section-label {
   font-size: 0.65rem;
   font-weight: 600;
@@ -88,22 +100,28 @@
   padding: 16px 10px 6px;
   white-space: nowrap;
   overflow: hidden;
-  transition: opacity var(--transition-normal);
+  max-height: 40px;
+  opacity: 1;
+  transition: opacity 0.2s ease, max-height 0.3s ease;
 }
 
 .sidebar.collapsed .nav-section-label {
   opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
+/* ─── Nav item ──────────────────────────────────────────────────── */
 .nav-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 10px;
+  padding: 9px 10px;
   border-radius: var(--border-radius-md);
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.18s ease;
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -117,41 +135,67 @@
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.92);
 }
 
+/* ── Active state: strong, unmissable highlight ── */
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(59, 99, 184, 0.5), rgba(6, 182, 212, 0.2));
+  background: linear-gradient(135deg,
+    rgba(6, 182, 212, 0.22) 0%,
+    rgba(59, 99, 184, 0.35) 100%);
   color: white;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 8px rgba(6, 182, 212, 0.12);
 }
 
+/* Thick glowing left bar */
 .nav-item.active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 6px;
-  bottom: 6px;
-  width: 3px;
-  background: var(--accent-cyan);
-  border-radius: 0 2px 2px 0;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  background: linear-gradient(180deg, #22d3ee, #06b6d4);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.7), 0 0 16px rgba(6, 182, 212, 0.3);
 }
 
+/* Active icon gets a cyan tint */
+.nav-item.active .nav-item-icon {
+  color: #22d3ee;
+  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.5));
+}
+
+/* ─── Icon ──────────────────────────────────────────────────────── */
 .nav-item-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  transition: color 0.18s ease, filter 0.18s ease;
 }
 
+/* ─── Item label text: slides out on collapse ───────────────────── */
 .nav-item-text {
-  transition: opacity var(--transition-normal);
+  max-width: 160px;
+  opacity: 1;
+  transform: translateX(0);
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.18s ease,
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .sidebar.collapsed .nav-item-text {
+  max-width: 0;
   opacity: 0;
+  transform: translateX(-6px);
 }
 
+/* ─── Badge ─────────────────────────────────────────────────────── */
 .nav-badge {
   margin-left: auto;
   background: var(--accent-cyan);
@@ -160,13 +204,22 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: var(--border-radius-full);
-  transition: opacity var(--transition-normal);
+  max-width: 50px;
+  opacity: 1;
+  transform: translateX(0);
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s ease,
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .sidebar.collapsed .nav-badge {
+  max-width: 0;
   opacity: 0;
+  transform: translateX(8px);
 }
 
+/* ─── Footer ────────────────────────────────────────────────────── */
 .sidebar-footer {
   padding: 12px 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
@@ -203,6 +256,12 @@
 
 .sidebar-user-info {
   overflow: hidden;
+  max-width: 140px;
+  opacity: 1;
+  transform: translateX(0);
+  transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.18s ease,
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-user-name {
@@ -221,7 +280,7 @@
 }
 
 .sidebar.collapsed .sidebar-user-info {
+  max-width: 0;
   opacity: 0;
-  width: 0;
+  transform: translateX(-6px);
 }
-

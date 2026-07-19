@@ -116,8 +116,12 @@ export class MonikaVoiceAdapter extends BaseVoiceAdapter<
         };
     }
 
-    protected async runCognitiveLoop(input: ReceptionistCognitiveInput, onSentence?: (sentence: string) => void): Promise<ReceptionistCognitiveResult> {
-        return monikaCognitiveLoop.processCycle(input, onSentence);
+    protected async runCognitiveLoop(
+        input: ReceptionistCognitiveInput,
+        onSentence?: (sentence: string) => void,
+        signal?: AbortSignal
+    ): Promise<ReceptionistCognitiveResult> {
+        return monikaCognitiveLoop.processCycle(input, onSentence, signal);
     }
 
     protected generateGreeting(persona: DbAIEmployeePersona, session: MonikaVoiceSession): string {

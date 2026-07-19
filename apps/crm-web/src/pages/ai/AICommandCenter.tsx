@@ -7,7 +7,7 @@ import {
     Check, Play, Pause, Save, Calendar, Trash2, FileText,
     Upload, HelpCircle, GraduationCap, Users, BarChart3,
     Shield, Activity, Bot, ChevronDown, ChevronUp,
-    AlertTriangle, ThumbsUp, ThumbsDown, Wifi, WifiOff, Loader2,
+    AlertTriangle, ThumbsUp, ThumbsDown, Wifi, WifiOff, Loader2, Smile,
     ServerCrash, Database, Radio, PhoneCall, UserCheck, Clock4, Plug, Mic
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
@@ -2285,24 +2285,74 @@ export default function AICommandCenter() {
                     </div>
  
                     {/* Badge 1: Health */}
-                    <div style={{
-                        background: "rgba(34, 197, 94, 0.04)",
-                        border: "1px solid rgba(34, 197, 94, 0.12)",
-                        borderRadius: "8px",
-                        padding: "6px 10px",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        gap: "2px",
-                        minWidth: "95px",
-                        flex: "1 1 0px",
-                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
-                    }}>
-                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Health</div>
+                    <div 
+                        onClick={() => setHealthExpanded(!healthExpanded)}
+                        style={{
+                            background: "rgba(34, 197, 94, 0.04)",
+                            border: "1px solid rgba(34, 197, 94, 0.12)",
+                            borderRadius: "8px",
+                            padding: "6px 10px",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            gap: "2px",
+                            minWidth: "95px",
+                            flex: "1 1 0px",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+                            cursor: "pointer",
+                            position: "relative"
+                        }}
+                    >
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span>Health</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e" }}>{healthExpanded ? "▲" : "▼"}</span>
+                        </div>
                         <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: "4px" }}>
                             <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%", display: "inline-block" }} />
                             {profile.role === "rohan" ? "Excellent" : profile.role === "neha" ? "Good" : "Excellent"}
                         </div>
+
+                        {/* Segmented Health dropdown popover */}
+                        {healthExpanded && (
+                            <div style={{
+                                position: "absolute",
+                                top: "115%",
+                                left: "0",
+                                width: "240px",
+                                background: "white",
+                                border: "1px solid var(--glass-border)",
+                                borderRadius: "8px",
+                                padding: "12px",
+                                boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+                                zIndex: 100,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "8px"
+                            }} onClick={(e) => e.stopPropagation()}>
+                                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--navy-900)", textTransform: "uppercase" }}>Digital Twin Health Profile</span>
+                                <hr style={{ border: "none", borderTop: "1px solid #f1f5f9", margin: "2px 0" }} />
+                                {[
+                                    { name: "Voice", val: 9 },
+                                    { name: "Knowledge", val: 8 },
+                                    { name: "Compliance", val: 10 },
+                                    { name: "Memory", val: 8 },
+                                    { name: "Reasoning", val: 9 },
+                                    { name: "Emotion", val: 9 },
+                                    { name: "Latency", val: 9 }
+                                ].map((item) => (
+                                    <div key={item.name} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", fontWeight: 700 }}>
+                                            <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
+                                            <span style={{ color: "var(--navy-900)", fontFamily: "monospace" }}>{item.val * 10}%</span>
+                                        </div>
+                                        <div style={{ fontFamily: "monospace", fontSize: "0.72rem", letterSpacing: "1px", lineHeight: 1 }}>
+                                            <span style={{ color: "#22c55e" }}>{"█".repeat(item.val)}</span>
+                                            <span style={{ color: "#e2e8f0" }}>{"░".repeat(10 - item.val)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Badge 2: Knowledge Coverage */}
@@ -2490,7 +2540,10 @@ export default function AICommandCenter() {
 
             {/* Row 2 Tab Navigation (Collapsible) */}
             {row2Expanded && (
-                <div className="aicc-tabs-nav" style={{ gap: "3px", padding: "6px", marginTop: "-16px", marginBottom: "24px" }}>
+                <div className="aicc-tabs-nav" style={{ gap: "3px", padding: "6px", marginTop: "-16px", marginBottom: "24px", flexWrap: "wrap" }}>
+                    <button onClick={() => setActiveTab("prompt_studio")} className={`aicc-tab-btn tab-knowledge ${activeTab === "prompt_studio" ? "active" : ""}`}>
+                        <Sparkles size={16} /> Prompt Studio
+                    </button>
                     <button onClick={() => setActiveTab("analytics")} className={`aicc-tab-btn tab-overview ${activeTab === "analytics" ? "active" : ""}`}>
                         <BarChart3 size={16} /> Analytics
                     </button>
@@ -2510,6 +2563,27 @@ export default function AICommandCenter() {
                     <button onClick={() => setActiveTab("digital_twin")} className={`aicc-tab-btn tab-persona ${activeTab === "digital_twin" ? "active" : ""}`}>
                         <UserCheck size={16} /> Digital Twin
                     </button>
+                    <button onClick={() => setActiveTab("memory")} className={`aicc-tab-btn tab-persona ${activeTab === "memory" ? "active" : ""}`}>
+                        <Database size={16} /> Memory
+                    </button>
+                    <button onClick={() => setActiveTab("evaluation")} className={`aicc-tab-btn tab-training ${activeTab === "evaluation" ? "active" : ""}`}>
+                        <CheckCircle2 size={16} /> Evaluation
+                    </button>
+                    <button onClick={() => setActiveTab("observability")} className={`aicc-tab-btn tab-voice ${activeTab === "observability" ? "active" : ""}`}>
+                        <Activity size={16} /> Observability
+                    </button>
+                    <button onClick={() => setActiveTab("cost_analytics")} className={`aicc-tab-btn tab-overview ${activeTab === "cost_analytics" ? "active" : ""}`}>
+                        <BarChart3 size={16} /> Cost Analytics
+                    </button>
+                    <button onClick={() => setActiveTab("compliance")} className={`aicc-tab-btn tab-persona ${activeTab === "compliance" ? "active" : ""}`}>
+                        <Shield size={16} /> Compliance
+                    </button>
+                    <button onClick={() => setActiveTab("knowledge_sync")} className={`aicc-tab-btn tab-workflow ${activeTab === "knowledge_sync" ? "active" : ""}`}>
+                        <Plug size={16} /> Knowledge Sync
+                    </button>
+                    <button onClick={() => setActiveTab("model_management")} className={`aicc-tab-btn tab-monitor ${activeTab === "model_management" ? "active" : ""}`}>
+                        <Bot size={16} /> Model Management
+                    </button>
                 </div>
             )}
 
@@ -2528,6 +2602,117 @@ export default function AICommandCenter() {
                                     {p === "today" ? "Today" : p === "7d" ? "7D" : "30D"}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Upper Panels: Briefing + Fleet Overview */}
+                    <div style={{ display: "grid", gridTemplateColumns: "2.1fr 1fr", gap: "20px" }}>
+                        
+                        {/* AI Executive Briefing Banner */}
+                        <div className="aicc-card" style={{
+                            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%)",
+                            border: "1px solid rgba(99, 102, 241, 0.15)",
+                            padding: "20px",
+                            borderRadius: "12px",
+                            display: "grid",
+                            gridTemplateColumns: "1.1fr 1fr 1.1fr",
+                            gap: "20px",
+                            margin: 0
+                        }}>
+                            {/* Section 1: Today's Summary & Revenue/Accuracy */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderRight: "1px solid var(--glass-border)", paddingRight: "12px" }}>
+                                <div>
+                                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>AI Executive Briefing</span>
+                                    <h4 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--navy-900)", margin: "4px 0 0 0" }}>Today's Summary</h4>
+                                </div>
+                                <div style={{ display: "flex", gap: "16px", marginTop: "4px" }}>
+                                    <div>
+                                        <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, display: "block", textTransform: "uppercase" }}>Revenue</span>
+                                        <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#10b981", display: "flex", alignItems: "center", gap: "2px" }}>
+                                            <TrendingUp size={16} /> ↑12%
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, display: "block", textTransform: "uppercase" }}>Accuracy</span>
+                                        <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--accent-indigo)" }}>94%</span>
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.72rem", fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "4px 10px", borderRadius: "20px", alignSelf: "flex-start", marginTop: "4px" }}>
+                                    <Smile size={12} /> Customers Happy
+                                </div>
+                            </div>
+
+                            {/* Section 2: Risks Identified */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderRight: "1px solid var(--glass-border)", paddingRight: "12px" }}>
+                                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#b91c1c", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "4px" }}>
+                                    <AlertTriangle size={12} /> 2 Operational Risks
+                                </span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "#ef4444" }}>●</span> <span>High drop-offs detected on pricing discussion (Rohan).</span>
+                                    </div>
+                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "#ef4444" }}>●</span> <span>Slight latency spike during peak WebRTC stream hours.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Section 3: Recommended Actions */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    3 Recommended Actions
+                                </span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "var(--accent-indigo)" }}>1.</span> <span>Retrain pricing knowledge file BKC_v4.</span>
+                                    </div>
+                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "var(--accent-indigo)" }}>2.</span> <span>Optimize voice adapter barge-in silence timeout.</span>
+                                    </div>
+                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
+                                        <span style={{ color: "var(--accent-indigo)" }}>3.</span> <span>Route high-value negotiations directly to Sales TL.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Fleet Overview Card */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "14px", background: "white", margin: 0 }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Fleet Overview</span>
+                                <Bot size={16} style={{ color: "var(--text-secondary)" }} />
+                            </h3>
+                            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px", alignItems: "center", height: "100%" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
+                                        <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>AI Employees</span>
+                                        <strong style={{ color: "var(--navy-900)" }}>24</strong>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
+                                        <span style={{ color: "#166534", fontWeight: 700 }}>🟢 Online</span>
+                                        <strong>18</strong>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
+                                        <span style={{ color: "#2563eb", fontWeight: 700 }}>🔵 Busy</span>
+                                        <strong>4</strong>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
+                                        <span style={{ color: "#d97706", fontWeight: 700 }}>🟡 Retrain</span>
+                                        <strong>2</strong>
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", borderLeft: "1px solid var(--glass-border)", paddingLeft: "12px" }}>
+                                    <div style={{
+                                        width: "56px", height: "56px", borderRadius: "50%",
+                                        background: "rgba(34, 197, 94, 0.08)", border: "3px solid #22c55e",
+                                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                                        boxShadow: "0 0 10px rgba(34, 197, 94, 0.2)"
+                                    }}>
+                                        <span style={{ fontSize: "1rem", fontWeight: 900, color: "#166534" }}>97%</span>
+                                    </div>
+                                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)", fontWeight: 800, marginTop: "4px", textTransform: "uppercase" }}>Overall Health</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2565,37 +2750,76 @@ export default function AICommandCenter() {
 
                     {/* Rohan-only: Live Call Stats card */}
                     {selectedAgent === "rohan" && (
-                        <div className="aicc-card" style={{ background: "linear-gradient(135deg, rgba(239,68,68,0.04), rgba(99,102,241,0.04))", border: "1px solid rgba(239,68,68,0.15)" }}>
+                        <div className="aicc-card" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.03), rgba(99,102,241,0.04))", border: "1px solid rgba(34,197,94,0.18)" }}>
                             <h3 className="aicc-card-title" style={{ marginBottom: "16px" }}>
                                 <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span className="aicc-live-dot" /> Live Telephony Stats — Rohan (Sales)
+                                    <span className="aicc-live-dot" style={{ background: "#22c55e", boxShadow: "0 0 10px rgba(34,197,94,0.7)", animation: "listening-blink 1.2s infinite" }} />
+                                    <span style={{ color: "#166534", fontWeight: 800 }}>🟢 Live Call Stream — Rohan (Sales)</span>
                                 </span>
-                                <Phone size={16} style={{ color: "#ef4444" }} />
+                                <Phone size={16} style={{ color: "#22c55e" }} />
                             </h3>
-                            <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
-                                <div className="aicc-live-call-stat">
-                                    <div className="aicc-live-call-stat-val">18</div>
-                                    <div className="aicc-live-call-stat-label">Calls Today</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "16px" }}>
+                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#2563eb", fontSize: "1.1rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>😊 Positive</div>
+                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Customer Sentiment</div>
                                 </div>
-                                <div className="aicc-live-call-stat">
-                                    <div className="aicc-live-call-stat-val">4m 12s</div>
-                                    <div className="aicc-live-call-stat-label">Avg Duration</div>
+                                <div className="aicc-live-call-stat" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#4f46e5", fontSize: "1.2rem", fontWeight: 900, animation: "calPulse 2s infinite" }}>AI</div>
+                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Speaking</div>
                                 </div>
-                                <div className="aicc-live-call-stat" style={{ border: "1px solid rgba(239,68,68,0.3)", background: "#fff5f5" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
-                                        <span className="aicc-live-dot" style={{ width: "6px", height: "6px", marginRight: 0 }} /> 1 Live
-                                    </div>
-                                    <div className="aicc-live-call-stat-label">Right Now</div>
+                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#1e293b", fontSize: "1.2rem", fontWeight: 900 }}>520 ms</div>
+                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Latency</div>
                                 </div>
-                                <div className="aicc-live-call-stat">
-                                    <div className="aicc-live-call-stat-val">92%</div>
-                                    <div className="aicc-live-call-stat-label">Connect Rate</div>
+                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#10b981", fontSize: "1.2rem", fontWeight: 900 }}>96%</div>
+                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Confidence</div>
                                 </div>
-                                <div className="aicc-live-call-stat">
-                                    <div className="aicc-live-call-stat-val">2.2%</div>
-                                    <div className="aicc-live-call-stat-label">Escalation</div>
+                                <div className="aicc-live-call-stat" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                    <div className="aicc-live-call-stat-val" style={{ color: "#7c3aed", fontWeight: 900, fontSize: "0.85rem" }}>Close Deal</div>
+                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Next Action</div>
                                 </div>
                             </div>
+                            {/* Live AI Operational State */}
+                            <div style={{ background: "rgba(15,23,42,0.02)", borderRadius: "8px", padding: "12px 14px", border: "1px solid var(--glass-border)", marginBottom: "12px" }}>
+                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "10px", display: "flex", justifyContent: "space-between" }}>
+                                    <span>Live AI Operational State</span>
+                                    <span style={{ color: "#22c55e", fontWeight: 900, display: "flex", alignItems: "center", gap: "4px" }}>
+                                        <span className="aicc-live-dot" style={{ width: "6px", height: "6px", background: "#22c55e", marginRight: 0, animation: "listening-blink 1.2s infinite" }} /> ACTIVE
+                                    </span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
+                                    {[
+                                        { label: "Listening", active: false, done: true, icon: "🎙️" },
+                                        { label: "Searching CRM", active: false, done: true, icon: "🔍" },
+                                        { label: "Checking Pricing", active: false, done: true, icon: "💵" },
+                                        { label: "Generating Answer", active: true, done: false, icon: "🧠" },
+                                        { label: "Speaking", active: false, done: false, icon: "🗣️" }
+                                    ].map((step, idx, arr) => (
+                                        <div key={idx} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flex: 1 }}>
+                                                <div style={{
+                                                    width: "30px", height: "30px", borderRadius: "50%",
+                                                    background: step.active ? "rgba(99, 102, 241, 0.15)" : step.done ? "rgba(34, 197, 94, 0.1)" : "rgba(0,0,0,0.02)",
+                                                    border: step.active ? "2px solid var(--accent-indigo)" : step.done ? "2px solid #22c55e" : "1px solid #e2e8f0",
+                                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                                    fontSize: "0.9rem",
+                                                    boxShadow: step.active ? "0 0 10px rgba(99, 102, 241, 0.4)" : "none"
+                                                }}>
+                                                    {step.icon}
+                                                </div>
+                                                <span style={{ fontSize: "0.58rem", fontWeight: step.active || step.done ? 800 : 500, color: step.active ? "var(--accent-indigo)" : step.done ? "#166534" : "var(--text-secondary)", textAlign: "center", whiteSpace: "nowrap" }}>
+                                                    {step.label}
+                                                </span>
+                                            </div>
+                                            {idx < arr.length - 1 && (
+                                                <div style={{ width: "100%", height: "2px", background: step.done ? "#22c55e" : "#e2e8f0", marginTop: "-16px", marginLeft: "4px", marginRight: "4px" }} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div style={{ background: "rgba(15,23,42,0.04)", borderRadius: "8px", padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
                                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "8px" }}>Last Completed Call Transcript Preview</div>
                                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -2801,6 +3025,58 @@ export default function AICommandCenter() {
                                     </div>
                                 );
                             })()}
+                        </div>
+                    </div>
+
+                    {/* Activity Timeline Card */}
+                    <div className="aicc-card" style={{ padding: "16px" }}>
+                        <h3 className="aicc-card-title" style={{ marginBottom: "16px" }}>
+                            <span>Digital Employee Activity Timeline</span>
+                            <Clock size={16} style={{ color: "var(--text-secondary)" }} />
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0", paddingLeft: "10px" }}>
+                            {[
+                                { time: "09:12", title: "Handled customer", desc: "Incoming lead inquiry parsed, intent identified as pricing query.", icon: "👤", badge: "Resolved", bg: "rgba(34, 197, 94, 0.08)", border: "rgba(34, 197, 94, 0.2)", col: "#166534" },
+                                { time: "09:18", title: "Knowledge retrieved", desc: "Searched pricing policies database, retrieved pricing guidelines for BKC Phase 2.", icon: "📍", badge: "DB Query", bg: "rgba(59, 130, 246, 0.08)", border: "rgba(59, 130, 246, 0.2)", col: "#1e40af" },
+                                { time: "09:22", title: "Escalated ticket", desc: "Handoff to human agent triggered due to out-of-scope discount request.", icon: "⚠️", badge: "Escalated", bg: "rgba(239, 68, 68, 0.08)", border: "rgba(239, 68, 68, 0.2)", col: "#991b1b" },
+                                { time: "09:25", title: "Completed follow-up", desc: "Outbound trigger: sent site visit confirmation checklist to customer via WhatsApp.", icon: "✅", badge: "Sent", bg: "rgba(34, 197, 94, 0.08)", border: "rgba(34, 197, 94, 0.2)", col: "#166534" },
+                                { time: "09:31", title: "Generated quote", desc: "Generated customized installment billing projection sheet & PDF.", icon: "📄", badge: "Generated", bg: "rgba(139, 92, 246, 0.08)", border: "rgba(139, 92, 246, 0.2)", col: "#5b21b6" },
+                            ].map((item, idx, arr) => {
+                                const isLast = idx === arr.length - 1;
+                                return (
+                                    <div key={idx} style={{ display: "flex", gap: "16px" }}>
+                                        {/* Timeline axis */}
+                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                                            <div style={{
+                                                width: "28px", height: "28px", borderRadius: "50%",
+                                                background: item.bg, border: `1px solid ${item.border}`,
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                                fontSize: "0.85rem", fontWeight: "bold"
+                                            }}>
+                                                {item.icon}
+                                            </div>
+                                            {!isLast && (
+                                                <div style={{ width: "2px", flex: 1, background: "rgba(0,0,0,0.06)", margin: "4px 0" }} />
+                                            )}
+                                        </div>
+                                        {/* Timeline text body */}
+                                        <div style={{ flex: 1, paddingBottom: isLast ? "0" : "18px" }}>
+                                            <div style={{ display: "flex", alignItems: "baseline", gap: "10px", flexWrap: "wrap", marginBottom: "4px" }}>
+                                                <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>{item.title}</span>
+                                                <span style={{ fontFamily: "monospace", fontSize: "0.68rem", fontWeight: 700, color: "var(--text-muted)", background: "rgba(0,0,0,0.04)", padding: "1px 6px", borderRadius: "4px" }}>
+                                                    {item.time}
+                                                </span>
+                                                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: item.col, background: item.bg, border: `1px solid ${item.border}`, padding: "1px 6px", borderRadius: "10px", marginLeft: "auto" }}>
+                                                    {item.badge}
+                                                </span>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                                                {item.desc}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -8518,6 +8794,239 @@ export default function AICommandCenter() {
 
                     </div>
 
+                </div>
+            )}
+
+            {/* ─── TAB: MEMORY ────────────────────────────────────────────── */}
+            {activeTab === "memory" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Enterprise Memory Console</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Manage long-term, contextual, and relationship memories of your digital employees.</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "20px" }}>
+                        <div className="aicc-card" style={{ background: "white", display: "flex", flexDirection: "column", gap: "14px" }}>
+                            <h3 className="aicc-card-title"><span>Memory Controllers</span><Database size={16} /></h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <label style={{ fontSize: "0.74rem", fontWeight: 700 }}>Memory Recall Threshold</label>
+                                <input type="range" min="0" max="100" defaultValue="75" style={{ width: "100%", accentColor: "var(--accent-indigo)" }} />
+                                <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>Requires 75% vector score similarity to recall long-term memories.</span>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card" style={{ background: "white", display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <h3 className="aicc-card-title"><span>Long-term Memory Registry</span><Clock size={16} /></h3>
+                            {[
+                                { key: "customer_bkc_pref", val: "BKC Phase 2 preference, budget ~2.5Cr, prefers high rise floor.", type: "Customer Memory" },
+                                { key: "discount_policy_limit", val: "Max discount approved for general campaigns is strictly 3.5%.", type: "System Memory" }
+                            ].map((mem, idx) => (
+                                <div key={idx} style={{ padding: "10px", background: "rgba(99,102,241,0.04)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "8px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                                        <strong style={{ fontSize: "0.75rem", fontFamily: "monospace" }}>{mem.key}</strong>
+                                        <span style={{ fontSize: "0.62rem", background: "#e0e7ff", color: "#4f46e5", padding: "1px 6px", borderRadius: "10px", fontWeight: 800 }}>{mem.type}</span>
+                                    </div>
+                                    <p style={{ margin: 0, fontSize: "0.7rem", color: "var(--text-secondary)" }}>{mem.val}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: PROMPT STUDIO ──────────────────────────────────────── */}
+            {activeTab === "prompt_studio" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Prompt & Persona Studio</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Craft system prompt parameters, safety guardrails, and templates for LLM response generation.</span>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }} className="aicc-card">
+                        <h3 className="aicc-card-title"><span>System Prompt Sandbox</span><Sparkles size={16} /></h3>
+                        <textarea 
+                            style={{ width: "100%", height: "140px", border: "1px solid var(--glass-border)", borderRadius: "8px", padding: "12px", fontSize: "0.76rem", fontFamily: "monospace", lineHeight: 1.5 }}
+                            defaultValue="You are Rohan, a digital sales employee of Maya Infratech. Be polite, namaste-welcoming, and guide users to book project site visits."
+                        />
+                        <button className="aicc-btn-primary" style={{ alignSelf: "flex-end", padding: "8px 16px" }}>Save Active System Draft</button>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: EVALUATION ─────────────────────────────────────────── */}
+            {activeTab === "evaluation" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>LLM Evaluation & Hallucination Guard</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Run offline regression suites and validate response boundaries.</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title"><span>Regression Test Suites</span><CheckCircle2 size={16} /></h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
+                                    <span>Accuracy Benchmark Suite v3</span>
+                                    <span style={{ color: "#22c55e", fontWeight: 800 }}>PASS (98.2%)</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
+                                    <span>Pricing Boundary Regression</span>
+                                    <span style={{ color: "#22c55e", fontWeight: 800 }}>PASS (100%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title"><span>Hallucination Detection Guard</span><Shield size={16} /></h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.75rem" }}>Enable Real-time Cross-Verification</span>
+                                    <input type="checkbox" defaultChecked style={{ width: "16px", height: "16px" }} />
+                                </div>
+                                <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>Verifies LLM outputs against Vector Knowledge sync before sending to client.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: OBSERVABILITY ──────────────────────────────────────── */}
+            {activeTab === "observability" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Observability & Model Performance Metrics</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Monitor real-time token metrics, response latencies, and transaction logs.</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px" }}>
+                        {[
+                            { label: "Token Rate (m)", val: "42.8K", desc: "+12% vs yesterday" },
+                            { label: "Median Latency", val: "540ms", desc: "-15ms optimization" },
+                            { label: "API Call Success", val: "99.98%", desc: "Healthy streams" },
+                            { label: "Queue Idle Time", val: "0.04s", desc: "No congestion" }
+                        ].map((card, idx) => (
+                            <div key={idx} className="aicc-card" style={{ padding: "14px" }}>
+                                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)" }}>{card.label}</span>
+                                <div style={{ fontSize: "1.4rem", fontWeight: 900, margin: "6px 0", color: "var(--text-primary)" }}>{card.val}</div>
+                                <span style={{ fontSize: "0.62rem", color: "#10b981", fontWeight: 700 }}>{card.desc}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: COST ANALYTICS ─────────────────────────────────────── */}
+            {activeTab === "cost_analytics" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Cost Analytics & ROI Calculator</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Detailed spend breakdown for tokens, STT, TTS, and computed human workload reduction ROI.</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "20px" }}>
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title"><span>Spend Categories</span><BarChart3 size={16} /></h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                    <span>LLM Token Processing Cost</span>
+                                    <strong>$124.50</strong>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                    <span>Sarvam STT / ElevenLabs TTS Spend</span>
+                                    <strong>$342.10</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title"><span>Estimated ROI</span><Activity size={16} /></h3>
+                            <div style={{ textAlign: "center", padding: "10px 0" }}>
+                                <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#10b981" }}>4.8x</div>
+                                <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)" }}>Human hours saved multiplier.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: COMPLIANCE ─────────────────────────────────────────── */}
+            {activeTab === "compliance" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Compliance & Privacy Policy Dashboard</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Manage consent banners, call recording authorization policies, and cryptographically verified audit trails.</span>
+                    </div>
+
+                    <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <h3 className="aicc-card-title"><span>Active Safety Guardrails</span><Shield size={16} /></h3>
+                        <div style={{ display: "flex", gap: "20px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <input type="checkbox" defaultChecked style={{ width: "16px", height: "16px" }} />
+                                <span style={{ fontSize: "0.75rem" }}>GDPR Consent Verification</span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <input type="checkbox" defaultChecked style={{ width: "16px", height: "16px" }} />
+                                <span style={{ fontSize: "0.75rem" }}>PCI-DSS Payment Redaction</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: KNOWLEDGE SYNC ─────────────────────────────────────── */}
+            {activeTab === "knowledge_sync" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Enterprise Knowledge Synchronization</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Integrate CRM datasets, ERP catalogs, SharePoint files, and Google Drive directories automatically.</span>
+                    </div>
+
+                    <div className="aicc-card">
+                        <h3 className="aicc-card-title"><span>Connected Data Sources</span><Plug size={16} /></h3>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                            {[
+                                { name: "Zentrix CRM Database Link", status: "Synchronized", date: "5 mins ago" },
+                                { name: "Google Drive Marketing folder", status: "Synchronized", date: "1 hour ago" }
+                            ].map((src, idx) => (
+                                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", border: "1px solid var(--glass-border)", borderRadius: "8px" }}>
+                                    <div>
+                                        <strong style={{ fontSize: "0.75rem", display: "block" }}>{src.name}</strong>
+                                        <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)" }}>Last sync: {src.date}</span>
+                                    </div>
+                                    <span style={{ fontSize: "0.62rem", color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: "10px", fontWeight: 800 }}>{src.status}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── TAB: MODEL MANAGEMENT ───────────────────────────────────── */}
+            {activeTab === "model_management" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }} className="animate-fadeIn">
+                    <div>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Model Registry & Routing Configuration</span>
+                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Compare GPT-4o, Gemini 1.5 Pro, Claude 3.5 Sonnet, and local models to configure target logic routing.</span>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+                        {[
+                            { name: "Claude 3.5 Sonnet", cost: "$3.00 / M tokens", latency: "520ms", selected: true },
+                            { name: "Gemini 1.5 Pro", cost: "$1.25 / M tokens", latency: "580ms", selected: false },
+                            { name: "GPT-4o", cost: "$5.00 / M tokens", latency: "490ms", selected: false }
+                        ].map((model, idx) => (
+                            <div key={idx} className="aicc-card" style={{ border: model.selected ? "1.5px solid var(--accent-indigo)" : "1px solid var(--glass-border)", background: model.selected ? "rgba(99,102,241,0.02)" : "white" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <strong style={{ fontSize: "0.82rem" }}>{model.name}</strong>
+                                    {model.selected && <span style={{ fontSize: "0.62rem", background: "#e0e7ff", color: "#4f46e5", padding: "1px 6px", borderRadius: "4px", fontWeight: 800 }}>ACTIVE ROUTE</span>}
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "10px" }}>
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Cost: {model.cost}</span>
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Avg Latency: {model.latency}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 

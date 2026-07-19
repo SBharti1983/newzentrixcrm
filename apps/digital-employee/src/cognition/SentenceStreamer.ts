@@ -80,37 +80,58 @@ function findBoundary(buffer: string, maxBuffer: number): number {
 export async function streamSentences(
     stream: AsyncGenerator<string, void, unknown>,
     onSentence: (sentence: string) => void,
-    options?: { maxBuffer?: number }
+    options?: { maxBuffer?: number; signal?: AbortSignal }
 ): Promise<string> {
     const maxBuffer = options?.maxBuffer ?? DEFAULT_MAX_BUFFER;
+    const signal = options?.signal;
     let fullText = '';
     let buffer = '';
 
-    for await (const chunk of stream) {
-        fullText += chunk;
-        buffer += chunk;
+    // If already aborted, bail out before consuming the stream.
+    if (signal?.aborted) {
+        return fullText;
+    }
 
-        let boundary = findBoundary(buffer, maxBuffer);
-        while (boundary !== -1) {
-            const sentence = buffer.substring(0, boundary).trim();
-            buffer = buffer.substring(boundary);
-
-            if (sentence) {
-                const cleaned = cleanSentence(sentence);
-                if (cleaned) {
-                    onSentence(cleaned);
-                }
+    try {
+        for await (const chunk of stream) {
+            // item 3.3: stop consuming the upstream LLM stream as soon as the
+            // caller aborts (e.g. voice barge-in). Returning early lets the
+            // underlying provider request be cancelled via the same signal.
+            if (signal?.aborted) {
+                break;
             }
-            boundary = findBoundary(buffer, maxBuffer);
+            fullText += chunk;
+            buffer += chunk;
+
+            let boundary = findBoundary(buffer, maxBuffer);
+            while (boundary !== -1) {
+                const sentence = buffer.substring(0, boundary).trim();
+                buffer = buffer.substring(boundary);
+
+                if (sentence) {
+                    const cleaned = cleanSentence(sentence);
+                    if (cleaned) {
+                        onSentence(cleaned);
+                    }
+                }
+                boundary = findBoundary(buffer, maxBuffer);
+            }
+        }
+    } catch (err: any) {
+        // Swallow AbortError — expected when barge-in cancels the stream.
+        if (err?.name !== 'AbortError' && !signal?.aborted) {
+            throw err;
         }
     }
 
-    // Flush any remaining buffer
-    const remaining = buffer.trim();
-    if (remaining) {
-        const cleaned = cleanSentence(remaining);
-        if (cleaned) {
-            onSentence(cleaned);
+    // Flush any remaining buffer (skip if aborted — partial output is discarded)
+    if (!signal?.aborted) {
+        const remaining = buffer.trim();
+        if (remaining) {
+            const cleaned = cleanSentence(remaining);
+            if (cleaned) {
+                onSentence(cleaned);
+            }
         }
     }
 

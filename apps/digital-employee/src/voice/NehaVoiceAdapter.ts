@@ -116,8 +116,12 @@ export class NehaVoiceAdapter extends BaseVoiceAdapter<
         };
     }
 
-    protected async runCognitiveLoop(input: AccountantCognitiveInput, onSentence?: (sentence: string) => void): Promise<AccountantCognitiveResult> {
-        return nehaCognitiveLoop.processCycle(input, onSentence);
+    protected async runCognitiveLoop(
+        input: AccountantCognitiveInput,
+        onSentence?: (sentence: string) => void,
+        signal?: AbortSignal
+    ): Promise<AccountantCognitiveResult> {
+        return nehaCognitiveLoop.processCycle(input, onSentence, signal);
     }
 
     protected generateGreeting(persona: DbAIEmployeePersona, session: NehaVoiceSession): string {

@@ -36,9 +36,9 @@ import { FillerWordManager } from './FillerWordManager';
 
 // ── Types ──────────────────────────────────────────────────────────
 
-export interface VoiceSession extends BaseVoiceSession {}
+export interface VoiceSession extends BaseVoiceSession { }
 
-export interface VoiceLatencyMetrics extends BaseVoiceLatencyMetrics {}
+export interface VoiceLatencyMetrics extends BaseVoiceLatencyMetrics { }
 
 // ── RohanVoiceAdapter ──────────────────────────────────────────────
 
@@ -94,8 +94,12 @@ export class RohanVoiceAdapter extends BaseVoiceAdapter<VoiceSession, VoiceLaten
         };
     }
 
-    protected async runCognitiveLoop(input: CognitiveInput, onSentence?: (sentence: string) => void) {
-        return rohanCognitiveLoop.processCycle(input, onSentence);
+    protected async runCognitiveLoop(
+        input: CognitiveInput,
+        onSentence?: (sentence: string) => void,
+        signal?: AbortSignal
+    ) {
+        return rohanCognitiveLoop.processCycle(input, onSentence, signal);
     }
 
     protected async generateGreeting(persona: DbAIEmployeePersona, session: VoiceSession): Promise<string> {

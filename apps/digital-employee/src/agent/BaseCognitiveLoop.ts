@@ -379,7 +379,7 @@ export abstract class BaseCognitiveLoop<
         let responseTextRaw = '';
         if (onSentence) {
             const stream = generateAIResponseStream(fullPrompt, false, signal);
-            responseTextRaw = await streamSentences(stream, onSentence, signal);
+            responseTextRaw = await streamSentences(stream, onSentence, { signal });
         } else {
             responseTextRaw = await generateAIResponse(fullPrompt, false, signal);
         }

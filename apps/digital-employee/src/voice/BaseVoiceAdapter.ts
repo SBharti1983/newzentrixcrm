@@ -59,6 +59,12 @@ export interface BaseVoiceSession {
     sentenceQueue?: SentenceQueue;
     speculativeSentences?: string[];
     streamedAny?: boolean;
+    /**
+     * item 3.3: AbortController for the in-flight speculative LLM request.
+     * Aborted on barge-in so the underlying provider request is cancelled
+     * (instead of running to completion and being silently discarded).
+     */
+    speculativeAbortController?: AbortController | null;
 
     // Turn state
     interimText: string;
@@ -155,8 +161,16 @@ export abstract class BaseVoiceAdapter<
     /** Build the cognitive input for the agent's processCycle. */
     protected abstract buildCognitiveInput(session: TSession, transcript: string): any;
 
-    /** Run the cognitive loop and return the result. */
-    protected abstract runCognitiveLoop(input: any, onSentence?: (sentence: string) => void): Promise<TResult>;
+    /**
+     * Run the cognitive loop and return the result.
+     * item 3.3: `signal` is forwarded to the underlying LLM request so a
+     * barge-in can cancel the in-flight speculative request.
+     */
+    protected abstract runCognitiveLoop(
+        input: any,
+        onSentence?: (sentence: string) => void,
+        signal?: AbortSignal
+    ): Promise<TResult>;
 
     /** Create the initial session object from metadata. */
     protected abstract createSession(
@@ -394,12 +408,18 @@ export abstract class BaseVoiceAdapter<
         session.speculativeSentences = [];
         session.streamedAny = false;
 
+        // item 3.3: create a fresh AbortController for this speculative
+        // request so a barge-in can cancel the in-flight LLM call instead
+        // of letting it run to completion and discarding the result.
+        session.speculativeAbortController = new AbortController();
+        const signal = session.speculativeAbortController.signal;
+
         logger.info(`${tag} Speculative LLM start (${session.sessionId}): "${transcript.substring(0, 40)}..."`);
 
         const input = this.buildCognitiveInput(session, transcript);
 
         const onSentence = (sentence: string) => {
-            if (!session.isActive) return;
+            if (!session.isActive || signal.aborted) return;
             session.streamedAny = true;
             if (session.turnFinalized) {
                 session.filler.disarm();
@@ -414,9 +434,9 @@ export abstract class BaseVoiceAdapter<
             }
         };
 
-        this.runCognitiveLoop(input, onSentence)
+        this.runCognitiveLoop(input, onSentence, signal)
             .then((result) => {
-                if (!session.isActive) return;
+                if (!session.isActive || signal.aborted) return;
                 session.speculativeResult = result;
                 session.speculativeInFlight = false;
                 this.resolveSpeculativeWaiters(session, result);
@@ -426,10 +446,15 @@ export abstract class BaseVoiceAdapter<
                     );
                 }
             })
-            .catch((err) => {
+            .catch((err: any) => {
+                // item 3.3: AbortError is expected on barge-in — not a failure.
+                if (signal.aborted || err?.name === 'AbortError') {
+                    logger.info(`${tag} Speculative LLM aborted by barge-in (${session.sessionId})`);
+                } else {
+                    logger.warn(`${tag} Speculative LLM failed: ${err.message}`);
+                }
                 session.speculativeInFlight = false;
                 this.resolveSpeculativeWaiters(session, null);
-                logger.warn(`${tag} Speculative LLM failed: ${err.message}`);
             });
     }
 
@@ -610,6 +635,13 @@ export abstract class BaseVoiceAdapter<
         const tag = this.getAdapterTag();
         logger.info(`${tag} Barge-in → stopping TTS + cancelling LLM (${session.sessionId})`);
 
+        // item 3.3: cancel the in-flight speculative LLM request so the
+        // underlying provider call is aborted (frees tokens + quota),
+        // rather than running to completion and being silently discarded.
+        if (session.speculativeAbortController) {
+            try { session.speculativeAbortController.abort(); } catch { /* already aborted */ }
+        }
+
         if (session.sentenceQueue) {
             session.sentenceQueue.clear();
         }
@@ -640,6 +672,7 @@ export abstract class BaseVoiceAdapter<
         session.stableInterimCount = 0;
         session.speculativeInFlight = false;
         session.speculativeResult = null;
+        session.speculativeAbortController = null; // item 3.3
         session.turnFinalized = false;
         session.turnStartedAt = 0;
         session.speculativeSentences = [];
