@@ -6,11 +6,11 @@ export default function AgentCopilotWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [messages, setMessages] = useState([
-        { role: 'assistant', text: "Hey! I'm your AI Copilot. Need info on a project or an objection-handling script?" }
+        { role: 'assistant', text: "Hey! I'm your Zentrix AI Copilot. I can compile summaries, optimize prompts, explain latencies, or check revenue risks." }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const messagesEndRef = useRef(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -20,6 +20,30 @@ export default function AgentCopilotWidget() {
         if (isOpen) scrollToBottom();
     }, [messages, isOpen]);
 
+    const handleQuickAction = (label: string) => {
+        setMessages(prev => [...prev, { role: 'user', text: label }]);
+        setLoading(true);
+        
+        setTimeout(() => {
+            let reply = "";
+            if (label.includes("Summarize today's activity")) {
+                reply = "**Today's Executive Summary**:\n- **Total volume**: **422 calls** handled across all twins.\n- **Monica (Receptionist)** qualified **1,510 routing inputs** with **98% accuracy**.\n- **Rohan (Sales)** has qualified **1.2K leads**, moving ₹18.4L into active pipelines.\n- **Neha (Billing)** closed 4 follow-up reconciliation schedules.\n- **Overall AI Accuracy**: Peak at **97.2%**, with human escalations down to **6/day** (↓ 45% decrease).";
+            } else if (label.includes("Show revenue risks")) {
+                reply = "⚠️ **Revenue Risks & Critical Alerts**:\n- **High-Value Lead Handoff Delay**: 3 qualified leads for BKC Phase 2 are currently waiting in the sales queue due to human agent availability limit. Est. value: **₹4.2L**.\n- **Out-of-Scope Pricing Discount**: Rohan handled an inquiry requesting a **10% booking discount** (beyond the 5% max autopilot threshold). Recommended action: **Assign Human TL**.";
+            } else if (label.includes("Why is Rohan slower?")) {
+                reply = "🐢 **Rohan Latency Analysis**:\n- Rohan's average response delay is currently **540ms** (vs. Neha's 555ms and Monica's 500ms).\n- **Reason**: Rohan has active **objection handling LoRA adapter layers** active, which load on-the-fly when pricing context is invoked from the CRM vector database.\n- **Optimization**: You can toggle on the **Edge-caching flag** for pricing schemas to save **120ms** of DB search latency.";
+            } else if (label.includes("Optimize prompts")) {
+                reply = "✍️ **Prompt Optimization Advice**:\n- **BKC Expressway Distance Objection**: The current prompt in **Prompt Studio** has a high barge-in overlap rate.\n- **Recommended rewrite**: Remove secondary geographic references and keep the callback short: *\"Standard expressway connectivity to BKC Phase 2 is just 12 minutes, sir. Best location for appreciation value. Would you like a site visit scheduled?\"*\n- **Expected impact**: **+4.2% conversion** improvement on objections.";
+            } else if (label.includes("Generate report")) {
+                reply = "📄 **Executive Operations Report Generated**:\n- Report compiled for: **Zentrix AI Fleet Performance Summary**\n- **Key Metrics Included**: Leads Handled, Latency Averages, API Token usage ($124.5 total), and Handoff ratios.\n- **Status**: [Download Performance Report (PDF)](#) (Ready for download)";
+            } else {
+                reply = `Received prompt: **${label}**. Processing workspace metrics...`;
+            }
+            setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+            setLoading(false);
+        }, 1200);
+    };
+
     const handleSend = async () => {
         if (!input.trim() || loading) return;
 
@@ -28,10 +52,40 @@ export default function AgentCopilotWidget() {
         setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
         setLoading(true);
 
+        // Check if matching any of the quick actions
+        const matched = [
+            { label: "Summarize today's activity", key: "summarize" },
+            { label: "Show revenue risks", key: "revenue" },
+            { label: "Why is Rohan slower?", key: "slower" },
+            { label: "Optimize prompts", key: "prompt" },
+            { label: "Generate report", key: "report" }
+        ].find(act => userMsg.toLowerCase().includes(act.key));
+
+        if (matched) {
+            setTimeout(() => {
+                let reply = "";
+                const label = matched.label;
+                if (label.includes("Summarize today's activity")) {
+                    reply = "**Today's Executive Summary**:\n- **Total volume**: **422 calls** handled across all twins.\n- **Monica (Receptionist)** qualified **1,510 routing inputs** with **98% accuracy**.\n- **Rohan (Sales)** has qualified **1.2K leads**, moving ₹18.4L into active pipelines.\n- **Neha (Billing)** closed 4 follow-up reconciliation schedules.\n- **Overall AI Accuracy**: Peak at **97.2%**, with human escalations down to **6/day** (↓ 45% decrease).";
+                } else if (label.includes("Show revenue risks")) {
+                    reply = "⚠️ **Revenue Risks & Critical Alerts**:\n- **High-Value Lead Handoff Delay**: 3 qualified leads for BKC Phase 2 are currently waiting in the sales queue due to human agent availability limit. Est. value: **₹4.2L**.\n- **Out-of-Scope Pricing Discount**: Rohan handled an inquiry requesting a **10% booking discount** (beyond the 5% max autopilot threshold). Recommended action: **Assign Human TL**.";
+                } else if (label.includes("Why is Rohan slower?")) {
+                    reply = "🐢 **Rohan Latency Analysis**:\n- Rohan's average response delay is currently **540ms** (vs. Neha's 555ms and Monica's 500ms).\n- **Reason**: Rohan has active **objection handling LoRA adapter layers** active, which load on-the-fly when pricing context is invoked from the CRM vector database.\n- **Optimization**: You can toggle on the **Edge-caching flag** for pricing schemas to save **120ms** of DB search latency.";
+                } else if (label.includes("Optimize prompts")) {
+                    reply = "✍️ **Prompt Optimization Advice**:\n- **BKC Expressway Distance Objection**: The current prompt in **Prompt Studio** has a high barge-in overlap rate.\n- **Recommended rewrite**: Remove secondary geographic references and keep the callback short: *\"Standard expressway connectivity to BKC Phase 2 is just 12 minutes, sir. Best location for appreciation value. Would you like a site visit scheduled?\"*\n- **Expected impact**: **+4.2% conversion** improvement on objections.";
+                } else if (label.includes("Generate report")) {
+                    reply = "📄 **Executive Operations Report Generated**:\n- Report compiled for: **Zentrix AI Fleet Performance Summary**\n- **Key Metrics Included**: Leads Handled, Latency Averages, API Token usage ($124.5 total), and Handoff ratios.\n- **Status**: [Download Performance Report (PDF)](#) (Ready for download)";
+                }
+                setMessages(prev => [...prev, { role: 'assistant', text: reply }]);
+                setLoading(false);
+            }, 1200);
+            return;
+        }
+
         try {
             const res = await copilotApi.ask({ query: userMsg });
             setMessages(prev => [...prev, { role: 'assistant', text: res.answer }]);
-        } catch (err) {
+        } catch (err: any) {
             console.error('[COPILOT X-DEBUG]', err);
             const errorMsg = err.error || err.message || "Unreachable AI Core";
             setMessages(prev => [...prev, { role: 'assistant', text: `🆔 [X-TRACE-77]: ${errorMsg}` }]);
@@ -40,15 +94,14 @@ export default function AgentCopilotWidget() {
         }
     };
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
         }
     };
 
-    // Render markdown extremely safely (just simple bolding and bullet mapping for safety)
-    const renderMessage = (text) => {
+    const renderMessage = (text: string) => {
         return text.split('\n').map((line, i) => {
             if (line.trim() === '') return <br key={i} />;
             let formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -63,12 +116,14 @@ export default function AgentCopilotWidget() {
                 className="hover-lift"
                 style={{
                     position: 'fixed', bottom: 32, right: 32, zIndex: 9999,
-                    width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4)', border: 'none', cursor: 'pointer'
+                    height: 48, borderRadius: '24px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    display: 'flex', alignItems: 'center', gap: '8px', padding: '0 20px', color: 'white',
+                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4)', border: 'none', cursor: 'pointer',
+                    fontWeight: 800, fontSize: '13px', letterSpacing: '0.02em'
                 }}
             >
-                <Sparkles size={28} />
+                <Sparkles size={16} />
+                <span>Ask AI Copilot</span>
             </button>
         );
     }
@@ -128,6 +183,47 @@ export default function AgentCopilotWidget() {
                         </div>
                     </div>
                 ))}
+
+                {/* Suggested Quick Actions */}
+                {messages.length === 1 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto', background: 'rgba(255,255,255,0.8)', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '12px' }}>
+                        <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ask AI (Quick Actions)</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {[
+                                { label: "Summarize today's activity", icon: "📊" },
+                                { label: "Show revenue risks", icon: "⚠️" },
+                                { label: "Why is Rohan slower?", icon: "🐢" },
+                                { label: "Optimize prompts", icon: "✍️" },
+                                { label: "Generate report", icon: "📄" }
+                            ].map((act) => (
+                                <button
+                                    key={act.label}
+                                    onClick={() => handleQuickAction(act.label)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        background: 'white',
+                                        border: '1px solid #e2e8f0',
+                                        borderRadius: '16px',
+                                        padding: '6px 12px',
+                                        fontSize: '11px',
+                                        fontWeight: 700,
+                                        color: '#4f46e5',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                    }}
+                                    className="hover-lift"
+                                >
+                                    <span>{act.icon}</span>
+                                    <span>{act.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {loading && (
                     <div style={{ display: 'flex', gap: 12, alignSelf: 'flex-start' }}>
                         <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'white', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

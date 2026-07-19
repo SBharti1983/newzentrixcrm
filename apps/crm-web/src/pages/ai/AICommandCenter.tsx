@@ -632,7 +632,28 @@ export default function AICommandCenter() {
     const [healthData, setHealthData] = useState<HealthData | null>(null);
     const [healthLoading, setHealthLoading] = useState<boolean>(false);
     const [healthExpanded, setHealthExpanded] = useState<boolean>(false);
+    const [chartMode, setChartMode] = useState<"accuracy" | "escalation">("accuracy");
     const healthIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const ACCURACY_30D_DATA = [
+        { day: "Day 1", accuracy: 88.5 },
+        { day: "Day 5", accuracy: 89.2 },
+        { day: "Day 10", accuracy: 91.0 },
+        { day: "Day 15", accuracy: 92.4 },
+        { day: "Day 20", accuracy: 93.8 },
+        { day: "Day 25", accuracy: 95.5 },
+        { day: "Day 30", accuracy: 97.2 },
+    ];
+
+    const ESCALATION_30D_DATA = [
+        { day: "Day 1", escalations: 45 },
+        { day: "Day 5", escalations: 38 },
+        { day: "Day 10", escalations: 32 },
+        { day: "Day 15", escalations: 24 },
+        { day: "Day 20", escalations: 18 },
+        { day: "Day 25", escalations: 12 },
+        { day: "Day 30", escalations: 6 },
+    ];
 
     const fetchHealth = useCallback(async () => {
         const dbId = profiles[selectedAgent]?.dbId;
@@ -2605,114 +2626,78 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    {/* Upper Panels: Briefing + Fleet Overview */}
-                    <div style={{ display: "grid", gridTemplateColumns: "2.1fr 1fr", gap: "20px" }}>
-                        
-                        {/* AI Executive Briefing Banner */}
-                        <div className="aicc-card" style={{
-                            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%)",
-                            border: "1px solid rgba(99, 102, 241, 0.15)",
-                            padding: "20px",
-                            borderRadius: "12px",
-                            display: "grid",
-                            gridTemplateColumns: "1.1fr 1fr 1.1fr",
-                            gap: "20px",
-                            margin: 0
-                        }}>
-                            {/* Section 1: Today's Summary & Revenue/Accuracy */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderRight: "1px solid var(--glass-border)", paddingRight: "12px" }}>
+                    {/* AI Briefing Hero Panel */}
+                    <div className="aicc-card" style={{
+                        background: "linear-gradient(135deg, #0b1528 0%, #111827 100%)",
+                        color: "white",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        padding: "24px 28px",
+                        borderRadius: "16px",
+                        display: "grid",
+                        gridTemplateColumns: "1.2fr 1fr 1.2fr",
+                        gap: "32px",
+                        boxShadow: "0 20px 40px rgba(0, 0, 0, 0.15)",
+                        margin: 0,
+                        position: "relative",
+                        overflow: "hidden"
+                    }}>
+                        {/* Decorative background glow */}
+                        <div style={{
+                            position: "absolute",
+                            top: "-50px",
+                            right: "-50px",
+                            width: "200px",
+                            height: "200px",
+                            borderRadius: "50%",
+                            background: "radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0) 70%)",
+                            pointerEvents: "none"
+                        }} />
+
+                        {/* Column 1: Greeting & Stats */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px", borderRight: "1px solid rgba(255, 255, 255, 0.08)", paddingRight: "24px" }}>
+                            <div>
+                                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.08em" }}>AI Briefing</span>
+                                <h2 style={{ fontSize: "1.6rem", fontWeight: 900, color: "white", margin: "2px 0 0 0", letterSpacing: "-0.02em" }}>Good Morning</h2>
+                            </div>
+                            <div style={{ display: "flex", gap: "24px" }}>
                                 <div>
-                                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", letterSpacing: "0.05em", display: "block" }}>AI Executive Briefing</span>
-                                    <h4 style={{ fontSize: "1.1rem", fontWeight: 900, color: "var(--navy-900)", margin: "4px 0 0 0" }}>Today's Summary</h4>
+                                    <span style={{ fontSize: "0.65rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", display: "block" }}>Revenue</span>
+                                    <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "#10b981", display: "flex", alignItems: "center", gap: "4px", marginTop: "4px" }}>
+                                        <TrendingUp size={16} /> ↑12%
+                                    </span>
                                 </div>
-                                <div style={{ display: "flex", gap: "16px", marginTop: "4px" }}>
-                                    <div>
-                                        <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, display: "block", textTransform: "uppercase" }}>Revenue</span>
-                                        <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#10b981", display: "flex", alignItems: "center", gap: "2px" }}>
-                                            <TrendingUp size={16} /> ↑12%
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, display: "block", textTransform: "uppercase" }}>Accuracy</span>
-                                        <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--accent-indigo)" }}>94%</span>
-                                    </div>
-                                </div>
-                                <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.72rem", fontWeight: 800, color: "#166534", background: "#dcfce7", padding: "4px 10px", borderRadius: "20px", alignSelf: "flex-start", marginTop: "4px" }}>
-                                    <Smile size={12} /> Customers Happy
-                                </div>
-                            </div>
-
-                            {/* Section 2: Risks Identified */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderRight: "1px solid var(--glass-border)", paddingRight: "12px" }}>
-                                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#b91c1c", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "4px" }}>
-                                    <AlertTriangle size={12} /> 2 Operational Risks
-                                </span>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
-                                        <span style={{ color: "#ef4444" }}>●</span> <span>High drop-offs detected on pricing discussion (Rohan).</span>
-                                    </div>
-                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
-                                        <span style={{ color: "#ef4444" }}>●</span> <span>Slight latency spike during peak WebRTC stream hours.</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Section 3: Recommended Actions */}
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                    3 Recommended Actions
-                                </span>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
-                                        <span style={{ color: "var(--accent-indigo)" }}>1.</span> <span>Retrain pricing knowledge file BKC_v4.</span>
-                                    </div>
-                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
-                                        <span style={{ color: "var(--accent-indigo)" }}>2.</span> <span>Optimize voice adapter barge-in silence timeout.</span>
-                                    </div>
-                                    <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", display: "flex", gap: "6px" }}>
-                                        <span style={{ color: "var(--accent-indigo)" }}>3.</span> <span>Route high-value negotiations directly to Sales TL.</span>
-                                    </div>
+                                <div>
+                                    <span style={{ fontSize: "0.65rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", display: "block" }}>AI Health</span>
+                                    <span style={{ fontSize: "1.3rem", fontWeight: 900, color: "#38bdf8", display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
+                                        <Bot size={16} /> 97%
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Fleet Overview Card */}
-                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "14px", background: "white", margin: 0 }}>
-                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
-                                <span>Fleet Overview</span>
-                                <Bot size={16} style={{ color: "var(--text-secondary)" }} />
-                            </h3>
-                            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px", alignItems: "center", height: "100%" }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
-                                        <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>AI Employees</span>
-                                        <strong style={{ color: "var(--navy-900)" }}>24</strong>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
-                                        <span style={{ color: "#166534", fontWeight: 700 }}>🟢 Online</span>
-                                        <strong>18</strong>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
-                                        <span style={{ color: "#2563eb", fontWeight: 700 }}>🔵 Busy</span>
-                                        <strong>4</strong>
-                                    </div>
-                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem" }}>
-                                        <span style={{ color: "#d97706", fontWeight: 700 }}>🟡 Retrain</span>
-                                        <strong>2</strong>
-                                    </div>
+                        {/* Column 2: Today's Priorities */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px", borderRight: "1px solid rgba(255, 255, 255, 0.08)", paddingRight: "24px", justifyContent: "center" }}>
+                            <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#f43f5e", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <AlertTriangle size={12} /> Today's Priority
+                            </span>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                <div style={{ fontSize: "0.74rem", color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span style={{ color: "#818cf8" }}>•</span> <span>Retrain Sales Agent</span>
                                 </div>
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", borderLeft: "1px solid var(--glass-border)", paddingLeft: "12px" }}>
-                                    <div style={{
-                                        width: "56px", height: "56px", borderRadius: "50%",
-                                        background: "rgba(34, 197, 94, 0.08)", border: "3px solid #22c55e",
-                                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                                        boxShadow: "0 0 10px rgba(34, 197, 94, 0.2)"
-                                    }}>
-                                        <span style={{ fontSize: "1rem", fontWeight: 900, color: "#166534" }}>97%</span>
-                                    </div>
-                                    <span style={{ fontSize: "0.55rem", color: "var(--text-secondary)", fontWeight: 800, marginTop: "4px", textTransform: "uppercase" }}>Overall Health</span>
+                                <div style={{ fontSize: "0.74rem", color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span style={{ color: "#818cf8" }}>•</span> <span>3 Knowledge Updates</span>
+                                </div>
+                                <div style={{ fontSize: "0.74rem", color: "#cbd5e1", display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span style={{ color: "#818cf8" }}>•</span> <span>1 Revenue Risk</span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Column 3: Expected Revenue Target */}
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: "12px" }}>
+                            <span style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Expected Revenue</span>
+                            <span style={{ fontSize: "2.1rem", fontWeight: 950, color: "white", marginTop: "4px", letterSpacing: "-0.03em" }}>₹22.4L</span>
+                            <span style={{ fontSize: "0.6rem", color: "#64748b", fontWeight: 700, marginTop: "2px" }}>Projected from active twin pipelines</span>
                         </div>
                     </div>
 
@@ -2748,91 +2733,210 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    {/* Rohan-only: Live Call Stats card */}
-                    {selectedAgent === "rohan" && (
-                        <div className="aicc-card" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.03), rgba(99,102,241,0.04))", border: "1px solid rgba(34,197,94,0.18)" }}>
-                            <h3 className="aicc-card-title" style={{ marginBottom: "16px" }}>
-                                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                    <span className="aicc-live-dot" style={{ background: "#22c55e", boxShadow: "0 0 10px rgba(34,197,94,0.7)", animation: "listening-blink 1.2s infinite" }} />
-                                    <span style={{ color: "#166534", fontWeight: 800 }}>🟢 Live Call Stream — Rohan (Sales)</span>
-                                </span>
-                                <Phone size={16} style={{ color: "#22c55e" }} />
-                            </h3>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "16px" }}>
-                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#2563eb", fontSize: "1.1rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>😊 Positive</div>
-                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Customer Sentiment</div>
+                    {/* Live Operations & Twin Benchmarks Grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: selectedAgent === "rohan" ? "1.5fr 1fr 1fr" : "1.2fr 1fr", gap: "20px" }}>
+                        
+                        {/* Rohan-only: Live Call Stats card */}
+                        {selectedAgent === "rohan" && (
+                            <div className="aicc-card" style={{ background: "linear-gradient(135deg, rgba(34,197,94,0.03), rgba(99,102,241,0.04))", border: "1px solid rgba(34,197,94,0.18)", margin: 0, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                                <h3 className="aicc-card-title" style={{ marginBottom: "16px", margin: 0 }}>
+                                    <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="aicc-live-dot" style={{ background: "#22c55e", boxShadow: "0 0 10px rgba(34,197,94,0.7)", animation: "listening-blink 1.2s infinite" }} />
+                                        <span style={{ color: "#166534", fontWeight: 800 }}>🟢 Live Call Stream — Rohan (Sales)</span>
+                                    </span>
+                                    <Phone size={16} style={{ color: "#22c55e" }} />
+                                </h3>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", marginBottom: "12px" }}>
+                                    <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "8px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <div className="aicc-live-call-stat-val" style={{ color: "#2563eb", fontSize: "0.95rem", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>😊 Positive</div>
+                                        <div className="aicc-live-call-stat-label" style={{ fontSize: "0.58rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700 }}>Customer Sentiment</div>
+                                    </div>
+                                    <div className="aicc-live-call-stat" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", padding: "8px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <div className="aicc-live-call-stat-val" style={{ color: "#4f46e5", fontSize: "1.05rem", fontWeight: 900, animation: "calPulse 2s infinite" }}>AI</div>
+                                        <div className="aicc-live-call-stat-label" style={{ fontSize: "0.58rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700 }}>Speaking</div>
+                                    </div>
+                                    <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "8px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <div className="aicc-live-call-stat-val" style={{ color: "#1e293b", fontSize: "1.05rem", fontWeight: 900 }}>520 ms</div>
+                                        <div className="aicc-live-call-stat-label" style={{ fontSize: "0.58rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700 }}>Latency</div>
+                                    </div>
+                                    <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "8px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <div className="aicc-live-call-stat-val" style={{ color: "#10b981", fontSize: "1.05rem", fontWeight: 900 }}>96%</div>
+                                        <div className="aicc-live-call-stat-label" style={{ fontSize: "0.58rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700 }}>Confidence</div>
+                                    </div>
+                                    <div className="aicc-live-call-stat" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", padding: "8px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                                        <div className="aicc-live-call-stat-val" style={{ color: "#7c3aed", fontWeight: 900, fontSize: "0.8rem" }}>Close Deal</div>
+                                        <div className="aicc-live-call-stat-label" style={{ fontSize: "0.58rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700 }}>Next Action</div>
+                                    </div>
                                 </div>
-                                <div className="aicc-live-call-stat" style={{ background: "rgba(99,102,241,0.05)", border: "1px solid rgba(99,102,241,0.2)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#4f46e5", fontSize: "1.2rem", fontWeight: 900, animation: "calPulse 2s infinite" }}>AI</div>
-                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Speaking</div>
+
+                                {/* Live AI Operational State */}
+                                <div style={{ background: "rgba(15,23,42,0.02)", borderRadius: "8px", padding: "10px 12px", border: "1px solid var(--glass-border)", marginBottom: "10px" }}>
+                                    <div style={{ fontSize: "0.62rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "8px", display: "flex", justifyContent: "space-between" }}>
+                                        <span>Live AI Operational State</span>
+                                        <span style={{ color: "#22c55e", fontWeight: 900, display: "flex", alignItems: "center", gap: "4px" }}>
+                                            <span className="aicc-live-dot" style={{ width: "6px", height: "6px", background: "#22c55e", marginRight: 0, animation: "listening-blink 1.2s infinite" }} /> ACTIVE
+                                        </span>
+                                    </div>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "6px" }}>
+                                        {[
+                                            { label: "Listening", active: false, done: true, icon: "🎙️" },
+                                            { label: "Searching CRM", active: false, done: true, icon: "🔍" },
+                                            { label: "Checking Pricing", active: false, done: true, icon: "💵" },
+                                            { label: "Generating Answer", active: true, done: false, icon: "🧠" },
+                                            { label: "Speaking", active: false, done: false, icon: "🗣️" }
+                                        ].map((step, idx, arr) => (
+                                            <div key={idx} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", flex: 1 }}>
+                                                    <div style={{
+                                                        width: "26px", height: "26px", borderRadius: "50%",
+                                                        background: step.active ? "rgba(99, 102, 241, 0.15)" : step.done ? "rgba(34, 197, 94, 0.1)" : "rgba(0,0,0,0.02)",
+                                                        border: step.active ? "2px solid var(--accent-indigo)" : step.done ? "2px solid #22c55e" : "1px solid #e2e8f0",
+                                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                                        fontSize: "0.8rem",
+                                                        boxShadow: step.active ? "0 0 8px rgba(99, 102, 241, 0.3)" : "none"
+                                                    }}>
+                                                        {step.icon}
+                                                    </div>
+                                                    <span style={{ fontSize: "0.52rem", fontWeight: step.active || step.done ? 800 : 500, color: step.active ? "var(--accent-indigo)" : step.done ? "#166534" : "var(--text-secondary)", textAlign: "center", whiteSpace: "nowrap" }}>
+                                                        {step.label}
+                                                    </span>
+                                                </div>
+                                                {idx < arr.length - 1 && (
+                                                    <div style={{ width: "100%", height: "2px", background: step.done ? "#22c55e" : "#e2e8f0", marginTop: "-14px", marginLeft: "2px", marginRight: "2px" }} />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#1e293b", fontSize: "1.2rem", fontWeight: 900 }}>520 ms</div>
-                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Latency</div>
-                                </div>
-                                <div className="aicc-live-call-stat" style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(0,0,0,0.05)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#10b981", fontSize: "1.2rem", fontWeight: 900 }}>96%</div>
-                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Confidence</div>
-                                </div>
-                                <div className="aicc-live-call-stat" style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", padding: "10px", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                                    <div className="aicc-live-call-stat-val" style={{ color: "#7c3aed", fontWeight: 900, fontSize: "0.85rem" }}>Close Deal</div>
-                                    <div className="aicc-live-call-stat-label" style={{ fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.02em" }}>Next Action</div>
+
+                                <div style={{ background: "rgba(15,23,42,0.04)", borderRadius: "8px", padding: "8px 12px", border: "1px solid var(--glass-border)" }}>
+                                    <div style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "6px" }}>Last Completed Call Transcript Preview</div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        <div style={{ fontSize: "0.72rem", background: "#6366f1", color: "white", padding: "4px 8px", borderRadius: "6px", alignSelf: "flex-start", maxWidth: "85%" }}>
+                                            <strong>Rohan:</strong> Rahul ji, BKC Phase 2 mein 3BHK starting ₹2.1Cr hai. Pre-approval loan assistance bhi available hai.
+                                        </div>
+                                        <div style={{ fontSize: "0.72rem", background: "#f1f5f9", color: "var(--text-primary)", padding: "4px 8px", borderRadius: "6px", alignSelf: "flex-end", maxWidth: "85%" }}>
+                                            <strong>Lead:</strong> Site visit Sunday ko possible hai kya?
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            {/* Live AI Operational State */}
-                            <div style={{ background: "rgba(15,23,42,0.02)", borderRadius: "8px", padding: "12px 14px", border: "1px solid var(--glass-border)", marginBottom: "12px" }}>
-                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "10px", display: "flex", justifyContent: "space-between" }}>
-                                    <span>Live AI Operational State</span>
-                                    <span style={{ color: "#22c55e", fontWeight: 900, display: "flex", alignItems: "center", gap: "4px" }}>
-                                        <span className="aicc-live-dot" style={{ width: "6px", height: "6px", background: "#22c55e", marginRight: 0, animation: "listening-blink 1.2s infinite" }} /> ACTIVE
+                        )}
+
+                        {/* Digital Twin Hero Widget */}
+                        <div className="aicc-card" style={{
+                            background: "white",
+                            border: "1px solid var(--glass-border)",
+                            padding: "20px",
+                            borderRadius: "12px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "12px",
+                            margin: 0,
+                            justifyContent: "space-between"
+                        }}>
+                            <div>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>Digital Twin</h3>
+                                <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Active sub-system health benchmarks.</p>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                {[
+                                    { name: "Voice", val: profile.role === "rohan" ? 90 : profile.role === "neha" ? 90 : 95, color: "linear-gradient(90deg, #10b981, #34d399)", shadow: "0 2px 8px rgba(16,185,129,0.2)" },
+                                    { name: "Knowledge", val: profile.role === "rohan" ? 84 : profile.role === "neha" ? 92 : 75, color: "linear-gradient(90deg, #3b82f6, #60a5fa)", shadow: "0 2px 8px rgba(59,130,246,0.2)" },
+                                    { name: "Memory", val: profile.role === "rohan" ? 80 : profile.role === "neha" ? 85 : 70, color: "linear-gradient(90deg, #a855f7, #c084fc)", shadow: "0 2px 8px rgba(168,85,247,0.2)" },
+                                    { name: "Reasoning", val: profile.role === "rohan" ? 90 : profile.role === "neha" ? 92 : 95, color: "linear-gradient(90deg, #f59e0b, #fbbf24)", shadow: "0 2px 8px rgba(245,158,11,0.2)" },
+                                    { name: "Compliance", val: profile.role === "rohan" ? 100 : profile.role === "neha" ? 95 : 98, color: "linear-gradient(90deg, #ec4899, #f472b6)", shadow: "0 2px 8px rgba(236,72,153,0.2)" }
+                                ].map((item) => (
+                                    <div key={item.name} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", fontWeight: 700 }}>
+                                            <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
+                                            <span style={{ color: "var(--navy-900)" }}>{item.val}%</span>
+                                        </div>
+                                        <div style={{ width: "100%", height: "6px", background: "rgba(0,0,0,0.03)", borderRadius: "3px", overflow: "hidden" }}>
+                                            <div style={{ width: `${item.val}%`, height: "100%", background: item.color, borderRadius: "3px", boxShadow: item.shadow }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* AI Recommendation Card */}
+                        <div className="aicc-card" style={{
+                            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)",
+                            border: "1px solid rgba(99, 102, 241, 0.18)",
+                            padding: "20px",
+                            borderRadius: "12px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "14px",
+                            margin: 0,
+                            justifyContent: "space-between"
+                        }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", letterSpacing: "0.05em" }}>AI Recommendation</span>
+                                    <span style={{ fontSize: "0.62rem", background: "rgba(99, 102, 241, 0.15)", color: "var(--accent-indigo)", padding: "2px 8px", borderRadius: "10px", fontWeight: 800 }}>HIGH ROI</span>
+                                </div>
+                                {profile.role === "rohan" ? (
+                                    <div>
+                                        <h4 style={{ fontSize: "1.05rem", fontWeight: 900, color: "var(--navy-900)", margin: 0 }}>Retrain objection handling</h4>
+                                        <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Calibrate responses for city expressway distance objections.</p>
+                                    </div>
+                                ) : profile.role === "neha" ? (
+                                    <div>
+                                        <h4 style={{ fontSize: "1.05rem", fontWeight: 900, color: "var(--navy-900)", margin: 0 }}>Optimize GST validation flow</h4>
+                                        <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Update parsing rules for multi-state tax schedule sheets.</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h4 style={{ fontSize: "1.05rem", fontWeight: 900, color: "var(--navy-900)", margin: 0 }}>Calibrate directory routing lookup</h4>
+                                        <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Update phonetic mapping for new partner department directories.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", background: "rgba(255,255,255,0.4)", padding: "10px 12px", borderRadius: "8px", border: "1px solid rgba(99, 102, 241, 0.08)" }}>
+                                <div>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", display: "block" }}>Expected Gain</span>
+                                    <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "#10b981", display: "block", marginTop: "2px" }}>
+                                        {profile.role === "rohan" ? "+6% conversion" : profile.role === "neha" ? "+4% efficiency" : "+8% accuracy"}
                                     </span>
                                 </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
-                                    {[
-                                        { label: "Listening", active: false, done: true, icon: "🎙️" },
-                                        { label: "Searching CRM", active: false, done: true, icon: "🔍" },
-                                        { label: "Checking Pricing", active: false, done: true, icon: "💵" },
-                                        { label: "Generating Answer", active: true, done: false, icon: "🧠" },
-                                        { label: "Speaking", active: false, done: false, icon: "🗣️" }
-                                    ].map((step, idx, arr) => (
-                                        <div key={idx} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flex: 1 }}>
-                                                <div style={{
-                                                    width: "30px", height: "30px", borderRadius: "50%",
-                                                    background: step.active ? "rgba(99, 102, 241, 0.15)" : step.done ? "rgba(34, 197, 94, 0.1)" : "rgba(0,0,0,0.02)",
-                                                    border: step.active ? "2px solid var(--accent-indigo)" : step.done ? "2px solid #22c55e" : "1px solid #e2e8f0",
-                                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                                    fontSize: "0.9rem",
-                                                    boxShadow: step.active ? "0 0 10px rgba(99, 102, 241, 0.4)" : "none"
-                                                }}>
-                                                    {step.icon}
-                                                </div>
-                                                <span style={{ fontSize: "0.58rem", fontWeight: step.active || step.done ? 800 : 500, color: step.active ? "var(--accent-indigo)" : step.done ? "#166534" : "var(--text-secondary)", textAlign: "center", whiteSpace: "nowrap" }}>
-                                                    {step.label}
-                                                </span>
-                                            </div>
-                                            {idx < arr.length - 1 && (
-                                                <div style={{ width: "100%", height: "2px", background: step.done ? "#22c55e" : "#e2e8f0", marginTop: "-16px", marginLeft: "4px", marginRight: "4px" }} />
-                                            )}
-                                        </div>
-                                    ))}
+                                <div>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", display: "block" }}>Estimated ROI</span>
+                                    <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "var(--navy-900)", display: "block", marginTop: "2px" }}>
+                                        {profile.role === "rohan" ? "₹1.8L" : profile.role === "neha" ? "₹1.2L" : "₹0.9L"}
+                                    </span>
                                 </div>
                             </div>
 
-                            <div style={{ background: "rgba(15,23,42,0.04)", borderRadius: "8px", padding: "10px 14px", border: "1px solid var(--glass-border)" }}>
-                                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", marginBottom: "8px" }}>Last Completed Call Transcript Preview</div>
-                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                    <div style={{ fontSize: "0.75rem", background: "#6366f1", color: "white", padding: "5px 10px", borderRadius: "6px", alignSelf: "flex-start", maxWidth: "85%" }}>
-                                        <strong>Rohan:</strong> Rahul ji, BKC Phase 2 mein 3BHK starting ₹2.1Cr hai. Pre-approval loan assistance bhi available hai.
-                                    </div>
-                                    <div style={{ fontSize: "0.75rem", background: "#f1f5f9", color: "var(--text-primary)", padding: "5px 10px", borderRadius: "6px", alignSelf: "flex-end", maxWidth: "85%" }}>
-                                        <strong>Lead:</strong> Site visit Sunday ko possible hai kya?
-                                    </div>
-                                </div>
-                            </div>
+                            <button 
+                                onClick={() => {
+                                    addToast({
+                                        type: "success",
+                                        title: "Job Initiated",
+                                        message: `🚀 Initiated ${profile.role === "rohan" ? "objection handling" : profile.role === "neha" ? "GST optimization" : "phonetic mapping"} retraining run. Retraining progress can be tracked in the AI Training tab.`
+                                    });
+                                }}
+                                className="btn hover-lift" 
+                                style={{
+                                    width: "100%",
+                                    padding: "10px",
+                                    background: "var(--accent-indigo)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    fontSize: "0.74rem",
+                                    fontWeight: 800,
+                                    cursor: "pointer",
+                                    textAlign: "center",
+                                    boxShadow: "0 4px 12px rgba(99,102,241,0.2)"
+                                }}
+                            >
+                                Apply Now
+                            </button>
                         </div>
-                    )}
+                    </div>
 
                     {/* Recent Conversations + Pipeline */}
                     <div className="aicc-overview-layout">
@@ -3080,70 +3184,114 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    {/* Agent Performance Comparison Matrix */}
-                    <div className="aicc-card aicc-comparison-matrix-card">
-                        <h3 className="aicc-card-title">
-                            <span>Agent Performance Comparison Matrix</span>
-                            <div style={{ display: "flex", gap: "6px" }}>
-                                {([{ k: "accuracy" as const, label: "Accuracy" }, { k: "latency" as const, label: "Latency" }]).map(s => (
-                                    <button key={s.k}
-                                        onClick={() => setMatrixSort(prev => ({ key: s.k, dir: prev.key === s.k && prev.dir === "desc" ? "asc" : "desc" }))}
-                                        style={{ fontSize: "0.65rem", fontWeight: 700, padding: "3px 8px", borderRadius: "5px", border: "1px solid var(--glass-border)", cursor: "pointer", background: matrixSort.key === s.k ? "var(--accent-indigo)" : "white", color: matrixSort.key === s.k ? "white" : "var(--text-secondary)" }}>
-                                        {s.label} {matrixSort.key === s.k ? (matrixSort.dir === "desc" ? "↓" : "↑") : "↕"}
+                    {/* Executive Analytics Dashboard Row */}
+                    <div style={{ display: "grid", gridTemplateColumns: "2.1fr 1fr", gap: "20px" }}>
+                        
+                        {/* Executive Charts Panel */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px", background: "white", margin: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <div>
+                                    <h3 className="aicc-card-title" style={{ margin: 0 }}>Executive Telephony Trends</h3>
+                                    <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Operational tracking of accuracy gains and human escalation rates.</p>
+                                </div>
+                                <div style={{ display: "flex", gap: "8px", background: "rgba(0,0,0,0.02)", padding: "2px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <button 
+                                        onClick={() => setChartMode("accuracy")}
+                                        style={{ fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px", border: "none", borderRadius: "6px", cursor: "pointer", background: chartMode === "accuracy" ? "var(--accent-indigo)" : "transparent", color: chartMode === "accuracy" ? "white" : "var(--text-secondary)" }}
+                                    >
+                                        AI Accuracy (30D)
                                     </button>
-                                ))}
+                                    <button 
+                                        onClick={() => setChartMode("escalation")}
+                                        style={{ fontSize: "0.65rem", fontWeight: 800, padding: "4px 10px", border: "none", borderRadius: "6px", cursor: "pointer", background: chartMode === "escalation" ? "var(--accent-indigo)" : "transparent", color: chartMode === "escalation" ? "white" : "var(--text-secondary)" }}
+                                    >
+                                        Escalation Trend (30D)
+                                    </button>
+                                </div>
                             </div>
-                        </h3>
-                        {/* Threshold alert legend */}
-                        <div style={{ display: "flex", gap: "12px", marginBottom: "12px", fontSize: "0.65rem", color: "var(--text-secondary)" }}>
-                            <span>Thresholds:</span>
-                            <span style={{ color: "#ef4444", fontWeight: 700 }}>⚠ Accuracy &lt; 90%</span>
-                            <span style={{ color: "#ef4444", fontWeight: 700 }}>⚠ Latency &gt; 800ms</span>
+
+                            <div style={{ height: "240px", marginTop: "10px" }}>
+                                {chartMode === "accuracy" ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={ACCURACY_30D_DATA}>
+                                            <defs>
+                                                <linearGradient id="colorAcc" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25}/>
+                                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
+                                            <XAxis dataKey="day" axisLine={false} tickLine={false} style={{ fontSize: '0.65rem', fontWeight: 700 }} />
+                                            <YAxis domain={[85, 100]} axisLine={false} tickLine={false} style={{ fontSize: '0.65rem', fontWeight: 700 }} unit="%" />
+                                            <RechartsTooltip contentStyle={{ fontSize: '0.7rem' }} />
+                                            <Area type="monotone" dataKey="accuracy" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAcc)" name="Accuracy Rate" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={ESCALATION_30D_DATA}>
+                                            <defs>
+                                                <linearGradient id="colorEsc" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25}/>
+                                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.03)" />
+                                            <XAxis dataKey="day" axisLine={false} tickLine={false} style={{ fontSize: '0.65rem', fontWeight: 700 }} />
+                                            <YAxis axisLine={false} tickLine={false} style={{ fontSize: '0.65rem', fontWeight: 700 }} />
+                                            <RechartsTooltip contentStyle={{ fontSize: '0.7rem' }} />
+                                            <Area type="monotone" dataKey="escalations" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEsc)" name="Human Escalations" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
                         </div>
-                        <div className="aicc-comparison-grid">
-                            <div className="aicc-comparison-header-row">
-                                <div className="aicc-comp-cell text-left">Agent Twin</div>
-                                <div className="aicc-comp-cell">Accuracy Rating</div>
-                                <div className="aicc-comp-cell">Avg Latency</div>
-                                <div className="aicc-comp-cell">Interaction Volume</div>
+
+                        {/* Top Performers Panel */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px", background: "white", justifyContent: "space-between", margin: 0 }}>
+                            <div>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>Top Performers</h3>
+                                <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>Highest scoring digital twins this month.</p>
                             </div>
-                            {[
-                                { avatar: "RM", avatarBg: "#e0e7ff", avatarCol: "#4f46e5", name: "Rohan Mishra", tag: "Sales & Lead Qualification", acc: 94, latency: 540, latencyPct: 54, vol: "1,240 calls", volPct: 82 },
-                                { avatar: "NS", avatarBg: "#ccfbf1", avatarCol: "#0d9488", name: "Neha Sharma", tag: "Accounts & Installment Billing", acc: 96, latency: 555, latencyPct: 55, vol: "820 calls", volPct: 54 },
-                                { avatar: "MK", avatarBg: "#fce7f3", avatarCol: "#db2777", name: "Monika Kapoor", tag: "Directory Routing & Receptionist", acc: 98, latency: 500, latencyPct: 50, vol: "1,510 calls", volPct: 100 },
-                            ].sort((a, b) => {
-                                const val = matrixSort.key === "accuracy" ? a.acc - b.acc : a.latency - b.latency;
-                                return matrixSort.dir === "desc" ? -val : val;
-                            }).map(agent => {
-                                const hasAlert = agent.acc < 90 || agent.latency > 800;
-                                return (
-                                    <div key={agent.name} className={`aicc-comparison-row${hasAlert ? " alert-row" : ""}`}>
-                                        <div className="aicc-comp-cell agent-info text-left">
-                                            <div className="aicc-avatar mini" style={{ background: agent.avatarBg, color: agent.avatarCol }}>{agent.avatar}</div>
-                                            <div>
-                                                <div className="agent-name">
-                                                    {agent.name}
-                                                    {hasAlert && <span className="aicc-threshold-badge">⚠ Alert</span>}
-                                                </div>
-                                                <div className="agent-tag">{agent.tag}</div>
-                                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px", margin: "10px 0" }}>
+                                {[
+                                    { rank: "🥇", name: "Monica", value: 98, color: "linear-gradient(90deg, #10b981, #34d399)", shadow: "0 2px 8px rgba(16,185,129,0.25)" },
+                                    { rank: "🥈", name: "Neha", value: 96, color: "linear-gradient(90deg, #3b82f6, #60a5fa)", shadow: "0 2px 8px rgba(59,130,246,0.25)" },
+                                    { rank: "🥉", name: "Rohan", value: 94, color: "linear-gradient(90deg, #f59e0b, #fbbf24)", shadow: "0 2px 8px rgba(245,158,11,0.25)" }
+                                ].map((item) => (
+                                    <div key={item.name} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.76rem", fontWeight: 800 }}>
+                                            <span>{item.rank} {item.name}</span>
+                                            <span style={{ color: "var(--navy-900)" }}>{item.value}%</span>
                                         </div>
-                                        <div className="aicc-comp-cell">
-                                            <div className="meter-label" style={{ color: agent.acc < 90 ? "#ef4444" : undefined }}>{agent.acc}%</div>
-                                            <div className="meter-bar"><div className="meter-fill" style={{ width: `${agent.acc}%`, background: agent.acc < 90 ? "#ef4444" : undefined }} /></div>
-                                        </div>
-                                        <div className="aicc-comp-cell">
-                                            <div className="latency-val" style={{ color: agent.latency > 800 ? "#ef4444" : undefined }}>{agent.latency} ms</div>
-                                            <div className="latency-bar"><div className="latency-fill" style={{ width: `${agent.latencyPct}%`, background: agent.latency > 800 ? "#ef4444" : undefined }} /></div>
-                                        </div>
-                                        <div className="aicc-comp-cell">
-                                            <div className="volume-val">{agent.vol}</div>
-                                            <div className="volume-bar"><div className="volume-fill" style={{ width: `${agent.volPct}%` }} /></div>
+                                        <div style={{ width: "100%", height: "8px", background: "rgba(0,0,0,0.03)", borderRadius: "4px", overflow: "hidden" }}>
+                                            <div style={{ width: `${item.value}%`, height: "100%", background: item.color, borderRadius: "4px", boxShadow: item.shadow }} />
                                         </div>
                                     </div>
-                                );
-                            })}
+                                ))}
+                            </div>
+                            <button 
+                                onClick={() => setActiveTab("analytics")}
+                                style={{
+                                    display: "block",
+                                    width: "100%",
+                                    padding: "10px",
+                                    background: "rgba(99, 102, 241, 0.08)",
+                                    border: "1px solid rgba(99, 102, 241, 0.15)",
+                                    borderRadius: "8px",
+                                    fontSize: "0.72rem",
+                                    fontWeight: 800,
+                                    color: "var(--accent-indigo)",
+                                    cursor: "pointer",
+                                    textAlign: "center",
+                                    transition: "all 0.2s"
+                                }}
+                                className="hover-lift"
+                            >
+                                Click → Full Analytics
+                            </button>
                         </div>
+
                     </div>
                 </div>
             )}
