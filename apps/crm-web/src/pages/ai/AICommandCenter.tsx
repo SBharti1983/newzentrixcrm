@@ -741,6 +741,23 @@ export default function AICommandCenter() {
     const [playgroundCompareMode, setPlaygroundCompareMode] = useState<boolean>(false);
     const [playgroundCompareRunId, setPlaygroundCompareRunId] = useState<string>("run-1");
 
+    // 🔗 Integrations state variables
+    const [integrationStatus, setIntegrationStatus] = useState<Record<string, 'connected' | 'disconnected' | 'configuring'>>({
+        crm: 'connected',
+        whatsapp: 'connected',
+        email: 'connected',
+        calendar: 'disconnected',
+        erp: 'disconnected',
+        telephony: 'connected',
+        googleDrive: 'connected',
+        sharepoint: 'disconnected',
+        slack: 'disconnected',
+        teams: 'disconnected',
+        webhooks: 'configuring'
+    });
+
+    const [activeIntegrationConfig, setActiveIntegrationConfig] = useState<string | null>(null);
+
     // 🔒 Enterprise Security states
     const [securityRole, setSecurityRole] = useState<string>("admin");
     const [dataSources, setDataSources] = useState<Record<string, boolean>>({
@@ -1839,6 +1856,9 @@ export default function AICommandCenter() {
                     </button>
                     <button onClick={() => setActiveTab("telephony")} className={`aicc-tab-btn tab-voice ${activeTab === "telephony" ? "active" : ""}`}>
                         <Radio size={16} /> Telephony
+                    </button>
+                    <button onClick={() => setActiveTab("integrations")} className={`aicc-tab-btn tab-workflow ${activeTab === "integrations" ? "active" : ""}`}>
+                        <Plug size={16} /> Integrations
                     </button>
                 </div>
             )}
@@ -5353,6 +5373,177 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
+                </div>
+            )}
+
+            {/* ─── TAB: INTEGRATIONS ────────────────────────────────────────── */}
+            {activeTab === "integrations" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Enterprise Systems Integration</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Manage external systems connections, webhooks, and synchronization status.</span>
+                        </div>
+                        <span style={{ fontSize: "0.72rem", background: "var(--accent-indigo)", color: "white", padding: "4px 10px", borderRadius: "20px", fontWeight: 800 }}>
+                            {Object.values(integrationStatus).filter(v => v === 'connected').length} of 11 systems active
+                        </span>
+                    </div>
+
+                    {/* Grid of 11 Integration Cards */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
+                        {[
+                            { key: 'crm', name: 'Zentrix CRM', desc: 'Sync lead status, deals pipelines, and call outcomes.', icon: '🏢' },
+                            { key: 'whatsapp', name: 'WhatsApp API', desc: 'Link templates and outbound messaging updates.', icon: '💬' },
+                            { key: 'email', name: 'Email Gateway', desc: 'Connect SMTP/IMAP for post-call followups.', icon: '✉️' },
+                            { key: 'calendar', name: 'Google Calendar', desc: 'Auto-schedule property site visits.', icon: '📅' },
+                            { key: 'erp', name: 'SAP / Oracle ERP', desc: 'Sync inventory pricing sheets and invoices.', icon: '⚙️' },
+                            { key: 'telephony', name: 'Exotel / Twilio Gateway', desc: 'Bridge voice trunk lines and inbound webhooks.', icon: '📞' },
+                            { key: 'googleDrive', name: 'Google Drive', desc: 'Auto-scan files to index RAG knowledge.', icon: '📁' },
+                            { key: 'sharepoint', name: 'MS SharePoint', desc: 'Scrape documentation directories.', icon: '🗂️' },
+                            { key: 'slack', name: 'Slack Alerts', desc: 'Send real-time alerts for lead escalations.', icon: '💬' },
+                            { key: 'teams', name: 'MS Teams', desc: 'Internal workspace channel push.', icon: '👥' },
+                            { key: 'webhooks', name: 'Custom Webhooks', desc: 'Trigger outbound API calls on CRM updates.', icon: '🔗' }
+                        ].map((sys) => {
+                            const status = integrationStatus[sys.key];
+                            const statusStyles = {
+                                connected: { label: 'Connected', bg: '#dcfce7', color: '#166534' },
+                                disconnected: { label: 'Inactive', bg: '#f1f5f9', color: 'var(--text-secondary)' },
+                                configuring: { label: 'Configuring', bg: '#fef3c7', color: '#b45309' }
+                            }[status];
+
+                            return (
+                                <div 
+                                    key={sys.key} 
+                                    className="aicc-card" 
+                                    style={{ 
+                                        display: "flex", flexDirection: "column", gap: "14px", 
+                                        border: activeIntegrationConfig === sys.key ? "2px solid var(--accent-indigo)" : "1px solid var(--glass-border)",
+                                        padding: "16px", background: "white" 
+                                    }}
+                                >
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                                        <div style={{ fontSize: "1.8rem" }}>{sys.icon}</div>
+                                        <span style={{ fontSize: "0.62rem", fontWeight: 800, background: statusStyles.bg, color: statusStyles.color, padding: "2px 8px", borderRadius: "4px" }}>
+                                            {statusStyles.label}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h4 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 4px 0" }}>{sys.name}</h4>
+                                        <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4 }}>{sys.desc}</p>
+                                    </div>
+                                    <div style={{ display: "flex", gap: "8px", borderTop: "1px solid var(--glass-border)", paddingTop: "12px", marginTop: "auto" }}>
+                                        <button 
+                                            onClick={() => {
+                                                setIntegrationStatus(prev => ({
+                                                    ...prev,
+                                                    [sys.key]: prev[sys.key] === 'connected' ? 'disconnected' : 'connected'
+                                                }));
+                                                addToast({
+                                                    type: "success",
+                                                    title: "Status Toggled",
+                                                    message: `${sys.name} connection state updated.`
+                                                });
+                                            }}
+                                            className="aicc-btn-secondary" 
+                                            style={{ flex: 1, padding: "5px 0", fontSize: "0.7rem", fontWeight: 700 }}
+                                        >
+                                            {status === 'connected' ? 'Disconnect' : 'Connect'}
+                                        </button>
+                                        <button 
+                                            onClick={() => setActiveIntegrationConfig(activeIntegrationConfig === sys.key ? null : sys.key)}
+                                            className="aicc-btn-primary" 
+                                            style={{ padding: "5px 12px", fontSize: "0.7rem", fontWeight: 700 }}
+                                        >
+                                            Configure
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Inline Configuration Drawer */}
+                    {activeIntegrationConfig && (
+                        <div className="aicc-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px", border: "1px solid var(--accent-indigo)" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                                    🔧 Configuration Settings for {activeIntegrationConfig.toUpperCase()}
+                                </h3>
+                                <button 
+                                    onClick={() => setActiveIntegrationConfig(null)}
+                                    className="aicc-btn-secondary" 
+                                    style={{ padding: "2px 8px", fontSize: "0.7rem" }}
+                                >
+                                    Close Panel
+                                </button>
+                            </div>
+
+                            {activeIntegrationConfig === 'crm' && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px", alignItems: "center" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800 }}>CRM Vendor</label>
+                                        <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                            <option value="zentrix">Zentrix Native CRM (Active)</option>
+                                            <option value="salesforce">Salesforce Cloud</option>
+                                            <option value="hubspot">HubSpot API</option>
+                                        </select>
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px", alignItems: "center" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800 }}>Sync Freq</label>
+                                        <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                            <option value="realtime">Real-time webhook sync</option>
+                                            <option value="hourly">Hourly batch jobs</option>
+                                            <option value="daily">Daily audit reconcile</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeIntegrationConfig === 'webhooks' && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px", alignItems: "center" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800 }}>Endpoint URL</label>
+                                        <input type="text" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} defaultValue="https://my-domain.com/api/v1/webhook" />
+                                    </div>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px", alignItems: "center" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800 }}>Secret Token</label>
+                                        <input type="password" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} defaultValue="zntx_wk_sec_930198" />
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeIntegrationConfig !== 'crm' && activeIntegrationConfig !== 'webhooks' && (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "12px", alignItems: "center" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800 }}>API Endpoint / ID</label>
+                                        <input type="text" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} placeholder="Auto-populated credentials key" disabled />
+                                    </div>
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                                        System keys generated via global OAuth dashboard flow.
+                                    </span>
+                                </div>
+                            )}
+
+                            <button 
+                                onClick={() => {
+                                    setIntegrationStatus(prev => ({
+                                        ...prev,
+                                        [activeIntegrationConfig]: 'connected'
+                                    }));
+                                    setActiveIntegrationConfig(null);
+                                    addToast({
+                                        type: "success",
+                                        title: "Saved Config",
+                                        message: "External system endpoints updated in RAG server cache."
+                                    });
+                                }}
+                                className="aicc-btn-primary" 
+                                style={{ alignSelf: "flex-end", padding: "6px 20px", fontSize: "0.75rem" }}
+                            >
+                                Save Configuration
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
