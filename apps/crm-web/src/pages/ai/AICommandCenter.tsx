@@ -1987,7 +1987,7 @@ export default function AICommandCenter() {
 
             {/* Dynamic employee enterprise context bar */}
             <div className="aicc-card" style={{ marginBottom: "24px", background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px" }}>
-                <div className="aicc-employee-context-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: "16px", alignItems: "center" }}>
+                <div className="aicc-employee-context-grid" style={{ display: "flex", flexWrap: "wrap", gap: "24px", alignItems: "center" }}>
                     
                     {/* Avatar & Name Info */}
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
