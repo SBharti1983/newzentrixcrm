@@ -11,6 +11,10 @@ import {
     ServerCrash, Database, Radio, PhoneCall, UserCheck, Clock4, Plug
 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { 
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+    BarChart, Bar, PieChart, Pie, Cell
+} from 'recharts';
 import { useAuth } from '../../hooks/useAuth';
 import { BASE_URL, getToken } from '../../api/client';
 import './AICommandCenter.css';
@@ -710,6 +714,32 @@ export default function AICommandCenter() {
 
     // Overview Enhancement States
     const [dashPeriod, setDashPeriod] = useState<'today' | '7d' | '30d'>('30d');
+
+    // Mock data for RAG Analytics charts
+    const queryTrendData = [
+        { name: 'Mon', asked: 140 },
+        { name: 'Tue', asked: 220 },
+        { name: 'Wed', asked: 190 },
+        { name: 'Thu', asked: 280 },
+        { name: 'Fri', asked: 310 },
+        { name: 'Sat', asked: 120 },
+        { name: 'Sun', asked: 95 }
+    ];
+
+    const docUsageData = [
+        { name: 'Brochure', usage: 480 },
+        { name: 'Pricing', usage: 350 },
+        { name: 'RERA_Appr', usage: 220 },
+        { name: 'FAQ_Scrape', usage: 140 },
+        { name: 'Objections_V3', usage: 5 }
+    ];
+
+    const chunkDistributionData = [
+        { name: 'Sales & Pricing', value: 450, color: 'var(--accent-indigo)' },
+        { name: 'RERA & Legal', value: 250, color: '#3b82f6' },
+        { name: 'Technical Spec', value: 180, color: '#10b981' },
+        { name: 'FAQs & General', value: 120, color: '#f59e0b' }
+    ];
     const [matrixSort, setMatrixSort] = useState<{ key: 'accuracy' | 'latency'; dir: 'asc' | 'desc' }>({ key: 'accuracy', dir: 'desc' });
 
     // Training Tab States
@@ -2633,111 +2663,199 @@ export default function AICommandCenter() {
                     </div>
 
                     {/* Enterprise AI Health, Analytics, and Activity Timeline Section */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", marginTop: "24px" }}>
-                        {/* 7. AI Health Card */}
-                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <h3 className="aicc-card-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                                <span>AI Health Status</span>
-                                <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", display: "inline-block" }} />
-                            </h3>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Knowledge Coverage</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "96%" : "98%"}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Average Confidence</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "94%" : "97%"}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Latency</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#166534" }}>1.2 sec</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Hallucination Risk</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#166534" }}>Low</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Failed Questions</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#991b1b" }}>{profile.role === "rohan" ? "3" : "1"}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Pending Retraining</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)" }}>{profile.role === "rohan" ? "4 items" : "1 item"}</span>
+                    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px", marginTop: "24px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {/* 7. AI Health Card */}
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                                    <span>AI Health Status</span>
+                                    <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", display: "inline-block" }} />
+                                </h3>
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(226,232,240,0.5)", paddingRight: "8px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Knowledge Coverage</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "96%" : "98%"}</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(226,232,240,0.5)", paddingRight: "8px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Avg Confidence</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "94%" : "97%"}</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(226,232,240,0.5)", paddingRight: "8px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Latency</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#166534" }}>1.2 sec</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(226,232,240,0.5)", paddingRight: "8px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Hallucination Risk</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#166534" }}>Low</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", borderRight: "1px solid rgba(226,232,240,0.5)", paddingRight: "8px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Failed Questions</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#991b1b" }}>{profile.role === "rohan" ? "3" : "1"}</span>
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                        <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", fontWeight: 500 }}>Pending Retrain</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--accent-indigo)" }}>{profile.role === "rohan" ? "4 items" : "1 item"}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* 9. Knowledge Analytics Card */}
-                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <h3 className="aicc-card-title" style={{ margin: 0 }}>Knowledge Analytics</h3>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Questions Asked</span>
-                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "1,248" : "2,194"}</span>
-                                    <div style={{ width: "100%", height: "4px", background: "rgba(99,102,241,0.1)", borderRadius: "2px", marginTop: "6px", overflow: "hidden" }}>
-                                        <div style={{ width: "70%", height: "100%", background: "var(--accent-indigo)" }} />
+                            {/* 9. Knowledge Analytics Card */}
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>Knowledge Analytics</h3>
+                                
+                                <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px" }}>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Questions Asked</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "1,248" : "2,194"}</span>
+                                    </div>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Knowledge Used</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "84.5%" : "92.0%"}</span>
+                                    </div>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Top Documents</span>
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--accent-indigo)", display: "block", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>Brochure_2026.pdf</span>
+                                    </div>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Unused Docs</span>
+                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#991b1b", display: "block", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>Objections_V3.docx</span>
+                                    </div>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Knowledge Growth</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "#166534" }}>+12%</span>
+                                    </div>
+                                    <div style={{ background: "#f8fafc", padding: "8px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Chunk Dist</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>Uniform</span>
                                     </div>
                                 </div>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Knowledge Used</span>
-                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "84.5%" : "92.0%"}</span>
-                                    <div style={{ width: "100%", height: "4px", background: "rgba(34,197,94,0.1)", borderRadius: "2px", marginTop: "6px", overflow: "hidden" }}>
-                                        <div style={{ width: "84.5%", height: "100%", background: "#22c55e" }} />
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px", marginTop: "10px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                        <div>
+                                            <h4 style={{ fontSize: "0.7rem", margin: "0 0 8px 0", color: "var(--text-secondary)", fontWeight: 800 }}>Questions Asked Trend</h4>
+                                            <div style={{ width: "100%", height: "110px" }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={queryTrendData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                                                        <defs>
+                                                            <linearGradient id="askedGrad" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop offset="5%" stopColor="var(--accent-indigo)" stopOpacity={0.2}/>
+                                                                <stop offset="95%" stopColor="var(--accent-indigo)" stopOpacity={0}/>
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226,232,240,0.4)" />
+                                                        <XAxis dataKey="name" style={{ fontSize: "0.55rem" }} tickLine={false} />
+                                                        <YAxis style={{ fontSize: "0.55rem" }} tickLine={false} />
+                                                        <RechartsTooltip contentStyle={{ fontSize: "0.65rem", borderRadius: "8px" }} />
+                                                        <Area type="monotone" dataKey="asked" stroke="var(--accent-indigo)" fillOpacity={1} fill="url(#askedGrad)" strokeWidth={2} />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h4 style={{ fontSize: "0.7rem", margin: "0 0 8px 0", color: "var(--text-secondary)", fontWeight: 800 }}>Document Usage Hits</h4>
+                                            <div style={{ width: "100%", height: "110px" }}>
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={docUsageData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226,232,240,0.4)" />
+                                                        <XAxis dataKey="name" style={{ fontSize: "0.55rem" }} tickLine={false} />
+                                                        <YAxis style={{ fontSize: "0.55rem" }} tickLine={false} />
+                                                        <RechartsTooltip contentStyle={{ fontSize: "0.65rem", borderRadius: "8px" }} />
+                                                        <Bar dataKey="usage" fill="var(--accent-indigo)" radius={[3, 3, 0, 0]} barSize={20} />
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Top Documents</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", display: "block" }}>Brochure_2026.pdf</span>
-                                </div>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Unused Documents</span>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#991b1b", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", display: "block" }}>Objections_V3.docx</span>
-                                </div>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Knowledge Growth</span>
-                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#166534" }}>+12% <span style={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)" }}>MoM</span></span>
-                                </div>
-                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Chunk Distribution</span>
-                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>Uniform</span>
+
+                                    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", borderLeft: "1px solid var(--glass-border)", paddingLeft: "15px" }}>
+                                        <h4 style={{ fontSize: "0.7rem", margin: "0 0 8px 0", color: "var(--text-secondary)", width: "100%", textAlign: "center", fontWeight: 800 }}>Chunk Distribution</h4>
+                                        <div style={{ width: "100%", height: "110px" }}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={chunkDistributionData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={25}
+                                                        outerRadius={45}
+                                                        paddingAngle={3}
+                                                        dataKey="value"
+                                                    >
+                                                        {chunkDistributionData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip contentStyle={{ fontSize: "0.65rem", borderRadius: "8px" }} />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "3px", width: "100%", fontSize: "0.58rem", marginTop: "8px" }}>
+                                            {chunkDistributionData.map((item, idx) => (
+                                                <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                        <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: item.color }} />
+                                                        <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
+                                                    </div>
+                                                    <span style={{ fontWeight: 800 }}>{item.value} chk</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* 8. Activity Timeline Card */}
                         <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <h3 className="aicc-card-title" style={{ margin: 0 }}>Activity Timeline</h3>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "8px", position: "relative" }}>
-                                <div style={{ position: "absolute", left: "14px", top: "10px", bottom: "10px", width: "2px", background: "rgba(99,102,241,0.2)" }} />
+                            <h3 className="aicc-card-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span>Activity Timeline</span>
+                                <span style={{ fontSize: "0.7rem", fontWeight: "normal", color: "var(--text-secondary)" }}>Audit Trail</span>
+                            </h3>
+                            
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", background: "#f8fafc", padding: "20px", borderRadius: "12px", border: "1px solid var(--glass-border)", minHeight: "420px", justifyContent: "center" }}>
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Yesterday</span>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>Uploaded brochure</span>
+                                </div>
                                 
-                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
-                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#22c55e", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
-                                    <div>
-                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Ready & Retrained</div>
-                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>Today 10:14 AM</div>
-                                    </div>
+                                <span style={{ fontSize: "1.1rem", color: "var(--accent-indigo)", fontWeight: 800, lineHeight: 1 }}>↓</span>
+                                
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>Chunked</span>
                                 </div>
-                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
-                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
-                                    <div>
-                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Agent retrained successfully</div>
-                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>Yesterday 4:30 PM</div>
-                                    </div>
+                                
+                                <span style={{ fontSize: "1.1rem", color: "var(--accent-indigo)", fontWeight: 800, lineHeight: 1 }}>↓</span>
+                                
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>Embedded</span>
                                 </div>
-                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
-                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
-                                    <div>
-                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Indexed document: Objections_V3.docx</div>
-                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>2 days ago</div>
-                                    </div>
+                                
+                                <div style={{ width: "80%", height: "1px", background: "var(--glass-border)", margin: "4px 0" }} />
+
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>26, 1:40 AM</span>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--accent-indigo)" }}>UI Evaluation for SaaS</span>
                                 </div>
-                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
-                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
-                                    <div>
-                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Chunked & Embedded Brochure_2026.pdf</div>
-                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>3 days ago</div>
-                                    </div>
+                                
+                                <span style={{ fontSize: "1.1rem", color: "var(--accent-indigo)", fontWeight: 800, lineHeight: 1 }}>↓</span>
+                                
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>Indexed</span>
+                                </div>
+                                
+                                <span style={{ fontSize: "1.1rem", color: "var(--accent-indigo)", fontWeight: 800, lineHeight: 1 }}>↓</span>
+                                
+                                <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "var(--text-primary)" }}>Agent retrained</span>
+                                </div>
+                                
+                                <span style={{ fontSize: "1.1rem", color: "var(--accent-indigo)", fontWeight: 800, lineHeight: 1 }}>↓</span>
+                                
+                                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#dcfce7", color: "#166534", padding: "6px 16px", borderRadius: "99px", fontSize: "0.75rem", fontWeight: 800 }}>
+                                    <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%" }} />
+                                    Ready
                                 </div>
                             </div>
                         </div>
