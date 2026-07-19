@@ -1,16 +1,21 @@
 /**
  * MonikaCognitiveLoop — AI Digital Receptionist Two-Track Cognitive Loop
  *
- * Orchestrates Monika's receptionist conversation loop:
- * 1. Track A (Fast Path): Generates instant caller response (~200ms)
- * 2. Track B (Reasoning Path): Classifies intent, evaluates routing/handoff,
- *    schedules meetings/site visits, and updates CRM state.
+ * Extends BaseCognitiveLoop (template-method) so Monika inherits the shared
+ * Track A / Track B orchestration, sentence streaming (item 1.4), Track B
+ * timeout + abort (item 1.3), reasoning validation + repair retry
+ * (items 4.1 / 4.3), and graceful fallback on Track B failure (item 1.2).
  *
- * Key differences from RohanCognitiveLoop:
- *  - Receptionist reasoning schema (intent → route/schedule/answer)
- *  - Routing decisions hand off to Surendra (human) or Rohan (AI sales)
- *  - Scheduling actions persist meetings/site visits
- *  - Caller lookup by phone (not lead nurture pipeline)
+ * Monika-specific behaviour lives in the hooks:
+ *  - loadContext(): caller lookup + staff directory + projects + FAQs
+ *  - executeReasoning(): delegates to executeMonikaReasoning
+ *  - validateReasoningOutput(): receptionist schema (intent/emotion/action/
+ *    response/next_goal)
+ *  - normalizeReasoning(): fills defaults for optional receptionist fields
+ *  - buildFallbackReasoning(): safe default (answer_query, neutral)
+ *  - applyReasoningSideEffects(): scheduling (meetings/site visits) +
+ *    routing/handoff to Surendra (human) or Rohan (AI sales)
+ *  - getMemoryKey(): `caller:{phone}` (or lead_id when present)
  *
  * NOTE: This module lives inside apps/digital-employee to run on a dedicated
  * Node.js event loop, isolated from the CRM API traffic in apps/api.
@@ -32,213 +37,53 @@ import {
     ReceptionistReasoningOutput,
     ReceptionistRouting,
     ReceptionistScheduling,
-    FastResponse,
     ConversationState,
     MonikaContext,
     StaffDirectoryEntry,
-    HandoffTarget,
-    SupportedLanguage,
     DbAIEmployeePersona,
 } from '@zentrix/types';
 import crmUpdater from '../integrations/crm/CrmUpdater';
 
-import { generateAIResponse } from '../ai/AIService';
+import {
+    BaseCognitiveLoop,
+    ReasoningValidationResult,
+} from './BaseCognitiveLoop';
 
-class MonikaCognitiveLoop {
-    /**
-     * Process a single turn of a receptionist conversation.
-     * Generates Track A response synchronously, fires Track B reasoning async.
-     */
-    async processCycle(input: ReceptionistCognitiveInput): Promise<ReceptionistCognitiveResult> {
-        const startTime = Date.now();
-        const { tenant_id, persona_id, lead_id, channel, user_message, detected_language, user_phone, caller_name } = input;
+class MonikaCognitiveLoop extends BaseCognitiveLoop<
+    ReceptionistCognitiveInput,
+    MonikaContext,
+    ReceptionistCognitiveResult,
+    ReceptionistReasoningOutput
+> {
+    protected readonly logTag = '[MonikaCognitiveLoop]';
 
-        // 1. Fetch Monika Persona
-        const persona = await monikaPersonaEngine.getPersona(tenant_id);
+    // ── Hooks ────────────────────────────────────────────────────────
 
-        // 2. Load receptionist context (caller, staff directory, projects, FAQs)
-        const context = await this.loadContext(tenant_id, persona, user_phone, caller_name, lead_id, channel, user_message);
-
-        // Update state with incoming message
-        context.conversation_state.last_user_message = user_message;
-        context.conversation_state.turn_count += 1;
-
-        // 3. Build Track A Fast prompt
-        const fastPrompt = monikaPersonaEngine.buildSystemPrompt(persona, context, 'fast');
-
-        // 4. Generate Track A Response (conversational, non-JSON)
-        const trackAStart = Date.now();
-        const responseText = await generateAIResponse(
-            `System Prompt:\n${fastPrompt}\n\nCaller Message: ${user_message}\n\nGenerate Monika's conversational response:`,
-            false
-        );
-        const trackALatency = Date.now() - trackAStart;
-
-        // 5. Filler prefix for voice
-        let fillerPrefix: string | undefined = undefined;
-        if (channel === 'voice') {
-            fillerPrefix = monikaPersonaEngine.getRandomFiller(persona) || undefined;
-        }
-
-        const responseLanguage: SupportedLanguage =
-            (detected_language || context.conversation_state.language_detected || 'hinglish') as SupportedLanguage;
-
-        // 6. Build FastResponse
-        const fastResponse: FastResponse = {
-            text: responseText,
-            language: responseLanguage,
-            filler_prefix: fillerPrefix,
-            confidence: 1.0,
-            latency_ms: trackALatency,
-        };
-
-        const turnNumber = context.conversation_state.turn_count;
-
-        // 7. Get or create memory tracker (reuse Rohan's memory infra)
-        const memory = await rohanMemory.getOrCreateMemory(tenant_id, persona.id, lead_id || `caller:${user_phone || 'unknown'}`, channel);
-
-        context.conversation_state.last_rohan_message = responseText;
-
-        // 8. Fire Track B background reasoning
-        const reasoningPromise = (async (): Promise<ReceptionistReasoningOutput> => {
-            const trackBStart = Date.now();
-            try {
-                const reasoningRaw = await executeMonikaReasoning(persona, context, user_message);
-                const reasoning = this.normalizeReasoning(reasoningRaw);
-                const reasoningLatency = Date.now() - trackBStart;
-
-                // Save reasoning to memory
-                await rohanMemory.saveReasoning(memory.id, reasoning as any);
-
-                // Evaluate routing / handoff
-                const routing = monikaPersonaEngine.evaluateRouting(persona, reasoning, context);
-                let scheduling: ReceptionistScheduling | undefined;
-
-                // Handle scheduling action
-                if (reasoning.action === 'schedule_meeting' || reasoning.action === 'schedule_site_visit') {
-                    scheduling = reasoning.scheduling;
-                    if (scheduling) {
-                        try {
-                            const booking = await monikaSchedulingService.bookMeeting(
-                                tenant_id,
-                                persona.id,
-                                scheduling,
-                                context.caller?.name || caller_name || 'Unknown',
-                                context.caller?.phone || user_phone || 'Unknown',
-                                lead_id
-                            );
-                            // Stamp the booking id back into the scheduling block
-                            scheduling = { ...scheduling, status: booking.status as any };
-                            logger.info(`[MonikaCognitiveLoop] Scheduled ${scheduling.type} (id=${booking.id})`);
-                        } catch (err: any) {
-                            logger.error(`[MonikaCognitiveLoop] Scheduling failed: ${err.message}`);
-                        }
-                    }
-                }
-
-                // Handle handoff / routing
-                if (routing) {
-                    const target = monikaPersonaEngine.resolveHandoffTarget(routing.target, context);
-                    const brief = buildMonikaHandoffBrief(reasoning, context, routing.target);
-                    const handoffMsg = getMonikaHandoffMessage(routing.target, context.caller?.name || 'ji', target?.name);
-                    await crmUpdater.triggerHandoff(
-                        tenant_id,
-                        persona,
-                        lead_id,
-                        memory.id,
-                        routing,
-                        reasoning,
-                        context,
-                        target,
-                        brief,
-                        handoffMsg
-                    );
-                }
-
-                // Apply CRM updates
-                if (lead_id && reasoning.crm_update) {
-                    await crmUpdater.applyCRMUpdates(tenant_id, lead_id, reasoning.crm_update);
-                }
-
-                // Update conversation state
-                const updatedState: ConversationState = {
-                    ...context.conversation_state,
-                    language_detected: (context.conversation_state.language_detected || responseLanguage) as SupportedLanguage,
-                    emotion_trend: [...context.conversation_state.emotion_trend, reasoning.emotion].slice(-5),
-                    current_goal: reasoning.next_goal || context.conversation_state.current_goal,
-                    missing_info: reasoning.missing_info || context.conversation_state.missing_info,
-                    next_action: reasoning.action || context.conversation_state.next_action,
-                };
-
-                await rohanMemory.saveConversationState(tenant_id, lead_id || `caller:${user_phone || 'unknown'}`, updatedState, memory.id);
-                await rohanMemory.invalidateContextCache(tenant_id, lead_id || `caller:${user_phone || 'unknown'}`);
-
-                // Audit log
-                const totalLatency = Date.now() - startTime;
-                await rohanMemory.logReasoning(
-                    tenant_id,
-                    persona.id,
-                    lead_id,
-                    memory.id,
-                    turnNumber,
-                    channel,
-                    user_message,
-                    reasoning as any,
-                    responseText,
-                    totalLatency,
-                    reasoningLatency
-                );
-
-                return reasoning;
-            } catch (err: any) {
-                logger.error(`[MonikaCognitiveLoop] Track B reasoning failed: ${err.message}`);
-                throw err;
-            }
-        })();
-
-        // Pre-compute routing synchronously from the fast path if possible
-        // (the authoritative routing comes from Track B, but we expose a
-        // best-effort hint on the result so the voice adapter can start
-        // preparing a transfer without waiting for Track B.)
-        return {
-            fast_response: fastResponse,
-            reasoning_promise: reasoningPromise,
-            memory_id: memory.id,
-            turn_number: turnNumber,
-        };
+    protected fetchPersona(tenantId: number): Promise<DbAIEmployeePersona> {
+        return monikaPersonaEngine.getPersona(tenantId);
     }
 
-    // ── Context Loading ─────────────────────────────────────────────
-
-    /**
-     * Build the MonikaContext: caller lookup, staff directory, projects, FAQs.
-     */
-    private async loadContext(
-        tenantId: number,
-        persona: DbAIEmployeePersona,
-        userPhone?: string,
-        callerName?: string,
-        leadId?: string,
-        channel?: string,
-        userMessage?: string
+    protected async loadContext(
+        input: ReceptionistCognitiveInput,
+        persona: DbAIEmployeePersona
     ): Promise<MonikaContext> {
-        // Caller lookup by phone (or lead_id if provided)
-        const caller = await this.lookupCaller(tenantId, userPhone, callerName, leadId);
+        const { tenant_id, user_phone, caller_name, lead_id, channel, user_message } = input;
 
-        // Staff directory (humans + AI agents Monika can route to)
-        const staffDirectory = await this.loadStaffDirectory(tenantId);
+        const caller = await this.lookupCaller(tenant_id, user_phone, caller_name, lead_id);
+        const staffDirectory = await this.loadStaffDirectory(tenant_id);
+        const projects = await this.loadProjects(tenant_id);
+        const faqs = await this.loadFaqs(tenant_id);
 
-        // Projects (for site visits / general info)
-        const projects = await this.loadProjects(tenantId);
-
-        // FAQs (general office queries)
-        const faqs = await this.loadFaqs(tenantId);
-
-        // Conversation state from memory
-        const stateKey = leadId || `caller:${userPhone || 'unknown'}`;
+        const stateKey = lead_id || `caller:${user_phone || 'unknown'}`;
         let conversationState: ConversationState;
         try {
-            const existing = await rohanMemory.loadContext(tenantId, persona, stateKey, (channel as any) || 'voice', userMessage || '');
+            const existing = await rohanMemory.loadContext(
+                tenant_id,
+                persona,
+                stateKey,
+                (channel as any) || 'voice',
+                user_message || ''
+            );
             conversationState = existing.conversation_state;
         } catch {
             conversationState = this.defaultConversationState();
@@ -253,6 +98,148 @@ class MonikaCognitiveLoop {
             conversation_state: conversationState,
         };
     }
+
+    protected buildFastPrompt(persona: DbAIEmployeePersona, context: MonikaContext): string {
+        return monikaPersonaEngine.buildSystemPrompt(persona, context, 'fast');
+    }
+
+    protected async executeReasoning(
+        persona: DbAIEmployeePersona,
+        context: MonikaContext,
+        userMessage: string,
+        _signal?: AbortSignal
+    ): Promise<ReceptionistReasoningOutput> {
+        return executeMonikaReasoning(persona, context, userMessage);
+    }
+
+    protected validateReasoningOutput(raw: any): ReasoningValidationResult {
+        const missing: string[] = [];
+        if (!raw || typeof raw !== 'object') {
+            return { valid: false, missing: ['<root>'] };
+        }
+        if (!raw.intent) missing.push('intent');
+        if (!raw.emotion) missing.push('emotion');
+        if (!raw.action) missing.push('action');
+        if (raw.response === undefined || raw.response === null || raw.response === '') {
+            missing.push('response');
+        }
+        if (!raw.next_goal) missing.push('next_goal');
+        return { valid: missing.length === 0, missing };
+    }
+
+    protected normalizeReasoning(raw: any): ReceptionistReasoningOutput {
+        return {
+            intent: raw.intent || 'other',
+            emotion: raw.emotion || 'neutral',
+            emotion_score: typeof raw.emotion_score === 'number' ? raw.emotion_score : 0,
+            query_summary: raw.query_summary || '',
+            requested_party: raw.requested_party || undefined,
+            missing_info: Array.isArray(raw.missing_info) ? raw.missing_info : [],
+            action: raw.action || 'answer_query',
+            response: raw.response || '',
+            routing: raw.routing || undefined,
+            scheduling: raw.scheduling || undefined,
+            crm_update: raw.crm_update || {},
+            next_goal: raw.next_goal || 'continue_helping',
+            should_handoff: Boolean(raw.should_handoff),
+            handoff_target: raw.handoff_target || undefined,
+            handoff_reason: raw.handoff_reason || undefined,
+        };
+    }
+
+    protected buildFallbackReasoning(
+        _context: MonikaContext,
+        cleanText: string
+    ): ReceptionistReasoningOutput {
+        return {
+            intent: 'other',
+            emotion: 'neutral',
+            emotion_score: 0,
+            query_summary: 'fallback — reasoning unavailable',
+            missing_info: [],
+            action: 'answer_query',
+            response: cleanText,
+            crm_update: {},
+            next_goal: 'continue_helping',
+            should_handoff: false,
+        };
+    }
+
+    protected getMemoryKey(input: ReceptionistCognitiveInput): string {
+        return input.lead_id || `caller:${input.user_phone || 'unknown'}`;
+    }
+
+    protected getFillerPrefix(persona: DbAIEmployeePersona): string | null {
+        return monikaPersonaEngine.getRandomFiller(persona);
+    }
+
+    protected userMessageLabel(): string {
+        return 'Caller Message';
+    }
+
+    protected employeeName(_persona: DbAIEmployeePersona): string {
+        return 'Monika';
+    }
+
+    protected async applyReasoningSideEffects(
+        input: ReceptionistCognitiveInput,
+        persona: DbAIEmployeePersona,
+        context: MonikaContext,
+        reasoning: ReceptionistReasoningOutput,
+        memoryId: string
+    ): Promise<void> {
+        const { tenant_id, lead_id, user_phone, caller_name } = input;
+
+        // Evaluate routing / handoff
+        const routing = monikaPersonaEngine.evaluateRouting(persona, reasoning, context);
+
+        // Handle scheduling action
+        if (reasoning.action === 'schedule_meeting' || reasoning.action === 'schedule_site_visit') {
+            const scheduling: ReceptionistScheduling | undefined = reasoning.scheduling;
+            if (scheduling) {
+                try {
+                    const booking = await monikaSchedulingService.bookMeeting(
+                        tenant_id,
+                        persona.id,
+                        scheduling,
+                        context.caller?.name || caller_name || 'Unknown',
+                        context.caller?.phone || user_phone || 'Unknown',
+                        lead_id
+                    );
+                    // Stamp the booking status back into the scheduling block
+                    reasoning.scheduling = { ...scheduling, status: booking.status as any };
+                    logger.info(`${this.logTag} Scheduled ${scheduling.type} (id=${booking.id})`);
+                } catch (err: any) {
+                    logger.error(`${this.logTag} Scheduling failed: ${err.message}`);
+                }
+            }
+        }
+
+        // Handle handoff / routing
+        if (routing) {
+            const target = monikaPersonaEngine.resolveHandoffTarget(routing.target, context);
+            const brief = buildMonikaHandoffBrief(reasoning, context, routing.target);
+            const handoffMsg = getMonikaHandoffMessage(
+                routing.target,
+                context.caller?.name || 'ji',
+                target?.name
+            );
+            await crmUpdater.triggerHandoff(
+                tenant_id,
+                persona,
+                lead_id,
+                memoryId,
+                routing,
+                reasoning,
+                context,
+                target,
+                brief,
+                handoffMsg
+            );
+        }
+    }
+
+    // ── Context-loading helpers (private) ────────────────────────────
 
     private async lookupCaller(
         tenantId: number,
@@ -295,7 +282,7 @@ class MonikaCognitiveLoop {
                 }
             }
         } catch (err: any) {
-            logger.error(`[MonikaCognitiveLoop] Caller lookup failed: ${err.message}`);
+            logger.error(`${this.logTag} Caller lookup failed: ${err.message}`);
         }
         return { name: name || 'Unknown', phone, is_existing_lead: false };
     }
@@ -345,7 +332,7 @@ class MonikaCognitiveLoop {
                 });
             }
         } catch (err: any) {
-            logger.error(`[MonikaCognitiveLoop] Staff directory load failed: ${err.message}`);
+            logger.error(`${this.logTag} Staff directory load failed: ${err.message}`);
         }
         return entries;
     }
@@ -363,12 +350,12 @@ class MonikaCognitiveLoop {
                 site_visit_available: true,
             }));
         } catch (err: any) {
-            logger.error(`[MonikaCognitiveLoop] Projects load failed: ${err.message}`);
+            logger.error(`${this.logTag} Projects load failed: ${err.message}`);
             return [];
         }
     }
 
-    private async loadFaqs(tenantId: number): Promise<MonikaContext['faqs']> {
+    private async loadFaqs(_tenantId: number): Promise<MonikaContext['faqs']> {
         // Static reception FAQs — could be moved to a DB table later.
         return [
             { question: 'Office hours?', answer: 'Monday to Saturday, 9 AM to 7 PM.' },
@@ -390,33 +377,6 @@ class MonikaCognitiveLoop {
             conversation_started_at: new Date().toISOString(),
         };
     }
-
-    // ── Reasoning Normalization ─────────────────────────────────────
-
-    /**
-     * Normalize the raw LLM JSON into a valid ReceptionistReasoningOutput,
-     * filling defaults for any missing fields so downstream code is safe.
-     */
-    private normalizeReasoning(raw: any): ReceptionistReasoningOutput {
-        return {
-            intent: raw.intent || 'other',
-            emotion: raw.emotion || 'neutral',
-            emotion_score: typeof raw.emotion_score === 'number' ? raw.emotion_score : 0,
-            query_summary: raw.query_summary || '',
-            requested_party: raw.requested_party || undefined,
-            missing_info: Array.isArray(raw.missing_info) ? raw.missing_info : [],
-            action: raw.action || 'answer_query',
-            response: raw.response || '',
-            routing: raw.routing || undefined,
-            scheduling: raw.scheduling || undefined,
-            crm_update: raw.crm_update || {},
-            next_goal: raw.next_goal || 'continue_helping',
-            should_handoff: Boolean(raw.should_handoff),
-            handoff_target: raw.handoff_target || undefined,
-            handoff_reason: raw.handoff_reason || undefined,
-        };
-    }
-
 }
 
 const monikaCognitiveLoop = new MonikaCognitiveLoop();
