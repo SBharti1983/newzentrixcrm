@@ -340,6 +340,8 @@ export default function AICommandCenter() {
     };
     const visualizerNodes = useMemo(() => vectorNodeData[selectedAgent] || vectorNodeData.rohan, [selectedAgent]);
     const [selectedVisualizerNode, setSelectedVisualizerNode] = useState<any | null>(null);
+    const [visualizerMode, setVisualizerMode] = useState<'graph' | 'tree'>('tree');
+    const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
     const knowledgeStats = useMemo(() => {
         const statsMap: Record<string, {
@@ -2157,22 +2159,39 @@ export default function AICommandCenter() {
                         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                             <div className="aicc-dropzone" onClick={simulateRAGIngest}>
                                 {isIngesting ? (
-                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                                        <RefreshCw className="animate-spin" size={32} style={{ color: "var(--accent-indigo)" }} />
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700 }}>
-                                            {ingestStatus === "uploading" && `Uploading document... (${ingestProgress}%)`}
-                                            {ingestStatus === "chunking" && `Auto-chunking text segments (600 chars)... (${ingestProgress}%)`}
-                                            {ingestStatus === "embedding" && `Generating cosine similarity vectors via OpenAI... (${ingestProgress}%)`}
-                                        </span>
-                                        <div style={{ width: "200px", height: "6px", background: "rgba(99,102,241,0.1)", borderRadius: "3px", overflow: "hidden" }}>
-                                            <div style={{ width: `${ingestProgress}%`, height: "100%", background: "var(--accent-indigo)", transition: "width 0.2s" }} />
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%", maxWidth: "400px", padding: "12px" }}>
+                                        <Loader2 className="animate-spin" size={36} style={{ color: "var(--accent-indigo)" }} />
+                                        <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                                            <span>
+                                                {ingestStatus === "uploading" && "Uploading document..."}
+                                                {ingestStatus === "chunking" && "Auto-chunking segments (600 chars)..."}
+                                                {ingestStatus === "embedding" && "Generating AI embeddings via OpenAI..."}
+                                            </span>
+                                            <span>{ingestProgress}%</span>
                                         </div>
+                                        <div style={{ width: "100%", height: "8px", background: "rgba(99,102,241,0.1)", borderRadius: "4px", overflow: "hidden", border: "1px solid rgba(99,102,241,0.15)" }}>
+                                            <div style={{ width: `${ingestProgress}%`, height: "100%", background: "linear-gradient(90deg, var(--accent-indigo), #4f46e5)", borderRadius: "4px", transition: "width 0.2s ease" }} />
+                                        </div>
+                                        <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
+                                            Do not close this tab. Processing vector nodes...
+                                        </span>
                                     </div>
                                 ) : (
-                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                        <Upload className="aicc-dropzone-icon" size={32} />
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>Click to upload custom PDFs, DOCX, or TXT files</span>
-                                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>File size limits: 25MB per document. Auto-chunks 600 chars.</span>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "12px" }}>
+                                        <Upload className="aicc-dropzone-icon" size={36} style={{ color: "var(--accent-indigo)", marginBottom: "8px" }} />
+                                        <span style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)" }}>Drag & Drop files here or click to browse</span>
+                                        <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px", marginBottom: "16px" }}>Max upload size: 25MB per file</span>
+                                        
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", maxWidth: "450px" }}>
+                                            <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center", letterSpacing: "0.5px" }}>Supported File Formats</div>
+                                            <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
+                                                {["PDF", "DOCX", "TXT", "CSV", "Images (OCR)", "ZIP"].map((fmt) => (
+                                                    <span key={fmt} style={{ fontSize: "0.68rem", fontWeight: 800, padding: "3px 8px", background: "rgba(99,102,241,0.08)", color: "var(--accent-indigo)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "4px" }}>
+                                                        {fmt}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -2215,75 +2234,123 @@ export default function AICommandCenter() {
                                     />
                                 </div>
 
-                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                                    {filteredDocs.map((doc) => (
-                                        <div 
-                                            key={doc.id}
-                                            className={`aicc-doc-card ${doc.active ? "active" : "inactive"}`}
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                background: doc.active ? "rgba(248, 250, 252, 0.7)" : "rgba(241, 245, 249, 0.4)",
-                                                padding: "12px 16px",
-                                                borderRadius: "10px",
-                                                border: doc.active ? "1px solid var(--glass-border)" : "1px solid rgba(226, 232, 240, 0.8)",
-                                                opacity: doc.active ? 1 : 0.7,
-                                                transition: "all 0.2s ease"
-                                            }}
-                                        >
-                                            <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedDocs.includes(doc.id)}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) setSelectedDocs(prev => [...prev, doc.id]);
-                                                        else setSelectedDocs(prev => prev.filter(id => id !== doc.id));
-                                                    }}
-                                                    style={{ cursor: "pointer", width: "15px", height: "15px", accentColor: "var(--accent-indigo)" }}
-                                                />
-                                                <FileText size={20} style={{ color: doc.active ? "var(--accent-indigo)" : "var(--text-secondary)" }} />
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>{doc.name}</div>
-                                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-                                                        <span>Indexed</span>
-                                                        <span>•</span>
-                                                        <span>{doc.date}</span>
-                                                        <span>•</span>
-                                                        <span>{doc.chunks} chunks</span>
-                                                        <span>•</span>
-                                                        <span style={{ color: doc.active ? "#166534" : "#991b1b", fontWeight: 700 }}>
-                                                            {doc.active ? "Ready" : "Disabled"}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                                                <button
-                                                    onClick={() => toggleDocActive(doc.id)}
-                                                    style={{
-                                                        fontSize: "0.7rem",
-                                                        fontWeight: 800,
-                                                        background: doc.active ? "#dcfce7" : "#fee2e2",
-                                                        color: doc.active ? "#166534" : "#991b1b",
-                                                        padding: "4px 10px",
-                                                        borderRadius: "99px",
-                                                        border: "none",
-                                                        cursor: "pointer"
-                                                    }}
-                                                >
-                                                    {doc.active ? "Active" : "Inactive"}
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirmDoc(doc)}
-                                                    style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}
-                                                    title="Delete from RAG Index"
-                                                >
-                                                    <Trash2 size={15} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div style={{ overflowX: "auto", border: "1px solid var(--glass-border)", borderRadius: "10px", background: "white" }}>
+                                    <table className="aicc-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", minWidth: "1000px" }}>
+                                        <thead>
+                                            <tr style={{ background: "rgba(241, 245, 249, 0.6)", borderBottom: "1px solid var(--glass-border)", textAlign: "left", fontWeight: 800, color: "var(--text-secondary)" }}>
+                                                <th style={{ padding: "10px 12px", width: "40px" }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedDocs.length === filteredDocs.length && filteredDocs.length > 0}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) setSelectedDocs(filteredDocs.map(d => d.id));
+                                                            else setSelectedDocs([]);
+                                                        }}
+                                                        style={{ cursor: "pointer" }}
+                                                    />
+                                                </th>
+                                                <th style={{ padding: "10px 12px" }}>Document</th>
+                                                <th style={{ padding: "10px 12px" }}>Size</th>
+                                                <th style={{ padding: "10px 12px" }}>Chunks</th>
+                                                <th style={{ padding: "10px 12px" }}>Embedding Model</th>
+                                                <th style={{ padding: "10px 12px" }}>Version</th>
+                                                <th style={{ padding: "10px 12px" }}>Owner</th>
+                                                <th style={{ padding: "10px 12px" }}>Department</th>
+                                                <th style={{ padding: "10px 12px" }}>Confidence</th>
+                                                <th style={{ padding: "10px 12px" }}>Last Used</th>
+                                                <th style={{ padding: "10px 12px" }}>Questions Answered</th>
+                                                <th style={{ padding: "10px 12px" }}>Status</th>
+                                                <th style={{ padding: "10px 12px", textAlign: "right" }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredDocs.map((doc) => {
+                                                // Dynamic business columns mapping
+                                                const embeddingModel = "text-embedding-3-small";
+                                                const version = doc.id === "kd1" || doc.id === "nd1" || doc.id === "md1" ? "v1.2" : "v1.0";
+                                                const owner = "Admin";
+                                                const department = profile.role === "rohan" ? "Sales" : profile.role === "neha" ? "Finance" : "Front Desk";
+                                                const confidence = doc.id === "kd1" ? "98.5%" : doc.id === "kd2" ? "96.8%" : "95.5%";
+                                                const lastUsed = doc.id === "kd1" ? "2h ago" : doc.id === "kd2" ? "Today" : "Yesterday";
+                                                const questionsAnswered = doc.id === "kd1" ? 42 : doc.id === "kd2" ? 18 : 5;
+
+                                                return (
+                                                    <tr 
+                                                        key={doc.id} 
+                                                        style={{ 
+                                                            borderBottom: "1px solid rgba(226, 232, 240, 0.6)", 
+                                                            background: selectedDocs.includes(doc.id) ? "rgba(99, 102, 241, 0.03)" : "transparent",
+                                                            transition: "background 0.2s"
+                                                        }}
+                                                    >
+                                                        <td style={{ padding: "10px 12px" }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedDocs.includes(doc.id)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) setSelectedDocs(prev => [...prev, doc.id]);
+                                                                    else setSelectedDocs(prev => prev.filter(id => id !== doc.id));
+                                                                }}
+                                                                style={{ cursor: "pointer" }}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: "10px 12px", fontWeight: 700, color: "var(--text-primary)" }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                                <FileText size={16} style={{ color: doc.active ? "var(--accent-indigo)" : "var(--text-secondary)" }} />
+                                                                <span>{doc.name}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{doc.size || "1.2 MB"}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{doc.chunks || 0}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.7rem" }}>{embeddingModel}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{version}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{owner}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{department}</td>
+                                                        <td style={{ padding: "10px 12px", fontWeight: 700, color: "#166534" }}>{confidence}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)" }}>{lastUsed}</td>
+                                                        <td style={{ padding: "10px 12px", color: "var(--text-secondary)", fontWeight: 700 }}>{questionsAnswered}</td>
+                                                        <td style={{ padding: "10px 12px" }}>
+                                                            <span style={{ 
+                                                                fontSize: "0.65rem", 
+                                                                fontWeight: 800, 
+                                                                padding: "2px 8px", 
+                                                                borderRadius: "99px",
+                                                                background: doc.active ? "#dcfce7" : "#fee2e2",
+                                                                color: doc.active ? "#166534" : "#991b1b"
+                                                            }}>
+                                                                {doc.active ? "Ready" : "Disabled"}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: "10px 12px", textAlign: "right" }}>
+                                                            <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
+                                                                <button
+                                                                    onClick={() => toggleDocActive(doc.id)}
+                                                                    style={{
+                                                                        fontSize: "0.68rem",
+                                                                        fontWeight: 800,
+                                                                        background: "transparent",
+                                                                        border: "none",
+                                                                        color: doc.active ? "#166534" : "#475569",
+                                                                        cursor: "pointer",
+                                                                        textDecoration: "underline"
+                                                                    }}
+                                                                >
+                                                                    {doc.active ? "Deactivate" : "Activate"}
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setDeleteConfirmDoc(doc)}
+                                                                    style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "2px" }}
+                                                                    title="Delete from RAG Index"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -2366,63 +2433,155 @@ export default function AICommandCenter() {
                     </div>
 
                     <div className="aicc-card aicc-chunk-visualizer-card">
-                        <h3 className="aicc-card-title">
+                        <h3 className="aicc-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span>Interactive Vector Chunk Visualizer</span>
-                            <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                            <div style={{ display: "flex", gap: "4px", background: "rgba(241, 245, 249, 0.8)", padding: "3px", borderRadius: "8px" }}>
+                                <button 
+                                    onClick={() => setVisualizerMode('tree')} 
+                                    style={{
+                                        fontSize: "0.7rem", fontWeight: 800, padding: "4px 10px", borderRadius: "6px", border: "none", cursor: "pointer",
+                                        background: visualizerMode === 'tree' ? "white" : "transparent",
+                                        boxShadow: visualizerMode === 'tree' ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                                        color: visualizerMode === 'tree' ? "var(--accent-indigo)" : "var(--text-secondary)"
+                                    }}
+                                >
+                                    Tree View
+                                </button>
+                                <button 
+                                    onClick={() => setVisualizerMode('graph')} 
+                                    style={{
+                                        fontSize: "0.7rem", fontWeight: 800, padding: "4px 10px", borderRadius: "6px", border: "none", cursor: "pointer",
+                                        background: visualizerMode === 'graph' ? "white" : "transparent",
+                                        boxShadow: visualizerMode === 'graph' ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                                        color: visualizerMode === 'graph' ? "var(--accent-indigo)" : "var(--text-secondary)"
+                                    }}
+                                >
+                                    Graph View
+                                </button>
+                            </div>
                         </h3>
                         <div className="aicc-visualizer-layout" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
-                            <div className="aicc-svg-container" style={{ height: "300px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "rgba(248, 250, 252, 0.4)" }}>
-                                <svg width="100%" height="100%" viewBox="0 0 400 300">
-                                    {visualizerNodes.map(node => (
-                                        <line
-                                            key={`l-${node.id}`}
-                                            x1="200"
-                                            y1="150"
-                                            x2={node.x}
-                                            y2={node.y}
-                                            stroke="rgba(99,102,241,0.2)"
-                                            strokeWidth="2"
-                                            strokeDasharray="4"
-                                        />
-                                    ))}
-                                    <circle
-                                        cx="200"
-                                        cy="150"
-                                        r="28"
-                                        fill="#6366f1"
-                                        stroke="#c7d2fe"
-                                        strokeWidth="3"
-                                        style={{ cursor: "pointer" }}
-                                        onClick={() => {
-                                            setSelectedVisualizerNode({ id: "central", name: "Knowledge Base Core", text: `Active agent knowledge database context. Assigned: ${dynamicDocCount} files, ${dynamicChunksCount} chunks.`, similarity: 1.0 });
-                                        }}
-                                    />
-                                    <text x="200" y="154" fill="white" fontSize="9px" fontWeight="800" textAnchor="middle" style={{ pointerEvents: "none" }}>RAG CORE</text>
-                                    
-                                    {visualizerNodes.map(node => {
-                                        const isSelected = selectedVisualizerNode?.id === node.id;
-                                        const nodeColor = selectedAgent === "rohan" ? "#fb923c" : selectedAgent === "neha" ? "#14b8a6" : "#ec4899";
-                                        return (
-                                            <g 
-                                                key={`n-${node.id}`} 
-                                                style={{ cursor: "pointer" }} 
-                                                onClick={() => handleNodeClick(node)}
-                                            >
-                                                <circle
-                                                    cx={node.x}
-                                                    cy={node.y}
-                                                    r={isSelected ? "16" : "12"}
-                                                    fill="#1e293b"
-                                                    stroke={nodeColor}
-                                                    strokeWidth={isSelected ? "3" : "2"}
+                            {visualizerMode === 'tree' ? (
+                                <div style={{ height: "300px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "white", padding: "20px", overflowY: "auto" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                        {Object.entries(
+                                            visualizerNodes.reduce((acc, node) => {
+                                                const cat = node.category || "Uncategorized";
+                                                if (!acc[cat]) acc[cat] = [];
+                                                acc[cat].push(node);
+                                                return acc;
+                                            }, {} as Record<string, typeof visualizerNodes>)
+                                        ).map(([category, nodes]) => {
+                                            const isCatHovered = hoveredNodeId === category || nodes.some(n => n.id === hoveredNodeId);
+                                            return (
+                                                <div key={category} style={{ display: "flex", flexDirection: "column" }}>
+                                                    <div 
+                                                        onMouseEnter={() => setHoveredNodeId(category)}
+                                                        onMouseLeave={() => setHoveredNodeId(null)}
+                                                        style={{ 
+                                                            display: "flex", alignItems: "center", gap: "8px", fontWeight: 800, fontSize: "0.8rem", 
+                                                            color: isCatHovered ? "var(--accent-indigo)" : "var(--text-primary)", 
+                                                            transition: "color 0.2s" 
+                                                        }}
+                                                    >
+                                                        <span>📁</span>
+                                                        <span>{category}</span>
+                                                    </div>
+                                                    <div style={{ paddingLeft: "16px", marginTop: "4px", display: "flex", flexDirection: "column" }}>
+                                                        {nodes.map((node, index) => {
+                                                            const isNodeHovered = hoveredNodeId === node.id || hoveredNodeId === category;
+                                                            const isSelected = selectedVisualizerNode?.id === node.id;
+                                                            return (
+                                                                <div 
+                                                                    key={node.id} 
+                                                                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                                                                    onMouseLeave={() => setHoveredNodeId(null)}
+                                                                    onClick={() => setSelectedVisualizerNode(node)}
+                                                                    style={{ 
+                                                                        display: "flex", alignItems: "center", gap: "4px", fontSize: "0.75rem", padding: "4px 8px", 
+                                                                        borderRadius: "6px", cursor: "pointer", 
+                                                                        background: isSelected ? "rgba(99,102,241,0.06)" : "transparent",
+                                                                        color: isSelected ? "var(--accent-indigo)" : (isNodeHovered ? "var(--text-primary)" : "var(--text-secondary)"),
+                                                                        transition: "all 0.2s"
+                                                                    }}
+                                                                >
+                                                                    <span style={{ color: isNodeHovered ? "var(--accent-indigo)" : "rgba(226, 232, 240, 0.8)", fontFamily: "monospace", marginRight: "4px" }}>
+                                                                        {index === nodes.length - 1 ? "└─" : "├─"}
+                                                                    </span>
+                                                                    <span>📄</span>
+                                                                    <span style={{ fontWeight: isSelected ? 700 : 500 }}>{node.name}</span>
+                                                                    <span style={{ fontSize: "0.65rem", opacity: 0.7 }}>({node.id.toUpperCase()})</span>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="aicc-svg-container" style={{ height: "300px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "rgba(248, 250, 252, 0.4)" }}>
+                                    <svg width="100%" height="100%" viewBox="0 0 400 300">
+                                        {visualizerNodes.map(node => {
+                                            const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === node.category;
+                                            return (
+                                                <line
+                                                    key={`l-${node.id}`}
+                                                    x1="200"
+                                                    y1="150"
+                                                    x2={node.x}
+                                                    y2={node.y}
+                                                    stroke={isHighlighted ? "var(--accent-indigo)" : "rgba(99,102,241,0.2)"}
+                                                    strokeWidth={isHighlighted ? "3" : "2"}
+                                                    strokeDasharray={isHighlighted ? "0" : "4"}
+                                                    style={{ transition: "all 0.2s" }}
                                                 />
-                                                <text x={node.x} y={node.y + 3} fill="white" fontSize="8px" fontWeight="800" textAnchor="middle">{node.id.toUpperCase()}</text>
-                                                <text x={node.x} y={node.y - 18} fill="var(--text-secondary)" fontSize="8px" fontWeight="700" textAnchor="middle">{node.name}</text>
-                                            </g>
-                                        );
-                                    })}
-                                </svg>
-                            </div>
+                                            );
+                                        })}
+                                        <circle
+                                            cx="200"
+                                            cy="150"
+                                            r="28"
+                                            fill="#6366f1"
+                                            stroke="#c7d2fe"
+                                            strokeWidth="3"
+                                            style={{ cursor: "pointer" }}
+                                            onClick={() => {
+                                                setSelectedVisualizerNode({ id: "central", name: "Knowledge Base Core", text: `Active agent knowledge database context. Assigned: ${dynamicDocCount} files, ${dynamicChunksCount} chunks.`, similarity: 1.0 });
+                                            }}
+                                        />
+                                        <text x="200" y="154" fill="white" fontSize="9px" fontWeight="800" textAnchor="middle" style={{ pointerEvents: "none" }}>RAG CORE</text>
+                                        
+                                        {visualizerNodes.map(node => {
+                                            const isSelected = selectedVisualizerNode?.id === node.id;
+                                            const isHighlighted = hoveredNodeId === node.id || hoveredNodeId === node.category;
+                                            const nodeColor = selectedAgent === "rohan" ? "#fb923c" : selectedAgent === "neha" ? "#14b8a6" : "#ec4899";
+                                            return (
+                                                <g 
+                                                    key={`n-${node.id}`} 
+                                                    style={{ cursor: "pointer" }} 
+                                                    onClick={() => handleNodeClick(node)}
+                                                    onMouseEnter={() => setHoveredNodeId(node.id)}
+                                                    onMouseLeave={() => setHoveredNodeId(null)}
+                                                >
+                                                    <circle
+                                                        cx={node.x}
+                                                        cy={node.y}
+                                                        r={isSelected || isHighlighted ? "16" : "12"}
+                                                        fill="#1e293b"
+                                                        stroke={nodeColor}
+                                                        strokeWidth={isSelected || isHighlighted ? "3" : "2"}
+                                                        style={{ transition: "all 0.2s" }}
+                                                    />
+                                                    <text x={node.x} y={node.y + 3} fill="white" fontSize="8px" fontWeight="800" textAnchor="middle">{node.id.toUpperCase()}</text>
+                                                    <text x={node.x} y={node.y - 18} fill="var(--text-secondary)" fontSize="8px" fontWeight={isSelected || isHighlighted ? "800" : "700"} textAnchor="middle">{node.name}</text>
+                                                </g>
+                                            );
+                                        })}
+                                    </svg>
+                                </div>
+                            )}
 
                             {selectedVisualizerNode ? (
                                 <div className="aicc-chunk-detail-panel" style={{ padding: "16px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "white", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -2451,6 +2610,117 @@ export default function AICommandCenter() {
                                     Select a node on the map to inspect chunking properties
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Enterprise AI Health, Analytics, and Activity Timeline Section */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", marginTop: "24px" }}>
+                        {/* 7. AI Health Card */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span>AI Health Status</span>
+                                <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%", display: "inline-block" }} />
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Knowledge Coverage</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "96%" : "98%"}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Average Confidence</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "94%" : "97%"}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Latency</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#166534" }}>1.2 sec</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Hallucination Risk</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#166534" }}>Low</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(226,232,240,0.5)", paddingBottom: "8px" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Failed Questions</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#991b1b" }}>{profile.role === "rohan" ? "3" : "1"}</span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>Pending Retraining</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)" }}>{profile.role === "rohan" ? "4 items" : "1 item"}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 9. Knowledge Analytics Card */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>Knowledge Analytics</h3>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Questions Asked</span>
+                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "1,248" : "2,194"}</span>
+                                    <div style={{ width: "100%", height: "4px", background: "rgba(99,102,241,0.1)", borderRadius: "2px", marginTop: "6px", overflow: "hidden" }}>
+                                        <div style={{ width: "70%", height: "100%", background: "var(--accent-indigo)" }} />
+                                    </div>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Knowledge Used</span>
+                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.role === "rohan" ? "84.5%" : "92.0%"}</span>
+                                    <div style={{ width: "100%", height: "4px", background: "rgba(34,197,94,0.1)", borderRadius: "2px", marginTop: "6px", overflow: "hidden" }}>
+                                        <div style={{ width: "84.5%", height: "100%", background: "#22c55e" }} />
+                                    </div>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Top Documents</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", display: "block" }}>Brochure_2026.pdf</span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Unused Documents</span>
+                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#991b1b", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", display: "block" }}>Objections_V3.docx</span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Knowledge Growth</span>
+                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#166534" }}>+12% <span style={{ fontSize: "0.7rem", fontWeight: 500, color: "var(--text-secondary)" }}>MoM</span></span>
+                                </div>
+                                <div style={{ background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", display: "block" }}>Chunk Distribution</span>
+                                    <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>Uniform</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 8. Activity Timeline Card */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>Activity Timeline</h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "8px", position: "relative" }}>
+                                <div style={{ position: "absolute", left: "14px", top: "10px", bottom: "10px", width: "2px", background: "rgba(99,102,241,0.2)" }} />
+                                
+                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
+                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "#22c55e", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
+                                    <div>
+                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Ready & Retrained</div>
+                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>Today 10:14 AM</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
+                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
+                                    <div>
+                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Agent retrained successfully</div>
+                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>Yesterday 4:30 PM</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
+                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
+                                    <div>
+                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Indexed document: Objections_V3.docx</div>
+                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>2 days ago</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: "flex", gap: "10px", alignItems: "flex-start", position: "relative" }}>
+                                    <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: "var(--accent-indigo)", border: "3px solid white", zIndex: 1, marginTop: "2px" }} />
+                                    <div>
+                                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Chunked & Embedded Brochure_2026.pdf</div>
+                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)" }}>3 days ago</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
