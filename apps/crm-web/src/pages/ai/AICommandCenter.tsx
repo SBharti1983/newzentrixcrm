@@ -693,6 +693,54 @@ export default function AICommandCenter() {
     const [apiKey, setApiKey] = useState<string>("zntx_live_pk_7482_aicc_secret_key_prod");
     const [row2Expanded, setRow2Expanded] = useState<boolean>(true);
 
+    // 🧪 Playground Sandbox States
+    const [playgroundPrompt, setPlaygroundPrompt] = useState<string>("You are Rohan, a helpful real estate assistant. Empathize with callers and answer details about BKC or Noida premium housing projects using RAG context.");
+    const [playgroundTemp, setPlaygroundTemp] = useState<number>(0.7);
+    const [playgroundQuery, setPlaygroundQuery] = useState<string>("");
+    const [playgroundResult, setPlaygroundResult] = useState<any>({
+        id: "run-curr",
+        query: "What is the pre-launch price of 3BHK flats?",
+        response: "The pre-launch price for luxury 3BHK flats at BKC starts at INR 1.8 Crore, including RERA registration exemptions. A booking fee of INR 5 Lakhs is required to lock these rates.",
+        prompt: "You are Rohan, a helpful real estate assistant...",
+        temp: 0.7,
+        latency: 1.18,
+        confidence: 98,
+        tokens: { prompt: 1350, completion: 145, cost: 0.0031 },
+        debug: [
+            "Step 1: Extracted query intent and key tokens: ['3BHK', 'price', 'pre-launch']",
+            "Step 2: Vector search against indexed documents retrieved 2 matching text blocks.",
+            "Step 3: Synthesized final response matching prompt style guidelines & voice constraints."
+        ],
+        chunks: [
+            { score: "98%", content: "BKC luxury 3BHK residential layouts start at INR 1.8 Crore inclusive of standard RERA registry filings.", source: "Brochure_2026.pdf", page: 3 },
+            { score: "89%", content: "Initial booking amount of INR 5 Lakhs secures pre-launch allocation rates.", source: "Pricing_Sheet.xlsx", page: 12 }
+        ]
+    });
+    const [playgroundHistory, setPlaygroundHistory] = useState<any[]>([
+        {
+            id: "run-1",
+            query: "What pre-launch discounts are available?",
+            response: "According to the RAG pricing guidelines, a pre-launch discount of up to 2% waiver on the registry fee is approved for early bookings with a slab commitment.",
+            prompt: "You are Rohan, a helpful real estate assistant...",
+            temp: 0.7,
+            latency: 1.25,
+            confidence: 94,
+            tokens: { prompt: 1420, completion: 120, cost: 0.0032 },
+            debug: [
+                "Step 1: Analyzed search keywords: ['pre-launch', 'discounts', 'available']",
+                "Step 2: Vector search against Pinecone database matched 2 chunks in Brochure_2026.pdf",
+                "Step 3: Applied prompt overrides & system constraints (temperature=0.7)",
+                "Step 4: Formulated context-aware summary matching registry waiver policy."
+            ],
+            chunks: [
+                { score: "94%", content: "A pre-launch discount of up to 2% waiver on registry fees is available for immediate bookings with slab commitment.", source: "Brochure_2026.pdf", page: 4 },
+                { score: "86%", content: "Standard pricing applies to residential units starting at 1.8 Cr without direct pre-launch exemptions.", source: "Pricing_Sheet.xlsx", page: 1 }
+            ]
+        }
+    ]);
+    const [playgroundCompareMode, setPlaygroundCompareMode] = useState<boolean>(false);
+    const [playgroundCompareRunId, setPlaygroundCompareRunId] = useState<string>("run-1");
+
     // 🔒 Enterprise Security states
     const [securityRole, setSecurityRole] = useState<string>("admin");
     const [dataSources, setDataSources] = useState<Record<string, boolean>>({
@@ -1401,6 +1449,96 @@ export default function AICommandCenter() {
                 setIsPlayingSynthesised(false);
             }, 4500);
         }
+    };
+
+    const handlePlaygroundQuerySubmit = async () => {
+        if (!playgroundQuery.trim()) return;
+        const query = playgroundQuery;
+        setPlaygroundQuery("");
+
+        addToast({
+            type: "info",
+            title: "Simulating RAG Pipeline",
+            message: "Performing vector search & prompt synthesis..."
+        });
+
+        let finalResponse = "I could not find exact matching documents for this query. Responding based on default GPT-4 cognitive weights: Please contact executive support.";
+        let confidence = 45;
+        let matchedChunks = [
+            { score: "45%", content: "No high confidence similarity matches found in database files. Defaulting to general system instructions.", source: "System Cache", page: 0 }
+        ];
+        let debugSteps = [
+            "Step 1: Analyzed search query: '" + query + "'",
+            "Step 2: Vector search against Pinecone yielded no results above 0.70 threshold.",
+            "Step 3: Fallback triggered. Model synthesized safe responder text."
+        ];
+
+        const lowercaseQuery = query.toLowerCase();
+        if (lowercaseQuery.includes("price") || lowercaseQuery.includes("pricing") || lowercaseQuery.includes("cost") || lowercaseQuery.includes("rate")) {
+            finalResponse = `According to our primary pricing sheet, luxury 3BHK residential units start at INR 1.8 Crore. Ground floor units carry a premium markup of 5%. Initial booking deposit is INR 5 Lakhs.`;
+            confidence = 98;
+            matchedChunks = [
+                { score: "98%", content: "BKC luxury 3BHK residential layouts start at INR 1.8 Crore inclusive of standard RERA registry filings.", source: "Brochure_2026.pdf", page: 3 },
+                { score: "89%", content: "Initial booking amount of INR 5 Lakhs secures pre-launch allocation rates.", source: "Pricing_Sheet.xlsx", page: 12 }
+            ];
+            debugSteps = [
+                "Step 1: Extracted query intent and key tokens: ['3BHK', 'price', 'pre-launch']",
+                "Step 2: Vector search against indexed documents retrieved 2 matching text blocks.",
+                "Step 3: Synthesized final response matching prompt style guidelines & voice constraints."
+            ];
+        } else if (lowercaseQuery.includes("rera") || lowercaseQuery.includes("approval") || lowercaseQuery.includes("approve")) {
+            finalResponse = `Yes, all units in the BKC project are 100% RERA compliant. The RERA registration number is PRM/KA/RERA/1251/BKC/2026. Phase 1 possession is scheduled for Dec 2028.`;
+            confidence = 96;
+            matchedChunks = [
+                { score: "96%", content: "BKC Phase 1 project registered under Karnataka RERA with registration number PRM/KA/RERA/1251/BKC/2026.", source: "RERA_Approval_Doc.pdf", page: 2 },
+                { score: "91%", content: "Possession date committed under builder agreement is December 31, 2028.", source: "Agreement_Draft.pdf", page: 14 }
+            ];
+            debugSteps = [
+                "Step 1: Extracted search keywords: ['rera', 'approval', 'possession']",
+                "Step 2: Scanned vector database. Match score peak at 96% in RERA_Approval_Doc.pdf.",
+                "Step 3: Formulated possession timeline summary."
+            ];
+        } else if (lowercaseQuery.includes("discount") || lowercaseQuery.includes("offer") || lowercaseQuery.includes("waiver")) {
+            finalResponse = `We are offering a pre-launch waiver of 2% on the stamp duty and registration fees for bookings finalized before this weekend.`;
+            confidence = 92;
+            matchedChunks = [
+                { score: "92%", content: "Pre-launch bookings eligible for 2% stamp duty waiver as approved by commercial management.", source: "Brochure_2026.pdf", page: 7 },
+                { score: "85%", content: "Promotional campaigns validity ends by Q3 2026.", source: "Marketing_Brief.docx", page: 2 }
+            ];
+            debugSteps = [
+                "Step 1: Identified transactional intent: ['discount', 'waiver', 'offer']",
+                "Step 2: Found 2 matching policy guidelines in Brochure_2026.pdf.",
+                "Step 3: Validated temperature settings (temp=" + playgroundTemp + ") to produce promotional pitch tone."
+            ];
+        }
+
+        const runId = "run-" + Date.now();
+        const latency = Number((0.9 + Math.random() * 0.4).toFixed(2));
+        const promptTokens = 1200 + Math.floor(Math.random() * 300);
+        const completionTokens = 80 + Math.floor(Math.random() * 80);
+        const cost = Number(((promptTokens * 0.0000015) + (completionTokens * 0.000006)).toFixed(4));
+
+        const newResult = {
+            id: runId,
+            query: query,
+            response: finalResponse,
+            prompt: playgroundPrompt,
+            temp: playgroundTemp,
+            latency: latency,
+            confidence: confidence,
+            tokens: { prompt: promptTokens, completion: completionTokens, cost: cost },
+            debug: debugSteps,
+            chunks: matchedChunks
+        };
+
+        setPlaygroundResult(newResult);
+        setPlaygroundHistory(prev => [newResult, ...prev]);
+
+        addToast({
+            type: "success",
+            title: "Response Generated",
+            message: `Model inference complete in ${latency}s.`
+        });
     };
 
     const clearSimulationHistory = () => {
@@ -3937,166 +4075,299 @@ export default function AICommandCenter() {
             {/* ─── TAB: PLAYGROUND ──────────────────────────────────────────── */}
             {activeTab === "playground" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    <div className="aicc-card" id="aicc_conversation_simulator_card">
-                        <h3 className="aicc-card-title">
-                            <span>High-Fidelity Conversation Simulator & Voice Sandbox</span>
-                            <Bot size={18} style={{ color: "var(--accent-indigo)" }} />
-                        </h3>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
-                                Simulate a live phone call dialogue. Select a scenario preset or type a custom user query to test turn-by-turn latency metrics, confidence, and speech emotional synthesiser loops.
-                            </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: "24px" }}>
+                        
+                        {/* LEFT PANEL: Settings & Test Input */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>Model Configuration</span>
+                                    <span style={{ fontSize: "1rem" }}>⚙️</span>
+                                </h3>
 
-                            <div className="aicc-simulator-grid" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
+                                <div className="aicc-form-group" style={{ margin: 0 }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", marginBottom: "6px", display: "block" }}>
+                                        Custom Prompt Testing (System Instructions)
+                                    </label>
+                                    <textarea
+                                        value={playgroundPrompt}
+                                        onChange={(e) => setPlaygroundPrompt(e.target.value)}
+                                        className="aicc-input"
+                                        style={{ width: "100%", height: "90px", padding: "10px", fontSize: "0.8rem", resize: "none", lineHeight: 1.4 }}
+                                        placeholder="Customize system persona instructions..."
+                                    />
+                                </div>
+
+                                <div className="aicc-form-group" style={{ margin: 0 }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>
+                                            Temperature Settings
+                                        </label>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)" }}>
+                                            {playgroundTemp} ({playgroundTemp <= 0.3 ? "Precise RAG" : playgroundTemp >= 0.7 ? "Creative Sales" : "Balanced"})
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.1"
+                                        value={playgroundTemp}
+                                        onChange={(e) => setPlaygroundTemp(parseFloat(e.target.value))}
+                                        style={{ width: "100%", accentColor: "var(--accent-indigo)" }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>Built-In RAG Chat Console</span>
+                                    <span style={{ fontSize: "1.1rem" }}>💬</span>
+                                </h3>
                                 
-                                <div className="aicc-simulator-console" style={{ display: "flex", flexDirection: "column", gap: "12px", border: "1px solid var(--glass-border)", borderRadius: "12px", padding: "16px", background: "#f8fafc" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Dialogue Transcript Timeline</span>
-                                        <button className="aicc-btn-secondary" style={{ padding: "4px 8px", fontSize: "0.7rem" }} onClick={clearSimulationHistory}>
-                                            Clear History
-                                        </button>
-                                    </div>
-                                    
-                                    <div className="aicc-transcript-timeline-box" style={{ height: "300px", overflowY: "auto", border: "1px solid var(--glass-border)", borderRadius: "8px", padding: "12px", background: "white", display: "flex", flexDirection: "column", gap: "10px" }}>
-                                        {simulationTranscript.length === 0 ? (
-                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-secondary)", gap: "8px" }}>
-                                                <MessageSquare size={24} style={{ opacity: 0.3 }} />
-                                                <span style={{ fontSize: "0.75rem" }}>Timeline empty. Select a query below to start simulation.</span>
-                                            </div>
-                                        ) : (
-                                            simulationTranscript.map((bubble, i) => (
-                                                <div key={i} className={`aicc-chat-bubble ${bubble.sender}`} style={{
-                                                    alignSelf: bubble.sender === "client" ? "flex-end" : "flex-start",
-                                                    background: bubble.sender === "client" ? "var(--accent-indigo)" : "#f1f5f9",
-                                                    color: bubble.sender === "client" ? "white" : "var(--text-primary)",
-                                                    padding: "8px 12px",
-                                                    borderRadius: "12px",
-                                                    maxWidth: "80%",
-                                                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
-                                                }}>
-                                                    <div style={{ fontSize: "0.8rem", lineHeight: 1.4 }}>{bubble.text}</div>
-                                                    <div style={{ fontSize: "0.6rem", color: bubble.sender === "client" ? "rgba(255,255,255,0.7)" : "var(--text-secondary)", textAlign: "right", marginTop: "4px" }}>
-                                                        {bubble.sender === "client" ? "Customer" : `${agentName}`} · {bubble.time}
-                                                    </div>
-                                                </div>
-                                            ))
-                                        )}
-                                        {isSimulating && (
-                                            <div style={{
-                                                alignSelf: "flex-start",
-                                                background: "#f1f5f9",
-                                                color: "var(--text-primary)",
-                                                padding: "8px 12px",
-                                                borderRadius: "12px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "8px"
-                                            }}>
-                                                <RefreshCw className="animate-spin" size={12} style={{ color: "var(--accent-indigo)" }} />
-                                                <span style={{ fontSize: "0.7rem", fontWeight: 700 }}>
-                                                    {simulatingStep === 1 && "Customer speaking (STT translation)..."}
-                                                    {simulatingStep === 2 && "Twin thinking (LLM semantic retrieval)..."}
-                                                    {simulatingStep === 3 && "Synthesizing voice response (TTS ElevenLabs)..."}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {isPlayingSynthesised && (
-                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                                            <span style={{ fontSize: "0.65rem", color: "var(--accent-indigo)", fontWeight: 800 }}>🔊 Simulated Audio Playing: Stability {voiceStability * 100}%</span>
-                                            <div className="aicc-eq-bars playing" style={{ height: "24px", margin: "4px 0" }}>
-                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
-                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
-                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
-                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
-                                                <span className="aicc-eq-bar" style={{ width: "4px" }} />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="aicc-tag-input-row" style={{ marginTop: "4px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>
+                                        Test Question Query
+                                    </label>
+                                    <div style={{ display: "flex", gap: "8px" }}>
                                         <input
                                             type="text"
-                                            placeholder="Type custom customer query (e.g. flat pricing, GST)..."
+                                            value={playgroundQuery}
+                                            onChange={(e) => setPlaygroundQuery(e.target.value)}
+                                            onKeyDown={(e) => e.key === "Enter" && handlePlaygroundQuerySubmit()}
+                                            placeholder="e.g. What is the pre-launch price / RERA approval?"
                                             className="aicc-input"
-                                            style={{ flex: 1, padding: "8px 12px", fontSize: "0.8rem" }}
-                                            value={customClientMessage}
-                                            onChange={(e) => setCustomClientMessage(e.target.value)}
-                                            onKeyDown={(e) => e.key === "Enter" && handleSendCustomMessage()}
-                                            disabled={isSimulating}
+                                            style={{ flex: 1, padding: "10px", fontSize: "0.8rem" }}
                                         />
-                                        <button className="aicc-btn-primary" onClick={handleSendCustomMessage} disabled={isSimulating}>
-                                            <Send size={12} /> Send
+                                        <button 
+                                            onClick={handlePlaygroundQuerySubmit}
+                                            className="aicc-btn-primary" 
+                                            style={{ padding: "0 18px", fontSize: "0.8rem", fontWeight: 800 }}
+                                        >
+                                            Submit
                                         </button>
                                     </div>
                                 </div>
 
-                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                    <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>QoS Telemetry Analytics (Last Turn)</span>
-                                    
-                                    <div className="aicc-card" style={{ padding: "16px", display: "flex", flexDirection: "column", gap: "10px", background: "white", border: "1px solid var(--glass-border)" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
-                                            <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>Total Response Turnaround</span>
-                                            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: simulatedMetrics.total > 600 ? "#b45309" : "#166534" }}>
-                                                {simulatedMetrics.total ? `${simulatedMetrics.total} ms` : "0 ms"}
-                                            </span>
-                                        </div>
-
-                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", textAlign: "center" }}>
-                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
-                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>STT Delay</span>
-                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.stt ? `${simulatedMetrics.stt} ms` : "—"}</span>
-                                            </div>
-                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
-                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>LLM Inference</span>
-                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.llm ? `${simulatedMetrics.llm} ms` : "—"}</span>
-                                            </div>
-                                            <div style={{ background: "#f8fafc", padding: "6px", borderRadius: "6px" }}>
-                                                <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", display: "block" }}>TTS Synthesis</span>
-                                                <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>{simulatedMetrics.tts ? `${simulatedMetrics.tts} ms` : "—"}</span>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                                            <div>
-                                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-secondary)", marginBottom: "4px" }}>
-                                                    <span>AI Comprehension Confidence</span>
-                                                    <span style={{ fontWeight: 800, color: "var(--text-primary)" }}>{simulatedMetrics.confidence ? `${simulatedMetrics.confidence}%` : "0%"}</span>
-                                                </div>
-                                                <div style={{ width: "100%", height: "4px", background: "#f1f5f9", borderRadius: "2px", overflow: "hidden" }}>
-                                                    <div style={{ width: `${simulatedMetrics.confidence || 0}%`, height: "100%", background: "#10b981", transition: "width 0.3s" }} />
-                                                </div>
-                                            </div>
-                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.75rem" }}>
-                                                <span style={{ color: "var(--text-secondary)" }}>Detected Voice Emotion</span>
-                                                <span style={{ background: "#e0f2fe", color: "#0369a1", fontWeight: 800, padding: "2px 8px", borderRadius: "4px", fontSize: "0.65rem" }}>
-                                                    {simulatedMetrics.emotion}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                                        <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)" }}>Simulate Standard Presets:</span>
-                                        {activeScenarios.map((s, idx) => (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", borderTop: "1px solid var(--glass-border)", paddingTop: "12px" }}>
+                                    <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-secondary)" }}>Quick Presets:</span>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                        {[
+                                            "What is the pre-launch price of 3BHK?",
+                                            "Is the BKC project RERA approved?",
+                                            "Are there stamp duty discounts?"
+                                        ].map((preset, idx) => (
                                             <button
                                                 key={idx}
-                                                onClick={() => runSimulationTurn(s.text, s.response, s.metrics)}
+                                                onClick={() => {
+                                                    setPlaygroundQuery(preset);
+                                                }}
                                                 className="aicc-btn-secondary"
-                                                style={{ textAlign: "left", padding: "8px 12px", fontSize: "0.75rem", background: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}
-                                                disabled={isSimulating}
+                                                style={{ padding: "4px 8px", fontSize: "0.7rem", background: "white" }}
                                             >
-                                                <span>{s.label}</span>
-                                                <ChevronRight size={12} style={{ opacity: 0.5 }} />
+                                                {preset}
                                             </button>
                                         ))}
                                     </div>
-
                                 </div>
-
                             </div>
                         </div>
+
+                        {/* RIGHT PANEL: Outputs, debugs & retrieved chunks */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            {playgroundResult ? (
+                                <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                            <span>AI Testing Output & Telemetry</span>
+                                        </h3>
+                                        <span style={{ fontSize: "0.65rem", background: "#dcfce7", color: "#166534", padding: "2px 8px", borderRadius: "4px", fontWeight: 800 }}>
+                                            Inference: {playgroundResult.latency}s
+                                        </span>
+                                    </div>
+
+                                    {/* AI final response text */}
+                                    <div style={{ background: "rgba(99, 102, 241, 0.04)", border: "1px solid rgba(99,102,241,0.15)", padding: "14px", borderRadius: "10px" }}>
+                                        <span style={{ display: "block", fontSize: "0.68rem", fontWeight: 800, color: "var(--accent-indigo)", textTransform: "uppercase", marginBottom: "4px" }}>
+                                            Synthesized Agent Response
+                                        </span>
+                                        <p style={{ fontSize: "0.82rem", color: "var(--text-primary)", margin: 0, lineHeight: 1.5, fontWeight: 500 }}>
+                                            {playgroundResult.response}
+                                        </p>
+                                    </div>
+
+                                    {/* Token Usage & Cost breakdown */}
+                                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", background: "#f8fafc", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)", textAlign: "center" }}>
+                                        <div>
+                                            <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Prompt Tokens</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{playgroundResult.tokens.prompt}</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Completion</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>{playgroundResult.tokens.completion}</span>
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", display: "block", textTransform: "uppercase", fontWeight: 800 }}>Estimated Cost</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--accent-indigo)" }}>${playgroundResult.tokens.cost.toFixed(4)}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Debug Chains of Thought reasoning info */}
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", display: "block", marginBottom: "8px" }}>
+                                            Chain of Thought Reasoning Loop
+                                        </span>
+                                        <div style={{ background: "#f8fafc", padding: "10px 12px", borderRadius: "8px", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: "6px" }}>
+                                            {playgroundResult.debug.map((step: string, idx: number) => (
+                                                <div key={idx} style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontFamily: "monospace", display: "flex", gap: "6px" }}>
+                                                    <span style={{ color: "var(--accent-indigo)" }}>➤</span>
+                                                    <span>{step}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Retrieved Chunks Viewer & References */}
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>
+                                                Retrieved Vector Chunks ({playgroundResult.chunks.length})
+                                            </span>
+                                            <span style={{ fontSize: "0.7rem", color: "#166534", fontWeight: 800 }}>
+                                                RAG Match Confidence: {playgroundResult.confidence}%
+                                            </span>
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            {playgroundResult.chunks.map((chunk: any, idx: number) => (
+                                                <div key={idx} style={{ background: "white", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                                        <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--accent-indigo)", background: "rgba(99,102,241,0.08)", padding: "2px 6px", borderRadius: "4px" }}>
+                                                            Score: {chunk.score}
+                                                        </span>
+                                                        <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontWeight: 700 }}>
+                                                            Source: <span style={{ textDecoration: "underline", color: "var(--accent-indigo)", cursor: "pointer" }}>{chunk.source}</span> (Page {chunk.page})
+                                                        </span>
+                                                    </div>
+                                                    <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.4, fontStyle: "italic" }}>
+                                                        "{chunk.content}"
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                </div>
+                            ) : (
+                                <div className="aicc-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "350px", color: "var(--text-secondary)", gap: "12px", border: "1px dashed var(--glass-border)" }}>
+                                    <Bot size={36} style={{ opacity: 0.3 }} />
+                                    <span style={{ fontSize: "0.8rem", fontWeight: 500 }}>Run a playground test query to output semantic context.</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* BOTTOM ROW: Compare responses section */}
+                    <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Compare Side-by-Side Model Responses</span>
+                                <span style={{ fontSize: "1rem" }}>⚖️</span>
+                            </h3>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "4px", cursor: "pointer" }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={playgroundCompareMode}
+                                        onChange={(e) => setPlaygroundCompareMode(e.target.checked)}
+                                        style={{ accentColor: "var(--accent-indigo)" }}
+                                    />
+                                    Enable Comparison Mode
+                                </label>
+                                {playgroundCompareMode && (
+                                    <select
+                                        className="aicc-input"
+                                        style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                                        value={playgroundCompareRunId}
+                                        onChange={(e) => setPlaygroundCompareRunId(e.target.value)}
+                                    >
+                                        {playgroundHistory.map((run) => (
+                                            <option key={run.id} value={run.id}>
+                                                Run: "{run.query.slice(0, 30)}..." (T={run.temp})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+                        </div>
+
+                        {playgroundCompareMode ? (
+                            (() => {
+                                const baseRun = playgroundResult;
+                                const compRun = playgroundHistory.find(x => x.id === playgroundCompareRunId);
+
+                                return (
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                                        {/* Current Run */}
+                                        <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "10px", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: "12px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--accent-indigo)" }}>Active Output</span>
+                                                <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Temp: {baseRun ? baseRun.temp : "—"}</span>
+                                            </div>
+                                            {baseRun ? (
+                                                <>
+                                                    <div>
+                                                        <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Query Asked</span>
+                                                        <p style={{ fontSize: "0.78rem", fontWeight: 700, margin: "2px 0 0 0" }}>{baseRun.query}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Response Summary</span>
+                                                        <p style={{ fontSize: "0.78rem", color: "var(--text-primary)", margin: "2px 0 0 0", lineHeight: 1.4 }}>{baseRun.response}</p>
+                                                    </div>
+                                                    <div style={{ display: "flex", gap: "16px", fontSize: "0.65rem", color: "var(--text-secondary)", borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: "8px" }}>
+                                                        <span>Latency: <strong>{baseRun.latency}s</strong></span>
+                                                        <span>Confidence: <strong>{baseRun.confidence}%</strong></span>
+                                                        <span>Cost: <strong>${baseRun.tokens.cost.toFixed(4)}</strong></span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>No active run to display.</span>
+                                            )}
+                                        </div>
+
+                                        {/* Compared Run */}
+                                        <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "10px", border: "1px solid var(--glass-border)", display: "flex", flexDirection: "column", gap: "12px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid var(--glass-border)", paddingBottom: "6px" }}>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Compared Run Reference</span>
+                                                <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Temp: {compRun ? compRun.temp : "—"}</span>
+                                            </div>
+                                            {compRun ? (
+                                                <>
+                                                    <div>
+                                                        <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Query Asked</span>
+                                                        <p style={{ fontSize: "0.78rem", fontWeight: 700, margin: "2px 0 0 0" }}>{compRun.query}</p>
+                                                    </div>
+                                                    <div>
+                                                        <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Response Summary</span>
+                                                        <p style={{ fontSize: "0.78rem", color: "var(--text-primary)", margin: "2px 0 0 0", lineHeight: 1.4 }}>{compRun.response}</p>
+                                                    </div>
+                                                    <div style={{ display: "flex", gap: "16px", fontSize: "0.65rem", color: "var(--text-secondary)", borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: "8px" }}>
+                                                        <span>Latency: <strong>{compRun.latency}s</strong></span>
+                                                        <span>Confidence: <strong>{compRun.confidence}%</strong></span>
+                                                        <span>Cost: <strong>${compRun.tokens.cost.toFixed(4)}</strong></span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Please select a run from history drop-down to compare.</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })()
+                        ) : (
+                            <div style={{ padding: "10px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.75rem" }}>
+                                Toggle "Enable Comparison Mode" above to view side-by-side RAG inference benchmarks.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
