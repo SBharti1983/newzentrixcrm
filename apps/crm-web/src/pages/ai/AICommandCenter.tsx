@@ -788,6 +788,14 @@ export default function AICommandCenter() {
     const [auditSearchQuery, setAuditSearchQuery] = useState<string>("");
     const [activeAuditDetailId, setActiveAuditDetailId] = useState<string | null>(null);
 
+    // 👤 Digital Twin state hooks
+    const [twinRole, setTwinRole] = useState<'receptionist' | 'sales' | 'trainer' | 'support'>('receptionist');
+    const [twinVideoEnabled, setTwinVideoEnabled] = useState<boolean>(true);
+    const [twinResolution, setTwinResolution] = useState<string>("720p");
+    const [twinCallState, setTwinCallState] = useState<'idle' | 'connecting' | 'connected'>('idle');
+    const [twinCallLogs, setTwinCallLogs] = useState<string[]>([]);
+    const [selectedTwinAvatar, setSelectedTwinAvatar] = useState<string>("receptionist_model_a");
+
     const [auditLogs, setAuditLogs] = useState<any[]>([
         { 
             id: "aud-001", 
@@ -1649,6 +1657,86 @@ export default function AICommandCenter() {
         });
     };
 
+    const handleValidateDatasets = () => {
+        setValidationStatus('validating');
+        addToast({
+            type: "info",
+            title: "Validation In Progress",
+            message: "Checking dataset syntax, parsing prompt-response structures..."
+        });
+        setTimeout(() => {
+            setValidationStatus('passed');
+            setDuplicateCount(3);
+            setDatasets(prev => prev.map(d => d.id === 'ds-2' ? { ...d, status: 'Validated' } : d));
+            addToast({
+                type: "success",
+                title: "Validation Complete",
+                message: "Format matches JSONL syntax guidelines. 3 duplicate entries resolved."
+            });
+        }, 2000);
+    };
+
+    const handleTriggerFineTuning = () => {
+        setIsFineTuning(true);
+        setFineTuningProgress(0);
+        addToast({
+            type: "info",
+            title: "Fine-Tuning Queued",
+            message: `Compiling training inputs for base model: ${selectedBaseModel}...`
+        });
+
+        const interval = setInterval(() => {
+            setFineTuningProgress(prev => {
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    setIsFineTuning(false);
+                    setTrainingQueueJobs(oldJobs => [
+                        { id: "job-" + Date.now().toString().slice(-4), name: `Fine-tune ${selectedBaseModel} (custom overrides)`, type: "Fine-Tuning", progress: 100, status: "COMPLETED" },
+                        ...oldJobs
+                    ]);
+                    addToast({
+                        type: "success",
+                        title: "Fine-Tuning Success",
+                        message: `Tuned weights compiled successfully. Active base model set to ${selectedBaseModel}.`
+                    });
+                    return 100;
+                }
+                return prev + 20;
+            });
+        }, 1500);
+    };
+
+    const handleStartTwinCall = () => {
+        if (twinCallState === 'connected') {
+            setTwinCallState('idle');
+            setTwinCallLogs([]);
+            addToast({
+                type: "info",
+                title: "Call Disconnected",
+                message: "Digital Twin WebRTC video stream terminated."
+            });
+            return;
+        }
+
+        setTwinCallState('connecting');
+        setTwinCallLogs(["Initializing local WebRTC audio/video context...", "Acquiring camera & microphone streams...", "Connecting to Zentrix Media Gateway..."]);
+        
+        setTimeout(() => {
+            setTwinCallState('connected');
+            setTwinCallLogs(prev => [
+                ...prev,
+                "WebRTC Session established at 720p 30fps.",
+                `Digital Twin Avatar (${selectedTwinAvatar.toUpperCase()}) is active.`,
+                `[Twin]: Hello! Welcome to Zentrix Showroom. I am Neha, your digital receptionist twin. How can I assist you with site layout maps or unit bookings today?`
+            ]);
+            addToast({
+                type: "success",
+                title: "Video Twin Connected",
+                message: "Live WebRTC video feed is streaming."
+            });
+        }, 2000);
+    };
+
     const clearSimulationHistory = () => {
         setSimulationTranscript([]);
         setIsPlayingSynthesised(false);
@@ -1956,6 +2044,9 @@ export default function AICommandCenter() {
                     </button>
                     <button onClick={() => setActiveTab("audit")} className={`aicc-tab-btn tab-overview ${activeTab === "audit" ? "active" : ""}`}>
                         <FileText size={16} /> Audit Log
+                    </button>
+                    <button onClick={() => setActiveTab("digital_twin")} className={`aicc-tab-btn tab-persona ${activeTab === "digital_twin" ? "active" : ""}`}>
+                        <UserCheck size={16} /> Digital Twin
                     </button>
                 </div>
             )}
@@ -6127,6 +6218,301 @@ export default function AICommandCenter() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {/* ─── TAB: DIGITAL TWIN ────────────────────────────────────────── */}
+            {activeTab === "digital_twin" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Enterprise Digital Twin Console</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Create and test digital twin video models for customer-facing interfaces.</span>
+                        </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: "20px" }}>
+                        
+                        {/* Configuration Controls (Left Column) */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            
+                            {/* Twin Role & Capability Select */}
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "14px", background: "white" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>Twin Function Profile</span>
+                                    <span style={{ fontSize: "1rem" }}>👤</span>
+                                </h3>
+                                
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                    <label style={{ fontSize: "0.78rem", fontWeight: 800 }}>Profile Role</label>
+                                    <select 
+                                        value={twinRole} 
+                                        onChange={(e) => setTwinRole(e.target.value as any)} 
+                                        className="aicc-input" 
+                                        style={{ padding: "8px", fontSize: "0.8rem" }}
+                                    >
+                                        <option value="receptionist">AI Receptionist (Kiosk & Office Welcoming)</option>
+                                        <option value="sales">AI Sales Executive (Interactive Pitching)</option>
+                                        <option value="trainer">AI Trainer (Interactive Slides & Onboarding)</option>
+                                        <option value="support">AI Support Agent (Screen Share Assistance)</option>
+                                    </select>
+                                </div>
+
+                                <hr style={{ border: "none", borderTop: "1px solid var(--glass-border)", margin: "4px 0" }} />
+
+                                {/* Contextual Settings based on selected Role */}
+                                {twinRole === 'receptionist' && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Welcome Pitch</label>
+                                            <input type="text" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} defaultValue="Welcome to Zentrix HQ. I am Neha, your digital avatar receptionist." />
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Kiosk Map ID</label>
+                                            <input type="text" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} defaultValue="map-hq-groundfloor-3" />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {twinRole === 'sales' && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Sales Deck PDF</label>
+                                            <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                                <option value="deck1">BKC prelaunch details.pdf</option>
+                                                <option value="deck2">Pricing premium catalog.pdf</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Offer Overlay</label>
+                                            <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                                <option value="stamp">2% Stamp Duty Waiver Popup</option>
+                                                <option value="registry">Free Car Parking Slot Offer</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {twinRole === 'trainer' && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Slide Deck URL</label>
+                                            <input type="text" className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }} defaultValue="https://docs.google.com/presentation/sales-onboarding" />
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Quiz Template</label>
+                                            <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                                <option value="quiz1">Sales Compliance Quiz V1</option>
+                                                <option value="quiz2">CRM Operations Training Check</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {twinRole === 'support' && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Live Screen Share</label>
+                                            <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                                <option value="allow">Allowed (WebRTC Screen Capture)</option>
+                                                <option value="restrict">Restricted to Sandbox Browser</option>
+                                            </select>
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                            <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Escalation Routing</label>
+                                            <select className="aicc-input" style={{ padding: "6px", fontSize: "0.78rem" }}>
+                                                <option value="l1">Route to Tier-1 Support Agents</option>
+                                                <option value="l2">Route to Premium Sales Managers</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Video Twin Stream Parameters */}
+                            <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "14px", background: "white" }}>
+                                <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                    <span>WebRTC Video Settings</span>
+                                    <span style={{ fontSize: "1rem" }}>📡</span>
+                                </h3>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 2.5fr", gap: "12px", alignItems: "center" }}>
+                                    <label style={{ fontSize: "0.78rem", fontWeight: 800 }}>Video Avatar Twin</label>
+                                    <select 
+                                        value={selectedTwinAvatar} 
+                                        onChange={(e) => setSelectedTwinAvatar(e.target.value)} 
+                                        className="aicc-input" 
+                                        style={{ padding: "8px", fontSize: "0.8rem" }}
+                                    >
+                                        <option value="receptionist_model_a">Neha Twin Model A (Reception Specialist)</option>
+                                        <option value="receptionist_model_b">Rohan Twin Model B (Sales Specialist)</option>
+                                        <option value="trainer_model_c">Monika Twin Model C (Corporate Trainer)</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px", marginTop: "4px" }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <div style={{ display: "flex", flexDirection: "column" }}>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>Enable Video twin</span>
+                                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)" }}>WebRTC camera overlay</span>
+                                        </div>
+                                        <input 
+                                            type="checkbox" 
+                                            checked={twinVideoEnabled} 
+                                            onChange={(e) => setTwinVideoEnabled(e.target.checked)} 
+                                            style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                                        />
+                                    </div>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>Resolution Preset</span>
+                                        <select 
+                                            value={twinResolution} 
+                                            onChange={(e) => setTwinResolution(e.target.value)} 
+                                            className="aicc-input" 
+                                            style={{ padding: "4px 8px", fontSize: "0.72rem" }}
+                                        >
+                                            <option value="480p">480p SD (Low Latency)</option>
+                                            <option value="720p">720p HD (Balanced)</option>
+                                            <option value="1080p">1080p Full HD (High Quality)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Live Video Twin Preview Sandbox (Right Column) */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px", background: "white", minHeight: "400px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <h3 style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+                                    🖥️ Digital Twin WebRTC Video Sandbox
+                                </h3>
+                                {twinCallState === 'connected' && (
+                                    <span style={{ 
+                                        fontSize: "0.62rem", fontWeight: 800, background: "#fee2e2", color: "#b91c1c", 
+                                        padding: "3px 8px", borderRadius: "4px", border: "1px solid rgba(185,28,28,0.2)",
+                                        animation: "pulse 1.5s infinite" 
+                                    }}>
+                                        ● LIVE STREAMING
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Simulated Video Feed Window */}
+                            <div style={{ 
+                                flex: 1, 
+                                minHeight: "240px",
+                                background: "#0f172a", 
+                                borderRadius: "10px", 
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                display: "flex", 
+                                flexDirection: "column",
+                                alignItems: "center", 
+                                justifyContent: "center",
+                                position: "relative",
+                                overflow: "hidden"
+                            }}>
+                                {twinCallState === 'idle' && (
+                                    <div style={{ textAlign: "center", padding: "20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                                        <div style={{ 
+                                            width: "74px", height: "74px", borderRadius: "50%", 
+                                            background: "rgba(99,102,241,0.15)", border: "2px solid var(--accent-indigo)",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "2.2rem"
+                                        }}>
+                                            👩‍💼
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "white", display: "block" }}>Twin Avatar Standby</span>
+                                            <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>WebRTC video channels idle.</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {twinCallState === 'connecting' && (
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+                                        <div style={{ 
+                                            width: "40px", height: "40px", borderRadius: "50%",
+                                            border: "3px solid rgba(255,255,255,0.1)",
+                                            borderTopColor: "var(--accent-indigo)",
+                                            animation: "spin 1s linear infinite"
+                                        }} />
+                                        <span style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 700 }}>Establishing WebRTC handshake...</span>
+                                    </div>
+                                )}
+
+                                {twinCallState === 'connected' && (
+                                    <>
+                                        {/* Avatar Animation Grid */}
+                                        <div style={{ 
+                                            width: "120px", height: "120px", borderRadius: "50%", 
+                                            background: "rgba(16,185,129,0.1)", border: "3px solid #10b981",
+                                            display: "flex", alignItems: "center", justifyContent: "center",
+                                            fontSize: "3.5rem",
+                                            animation: "pulse 2s infinite"
+                                        }}>
+                                            👩‍💼
+                                        </div>
+                                        <div style={{ 
+                                            position: "absolute", bottom: "10px", left: "10px", right: "10px",
+                                            background: "rgba(15,23,42,0.8)", border: "1px solid rgba(255,255,255,0.08)",
+                                            borderRadius: "6px", padding: "8px 12px", fontSize: "0.7rem", color: "#10b981",
+                                            fontWeight: 700
+                                        }}>
+                                            🎙️ [Twin speaking]: WebRTC Video Channel {twinResolution} Active (30fps)
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Call Logs / Logs output */}
+                            {twinCallLogs.length > 0 && (
+                                <div style={{ 
+                                    background: "#f8fafc", 
+                                    border: "1px solid var(--glass-border)", 
+                                    borderRadius: "8px", 
+                                    padding: "10px 14px", 
+                                    fontSize: "0.7rem",
+                                    maxHeight: "100px",
+                                    overflowY: "auto",
+                                    fontFamily: "monospace",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "4px"
+                                }}>
+                                    {twinCallLogs.map((logStr, i) => (
+                                        <span key={i} style={{ color: logStr.includes("[Twin]") ? "var(--accent-indigo)" : "var(--text-secondary)" }}>
+                                            {logStr}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Trigger call button */}
+                            <button
+                                onClick={handleStartTwinCall}
+                                className={twinCallState === 'connected' ? "aicc-btn-secondary" : "aicc-btn-primary"}
+                                style={{ 
+                                    padding: "10px", 
+                                    fontSize: "0.8rem", 
+                                    fontWeight: 800, 
+                                    display: "flex", 
+                                    alignItems: "center", 
+                                    justifyContent: "center", 
+                                    gap: "6px",
+                                    background: twinCallState === 'connected' ? "#fee2e2" : "var(--accent-indigo)",
+                                    color: twinCallState === 'connected' ? "#991b1b" : "white"
+                                }}
+                            >
+                                {twinCallState === 'idle' && "Start Test Video Call"}
+                                {twinCallState === 'connecting' && "Connecting WebRTC..."}
+                                {twinCallState === 'connected' && "End Test Video Call"}
+                            </button>
+
+                        </div>
+
+                    </div>
+
                 </div>
             )}
 
