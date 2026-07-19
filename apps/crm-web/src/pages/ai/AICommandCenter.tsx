@@ -971,6 +971,7 @@ export default function AICommandCenter() {
     const [agentPaused, setAgentPaused] = useState<boolean>(false);
     const [isEscalated, setIsEscalated] = useState<boolean>(false);
     const [whisperMessage, setWhisperMessage] = useState<string>("");
+    const [isWhisperFocused, setIsWhisperFocused] = useState<boolean>(false);
     const [supervisorLogs, setSupervisorLogs] = useState<string[]>([]);
     const [suggestedResponse] = useState<string>("Offer the customer the flexible payment plan:\n10% booking\n85% on registry\n5% on possession");
 
@@ -5524,8 +5525,8 @@ export default function AICommandCenter() {
                                         </div>
 
                                         {/* Equalizer animation bar */}
-                                        <div className="aicc-live-equalizer-wrap" style={{ background: "#ef4444", color: "white", padding: "6px 10px", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <span style={{ fontSize: "0.65rem", fontWeight: 800 }}>LIVE BROADCAST DECODING CHANNEL</span>
+                                        <div className="aicc-live-equalizer-wrap" style={{ background: "linear-gradient(90deg, #4f46e5, #6366f1)", color: "white", padding: "6px 10px", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <span style={{ fontSize: "0.65rem", fontWeight: 800, letterSpacing: "0.04em" }}>LIVE BROADCAST DECODING CHANNEL</span>
                                             <div className="aicc-live-monitor-eq-bars" style={{ display: "flex", gap: "2px", alignItems: "flex-end", height: "10px" }}>
                                                 <span className="aicc-live-monitor-eq-bar" style={{ width: "3px" }} />
                                                 <span className="aicc-live-monitor-eq-bar" style={{ width: "3px" }} />
@@ -5593,27 +5594,82 @@ export default function AICommandCenter() {
                                                     ))}
                                                 </div>
 
-                                                <div style={{ display: "flex", gap: "6px" }}>
-                                                    <input
-                                                        type="text"
-                                                        value={whisperMessage}
-                                                        onChange={(e) => setWhisperMessage(e.target.value)}
-                                                        placeholder="Type whisper to Rohan (e.g. Offer Unit 402)..."
-                                                        className="aicc-input"
-                                                        style={{ flex: 1, padding: "7px 10px", fontSize: "0.72rem", borderRadius: "7px", border: "1px solid rgba(59,130,246,0.3)" }}
-                                                        onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
-                                                    />
-                                                    <button
-                                                        onClick={handleSendWhisper}
-                                                        style={{
-                                                            padding: "7px 14px", fontSize: "0.72rem", fontWeight: 800,
-                                                            background: "#2563eb", color: "white", border: "none",
-                                                            borderRadius: "7px", cursor: "pointer", whiteSpace: "nowrap",
-                                                            boxShadow: "0 2px 8px rgba(37,99,235,0.25)"
-                                                        }}
-                                                    >
-                                                        Send
-                                                    </button>
+                                                {/* Whisper Input Container — highlights on focus */}
+                                                <div style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    gap: "6px",
+                                                    padding: "8px",
+                                                    borderRadius: "9px",
+                                                    border: isWhisperFocused
+                                                        ? "1.5px solid rgba(37, 99, 235, 0.55)"
+                                                        : "1.5px solid rgba(37, 99, 235, 0.15)",
+                                                    boxShadow: isWhisperFocused
+                                                        ? "0 0 0 3px rgba(37, 99, 235, 0.08), 0 2px 10px rgba(37, 99, 235, 0.1)"
+                                                        : "none",
+                                                    background: isWhisperFocused
+                                                        ? "rgba(37, 99, 235, 0.025)"
+                                                        : "transparent",
+                                                    transition: "all 0.2s ease"
+                                                }}>
+                                                    {/* Typing indicator — only visible when focused */}
+                                                    {isWhisperFocused && (
+                                                        <div style={{ display: "flex", alignItems: "center", gap: "5px", paddingLeft: "2px" }}>
+                                                            <div style={{ display: "flex", gap: "3px", alignItems: "center" }}>
+                                                                <span style={{
+                                                                    width: "5px", height: "5px", background: "#2563eb",
+                                                                    borderRadius: "50%", display: "inline-block",
+                                                                    animation: "aicc-typing-dot 1.2s infinite ease-in-out",
+                                                                    animationDelay: "0s"
+                                                                }} />
+                                                                <span style={{
+                                                                    width: "5px", height: "5px", background: "#2563eb",
+                                                                    borderRadius: "50%", display: "inline-block",
+                                                                    animation: "aicc-typing-dot 1.2s infinite ease-in-out",
+                                                                    animationDelay: "0.2s"
+                                                                }} />
+                                                                <span style={{
+                                                                    width: "5px", height: "5px", background: "#2563eb",
+                                                                    borderRadius: "50%", display: "inline-block",
+                                                                    animation: "aicc-typing-dot 1.2s infinite ease-in-out",
+                                                                    animationDelay: "0.4s"
+                                                                }} />
+                                                            </div>
+                                                            <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#2563eb", letterSpacing: "0.02em" }}>Supervisor typing…</span>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ display: "flex", gap: "6px" }}>
+                                                        <input
+                                                            type="text"
+                                                            value={whisperMessage}
+                                                            onChange={(e) => setWhisperMessage(e.target.value)}
+                                                            placeholder="Type whisper to Rohan (e.g. Offer Unit 402)..."
+                                                            className="aicc-input"
+                                                            style={{
+                                                                flex: 1, padding: "7px 10px", fontSize: "0.72rem",
+                                                                borderRadius: "7px",
+                                                                border: isWhisperFocused
+                                                                    ? "1px solid rgba(37,130,246,0.5)"
+                                                                    : "1px solid rgba(59,130,246,0.3)",
+                                                                outline: "none",
+                                                                transition: "border-color 0.2s"
+                                                            }}
+                                                            onFocus={() => setIsWhisperFocused(true)}
+                                                            onBlur={() => setIsWhisperFocused(false)}
+                                                            onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
+                                                        />
+                                                        <button
+                                                            onClick={handleSendWhisper}
+                                                            style={{
+                                                                padding: "7px 14px", fontSize: "0.72rem", fontWeight: 800,
+                                                                background: "#2563eb", color: "white", border: "none",
+                                                                borderRadius: "7px", cursor: "pointer", whiteSpace: "nowrap",
+                                                                boxShadow: "0 2px 8px rgba(37,99,235,0.25)"
+                                                            }}
+                                                        >
+                                                            Send
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -5841,7 +5897,7 @@ export default function AICommandCenter() {
                                                                 border: `1px solid ${isWhisper ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.15)"}`,
                                                                 borderLeft: `3px solid ${isWhisper ? "#f59e0b" : "#ef4444"}`,
                                                                 borderRadius: "6px",
-                                                                fontSize: "0.65rem"
+                                                fontSize: "0.65rem"
                                                             }}>
                                                                 <span style={{ fontSize: "0.7rem" }}>{isWhisper ? "📡" : "⚡"}</span>
                                                                 <span style={{ fontWeight: 800, color: isWhisper ? "#92400e" : "#991b1b", textTransform: "uppercase", fontSize: "0.58rem", letterSpacing: "0.04em", flexShrink: 0 }}>
@@ -5892,8 +5948,8 @@ export default function AICommandCenter() {
                                                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#166534" }}>Online Agents</span>
                                                 <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#15803d", lineHeight: 1 }}>12</span>
                                             </div>
-                                            <div style={{ width: "100%", height: "4px", background: "rgba(34,197,94,0.12)", borderRadius: "2px", overflow: "hidden" }}>
-                                                <div style={{ width: "80%", height: "100%", background: "linear-gradient(90deg, #4ade80, #22c55e)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            <div style={{ width: "100%", height: "5px", background: "rgba(34,197,94,0.12)", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: "100%", height: "100%", background: "linear-gradient(90deg, #4ade80, #22c55e)", borderRadius: "3px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                                             </div>
                                         </div>
                                         <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>ONLINE</span>
@@ -5914,8 +5970,8 @@ export default function AICommandCenter() {
                                                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#854d0e" }}>Training Required</span>
                                                 <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#a16207", lineHeight: 1 }}>2</span>
                                             </div>
-                                            <div style={{ width: "100%", height: "4px", background: "rgba(234,179,8,0.12)", borderRadius: "2px", overflow: "hidden" }}>
-                                                <div style={{ width: "20%", height: "100%", background: "linear-gradient(90deg, #fde047, #eab308)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            <div style={{ width: "100%", height: "5px", background: "rgba(234,179,8,0.12)", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: "17%", height: "100%", background: "linear-gradient(90deg, #fde047, #eab308)", borderRadius: "3px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                                             </div>
                                         </div>
                                         <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fef3c7", color: "#854d0e", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>PENDING</span>
@@ -5936,8 +5992,8 @@ export default function AICommandCenter() {
                                                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#991b1b" }}>Escalations</span>
                                                 <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#dc2626", lineHeight: 1 }}>3</span>
                                             </div>
-                                            <div style={{ width: "100%", height: "4px", background: "rgba(239,68,68,0.1)", borderRadius: "2px", overflow: "hidden" }}>
-                                                <div style={{ width: "40%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            <div style={{ width: "100%", height: "5px", background: "rgba(239,68,68,0.1)", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: "25%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "3px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                                             </div>
                                         </div>
                                         <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>URGENT</span>
@@ -5958,8 +6014,8 @@ export default function AICommandCenter() {
                                                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#b91c1c" }}>Failed Responses</span>
                                                 <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#dc2626", lineHeight: 1 }}>1</span>
                                             </div>
-                                            <div style={{ width: "100%", height: "4px", background: "rgba(239,68,68,0.08)", borderRadius: "2px", overflow: "hidden" }}>
-                                                <div style={{ width: "10%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            <div style={{ width: "100%", height: "5px", background: "rgba(239,68,68,0.08)", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: "8%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "3px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                                             </div>
                                         </div>
                                         <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>ERROR</span>
@@ -5980,8 +6036,8 @@ export default function AICommandCenter() {
                                                 <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1e40af" }}>Hallucination Risk</span>
                                                 <span style={{ fontSize: "1rem", fontWeight: 900, color: "#1d4ed8", lineHeight: 1 }}>Low</span>
                                             </div>
-                                            <div style={{ width: "100%", height: "4px", background: "rgba(59,130,246,0.1)", borderRadius: "2px", overflow: "hidden" }}>
-                                                <div style={{ width: "12%", height: "100%", background: "linear-gradient(90deg, #93c5fd, #3b82f6)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            <div style={{ width: "100%", height: "5px", background: "rgba(59,130,246,0.1)", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: "12%", height: "100%", background: "linear-gradient(90deg, #93c5fd, #3b82f6)", borderRadius: "3px", transition: "width 0.7s cubic-bezier(0.4,0,0.2,1)" }} />
                                             </div>
                                         </div>
                                         <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#dbeafe", color: "#1e40af", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>SAFE</span>
@@ -6036,87 +6092,56 @@ export default function AICommandCenter() {
                                             accentColor = "#8b5cf6"; bgColor = "rgba(139,92,246,0.05)"; borderColor = "rgba(139,92,246,0.15)";
                                         }
 
+                                        const isLast = idx === monitoringFeed.length - 1;
+
                                         return (
                                             <div key={item.id} style={{
-                                                padding: "14px 16px",
-                                                borderBottom: idx < monitoringFeed.length - 1 ? "1px solid var(--glass-border)" : "none",
-                                                background: idx === monitoringFeed.length - 1 ? bgColor : "transparent",
-                                                borderLeft: `4px solid ${accentColor}`,
-                                                transition: "all 0.2s ease",
                                                 display: "flex",
-                                                flexDirection: "column",
-                                                gap: "6px"
+                                                gap: "10px",
+                                                padding: "10px 14px",
+                                                borderBottom: !isLast ? "1px solid var(--glass-border)" : "none",
+                                                background: isLast ? bgColor : "transparent",
+                                                transition: "background 0.3s ease"
                                             }}>
-                                                {/* Header Row: Timestamp & Status badge */}
-                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                                    <span style={{
-                                                        fontFamily: "monospace",
-                                                        fontSize: "0.68rem",
-                                                        fontWeight: 800,
-                                                        color: "var(--text-secondary)",
-                                                        background: "rgba(0, 0, 0, 0.04)",
-                                                        padding: "2px 6px",
-                                                        borderRadius: "4px",
-                                                        letterSpacing: "0.03em"
+                                                {/* Left: Vertical connector line + dot */}
+                                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0", flexShrink: 0, paddingTop: "2px" }}>
+                                                    <div style={{
+                                                        width: "22px", height: "22px",
+                                                        borderRadius: "50%",
+                                                        background: bgColor,
+                                                        border: `1.5px solid ${borderColor}`,
+                                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                                        fontSize: "0.75rem", flexShrink: 0
                                                     }}>
-                                                        {item.timestamp}
-                                                    </span>
-                                                    {confidence !== null && (
-                                                        <span style={{
-                                                            fontSize: "0.65rem",
-                                                            fontWeight: 800,
-                                                            color: accentColor,
-                                                            background: "white",
-                                                            border: `1px solid ${borderColor}`,
-                                                            padding: "1px 7px",
-                                                            borderRadius: "10px"
-                                                        }}>
-                                                            Confidence {confidence}%
-                                                        </span>
+                                                        {icon}
+                                                    </div>
+                                                    {!isLast && (
+                                                        <div style={{ width: "1.5px", flex: 1, minHeight: "12px", background: "var(--glass-border)", marginTop: "2px" }} />
                                                     )}
                                                 </div>
 
-                                                {/* Title block with Type Icon and Label */}
-                                                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
-                                                    <span style={{ fontSize: "0.9rem" }}>{icon}</span>
-                                                    <span style={{
-                                                        fontSize: "0.75rem",
-                                                        fontWeight: 900,
-                                                        color: "var(--text-primary)",
-                                                        letterSpacing: "0.01em"
-                                                    }}>
-                                                        {typeLabel}
+                                                {/* Right: Timestamp + event label + confidence */}
+                                                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px", paddingBottom: !isLast ? "6px" : "0" }}>
+                                                    <span style={{ fontFamily: "monospace", fontSize: "0.6rem", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.02em" }}>
+                                                        {item.timestamp}
+                                                    </span>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                                                        <span style={{ fontSize: "0.74rem", fontWeight: 800, color: accentColor }}>{typeLabel}</span>
+                                                        {confidence !== null && (
+                                                            <span style={{
+                                                                fontSize: "0.58rem", fontWeight: 800,
+                                                                background: bgColor, color: accentColor,
+                                                                border: `1px solid ${borderColor}`,
+                                                                padding: "1px 6px", borderRadius: "10px"
+                                                            }}>
+                                                                {confidence}% conf
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                                                        {item.reasoning || item.action}
                                                     </span>
                                                 </div>
-
-                                                {/* Reasoning Description */}
-                                                <div style={{
-                                                    fontSize: "0.72rem",
-                                                    color: "var(--text-secondary)",
-                                                    lineHeight: 1.45,
-                                                    paddingLeft: "2px",
-                                                    marginTop: "2px"
-                                                }}>
-                                                    {item.reasoning}
-                                                </div>
-
-                                                {/* Quote Bubble */}
-                                                {item.message && (
-                                                    <div style={{
-                                                        marginTop: "6px",
-                                                        fontSize: "0.68rem",
-                                                        color: "var(--text-secondary)",
-                                                        fontStyle: "italic",
-                                                        background: "rgba(255, 255, 255, 0.6)",
-                                                        borderRadius: "6px",
-                                                        padding: "6px 10px",
-                                                        borderLeft: `3px solid ${accentColor}`,
-                                                        border: `1px solid ${borderColor}`,
-                                                        lineHeight: 1.4
-                                                    }}>
-                                                        "{item.message}"
-                                                    </div>
-                                                )}
                                             </div>
                                         );
                                     })}

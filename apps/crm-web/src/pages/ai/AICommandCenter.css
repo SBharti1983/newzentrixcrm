@@ -1142,6 +1142,12 @@
     0%, 100% { opacity: 1; }
     50%       { opacity: 0.3; }
 }
+
+/* ── Whisper Typing Dots ── */
+@keyframes aicc-typing-dot {
+    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+    40%           { transform: translateY(-4px); opacity: 1; }
+}
 .aicc-listening-dot {
     width: 7px;
     height: 7px;

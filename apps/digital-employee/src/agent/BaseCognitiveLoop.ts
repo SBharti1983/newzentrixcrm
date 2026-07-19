@@ -334,7 +334,8 @@ export abstract class BaseCognitiveLoop<
      */
     async processCycle(
         input: TInput,
-        onSentence?: (sentence: string) => void
+        onSentence?: (sentence: string) => void,
+        signal?: AbortSignal
     ): Promise<TResult> {
         const startTime = Date.now();
         const { tenant_id, lead_id, channel, user_message, detected_language } = input;
@@ -377,10 +378,10 @@ export abstract class BaseCognitiveLoop<
 
         let responseTextRaw = '';
         if (onSentence) {
-            const stream = generateAIResponseStream(fullPrompt, false);
-            responseTextRaw = await streamSentences(stream, onSentence);
+            const stream = generateAIResponseStream(fullPrompt, false, signal);
+            responseTextRaw = await streamSentences(stream, onSentence, signal);
         } else {
-            responseTextRaw = await generateAIResponse(fullPrompt, false);
+            responseTextRaw = await generateAIResponse(fullPrompt, false, signal);
         }
         const trackALatency = Date.now() - trackAStart;
 
