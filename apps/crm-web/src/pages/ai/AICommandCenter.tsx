@@ -5394,24 +5394,33 @@ export default function AICommandCenter() {
                                             {monitorTranscript.map((bubble, idx) => {
                                                 if (bubble.sender === "ai") {
                                                     return (
-                                                        <div key={idx} style={{ display: "flex", flexDirection: "column", alignSelf: "flex-start", maxWidth: "80%", gap: "3px" }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                                                <span style={{ width: "7px", height: "7px", background: "#6366f1", borderRadius: "50%", flexShrink: 0 }} />
-                                                                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em" }}>🤖 Rohan AI</span>
-                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", marginLeft: "2px", fontFamily: "monospace" }}>{bubble.time}</span>
-                                                            </div>
+                                                        <div key={idx} style={{ display: "flex", alignSelf: "flex-start", maxWidth: "85%", gap: "8px", alignItems: "flex-start" }}>
                                                             <div style={{
-                                                                background: "white",
-                                                                border: "1px solid rgba(99,102,241,0.18)",
-                                                                borderLeft: "4px solid #6366f1",
-                                                                padding: "9px 12px",
-                                                                borderRadius: "2px 12px 12px 12px",
-                                                                fontSize: "0.74rem",
-                                                                color: "#1e293b",
-                                                                lineHeight: 1.5,
-                                                                boxShadow: "0 1px 4px rgba(99,102,241,0.08)"
+                                                                width: "28px", height: "28px",
+                                                                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                                                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                                                fontSize: "0.85rem", boxShadow: "0 2px 6px rgba(99,102,241,0.2)", flexShrink: 0
                                                             }}>
-                                                                {bubble.text}
+                                                                🤖
+                                                            </div>
+                                                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                    <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em" }}>Rohan AI</span>
+                                                                    <span style={{ fontSize: "0.56rem", color: "#94a3b8", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                                </div>
+                                                                <div style={{
+                                                                    background: "white",
+                                                                    border: "1px solid rgba(99,102,241,0.18)",
+                                                                    borderLeft: "4px solid #6366f1",
+                                                                    padding: "9px 12px",
+                                                                    borderRadius: "2px 12px 12px 12px",
+                                                                    fontSize: "0.74rem",
+                                                                    color: "#1e293b",
+                                                                    lineHeight: 1.5,
+                                                                    boxShadow: "0 1px 4px rgba(99,102,241,0.08)"
+                                                                }}>
+                                                                    {bubble.text}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
@@ -5419,22 +5428,31 @@ export default function AICommandCenter() {
 
                                                 if (bubble.sender === "customer") {
                                                     return (
-                                                        <div key={idx} style={{ display: "flex", flexDirection: "column", alignSelf: "flex-end", maxWidth: "80%", gap: "3px", alignItems: "flex-end" }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", marginRight: "2px", fontFamily: "monospace" }}>{bubble.time}</span>
-                                                                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>👤 Customer</span>
-                                                                <span style={{ width: "7px", height: "7px", background: "#3b82f6", borderRadius: "50%", flexShrink: 0 }} />
-                                                            </div>
+                                                        <div key={idx} style={{ display: "flex", alignSelf: "flex-end", maxWidth: "85%", gap: "8px", alignItems: "flex-start", flexDirection: "row-reverse" }}>
                                                             <div style={{
-                                                                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                                                                color: "white",
-                                                                padding: "9px 12px",
-                                                                borderRadius: "12px 2px 12px 12px",
-                                                                fontSize: "0.74rem",
-                                                                lineHeight: 1.5,
-                                                                boxShadow: "0 2px 8px rgba(59,130,246,0.25)"
+                                                                width: "28px", height: "28px",
+                                                                background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+                                                                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                                                fontSize: "0.85rem", boxShadow: "0 2px 6px rgba(59,130,246,0.2)", flexShrink: 0
                                                             }}>
-                                                                {bubble.text}
+                                                                👤
+                                                            </div>
+                                                            <div style={{ display: "flex", flexDirection: "column", gap: "3px", alignItems: "flex-end" }}>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                    <span style={{ fontSize: "0.56rem", color: "#94a3b8", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                                    <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>Customer</span>
+                                                                </div>
+                                                                <div style={{
+                                                                    background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                                                                    color: "white",
+                                                                    padding: "9px 12px",
+                                                                    borderRadius: "12px 2px 12px 12px",
+                                                                    fontSize: "0.74rem",
+                                                                    lineHeight: 1.5,
+                                                                    boxShadow: "0 2px 8px rgba(59,130,246,0.25)"
+                                                                }}>
+                                                                    {bubble.text}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
@@ -5442,32 +5460,34 @@ export default function AICommandCenter() {
 
                                                 if (bubble.sender === "supervisor") {
                                                     return (
-                                                        <div key={idx} style={{
-                                                            display: "flex",
-                                                            alignSelf: "center",
-                                                            maxWidth: "90%",
-                                                            flexDirection: "column",
-                                                            alignItems: "center",
-                                                            gap: "4px"
-                                                        }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                                                                <span style={{ fontSize: "0.58rem", color: "#92400e", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>🛡️ Supervisor Whisper</span>
-                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", fontFamily: "monospace" }}>{bubble.time}</span>
-                                                            </div>
+                                                        <div key={idx} style={{ display: "flex", alignSelf: "center", maxWidth: "90%", gap: "8px", alignItems: "flex-start" }}>
                                                             <div style={{
-                                                                background: "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1))",
-                                                                border: "1px solid rgba(245,158,11,0.35)",
-                                                                borderLeft: "4px solid #f59e0b",
-                                                                padding: "8px 14px",
-                                                                borderRadius: "8px",
-                                                                fontSize: "0.72rem",
-                                                                color: "#78350f",
-                                                                fontStyle: "italic",
-                                                                lineHeight: 1.45,
-                                                                textAlign: "center",
-                                                                boxShadow: "0 1px 6px rgba(245,158,11,0.12)"
+                                                                width: "28px", height: "28px",
+                                                                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                                                                borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                                                                fontSize: "0.85rem", boxShadow: "0 2px 6px rgba(245,158,11,0.2)", flexShrink: 0
                                                             }}>
-                                                                {bubble.text}
+                                                                👨‍💼
+                                                            </div>
+                                                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                    <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#b45309", textTransform: "uppercase", letterSpacing: "0.05em" }}>Supervisor Whisper</span>
+                                                                    <span style={{ fontSize: "0.56rem", color: "#94a3b8", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                                </div>
+                                                                <div style={{
+                                                                    background: "linear-gradient(135deg, rgba(251,191,36,0.12), rgba(245,158,11,0.07))",
+                                                                    border: "1px solid rgba(245,158,11,0.32)",
+                                                                    borderLeft: "4px solid #f59e0b",
+                                                                    padding: "8px 14px",
+                                                                    borderRadius: "2px 12px 12px 12px",
+                                                                    fontSize: "0.72rem",
+                                                                    color: "#78350f",
+                                                                    fontStyle: "italic",
+                                                                    lineHeight: 1.45,
+                                                                    boxShadow: "0 1px 5px rgba(245,158,11,0.1)"
+                                                                }}>
+                                                                    {bubble.text}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
