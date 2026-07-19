@@ -783,6 +783,97 @@ export default function AICommandCenter() {
     // Manager Analytics States & Datasets
     const [analyticsPeriod, setAnalyticsPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
+    // 🔍 Enterprise Audit states
+    const [auditEventFilter, setAuditEventFilter] = useState<string>("all");
+    const [auditSearchQuery, setAuditSearchQuery] = useState<string>("");
+    const [activeAuditDetailId, setActiveAuditDetailId] = useState<string | null>(null);
+
+    const [auditLogs, setAuditLogs] = useState<any[]>([
+        { 
+            id: "aud-001", 
+            timestamp: "2026-07-19 10:48:15", 
+            category: "ai_action", 
+            actor: "Voice Agent (Rohan)", 
+            msg: "Handoff to human agent triggered for lead #8301",
+            details: {
+                reason: "Customer requested pricing negotiations outside pre-configured approval bounds",
+                prompt: "System Prompt: You are Rohan... Customer: Can you give me a 5% discount? Response: Let me check with my manager...",
+                response: "Transferring call to Surendra (Senior Sales Lead)..."
+            }
+        },
+        { 
+            id: "aud-002", 
+            timestamp: "2026-07-19 10:42:30", 
+            category: "api_call", 
+            actor: "CRM Gateway", 
+            msg: "POST /api/v1/leads/sync response 200 OK",
+            details: {
+                latency: "230ms",
+                reqBody: "{ leadId: '8301', status: 'Contacted', syncRate: '100%' }",
+                resBody: "{ success: true, timestamp: '2026-07-19T05:12:30.400Z' }"
+            }
+        },
+        { 
+            id: "aud-003", 
+            timestamp: "2026-07-19 10:14:12", 
+            category: "knowledge_change", 
+            actor: "Surendra Singh", 
+            msg: "Uploaded Noida_Sector_150_Layout.pdf",
+            details: {
+                size: "4.2 MB",
+                checksum: "sha256:0d91a921820b411",
+                action: "Knowledge Base Appended"
+            }
+        },
+        { 
+            id: "aud-004", 
+            timestamp: "2026-07-19 09:55:04", 
+            category: "security_event", 
+            actor: "PII Filter Engine", 
+            msg: "PII Filter Blocked Credit Card number in Playground input",
+            details: {
+                policy: "Strict PCI-DSS Redaction",
+                rawInput: "My credit card number is 4111-2222-3333-4444",
+                redactedInput: "My credit card number is [REDACTED_CARD]"
+            }
+        },
+        { 
+            id: "aud-005", 
+            timestamp: "2026-07-19 09:30:11", 
+            category: "user_activity", 
+            actor: "Sikandar Bharti", 
+            msg: "Saved Telephony GSM Gateway Configuration settings",
+            details: {
+                ipAddress: "192.168.1.144",
+                userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                action: "Config Saved"
+            }
+        },
+        { 
+            id: "aud-006", 
+            timestamp: "2026-07-19 09:12:45", 
+            category: "security_event", 
+            actor: "IP Whitelist Guard", 
+            msg: "Connection blocked from unauthorized IP: 104.22.4.19",
+            details: {
+                ipAddress: "104.22.4.19",
+                reason: "IP not found in whitelist: 192.168.1.1/24, 10.0.0.0/8"
+            }
+        },
+        { 
+            id: "aud-007", 
+            timestamp: "2026-07-19 08:44:22", 
+            category: "ai_action", 
+            actor: "Voice Agent (Rohan)", 
+            msg: "Outbound Call initiated to lead +919876543210",
+            details: {
+                persona: "Rohan (Premium real estate specialist)",
+                campaign: "BKC Pre-Launch Followups",
+                trunkLine: "Twilio SIP Channel 4"
+            }
+        }
+    ]);
+
     const conversationTrendData = {
         daily: [
             { name: 'Mon', calls: 120, latency: 1.30, cost: 9.6 },
@@ -1819,8 +1910,8 @@ export default function AICommandCenter() {
                 <button onClick={() => setActiveTab("workflow")} className={`aicc-tab-btn tab-workflow ${activeTab === "workflow" ? "active" : ""}`}>
                     <Calendar size={16} /> Workflow
                 </button>
-                <button onClick={() => setActiveTab("training")} className={`aicc-tab-btn tab-training ${activeTab === "training" ? "active" : ""}`}>
-                    <GraduationCap size={16} style={{ transform: "rotateY(180deg)" }} /> Training
+                <button onClick={() => setActiveTab("rules")} className={`aicc-tab-btn tab-training ${activeTab === "rules" ? "active" : ""}`}>
+                    <GraduationCap size={16} style={{ transform: "rotateY(180deg)" }} /> Coaching Rules
                 </button>
                 <button onClick={() => setActiveTab("playground")} className={`aicc-tab-btn tab-playground ${activeTab === "playground" ? "active" : ""}`}>
                     <Bot size={16} /> Playground
@@ -1854,11 +1945,17 @@ export default function AICommandCenter() {
                     <button onClick={() => setActiveTab("coaching")} className={`aicc-tab-btn tab-training ${activeTab === "coaching" ? "active" : ""}`}>
                         <GraduationCap size={16} /> Coaching
                     </button>
+                    <button onClick={() => setActiveTab("training")} className={`aicc-tab-btn tab-training ${activeTab === "training" ? "active" : ""}`}>
+                        <Brain size={16} /> AI Training
+                    </button>
                     <button onClick={() => setActiveTab("telephony")} className={`aicc-tab-btn tab-voice ${activeTab === "telephony" ? "active" : ""}`}>
                         <Radio size={16} /> Telephony
                     </button>
                     <button onClick={() => setActiveTab("integrations")} className={`aicc-tab-btn tab-workflow ${activeTab === "integrations" ? "active" : ""}`}>
                         <Plug size={16} /> Integrations
+                    </button>
+                    <button onClick={() => setActiveTab("audit")} className={`aicc-tab-btn tab-overview ${activeTab === "audit" ? "active" : ""}`}>
+                        <FileText size={16} /> Audit Log
                     </button>
                 </div>
             )}
@@ -5825,6 +5922,211 @@ export default function AICommandCenter() {
                             </button>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ─── TAB: AUDIT LOGS ─────────────────────────────────────────── */}
+            {activeTab === "audit" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    
+                    {/* Header with Export options */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Enterprise Compliance & Audit logs</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Immutable trail of API calls, AI actions, knowledge database updates, and security events.</span>
+                        </div>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                            <button 
+                                onClick={() => addToast({
+                                    type: "success",
+                                    title: "Logs Exported",
+                                    message: "Exported audit trail to audit_logs_compliance.csv"
+                                })}
+                                className="aicc-btn-secondary" 
+                                style={{ padding: "8px 16px", fontSize: "0.8rem", fontWeight: 700 }}
+                            >
+                                📥 Export CSV
+                            </button>
+                            <button 
+                                onClick={() => addToast({
+                                    type: "success",
+                                    title: "Logs Exported",
+                                    message: "Exported audit trail to audit_logs_compliance.json"
+                                })}
+                                className="aicc-btn-secondary" 
+                                style={{ padding: "8px 16px", fontSize: "0.8rem", fontWeight: 700 }}
+                            >
+                                📥 Export JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Filter and Search Row */}
+                    <div style={{ display: "flex", gap: "12px", alignItems: "center", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--glass-border)" }}>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            {[
+                                { key: 'all', label: 'All Logs' },
+                                { key: 'ai_action', label: 'AI Actions' },
+                                { key: 'api_call', label: 'API Calls' },
+                                { key: 'knowledge_change', label: 'Knowledge' },
+                                { key: 'security_event', label: 'Security' },
+                                { key: 'user_activity', label: 'User Activities' }
+                            ].map(cat => (
+                                <button
+                                    key={cat.key}
+                                    onClick={() => setAuditEventFilter(cat.key)}
+                                    style={{
+                                        padding: "6px 12px",
+                                        borderRadius: "6px",
+                                        border: "1px solid var(--glass-border)",
+                                        background: auditEventFilter === cat.key ? "var(--accent-indigo)" : "white",
+                                        color: auditEventFilter === cat.key ? "white" : "var(--text-secondary)",
+                                        fontSize: "0.72rem",
+                                        fontWeight: 800,
+                                        cursor: "pointer",
+                                        transition: "all 0.15s"
+                                    }}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Filter audit description..."
+                            value={auditSearchQuery}
+                            onChange={(e) => setAuditSearchQuery(e.target.value)}
+                            style={{
+                                flex: 1,
+                                padding: "8px 12px",
+                                borderRadius: "6px",
+                                border: "1px solid var(--glass-border)",
+                                fontSize: "0.78rem",
+                                outline: "none",
+                                marginLeft: "auto",
+                                maxWidth: "260px"
+                            }}
+                        />
+                    </div>
+
+                    {/* Audit Logs Table */}
+                    <div className="aicc-card" style={{ padding: 0, overflow: "hidden" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
+                            <thead>
+                                <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", fontWeight: 800 }}>
+                                    <th style={{ padding: "12px 16px", textAlign: "left", width: "140px" }}>Timestamp</th>
+                                    <th style={{ padding: "12px 16px", textAlign: "left", width: "120px" }}>Category</th>
+                                    <th style={{ padding: "12px 16px", textAlign: "left", width: "160px" }}>Actor / Service</th>
+                                    <th style={{ padding: "12px 16px", textAlign: "left" }}>Description Action</th>
+                                    <th style={{ padding: "12px 16px", textAlign: "center", width: "100px" }}>Metadata</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {auditLogs
+                                    .filter(log => auditEventFilter === 'all' || log.category === auditEventFilter)
+                                    .filter(log => log.msg.toLowerCase().includes(auditSearchQuery.toLowerCase()))
+                                    .map(log => {
+                                        const badgeStyles = {
+                                            ai_action: { bg: "#e0e7ff", color: "#3730a3", label: "AI Action" },
+                                            api_call: { bg: "#ecfdf5", color: "#065f46", label: "API Call" },
+                                            knowledge_change: { bg: "#faf5ff", color: "#6b21a8", label: "Knowledge" },
+                                            security_event: { bg: "#fef2f2", color: "#991b1b", label: "Security" },
+                                            user_activity: { bg: "#fff7ed", color: "#9a3412", label: "User" }
+                                        }[log.category as 'ai_action' | 'api_call' | 'knowledge_change' | 'security_event' | 'user_activity'];
+
+                                        const isExpanded = activeAuditDetailId === log.id;
+
+                                        return (
+                                            <React.Fragment key={log.id}>
+                                                <tr style={{ borderBottom: "1px solid var(--glass-border)", background: isExpanded ? "rgba(99,102,241,0.02)" : "transparent" }}>
+                                                    <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{log.timestamp}</td>
+                                                    <td style={{ padding: "12px 16px" }}>
+                                                        <span style={{ fontSize: "0.62rem", fontWeight: 800, background: badgeStyles.bg, color: badgeStyles.color, padding: "2px 6px", borderRadius: "4px" }}>
+                                                            {badgeStyles.label}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ padding: "12px 16px", fontWeight: 800, color: "var(--text-primary)" }}>{log.actor}</td>
+                                                    <td style={{ padding: "12px 16px", fontWeight: 700 }}>{log.msg}</td>
+                                                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                                                        <button
+                                                            onClick={() => setActiveAuditDetailId(isExpanded ? null : log.id)}
+                                                            className="aicc-btn-secondary"
+                                                            style={{ padding: "4px 8px", fontSize: "0.68rem" }}
+                                                        >
+                                                            {isExpanded ? "Hide" : "Inspect"}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                {isExpanded && (
+                                                    <tr>
+                                                        <td colSpan={5} style={{ background: "#f8fafc", padding: "16px 24px", borderBottom: "1px solid var(--glass-border)" }}>
+                                                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                                                <h4 style={{ margin: 0, fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>🔍 Detailed Audit Metadata Block</h4>
+                                                                
+                                                                {log.category === 'ai_action' && (
+                                                                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                                        <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                            <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Prompt History (Inputs to Base LLM):</strong>
+                                                                            <pre style={{ margin: 0, fontSize: "0.7rem", whiteSpace: "pre-wrap", color: "var(--text-primary)" }}>{log.details.prompt}</pre>
+                                                                        </div>
+                                                                        <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                            <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Response History (Output Text):</strong>
+                                                                            <pre style={{ margin: 0, fontSize: "0.7rem", whiteSpace: "pre-wrap", color: "var(--text-primary)" }}>{log.details.response}</pre>
+                                                                        </div>
+                                                                        {log.details.reason && (
+                                                                            <span style={{ fontSize: "0.7rem", color: "#9a3412" }}>⚠️ Handoff Trigger Context: {log.details.reason}</span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+
+                                                                {log.category === 'api_call' && (
+                                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                                                        <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                            <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Request Headers & Payload:</strong>
+                                                                            <pre style={{ margin: 0, fontSize: "0.7rem", whiteSpace: "pre-wrap" }}>{log.details.reqBody}</pre>
+                                                                        </div>
+                                                                        <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                            <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Response Body:</strong>
+                                                                            <pre style={{ margin: 0, fontSize: "0.7rem", whiteSpace: "pre-wrap" }}>{log.details.resBody}</pre>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+
+                                                                {log.category === 'security_event' && (
+                                                                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                                        {log.details.rawInput && (
+                                                                            <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                                <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Sanitized Raw Playground Input:</strong>
+                                                                                <pre style={{ margin: 0, fontSize: "0.7rem", color: "#991b1b" }}>{log.details.rawInput}</pre>
+                                                                            </div>
+                                                                        )}
+                                                                        {log.details.redactedInput && (
+                                                                            <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px" }}>
+                                                                                <strong style={{ display: "block", fontSize: "0.68rem", color: "var(--text-secondary)", marginBottom: "4px" }}>Compliance Safe Redacted Input:</strong>
+                                                                                <pre style={{ margin: 0, fontSize: "0.7rem", color: "#065f46" }}>{log.details.redactedInput}</pre>
+                                                                            </div>
+                                                                        )}
+                                                                        <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                                                                            Security Policy Triggered: {log.details.policy || log.details.reason}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {log.category !== 'ai_action' && log.category !== 'api_call' && log.category !== 'security_event' && (
+                                                                    <div style={{ padding: "8px 12px", background: "white", border: "1px solid var(--glass-border)", borderRadius: "6px", fontSize: "0.72rem" }}>
+                                                                        <pre style={{ margin: 0 }}>{JSON.stringify(log.details, null, 2)}</pre>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
 
