@@ -2717,7 +2717,7 @@ export default function AICommandCenter() {
                                         <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", maxWidth: "450px" }}>
                                             <div style={{ fontSize: "0.68rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", textAlign: "center", letterSpacing: "0.5px" }}>Supported File Formats</div>
                                             <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
-                                                {["PDF", "DOCX", "TXT", "CSV", "Images (OCR)", "ZIP"].map((fmt) => (
+                                                {["PDF", "DOCX", "TXT", "CSV", "OCR Screenshots", "WhatsApp/Email Images", "Audio (MP3/WAV)", "Videos (MP4)"].map((fmt) => (
                                                     <span key={fmt} style={{ fontSize: "0.68rem", fontWeight: 800, padding: "3px 8px", background: "rgba(99,102,241,0.08)", color: "var(--accent-indigo)", border: "1px solid rgba(99,102,241,0.15)", borderRadius: "4px" }}>
                                                         {fmt}
                                                     </span>
