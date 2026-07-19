@@ -5376,6 +5376,287 @@ export default function AICommandCenter() {
                 </div>
             )}
 
+            {/* ─── TAB: AI TRAINING ─────────────────────────────────────────── */}
+            {activeTab === "training" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                            <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Cognitive Training & Fine-Tuning Console</span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>Manage datasets, monitor active fine-tuning iterations, and verify RAG embedding parameters.</span>
+                        </div>
+                    </div>
+
+                    {/* Top Section: Models & Fine-Tuning Options */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px", background: "white" }}>
+                            <h4 style={{ fontSize: "0.8rem", fontWeight: 800, margin: 0 }}>Embedding Model Selection</h4>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Select model parameters used to transform text chunks into multi-dimensional vectors.</span>
+                            <select 
+                                value={selectedEmbeddingModel} 
+                                onChange={(e) => setSelectedEmbeddingModel(e.target.value)} 
+                                className="aicc-input" 
+                                style={{ padding: "8px", fontSize: "0.8rem", marginTop: "auto" }}
+                            >
+                                <option value="text-embedding-3-small">OpenAI text-embedding-3-small (Recommended)</option>
+                                <option value="text-embedding-3-large">OpenAI text-embedding-3-large (High Dim)</option>
+                                <option value="text-embedding-ada-002">OpenAI text-embedding-ada-002 (Legacy)</option>
+                                <option value="cohere-embed-v3">Cohere Embed v3 (Multilingual)</option>
+                            </select>
+                        </div>
+
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px", background: "white" }}>
+                            <h4 style={{ fontSize: "0.8rem", fontWeight: 800, margin: 0 }}>Base Tuning Model</h4>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Choose target base architecture used for direct parameters fine-tuning.</span>
+                            <select 
+                                value={selectedBaseModel} 
+                                onChange={(e) => setSelectedBaseModel(e.target.value)} 
+                                className="aicc-input" 
+                                style={{ padding: "8px", fontSize: "0.8rem", marginTop: "auto" }}
+                            >
+                                <option value="gpt-4o-mini-tuned">OpenAI GPT-4o-Mini (Tuned)</option>
+                                <option value="llama-3.1-8b-instruct">Meta Llama 3.1 8B Instruct</option>
+                                <option value="mistral-nemo-12b">Mistral Nemo 12B Instruct</option>
+                            </select>
+                        </div>
+
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px", background: "rgba(99,102,241,0.03)", border: "1px solid rgba(99,102,241,0.12)" }}>
+                            <h4 style={{ fontSize: "0.8rem", fontWeight: 800, margin: 0, color: "var(--accent-indigo)" }}>Execute Fine-Tuning</h4>
+                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>Initiate model gradient steps optimization on all active validated datasets.</span>
+                            
+                            {isFineTuning ? (
+                                <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", fontWeight: 700 }}>
+                                        <span>Training in queue...</span>
+                                        <span>{fineTuningProgress}%</span>
+                                    </div>
+                                    <div style={{ width: "100%", height: "6px", background: "#f1f5f9", borderRadius: "3px", overflow: "hidden" }}>
+                                        <div style={{ width: `${fineTuningProgress}%`, height: "100%", background: "var(--accent-indigo)" }} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <button 
+                                    onClick={handleTriggerFineTuning} 
+                                    className="aicc-btn-primary" 
+                                    style={{ marginTop: "auto", padding: "8px", fontSize: "0.8rem", fontWeight: 800 }}
+                                >
+                                    Start Fine-Tuning Run
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Middle Section: Dataset Management & Validation */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px" }}>
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Dataset Management</span>
+                                <span style={{ fontSize: "1rem" }}>📂</span>
+                            </h3>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", marginTop: "8px" }}>
+                                <thead>
+                                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", fontWeight: 800 }}>
+                                        <th style={{ padding: "8px 10px", textAlign: "left" }}>Dataset Filename</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "right" }}>File Size</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "right" }}>QA Pairs</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "right" }}>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {datasets.map((ds) => (
+                                        <tr key={ds.id} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                            <td style={{ padding: "8px 10px", fontWeight: 800, color: "var(--text-primary)" }}>{ds.name}</td>
+                                            <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-secondary)" }}>{ds.size}</td>
+                                            <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>{ds.pairs}</td>
+                                            <td style={{ padding: "8px 10px", textAlign: "right" }}>
+                                                <span style={{ 
+                                                    fontSize: "0.62rem", fontWeight: 800, padding: "2px 6px", borderRadius: "4px",
+                                                    background: ds.status === 'Validated' ? '#dcfce7' : ds.status === 'Pending Validation' ? '#fef3c7' : '#fee2e2',
+                                                    color: ds.status === 'Validated' ? '#166534' : ds.status === 'Pending Validation' ? '#b45309' : '#991b1b'
+                                                }}>
+                                                    {ds.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Dataset Formatting & Validation</span>
+                                <span style={{ fontSize: "1rem" }}>🛡️</span>
+                            </h3>
+                            <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                                Scan formatting schemas to locate missing fields, invalid tokens, and structural errors before sending datasets to fine-tune pools.
+                            </span>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "6px 0" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                    <span style={{ color: "var(--text-secondary)" }}>Validation Checks:</span>
+                                    <span style={{ fontWeight: 800, color: validationStatus === 'passed' ? '#166534' : 'var(--text-primary)' }}>
+                                        {validationStatus === 'idle' && 'Not Started'}
+                                        {validationStatus === 'validating' && 'Scanning...'}
+                                        {validationStatus === 'passed' && 'Passed'}
+                                    </span>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem" }}>
+                                    <span style={{ color: "var(--text-secondary)" }}>Duplicate Pairs Resolved:</span>
+                                    <span style={{ fontWeight: 800, color: duplicateCount > 0 ? "#b45309" : "var(--text-primary)" }}>{duplicateCount} duplicate entries</span>
+                                </div>
+                            </div>
+
+                            {validationStatus === 'validating' ? (
+                                <button className="aicc-btn-secondary" style={{ padding: "8px", fontSize: "0.8rem", width: "100%" }} disabled>
+                                    Validating schemas...
+                                </button>
+                            ) : (
+                                <button 
+                                    onClick={handleValidateDatasets} 
+                                    className="aicc-btn-secondary" 
+                                    style={{ padding: "8px", fontSize: "0.8rem", width: "100%", fontWeight: 700 }}
+                                >
+                                    Validate Active Datasets
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Bottom Section: Approval Queue & Version History */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                        
+                        {/* Knowledge Approval Queue */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Knowledge Approval Queue</span>
+                                <span style={{ fontSize: "1rem" }}>📋</span>
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                {knowledgeApprovalQueue.length === 0 ? (
+                                    <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", padding: "10px 0" }}>No pending documents in approval queue.</span>
+                                ) : (
+                                    knowledgeApprovalQueue.map((item) => (
+                                        <div key={item.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "#f8fafc", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                            <div>
+                                                <div style={{ fontSize: "0.78rem", fontWeight: 800 }}>{item.name}</div>
+                                                <div style={{ fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                                                    {item.type} ({item.size}) · Uploaded by: {item.uploadedBy}
+                                                </div>
+                                            </div>
+                                            <div style={{ display: "flex", gap: "6px" }}>
+                                                <button 
+                                                    onClick={() => {
+                                                        setKnowledgeApprovalQueue(prev => prev.filter(x => x.id !== item.id));
+                                                        setTrainingQueueJobs(oldJobs => [
+                                                            { id: "job-" + Date.now().toString().slice(-4), name: `Embedding Ingestion: ${item.name}`, type: "Embedding RAG", progress: 0, status: "RUNNING" },
+                                                            ...oldJobs
+                                                        ]);
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Document Approved",
+                                                            message: `${item.name} added to vector database compilation queue.`
+                                                        });
+                                                    }}
+                                                    className="aicc-btn-primary" 
+                                                    style={{ padding: "4px 8px", fontSize: "0.7rem" }}
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button 
+                                                    onClick={() => {
+                                                        setKnowledgeApprovalQueue(prev => prev.filter(x => x.id !== item.id));
+                                                        addToast({
+                                                            type: "warning",
+                                                            title: "Document Rejected",
+                                                            message: `${item.name} status set to rejected.`
+                                                        });
+                                                    }}
+                                                    className="aicc-btn-secondary" 
+                                                    style={{ padding: "4px 8px", fontSize: "0.7rem", color: "#991b1b" }}
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Version History & rollback */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Knowledge Version History & Rollback</span>
+                                <span style={{ fontSize: "1rem" }}>🕒</span>
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {knowledgeHistory.map((ver, idx) => (
+                                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderBottom: "1px solid var(--glass-border)" }}>
+                                        <div>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: ver.version.includes("Active") ? "var(--accent-indigo)" : "var(--text-primary)" }}>{ver.version}</span>
+                                            <p style={{ fontSize: "0.7rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>{ver.desc} (by {ver.author})</p>
+                                        </div>
+                                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)" }}>{ver.date}</span>
+                                            {!ver.version.includes("Active") && (
+                                                <button 
+                                                    onClick={() => {
+                                                        addToast({
+                                                            type: "success",
+                                                            title: "Rollback Triggered",
+                                                            message: `Knowledge version rolled back to ${ver.version}. Cache invalidated.`
+                                                        });
+                                                    }}
+                                                    className="aicc-btn-secondary" 
+                                                    style={{ padding: "2px 6px", fontSize: "0.62rem", fontWeight: 700 }}
+                                                >
+                                                    Rollback to V{idx + 1}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* Active Training Job Queue */}
+                    <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                        <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                            <span>Active Training Queue Jobs</span>
+                            <span style={{ fontSize: "1rem" }}>⚙️</span>
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                            {trainingQueueJobs.map((job) => {
+                                const isRun = job.status === 'RUNNING';
+                                return (
+                                    <div key={job.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: isRun ? "rgba(99,102,241,0.03)" : "white", border: isRun ? "1px solid rgba(99,102,241,0.15)" : "1px solid var(--glass-border)", borderRadius: "10px" }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>{job.name}</span>
+                                                <span style={{ fontSize: "0.62rem", background: isRun ? "#fef3c7" : "#dcfce7", color: isRun ? "#b45309" : "#166534", padding: "1px 6px", borderRadius: "4px", fontWeight: 800 }}>{job.status}</span>
+                                            </div>
+                                            <div style={{ display: "flex", gap: "16px", fontSize: "0.68rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                                <span>Job ID: #{job.id}</span>
+                                                <span>Type: {job.type}</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ width: "140px", display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
+                                            <span style={{ fontSize: "0.68rem", fontWeight: 800 }}>{job.progress}% Complete</span>
+                                            <div style={{ width: "100%", height: "4px", background: "#f1f5f9", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: `${job.progress}%`, height: "100%", background: isRun ? "var(--accent-indigo)" : "#10b981" }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                </div>
+            )}
+
             {/* ─── TAB: INTEGRATIONS ────────────────────────────────────────── */}
             {activeTab === "integrations" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
