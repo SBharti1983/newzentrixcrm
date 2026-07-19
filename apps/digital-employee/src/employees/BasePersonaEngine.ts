@@ -27,6 +27,7 @@ import {
     AIEmployeeRole,
     PersonaNotFoundError,
 } from '@zentrix/types';
+import { RedisBus } from '@zentrix/messaging';
 
 // ── In-memory persona cache (refreshed every 5 min) ─────────────────
 interface PersonaCacheEntry {
@@ -54,6 +55,20 @@ export abstract class BasePersonaEngine {
 
     // Per-engine cache (each subclass instance gets its own map)
     private cache = new Map<number, PersonaCacheEntry>();
+
+    // Keep track of active engine instances for cache invalidation
+    private static instances: BasePersonaEngine[] = [];
+
+    constructor() {
+        BasePersonaEngine.instances.push(this);
+    }
+
+    /** Invalidate cache for all instances for a specific tenant */
+    static invalidateAllCaches(tenantId: number): void {
+        BasePersonaEngine.instances.forEach(instance => {
+            instance.invalidateCache(tenantId);
+        });
+    }
 
     // ── Persona Loading ─────────────────────────────────────────────
 
@@ -183,3 +198,16 @@ export abstract class BasePersonaEngine {
         ...args: any[]
     ): string;
 }
+
+// ── Real-Time Cache Invalidation Listener ──────────────────────────────
+const redisBus = new RedisBus();
+redisBus.connect().then(() => {
+    redisBus.subscribe('persona:updated', (payload) => {
+        if (payload && payload.tenantId) {
+            logger.info(`[BasePersonaEngine] Invalidation event received for tenant ${payload.tenantId}`);
+            BasePersonaEngine.invalidateAllCaches(payload.tenantId);
+        }
+    });
+}).catch(err => {
+    logger.warn(`[BasePersonaEngine] RedisBus connection bypassed: ${err.message}`);
+});

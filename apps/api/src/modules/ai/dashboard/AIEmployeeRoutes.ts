@@ -11,6 +11,7 @@ import { authenticateToken } from '../../../middleware/auth';
 import pool from '../../../db/pool';
 import { logger } from '@zentrix/logger';
 import axios from 'axios';
+import { eventPublisher } from '@zentrix/messaging';
 
 const router = express.Router();
 
@@ -266,6 +267,15 @@ router.put('/:id', async (req: any, res: Response) => {
         if (!updated[0]) {
             return res.status(404).json({ error: 'AI Employee profile not found or unauthorized' });
         }
+
+        // Publish real-time cache invalidation event
+        eventPublisher.publish('persona:updated', {
+            tenantId: Number(tenantId),
+            agentId: updated[0].id,
+            updatedAt: new Date().toISOString()
+        }).catch(err => {
+            logger.error(`[AIEmployeeRoutes] Failed to publish persona:updated event: ${err.message}`);
+        });
 
         res.json({ success: true, message: 'AI Employee profile updated successfully', data: updated[0] });
     } catch (err: any) {

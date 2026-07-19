@@ -36,6 +36,7 @@
     "@zentrix/logger": "*",
     "@zentrix/types": "*",
     "@zentrix/database": "*",
+    "@zentrix/messaging": "*",
     "@google/genai": "^1.42.0",
     "@google/generative-ai": "^0.24.1",
     "@sentry/node": "^10.50.0",

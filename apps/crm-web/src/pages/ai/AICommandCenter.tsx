@@ -689,6 +689,25 @@ export default function AICommandCenter() {
     const [apiKey, setApiKey] = useState<string>("zntx_live_pk_7482_aicc_secret_key_prod");
     const [row2Expanded, setRow2Expanded] = useState<boolean>(true);
 
+    // 🔒 Enterprise Security states
+    const [securityRole, setSecurityRole] = useState<string>("admin");
+    const [dataSources, setDataSources] = useState<Record<string, boolean>>({
+        crmDb: true,
+        localPdfs: true,
+        webScrape: false,
+        apiIntegrations: true
+    });
+    const [crmPerms, setCrmPerms] = useState<Record<string, boolean>>({
+        readLeads: true,
+        writeLeads: true,
+        editDeals: false,
+        deleteLeads: false
+    });
+    const [filePolicy, setFilePolicy] = useState<string>("restricted-admin");
+    const [sensitiveFilters, setSensitiveFilters] = useState<string>("SSN, CreditCard, Password, Confidential, Secret");
+    const [retentionDays, setRetentionDays] = useState<number>(90);
+    const [ipRestrictions, setIpRestrictions] = useState<string>("192.168.1.1/24, 10.0.0.0/8");
+
     // Overview Enhancement States
     const [dashPeriod, setDashPeriod] = useState<'today' | '7d' | '30d'>('30d');
     const [matrixSort, setMatrixSort] = useState<{ key: 'accuracy' | 'latency'; dir: 'asc' | 'desc' }>({ key: 'accuracy', dir: 'desc' });
@@ -3842,69 +3861,239 @@ export default function AICommandCenter() {
             {activeTab === "security" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                     
-                    <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Safety Controls & Fallback Configurations</span>
-                            <Shield size={18} style={{ color: "var(--accent-indigo)" }} />
-                        </h3>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                            {[
-                                { key: "profanityFilter", name: "Profanity Filter", desc: "Block inappropriate and toxic remarks in user inbound streaming" },
-                                { key: "piiMasking", name: "PII Masking", desc: "Mask credit cards, phone numbers, and bank receipts details from vector memory logs" },
-                                { key: "emergencyTransfer", name: "Emergency Transfer", desc: "Direct handoff routing to sales manager if caller exhibits panic triggers" },
-                                { key: "fallbackVoice", name: "Fallback Voice", desc: "Dynamically transition clone voice profiles to ElevenLabs base models in server outage" }
-                            ].map((control) => (
-                                <div key={control.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--glass-border)" }}>
-                                    <div>
-                                        <div style={{ fontSize: "0.8rem", fontWeight: 800 }}>{control.name}</div>
-                                        <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)", marginTop: "2px" }}>{control.desc}</div>
-                                    </div>
-                                    <label className="aicc-switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={safetyControls[control.key]}
-                                            onChange={(e) => {
-                                                setSafetyControls(prev => ({ ...prev, [control.key]: e.target.checked }));
-                                                addToast({ type: "info", title: "Safety Protocol", message: `${control.name} status modified.` });
-                                            }}
-                                            style={{ display: "none" }}
-                                        />
-                                        <span className="aicc-slider" style={{
-                                            position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
-                                            background: safetyControls[control.key] ? "var(--accent-indigo)" : "#cbd5e1",
-                                            borderRadius: "99px", transition: "0.2s"
-                                        }}>
-                                            <span style={{
-                                                position: "absolute", content: "", height: "14px", width: "14px", left: safetyControls[control.key] ? "22px" : "4px", bottom: "3px",
-                                                background: "white", borderRadius: "50%", transition: "0.2s"
-                                            }} />
-                                        </span>
-                                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                        {/* Card 1: Role & Access Controls (Enterprise) */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title">
+                                <span>Role & Access Controls</span>
+                                <Shield size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </h3>
+                            
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Role & Permission Management</label>
+                                    <select 
+                                        className="aicc-select" 
+                                        value={securityRole} 
+                                        onChange={(e) => {
+                                            setSecurityRole(e.target.value);
+                                            addToast({ type: "success", title: "Security Role Updated", message: `Assigned role updated to ${e.target.value}.` });
+                                        }}
+                                    >
+                                        <option value="admin">Super Admin (All Permissions)</option>
+                                        <option value="compliance">Compliance Officer (Audit Only)</option>
+                                        <option value="operations">Operations Manager (No Deletes)</option>
+                                        <option value="read-only">Read-only Analyst (View Only)</option>
+                                    </select>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
 
-                    <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Client API Gateway Tokens</span>
-                            <span style={{ fontSize: "1rem" }}>🔒</span>
-                        </h3>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>ElevenLabs Production Secret Key</span>
-                            <div className="aicc-tag-input-row">
-                                <input
-                                    type="text"
-                                    className="aicc-input"
-                                    style={{ flex: 1, fontFamily: "monospace", fontSize: "0.8rem", background: "#f8fafc" }}
-                                    value={apiKey}
-                                    readOnly
-                                />
-                                <button className="aicc-btn-secondary" onClick={rotateApiKey}>Rotate Key</button>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>CRM Access Permissions</label>
+                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                        {[
+                                            { key: "readLeads", label: "Read Leads" },
+                                            { key: "writeLeads", label: "Write Leads" },
+                                            { key: "editDeals", label: "Edit Deals" },
+                                            { key: "deleteLeads", label: "Delete Records" }
+                                        ].map((perm) => (
+                                            <label key={perm.key} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.75rem", color: "var(--text-primary)", cursor: "pointer" }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={crmPerms[perm.key]}
+                                                    onChange={(e) => {
+                                                        setCrmPerms(prev => ({ ...prev, [perm.key]: e.target.checked }));
+                                                        addToast({ type: "info", title: "CRM Permission Changed", message: `${perm.label} status modified.` });
+                                                    }}
+                                                    style={{ width: "14px", height: "14px", accentColor: "var(--accent-indigo)" }}
+                                                />
+                                                <span>{perm.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>IP Restrictions (CIDR blocks)</label>
+                                    <input 
+                                        type="text" 
+                                        className="aicc-input" 
+                                        placeholder="Comma separated IP ranges" 
+                                        value={ipRestrictions} 
+                                        onChange={(e) => setIpRestrictions(e.target.value)}
+                                        style={{ fontSize: "0.8rem", fontFamily: "monospace" }}
+                                    />
+                                    <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)" }}>Leave empty to allow all IP addresses.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Card 2: Data Ingestion & Storage Rules */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title">
+                                <span>Data Ingestion & Storage</span>
+                                <span style={{ fontSize: "1.1rem" }}>💾</span>
+                            </h3>
+                            
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Allowed Data Sources</label>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                        {[
+                                            { key: "crmDb", label: "Postgres CRM DB" },
+                                            { key: "localPdfs", label: "Local PDFs & Files" },
+                                            { key: "webScrape", label: "Website Scraping" },
+                                            { key: "apiIntegrations", label: "External REST APIs" }
+                                        ].map((src) => (
+                                            <button
+                                                key={src.key}
+                                                onClick={() => {
+                                                    setDataSources(prev => ({ ...prev, [src.key]: !prev[src.key] }));
+                                                    addToast({ type: "info", title: "Data Source Configuration", message: `${src.label} access toggled.` });
+                                                }}
+                                                style={{
+                                                    fontSize: "0.68rem", fontWeight: 800, padding: "4px 10px", borderRadius: "6px",
+                                                    border: "1px solid var(--glass-border)",
+                                                    background: dataSources[src.key] ? "var(--accent-indigo)" : "white",
+                                                    color: dataSources[src.key] ? "white" : "var(--text-primary)",
+                                                    cursor: "pointer", transition: "all 0.2s"
+                                                }}
+                                            >
+                                                {src.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>File Access Policies</label>
+                                    <select 
+                                        className="aicc-select"
+                                        value={filePolicy}
+                                        onChange={(e) => {
+                                            setFilePolicy(e.target.value);
+                                            addToast({ type: "success", title: "Access Policy Updated", message: `Scope changed to ${e.target.value}.` });
+                                        }}
+                                    >
+                                        <option value="public">Public (Access allowed to all staff)</option>
+                                        <option value="tenant-only">Tenant Only (Limited to this workplace)</option>
+                                        <option value="restricted-admin">Restricted Admin (Admin and compliance only)</option>
+                                    </select>
+                                </div>
+
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Data Retention Rules</label>
+                                    <select 
+                                        className="aicc-select"
+                                        value={retentionDays}
+                                        onChange={(e) => {
+                                            setRetentionDays(Number(e.target.value));
+                                            addToast({ type: "success", title: "Retention Threshold Set", message: `Auto-purge set to ${e.target.value} days.` });
+                                        }}
+                                    >
+                                        <option value={30}>30 Days (Standard Purge)</option>
+                                        <option value={90}>90 Days (Enterprise Standard)</option>
+                                        <option value={180}>180 Days (Long-term Compliance)</option>
+                                        <option value={0}>Indefinitely (No Auto-purge)</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px" }}>
+                        {/* Card 3: Safety, Masking & Sensitive Scrubbers */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title">
+                                <span>Data Masking & PII Protection</span>
+                                <span style={{ fontSize: "1.1rem" }}>🛡️</span>
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                {[
+                                    { key: "profanityFilter", name: "Profanity Filter", desc: "Block inappropriate and toxic remarks in user inbound streaming" },
+                                    { key: "piiMasking", name: "PII Masking & Detection", desc: "Scrub credit cards, SSN, phone numbers, and bank receipt details from vector logs" },
+                                    { key: "emergencyTransfer", name: "Emergency Transfer", desc: "Handoff to sales manager if caller exhibits panic triggers" },
+                                    { key: "fallbackVoice", name: "Fallback Voice", desc: "Dynamically transition clone voice profiles to base models in server outage" }
+                                ].map((control) => (
+                                    <div key={control.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc", padding: "12px 16px", borderRadius: "10px", border: "1px solid var(--glass-border)" }}>
+                                        <div>
+                                            <div style={{ fontSize: "0.8rem", fontWeight: 800 }}>{control.name}</div>
+                                            <div style={{ fontSize: "0.65rem", color: "var(--text-secondary)", marginTop: "2px" }}>{control.desc}</div>
+                                        </div>
+                                        <label className="aicc-switch" style={{ position: "relative", display: "inline-block", width: "40px", height: "20px" }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={safetyControls[control.key]}
+                                                onChange={(e) => {
+                                                    setSafetyControls(prev => ({ ...prev, [control.key]: e.target.checked }));
+                                                    addToast({ type: "info", title: "Safety Protocol", message: `${control.name} status modified.` });
+                                                }}
+                                                style={{ display: "none" }}
+                                            />
+                                            <span className="aicc-slider" style={{
+                                                position: "absolute", cursor: "pointer", top: 0, left: 0, right: 0, bottom: 0,
+                                                background: safetyControls[control.key] ? "var(--accent-indigo)" : "#cbd5e1",
+                                                borderRadius: "99px", transition: "0.2s"
+                                            }}>
+                                                <span style={{
+                                                    position: "absolute", content: "", height: "14px", width: "14px", left: safetyControls[control.key] ? "22px" : "4px", bottom: "3px",
+                                                    background: "white", borderRadius: "50%", transition: "0.2s"
+                                                }} />
+                                            </span>
+                                        </label>
+                                    </div>
+                                ))}
+                                
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "4px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Sensitive Information Filters</label>
+                                    <textarea
+                                        className="aicc-input"
+                                        rows={2}
+                                        value={sensitiveFilters}
+                                        onChange={(e) => setSensitiveFilters(e.target.value)}
+                                        placeholder="SSN, CreditCard, Password..."
+                                        style={{ fontSize: "0.8rem", resize: "none" }}
+                                    />
+                                    <span style={{ fontSize: "0.6rem", color: "var(--text-secondary)" }}>AI will replace matching regex/words with [REDACTED] dynamically.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Card 4: API Gateway Key Manager */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            <h3 className="aicc-card-title">
+                                <span>API Keys Credentials</span>
+                                <span style={{ fontSize: "1rem" }}>🔑</span>
+                            </h3>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>ElevenLabs Production Secret Key</label>
+                                    <div className="aicc-tag-input-row" style={{ display: "flex", gap: "8px" }}>
+                                        <input
+                                            type="text"
+                                            className="aicc-input"
+                                            style={{ flex: 1, fontFamily: "monospace", fontSize: "0.8rem", background: "#f8fafc" }}
+                                            value={apiKey}
+                                            readOnly
+                                        />
+                                        <button className="aicc-btn-secondary" style={{ padding: "6px 12px" }} onClick={rotateApiKey}>Rotate Key</button>
+                                    </div>
+                                </div>
+                                
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "8px" }}>
+                                    <label style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-secondary)" }}>Webhook Authentication Secret</label>
+                                    <input 
+                                        type="text" 
+                                        className="aicc-input" 
+                                        value="whsec_084284bcf7f1e92d84719" 
+                                        readOnly 
+                                        style={{ fontFamily: "monospace", fontSize: "0.8rem", background: "#f8fafc" }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 5: Operations Compliance Audit Logs */}
                     <div className="aicc-card">
                         <h3 className="aicc-card-title">
                             <span>Operations Security Audit Logs</span>
@@ -3912,23 +4101,26 @@ export default function AICommandCenter() {
                         </h3>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem" }}>
                             <thead>
-                                <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)" }}>
+                                <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", fontWeight: 800 }}>
                                     <th style={{ padding: "10px", textAlign: "left" }}>Timestamp</th>
                                     <th style={{ padding: "10px", textAlign: "left" }}>Event Category</th>
                                     <th style={{ padding: "10px", textAlign: "left" }}>Operator</th>
+                                    <th style={{ padding: "10px", textAlign: "left" }}>IP Address</th>
                                     <th style={{ padding: "10px", textAlign: "left" }}>Details Summary</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {[
-                                    { time: "2026-07-15 17:42:10", cat: "API_ROTATION", op: "Admin (Maya)", desc: "Production primary client token successfully rotated." },
-                                    { time: "2026-07-15 15:30:45", cat: "RAG_INGESTION", op: "Operator_02", desc: "Ingested doc: RERA_Approval_Docs.pdf. Chunks: 21." },
-                                    { time: "2026-07-15 11:14:02", cat: "WORKFLOW_EDIT", op: "Admin (Maya)", desc: "Rohan twin shift limits updated: login 09:00, logout 19:00." }
+                                    { time: "2026-07-15 17:42:10", cat: "API_ROTATION", op: "Admin (Maya)", ip: "192.168.1.43", desc: "Production primary client token successfully rotated." },
+                                    { time: "2026-07-15 15:30:45", cat: "RAG_INGESTION", op: "Operator_02", ip: "192.168.1.101", desc: "Ingested doc: RERA_Approval_Docs.pdf. Chunks: 21." },
+                                    { time: "2026-07-15 11:14:02", cat: "WORKFLOW_EDIT", op: "Admin (Maya)", ip: "192.168.1.43", desc: "Rohan twin shift limits updated: login 09:00, logout 19:00." },
+                                    { time: "2026-07-15 09:12:00", cat: "RETENTION_POLICY", op: "System", ip: "Localhost", desc: "Retention period updated from 30 days to 90 days." }
                                 ].map((row, idx) => (
-                                    <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                    <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)", transition: "background 0.2s" }}>
                                         <td style={{ padding: "10px", color: "var(--text-secondary)" }}>{row.time}</td>
                                         <td style={{ padding: "10px", fontWeight: 800 }}>{row.cat}</td>
                                         <td style={{ padding: "10px" }}>{row.op}</td>
+                                        <td style={{ padding: "10px", fontFamily: "monospace" }}>{row.ip}</td>
                                         <td style={{ padding: "10px", color: "var(--text-secondary)" }}>{row.desc}</td>
                                     </tr>
                                 ))}

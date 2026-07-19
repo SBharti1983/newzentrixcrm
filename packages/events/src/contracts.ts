@@ -47,6 +47,12 @@ export interface AIAgentStatusChangePayload {
     timestamp: number;
 }
 
+export interface PersonaUpdatedPayload {
+    tenantId: number;
+    agentId: string;
+    updatedAt: string;
+}
+
 /**
  * Event naming mapping registry.
  * Maps event topic keys to their respective type-safe payloads.
@@ -57,5 +63,6 @@ export type EventMap = {
     'call:ended': CallEndedPayload;
     'payment:received': PaymentReceivedPayload;
     'ai_agent:status_change': AIAgentStatusChangePayload;
+    'persona:updated': PersonaUpdatedPayload;
 };
 

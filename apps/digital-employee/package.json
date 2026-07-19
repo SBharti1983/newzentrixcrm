@@ -12,6 +12,7 @@
     "@google/generative-ai": "^0.24.1",
     "@zentrix/database": "*",
     "@zentrix/logger": "*",
+    "@zentrix/messaging": "*",
     "@zentrix/rag": "*",
     "@zentrix/types": "*",
     "avr-vad": "^1.0.10",
