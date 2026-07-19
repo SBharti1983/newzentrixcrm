@@ -972,7 +972,7 @@ export default function AICommandCenter() {
     const [isEscalated, setIsEscalated] = useState<boolean>(false);
     const [whisperMessage, setWhisperMessage] = useState<string>("");
     const [supervisorLogs, setSupervisorLogs] = useState<string[]>([]);
-    const [suggestedResponse] = useState<string>("Offer the customer the flexible payment plan — 10% booking now, 85% on registry, 5% on possession.");
+    const [suggestedResponse] = useState<string>("Offer the customer the flexible payment plan:\n10% booking\n85% on registry\n5% on possession");
 
     const [auditLogs, setAuditLogs] = useState<any[]>([
         { 
@@ -5527,10 +5527,52 @@ export default function AICommandCenter() {
                                             </div>
 
                                             {/* 1. Whisper Advice — Primary Action */}
-                                            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                                                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "4px" }}>
-                                                    <span>📡</span> Whisper Advice
-                                                </span>
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "4px" }}>
+                                                        <span>📡</span> Whisper Advice
+                                                    </span>
+                                                    <span style={{ fontSize: "0.58rem", color: "var(--text-secondary)", fontWeight: 700 }}>Quick Actions</span>
+                                                </div>
+
+                                                {/* Quick Chips Row */}
+                                                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
+                                                    {[
+                                                        { label: "Verify Budget", text: "Verify comfort budget and payment timeline." },
+                                                        { label: "Book Site Visit", text: "Invite for a physical site visit this Sunday morning." },
+                                                        { label: "Share Pricing", text: "Provide detailed pricing sheet and unit availability list." },
+                                                        { label: "Handle Objection", text: "Address pricing concern by highlighting premium construction quality." },
+                                                        { label: "Offer Discount", text: "Offer the limited-time 2% inaugural discount for booking today." }
+                                                    ].map((chip, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => setWhisperMessage(chip.text)}
+                                                            type="button"
+                                                            style={{
+                                                                padding: "5px 10px",
+                                                                fontSize: "0.66rem",
+                                                                borderRadius: "12px",
+                                                                background: "rgba(37, 99, 235, 0.05)",
+                                                                color: "#2563eb",
+                                                                border: "1px solid rgba(37, 99, 235, 0.18)",
+                                                                cursor: "pointer",
+                                                                fontWeight: 700,
+                                                                transition: "all 0.15s"
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.background = "rgba(37, 99, 235, 0.1)";
+                                                                e.currentTarget.style.borderColor = "rgba(37, 99, 235, 0.35)";
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.background = "rgba(37, 99, 235, 0.05)";
+                                                                e.currentTarget.style.borderColor = "rgba(37, 99, 235, 0.18)";
+                                                            }}
+                                                        >
+                                                            {chip.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
                                                 <div style={{ display: "flex", gap: "6px" }}>
                                                     <input
                                                         type="text"
@@ -5557,37 +5599,71 @@ export default function AICommandCenter() {
 
                                             {/* 2. Suggested AI Response */}
                                             <div style={{
-                                                background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04))",
-                                                border: "1px solid rgba(99,102,241,0.18)",
+                                                background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 100%)",
+                                                border: "1px solid rgba(99,102,241,0.22)",
                                                 borderLeft: "4px solid #6366f1",
-                                                borderRadius: "8px",
-                                                padding: "10px 12px",
+                                                borderRadius: "10px",
+                                                padding: "12px",
                                                 display: "flex",
                                                 flexDirection: "column",
-                                                gap: "8px"
+                                                gap: "10px",
+                                                boxShadow: "0 2px 8px rgba(99,102,241,0.05)"
                                             }}>
-                                                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#4338ca", textTransform: "uppercase", letterSpacing: "0.04em" }}>🧠 Suggested AI Response</span>
-                                                <p style={{ margin: 0, fontSize: "0.72rem", color: "#1e293b", lineHeight: 1.45, fontStyle: "italic" }}>
-                                                    "{suggestedResponse}"
-                                                </p>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                        <Sparkles size={13} style={{ color: "#6366f1", animation: "pulse-red 2s infinite" }} />
+                                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, color: "#4338ca", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                                            AI Suggested Response
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                                                        <span style={{ fontSize: "0.55rem", background: "rgba(99, 102, 241, 0.1)", color: "#4338ca", padding: "1px 6px", borderRadius: "4px", fontWeight: 800 }}>
+                                                            Confidence 96%
+                                                        </span>
+                                                        <span style={{ fontSize: "0.55rem", background: "rgba(0, 0, 0, 0.04)", color: "var(--text-secondary)", padding: "1px 6px", borderRadius: "4px", fontWeight: 800 }}>
+                                                            📚 Source: Pricing Policy v4
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Suggestion Bubble */}
+                                                <div style={{
+                                                    background: "rgba(255, 255, 255, 0.75)",
+                                                    border: "1px solid rgba(99,102,241,0.12)",
+                                                    borderRadius: "8px",
+                                                    padding: "10px 14px",
+                                                    boxShadow: "inset 0 1px 2px rgba(0,0,0,0.02)"
+                                                }}>
+                                                    <p style={{ margin: 0, fontSize: "0.74rem", color: "#1e293b", lineHeight: 1.5, fontWeight: 500, whiteSpace: "pre-line" }}>
+                                                        {suggestedResponse}
+                                                    </p>
+                                                </div>
+
                                                 <div style={{ display: "flex", gap: "6px" }}>
                                                     <button
                                                         onClick={() => { handleSendWhisper && setWhisperMessage(suggestedResponse); }}
                                                         style={{
-                                                            padding: "4px 12px", fontSize: "0.68rem", fontWeight: 800,
+                                                            padding: "5px 14px", fontSize: "0.68rem", fontWeight: 800,
                                                             background: "#6366f1", color: "white", border: "none",
-                                                            borderRadius: "6px", cursor: "pointer"
+                                                            borderRadius: "6px", cursor: "pointer",
+                                                            boxShadow: "0 2px 6px rgba(99,102,241,0.2)",
+                                                            transition: "all 0.15s"
                                                         }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = "#4f46e5"}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = "#6366f1"}
                                                     >
                                                         Insert
                                                     </button>
                                                     <button
                                                         style={{
                                                             padding: "4px 12px", fontSize: "0.68rem", fontWeight: 800,
-                                                            background: "rgba(99,102,241,0.1)", color: "#4338ca",
+                                                            background: "rgba(255, 255, 255, 0.8)", color: "#4338ca",
                                                             border: "1px solid rgba(99,102,241,0.25)",
-                                                            borderRadius: "6px", cursor: "pointer"
+                                                            borderRadius: "6px", cursor: "pointer",
+                                                            transition: "all 0.15s"
                                                         }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = "rgba(99,102,241,0.05)"}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255, 255, 255, 0.8)"}
                                                     >
                                                         Edit
                                                     </button>
@@ -5650,21 +5726,47 @@ export default function AICommandCenter() {
                                                 </p>
 
                                                 {!showTakeoverConfirm ? (
-                                                    <button
-                                                        onClick={() => takeoverActive ? handleToggleTakeover() : setShowTakeoverConfirm(true)}
-                                                        style={{
-                                                            padding: "9px", fontSize: "0.73rem", fontWeight: 800,
-                                                            background: takeoverActive ? "#fee2e2" : "#dc2626",
-                                                            color: takeoverActive ? "#991b1b" : "white",
-                                                            border: takeoverActive ? "1px solid rgba(220,38,38,0.4)" : "none",
-                                                            borderRadius: "7px", cursor: "pointer",
-                                                            boxShadow: takeoverActive ? "none" : "0 3px 12px rgba(220,38,38,0.35)",
-                                                            transition: "all 0.2s",
-                                                            width: "100%"
-                                                        }}
-                                                    >
-                                                        {takeoverActive ? "↩ Release — Return to AI Rohan" : "🔴 Take Over Call"}
-                                                    </button>
+                                                    takeoverActive ? (
+                                                        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                                            <div style={{
+                                                                display: "flex", alignItems: "center", gap: "6px",
+                                                                background: "#fee2e2", color: "#b91c1c",
+                                                                border: "1px solid rgba(185, 28, 28, 0.2)",
+                                                                padding: "8px 12px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: 700
+                                                            }}>
+                                                                <span>✓</span> Supervisor has taken control
+                                                            </div>
+                                                            <button
+                                                                onClick={handleToggleTakeover}
+                                                                style={{
+                                                                    padding: "9px", fontSize: "0.72rem", fontWeight: 800,
+                                                                    background: "var(--accent-indigo)", color: "white",
+                                                                    border: "none", borderRadius: "7px", cursor: "pointer",
+                                                                    boxShadow: "0 2px 8px rgba(99, 102, 241, 0.25)",
+                                                                    transition: "all 0.15s",
+                                                                    width: "100%"
+                                                                }}
+                                                            >
+                                                                Resume AI
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setShowTakeoverConfirm(true)}
+                                                            style={{
+                                                                padding: "9px", fontSize: "0.73rem", fontWeight: 800,
+                                                                background: "#dc2626",
+                                                                color: "white",
+                                                                border: "none",
+                                                                borderRadius: "7px", cursor: "pointer",
+                                                                boxShadow: "0 3px 12px rgba(220, 38, 38, 0.35)",
+                                                                transition: "all 0.2s",
+                                                                width: "100%"
+                                                            }}
+                                                        >
+                                                            🔴 Take Control
+                                                        </button>
+                                                    )
                                                 ) : (
                                                     /* Confirmation prompt */
                                                     <div style={{
@@ -5676,7 +5778,7 @@ export default function AICommandCenter() {
                                                         flexDirection: "column",
                                                         gap: "8px"
                                                     }}>
-                                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#7f1d1d" }}>Take Over Call?</span>
+                                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#7f1d1d" }}>Take Control?</span>
                                                         <p style={{ margin: 0, fontSize: "0.68rem", color: "#991b1b", lineHeight: 1.45 }}>
                                                             The AI agent will stop speaking immediately, and you will be connected to the customer.
                                                         </p>
@@ -5699,7 +5801,7 @@ export default function AICommandCenter() {
                                                                     border: "none", borderRadius: "6px", cursor: "pointer"
                                                                 }}
                                                             >
-                                                                Take Over
+                                                                Take Control
                                                             </button>
                                                         </div>
                                                     </div>
