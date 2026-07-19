@@ -345,6 +345,7 @@ import rohanDashboardRoutes from './modules/ai/dashboard/RohanDashboardRoutes';
 import aiEmployeeRoutes from './modules/ai/dashboard/AIEmployeeRoutes';
 import nehaEventRoutes from './modules/ai/nehaBridge/NehaEventRoutes';
 import nehaDashboardRoutes from './modules/ai/dashboard/NehaDashboardRoutes';
+import webRtcRoutes from './modules/ai/dashboard/WebRtcRoutes';
 
 // ─── Route Registration ─────────────────────────────────────────
 const v1Router = express.Router();
@@ -391,6 +392,7 @@ v1Router.use('/ai/dashboard', rohanDashboardRoutes);
 v1Router.use('/ai/employees', aiEmployeeRoutes);
 v1Router.use('/neha/events', nehaEventRoutes);
 v1Router.use('/neha/dashboard', nehaDashboardRoutes);
+v1Router.use('/ai/webrtc', webRtcRoutes);
 
 // Mount versioned routing tables
 app.use('/api/v1', v1Router);
