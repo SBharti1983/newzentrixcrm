@@ -2673,7 +2673,12 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    <div className="aicc-card">
+                    <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "20px" }}>
+                        
+                        {/* Left Column: Ingestion Controls & Sources */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                            
+                            <div className="aicc-card" style={{ marginTop: 0 }}>
                         <h3 className="aicc-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <span>Knowledge Base Ingestion (RAG)</span>
@@ -2882,6 +2887,215 @@ export default function AICommandCenter() {
                             </div>
                         </div>
                     </div>
+                </div>
+
+                {/* Right Column: Ingestion Timeline & Knowledge Analytics */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                    
+                    {/* Ingestion Timeline Card (Item 8) */}
+                    <div className="aicc-card" style={{ marginTop: 0, background: "white" }}>
+                        <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                            <span>Knowledge Ingestion Activity Timeline</span>
+                            <span style={{ fontSize: "1rem" }}>🕒</span>
+                        </h3>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
+                            
+                            {/* Live Ingestion Steps when active */}
+                            {isIngesting && (
+                                <div style={{ padding: "12px", background: "rgba(99,102,241,0.03)", border: "1px solid rgba(99,102,241,0.12)", borderRadius: "8px" }}>
+                                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--accent-indigo)", display: "block", marginBottom: "8px" }}>● PROCESSING ACTIVE UPLOAD</span>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderLeft: "2px dashed var(--accent-indigo)", paddingLeft: "12px", marginLeft: "6px" }}>
+                                        
+                                        <div style={{ fontSize: "0.72rem", color: ingestStatus === 'uploading' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: ingestStatus === 'uploading' ? 800 : 500 }}>
+                                            {ingestStatus === 'uploading' ? '⏳' : '✓'} Uploading brochure.pdf
+                                        </div>
+                                        <div style={{ fontSize: "0.72rem", color: ingestStatus === 'chunking' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: ingestStatus === 'chunking' ? 800 : 500 }}>
+                                            {ingestStatus === 'chunking' ? '⏳' : ingestProgress > 50 ? '✓' : '○'} Chunking document (600 char limit)
+                                        </div>
+                                        <div style={{ fontSize: "0.72rem", color: ingestStatus === 'embedding' ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: ingestStatus === 'embedding' ? 800 : 500 }}>
+                                            {ingestStatus === 'embedding' ? '⏳' : ingestProgress > 85 ? '✓' : '○'} Generating OpenAI vectors
+                                        </div>
+                                        <div style={{ fontSize: "0.72rem", color: ingestProgress > 95 ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: ingestProgress > 95 ? 800 : 500 }}>
+                                            {ingestProgress === 100 ? '✓' : '○'} Indexing Pinecone nodes
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Static Timeline Logs */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Yesterday's Audit Trail</div>
+                                
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>📄</span>
+                                        <div style={{ width: "2px", flex: 1, background: "var(--glass-border)", margin: "4px 0" }} />
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Uploaded Brochure</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:24 AM · size: 1.4MB · doc_id: #kd1</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>✂️</span>
+                                        <div style={{ width: "2px", flex: 1, background: "var(--glass-border)", margin: "4px 0" }} />
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Chunked</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:25 AM · 8 semantic nodes generated</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>🧠</span>
+                                        <div style={{ width: "2px", flex: 1, background: "var(--glass-border)", margin: "4px 0" }} />
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Embedded</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:25 AM · text-embedding-3-small (1536 dim)</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>📁</span>
+                                        <div style={{ width: "2px", flex: 1, background: "var(--glass-border)", margin: "4px 0" }} />
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Indexed</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:26 AM · Upserted in index: zentrix-rag-bkc</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>⚙️</span>
+                                        <div style={{ width: "2px", flex: 1, background: "var(--glass-border)", margin: "4px 0" }} />
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>Agent Retrained</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:27 AM · Weights compiled dynamically</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "flex", gap: "12px" }}>
+                                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                        <span style={{ fontSize: "0.8rem" }}>✅</span>
+                                    </div>
+                                    <div>
+                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#166534" }}>Ready & Active</span>
+                                        <p style={{ fontSize: "0.68rem", color: "var(--text-secondary)", margin: "2px 0 0 0" }}>Yesterday 11:27 AM · Agent Rohan context updated</p>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* Knowledge Analytics Charts (Item 9) */}
+                    <div className="aicc-card" style={{ marginTop: 0, background: "white" }}>
+                        <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                            <span>Knowledge Analytics & Document Metrics</span>
+                            <span style={{ fontSize: "1rem" }}>📊</span>
+                        </h3>
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
+                            
+                            {/* Stats grid */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase" }}>Questions Asked</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", color: "var(--text-primary)", marginTop: "2px" }}>14,250 queries</span>
+                                    <span style={{ fontSize: "0.62rem", color: "#166534" }}>↑ 12.4% vs last week</span>
+                                </div>
+                                <div style={{ padding: "8px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase" }}>Knowledge Used</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, display: "block", color: "var(--accent-indigo)", marginTop: "2px" }}>92.4% hit rate</span>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)" }}>13,167 semantic matches</span>
+                                </div>
+                            </div>
+
+                            {/* Top vs Unused Documents */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                <div>
+                                    <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#166534", display: "block", marginBottom: "6px" }}>🔥 Top Documents</span>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        {[
+                                            { name: "Brochure_2026.pdf", hits: "342 hits" },
+                                            { name: "Pricing_Sheet.xlsx", hits: "189 hits" },
+                                            { name: "RERA_Doc.pdf", hits: "122 hits" }
+                                        ].map((d, i) => (
+                                            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#f8fafc", borderRadius: "4px", fontSize: "0.65rem" }}>
+                                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80px" }}>{d.name}</span>
+                                                <strong style={{ color: "#166534" }}>{d.hits}</strong>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "#991b1b", display: "block", marginBottom: "6px" }}>❄️ Unused Documents</span>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                                        {[
+                                            { name: "Old_Policy_2024.docx", age: "180d" },
+                                            { name: "General_FAQ_v1.txt", age: "120d" },
+                                            { name: "Temp_Contact.csv", age: "90d" }
+                                        ].map((d, i) => (
+                                            <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 6px", background: "#f8fafc", borderRadius: "4px", fontSize: "0.65rem" }}>
+                                                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "80px" }}>{d.name}</span>
+                                                <strong style={{ color: "var(--text-secondary)" }}>{d.age}</strong>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Knowledge Growth visual */}
+                            <div>
+                                <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginBottom: "6px" }}>📈 Knowledge Growth (Vector Chunks)</span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                                    {[
+                                        { label: "Week 1", val: 30, count: "120 chunks" },
+                                        { label: "Week 2", val: 55, count: "240 chunks" },
+                                        { label: "Week 3", val: 80, count: "360 chunks" },
+                                        { label: "Week 4", val: 100, count: "480 chunks" }
+                                    ].map((w, i) => (
+                                        <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "0.65rem" }}>
+                                            <span style={{ width: "40px", color: "var(--text-secondary)" }}>{w.label}</span>
+                                            <div style={{ flex: 1, height: "6px", background: "#f1f5f9", borderRadius: "3px", overflow: "hidden" }}>
+                                                <div style={{ width: `${w.val}%`, height: "100%", background: "var(--accent-indigo)" }} />
+                                            </div>
+                                            <span style={{ fontWeight: 700 }}>{w.count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Chunk Size Distribution */}
+                            <div>
+                                <span style={{ fontSize: "0.7rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginBottom: "6px" }}>📊 Chunk Size Distribution</span>
+                                <div style={{ display: "flex", gap: "4px", height: "18px", borderRadius: "4px", overflow: "hidden" }}>
+                                    <div style={{ flex: 0.15, background: "#818cf8", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.55rem", fontWeight: 800 }} title="256 Tokens (15%)">15%</div>
+                                    <div style={{ flex: 0.65, background: "var(--accent-indigo)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.55rem", fontWeight: 800 }} title="512 Tokens (65%)">65%</div>
+                                    <div style={{ flex: 0.20, background: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "0.55rem", fontWeight: 800 }} title="1024 Tokens (20%)">20%</div>
+                                </div>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.62rem", color: "var(--text-secondary)", marginTop: "4px" }}>
+                                    <span>256 Tokens (Short)</span>
+                                    <span>512 Tokens (Semantic)</span>
+                                    <span>1024 Tokens (Detailed)</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
 
                     {deleteConfirmDoc && (
                         <div className="aicc-modal-backdrop" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
