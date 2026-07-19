@@ -128,8 +128,11 @@ const INITIAL_PROFILES: Record<string, any> = {
                 { id: "rfeed1", timestamp: "14:21:05", lead_name: "Deep Yadav", action: "Intent Detected", reasoning: "Lead query matched layout plots pricing. Analyzing core intent.", message: "Haan ji, Expressway Sector 150 ke plots ke rates check kar raha hu." }
             ],
             activityLog: [
-                { id: "act1", time: "14:20:10", action: "Inbound Call Received", detail: "Connecting call from Dileep Yadav (+91 98765 43210)" },
-                { id: "act2", time: "14:15:30", action: "WhatsApp Sent", detail: "Nurture template sent to Rahul Singh" }
+                { id: "act1", time: "14:20:10", action: "Connected",             detail: "Inbound call received from Deep Yadav (+91 98765 43210). Call routing complete.",   status: "completed" },
+                { id: "act2", time: "14:21:05", action: "Payment Discussed",      detail: "Lead queried pre-approval rates. AI presented EMI options & pricing matrix.",       status: "completed" },
+                { id: "act3", time: "14:23:18", action: "WhatsApp Sent",           detail: "Sector 150 brochure, pricing sheet & layout maps dispatched via WhatsApp.",         status: "completed" },
+                { id: "act4", time: "14:25:44", action: "Site Visit Scheduled",   detail: "Lead confirmed site visit for Sunday 09:00 AM. Calendar invite sent.",             status: "active" },
+                { id: "act5", time: "—",        action: "Deal Closed",            detail: "Awaiting post-visit confirmation. Token amount collection pending.",               status: "pending" }
             ]
         }
     },
@@ -789,6 +792,7 @@ export default function AICommandCenter() {
     const [monitoringFeed, setMonitoringFeed] = useState<any[]>([]);
     const [monitoringProgress, setMonitoringProgress] = useState<number>(0);
     const [monitorTranscript, setMonitorTranscript] = useState<{ sender: "ai" | "customer" | "supervisor"; text: string; time: string }[]>([]);
+    const [liveCallSeconds, setLiveCallSeconds] = useState<number>(0);
 
     // Analytics / Security Tab States
     const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly'>('daily');
@@ -963,8 +967,12 @@ export default function AICommandCenter() {
 
     // ⚡ Supervisor takeover & whisper states
     const [takeoverActive, setTakeoverActive] = useState<boolean>(false);
+    const [showTakeoverConfirm, setShowTakeoverConfirm] = useState<boolean>(false);
+    const [agentPaused, setAgentPaused] = useState<boolean>(false);
+    const [isEscalated, setIsEscalated] = useState<boolean>(false);
     const [whisperMessage, setWhisperMessage] = useState<string>("");
     const [supervisorLogs, setSupervisorLogs] = useState<string[]>([]);
+    const [suggestedResponse] = useState<string>("Offer the customer the flexible payment plan — 10% booking now, 85% on registry, 5% on possession.");
 
     const [auditLogs, setAuditLogs] = useState<any[]>([
         { 
@@ -1143,6 +1151,14 @@ export default function AICommandCenter() {
             message: "Successfully synchronized knowledge and pipeline contexts with PostgreSQL database."
         });
     };
+
+    // Live call seconds ticker
+    useEffect(() => {
+        if (!isMonitoringActive) { setLiveCallSeconds(0); return; }
+        setLiveCallSeconds(0);
+        const ticker = setInterval(() => setLiveCallSeconds(s => s + 1), 1000);
+        return () => clearInterval(ticker);
+    }, [isMonitoringActive]);
 
     // Live Monitoring feed simulation loop
     useEffect(() => {
@@ -2071,6 +2087,28 @@ export default function AICommandCenter() {
                 message: "Live WebRTC audio is routed to your microphone now."
             });
         }
+    };
+
+    const handlePauseAgent = () => {
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        if (agentPaused) {
+            setAgentPaused(false);
+            setSupervisorLogs(prev => [...prev, `[System]: Rohan resumed speaking. Agent unpaused at ${timeStr}.`]);
+            addToast({ type: "info", title: "Agent Resumed", message: "Rohan has resumed speaking on the call." });
+        } else {
+            setAgentPaused(true);
+            setSupervisorLogs(prev => [...prev, `[Supervisor]: Agent paused at ${timeStr}. Rohan is temporarily muted.`]);
+            addToast({ type: "warning", title: "Agent Paused", message: "Rohan is temporarily muted. Resume anytime." });
+        }
+    };
+
+    const handleEscalate = () => {
+        if (isEscalated) return;
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setIsEscalated(true);
+        setSupervisorLogs(prev => [...prev, `[Escalation]: Call flagged for human team lead review at ${timeStr}.`]);
+        setMonitorTranscript(prev => [...prev, { sender: "supervisor" as const, text: "Escalated to team lead. Human review required.", time: timeStr }]);
+        addToast({ type: "error", title: "Escalated", message: "This call has been escalated to a human team lead." });
     };
 
     const clearSimulationHistory = () => {
@@ -5120,9 +5158,9 @@ export default function AICommandCenter() {
                         >
                             {/* Alert Header Badge */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "100px" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                    <span className="aicc-active-call-pulse" style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 10px #ef4444" }} />
-                                    <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#ef4444", letterSpacing: "0.05em", textTransform: "uppercase" }}>🔴 LIVE CALL</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                                    <span className="aicc-live-ring-dot" />
+                                    <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#ef4444", letterSpacing: "0.05em", textTransform: "uppercase" }}>LIVE CALL</span>
                                 </div>
                                 {isMonitoringActive && (
                                     <span style={{ background: "#ef4444", color: "white", padding: "2px 6px", borderRadius: "4px", fontSize: "0.58rem", fontWeight: 800, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.02em" }}>
@@ -5145,8 +5183,10 @@ export default function AICommandCenter() {
                                 {/* Duration */}
                                 <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                                     <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Duration</span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
-                                        {profile.liveMonitor.activeCall.duration}
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, color: isMonitoringActive ? "#ef4444" : "var(--text-primary)", fontFamily: "monospace" }}>
+                                        {isMonitoringActive
+                                            ? `${String(Math.floor(liveCallSeconds / 60)).padStart(2, "0")}:${String(liveCallSeconds % 60).padStart(2, "0")}`
+                                            : profile.liveMonitor.activeCall.duration}
                                     </span>
                                 </div>
 
@@ -5437,6 +5477,32 @@ export default function AICommandCenter() {
                                             })}
                                         </div>
 
+                                        {/* Listening Indicator + Waveform */}
+                                        <div style={{
+                                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                                            padding: "8px 12px",
+                                            background: "linear-gradient(135deg, rgba(99,102,241,0.04), rgba(139,92,246,0.03))",
+                                            border: "1px solid rgba(99,102,241,0.12)",
+                                            borderRadius: "10px"
+                                        }}>
+                                            {/* Listening badge */}
+                                            <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                                                <span className="aicc-listening-dot" />
+                                                <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#22c55e", letterSpacing: "0.02em" }}>Listening…</span>
+                                            </div>
+                                            {/* Animated waveform bars */}
+                                            <div style={{ display: "flex", gap: "3px", alignItems: "flex-end", height: "20px" }}>
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                                <span className="aicc-live-waveform-bar" />
+                                            </div>
+                                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", fontFamily: "monospace", fontWeight: 700 }}>DUPLEX ACTIVE</span>
+                                        </div>
+
                                         {/* Equalizer animation bar */}
                                         <div className="aicc-live-equalizer-wrap" style={{ background: "#ef4444", color: "white", padding: "6px 10px", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                             <span style={{ fontSize: "0.65rem", fontWeight: 800 }}>LIVE BROADCAST DECODING CHANNEL</span>
@@ -5447,59 +5513,200 @@ export default function AICommandCenter() {
                                             </div>
                                         </div>
 
-                                        {/* Supervisor Copilot Actions */}
-                                        <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                        {/* Supervisor Copilot Actions — Redesigned */}
+                                        <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "14px", display: "flex", flexDirection: "column", gap: "12px" }}>
+
+                                            {/* Header */}
                                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                                <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-primary)" }}>🛡️ Supervisor Live Copilot Actions</span>
+                                                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                                    <span>🛡️</span> Supervisor Live Copilot
+                                                </span>
                                                 {takeoverActive && (
-                                                    <span style={{ fontSize: "0.6rem", background: "#fee2e2", color: "#ef4444", padding: "1px 4px", borderRadius: "3px", fontWeight: 800 }}>⚡ TAKEOVER ACTIVE</span>
+                                                    <span style={{ fontSize: "0.6rem", background: "#fee2e2", color: "#ef4444", padding: "2px 6px", borderRadius: "4px", fontWeight: 800, letterSpacing: "0.04em" }}>⚡ TAKEOVER ACTIVE</span>
                                                 )}
                                             </div>
 
-                                            {/* Whispering Box */}
-                                            <div style={{ display: "flex", gap: "6px" }}>
-                                                <input 
-                                                    type="text" 
-                                                    value={whisperMessage} 
-                                                    onChange={(e) => setWhisperMessage(e.target.value)}
-                                                    placeholder="Type whisper instruction to Rohan (e.g. Offer Unit 402)..."
-                                                    className="aicc-input"
-                                                    style={{ flex: 1, padding: "6px 10px", fontSize: "0.72rem" }}
-                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
-                                                />
-                                                <button 
-                                                    onClick={handleSendWhisper}
-                                                    className="aicc-btn-primary"
-                                                    style={{ padding: "6px 12px", fontSize: "0.72rem", whiteSpace: "nowrap", cursor: "pointer", borderRadius: "5px" }}
+                                            {/* 1. Whisper Advice — Primary Action */}
+                                            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                                                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.04em", display: "flex", alignItems: "center", gap: "4px" }}>
+                                                    <span>📡</span> Whisper Advice
+                                                </span>
+                                                <div style={{ display: "flex", gap: "6px" }}>
+                                                    <input
+                                                        type="text"
+                                                        value={whisperMessage}
+                                                        onChange={(e) => setWhisperMessage(e.target.value)}
+                                                        placeholder="Type whisper to Rohan (e.g. Offer Unit 402)..."
+                                                        className="aicc-input"
+                                                        style={{ flex: 1, padding: "7px 10px", fontSize: "0.72rem", borderRadius: "7px", border: "1px solid rgba(59,130,246,0.3)" }}
+                                                        onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
+                                                    />
+                                                    <button
+                                                        onClick={handleSendWhisper}
+                                                        style={{
+                                                            padding: "7px 14px", fontSize: "0.72rem", fontWeight: 800,
+                                                            background: "#2563eb", color: "white", border: "none",
+                                                            borderRadius: "7px", cursor: "pointer", whiteSpace: "nowrap",
+                                                            boxShadow: "0 2px 8px rgba(37,99,235,0.25)"
+                                                        }}
+                                                    >
+                                                        Send
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* 2. Suggested AI Response */}
+                                            <div style={{
+                                                background: "linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.04))",
+                                                border: "1px solid rgba(99,102,241,0.18)",
+                                                borderLeft: "4px solid #6366f1",
+                                                borderRadius: "8px",
+                                                padding: "10px 12px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "8px"
+                                            }}>
+                                                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: "#4338ca", textTransform: "uppercase", letterSpacing: "0.04em" }}>🧠 Suggested AI Response</span>
+                                                <p style={{ margin: 0, fontSize: "0.72rem", color: "#1e293b", lineHeight: 1.45, fontStyle: "italic" }}>
+                                                    "{suggestedResponse}"
+                                                </p>
+                                                <div style={{ display: "flex", gap: "6px" }}>
+                                                    <button
+                                                        onClick={() => { handleSendWhisper && setWhisperMessage(suggestedResponse); }}
+                                                        style={{
+                                                            padding: "4px 12px", fontSize: "0.68rem", fontWeight: 800,
+                                                            background: "#6366f1", color: "white", border: "none",
+                                                            borderRadius: "6px", cursor: "pointer"
+                                                        }}
+                                                    >
+                                                        Insert
+                                                    </button>
+                                                    <button
+                                                        style={{
+                                                            padding: "4px 12px", fontSize: "0.68rem", fontWeight: 800,
+                                                            background: "rgba(99,102,241,0.1)", color: "#4338ca",
+                                                            border: "1px solid rgba(99,102,241,0.25)",
+                                                            borderRadius: "6px", cursor: "pointer"
+                                                        }}
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* 3. Secondary Actions Row: Pause Agent + Escalate */}
+                                            <div style={{ display: "flex", gap: "8px" }}>
+                                                <button
+                                                    onClick={handlePauseAgent}
+                                                    style={{
+                                                        flex: 1, padding: "7px", fontSize: "0.7rem", fontWeight: 800,
+                                                        background: agentPaused ? "rgba(245,158,11,0.22)" : "rgba(245,158,11,0.1)",
+                                                        color: agentPaused ? "#78350f" : "#92400e",
+                                                        border: agentPaused ? "1px solid rgba(245,158,11,0.55)" : "1px solid rgba(245,158,11,0.3)",
+                                                        borderRadius: "7px", cursor: "pointer",
+                                                        boxShadow: agentPaused ? "0 0 0 2px rgba(245,158,11,0.18)" : "none",
+                                                        transition: "all 0.15s"
+                                                    }}
                                                 >
-                                                    Send Whisper
+                                                    {agentPaused ? "▶️ Resume Agent" : "⏸ Pause Agent"}
+                                                </button>
+                                                <button
+                                                    onClick={handleEscalate}
+                                                    style={{
+                                                        flex: 1, padding: "7px", fontSize: "0.7rem", fontWeight: 800,
+                                                        background: isEscalated ? "rgba(124, 58, 237, 0.22)" : "rgba(124, 58, 237, 0.08)",
+                                                        color: isEscalated ? "#4c1d95" : "#6d28d9",
+                                                        border: isEscalated ? "1px solid rgba(124, 58, 237, 0.55)" : "1px solid rgba(124, 58, 237, 0.25)",
+                                                        borderRadius: "7px", cursor: isEscalated ? "default" : "pointer",
+                                                        boxShadow: isEscalated ? "0 0 0 2px rgba(124, 58, 237, 0.18)" : "none",
+                                                        transition: "all 0.15s"
+                                                    }}
+                                                >
+                                                    {isEscalated ? "⬆️ Escalated" : "⬆️ Escalate"}
                                                 </button>
                                             </div>
 
-                                            {/* Takeover Control Trigger */}
-                                            <button 
-                                                onClick={handleToggleTakeover}
-                                                className={takeoverActive ? "aicc-btn-secondary" : "aicc-btn-primary"}
-                                                style={{ 
-                                                    padding: "8px", 
-                                                    fontSize: "0.72rem", 
-                                                    fontWeight: 800, 
-                                                    background: takeoverActive ? "#fee2e2" : "#ea580c", 
-                                                    color: takeoverActive ? "#991b1b" : "white",
-                                                    border: "none",
-                                                    borderRadius: "5px",
-                                                    cursor: "pointer",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    gap: "4px",
-                                                    transition: "background 0.2s ease"
-                                                }}
-                                            >
-                                                {takeoverActive ? "Release Call control back to AI Rohan" : "⚡ FORCE CALL TAKEOVER (Mute Rohan)"}
-                                            </button>
+                                            {/* 4. Danger Zone — tinted container */}
+                                            <div style={{
+                                                background: "#fff5f5",
+                                                border: "1px solid rgba(239, 68, 68, 0.3)",
+                                                borderRadius: "10px",
+                                                padding: "12px 14px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "8px"
+                                            }}>
+                                                {/* Header */}
+                                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                    <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.06em" }}>⚠ Danger Zone</span>
+                                                    {takeoverActive && (
+                                                        <span style={{ fontSize: "0.58rem", background: "#fee2e2", color: "#b91c1c", padding: "1px 5px", borderRadius: "4px", fontWeight: 800 }}>⚡ ACTIVE</span>
+                                                    )}
+                                                </div>
 
-                                            {/* Supervisor Live Action Log Feed — Whisper Toast Rows */}
+                                                {/* Warning copy */}
+                                                <p style={{ margin: 0, fontSize: "0.68rem", color: "#7f1d1d", lineHeight: 1.5 }}>
+                                                    Taking over disconnects the AI from the conversation immediately.
+                                                </p>
+
+                                                {!showTakeoverConfirm ? (
+                                                    <button
+                                                        onClick={() => takeoverActive ? handleToggleTakeover() : setShowTakeoverConfirm(true)}
+                                                        style={{
+                                                            padding: "9px", fontSize: "0.73rem", fontWeight: 800,
+                                                            background: takeoverActive ? "#fee2e2" : "#dc2626",
+                                                            color: takeoverActive ? "#991b1b" : "white",
+                                                            border: takeoverActive ? "1px solid rgba(220,38,38,0.4)" : "none",
+                                                            borderRadius: "7px", cursor: "pointer",
+                                                            boxShadow: takeoverActive ? "none" : "0 3px 12px rgba(220,38,38,0.35)",
+                                                            transition: "all 0.2s",
+                                                            width: "100%"
+                                                        }}
+                                                    >
+                                                        {takeoverActive ? "↩ Release — Return to AI Rohan" : "🔴 Take Over Call"}
+                                                    </button>
+                                                ) : (
+                                                    /* Confirmation prompt */
+                                                    <div style={{
+                                                        background: "white",
+                                                        border: "1px solid rgba(239,68,68,0.35)",
+                                                        borderRadius: "8px",
+                                                        padding: "12px",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        gap: "8px"
+                                                    }}>
+                                                        <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#7f1d1d" }}>Take Over Call?</span>
+                                                        <p style={{ margin: 0, fontSize: "0.68rem", color: "#991b1b", lineHeight: 1.45 }}>
+                                                            The AI agent will stop speaking immediately, and you will be connected to the customer.
+                                                        </p>
+                                                        <div style={{ display: "flex", gap: "8px" }}>
+                                                            <button
+                                                                onClick={() => setShowTakeoverConfirm(false)}
+                                                                style={{
+                                                                    flex: 1, padding: "6px", fontSize: "0.7rem", fontWeight: 800,
+                                                                    background: "white", color: "#374151",
+                                                                    border: "1px solid #d1d5db", borderRadius: "6px", cursor: "pointer"
+                                                                }}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setShowTakeoverConfirm(false); handleToggleTakeover(); }}
+                                                                style={{
+                                                                    flex: 1, padding: "6px", fontSize: "0.7rem", fontWeight: 800,
+                                                                    background: "#dc2626", color: "white",
+                                                                    border: "none", borderRadius: "6px", cursor: "pointer"
+                                                                }}
+                                                            >
+                                                                Take Over
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Supervisor Live Action Log Feed */}
                                             {supervisorLogs.length > 0 && (
                                                 <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "80px", overflowY: "auto" }}>
                                                     {supervisorLogs.map((logStr, i) => {
@@ -5803,6 +6010,22 @@ export default function AICommandCenter() {
                                             </div>
                                         </div>
                                     )}
+                                    {/* AI Thinking indicator — shows while streaming is still in progress */}
+                                    {isMonitoringActive && monitoringProgress > 0 && monitoringProgress < 4 && (
+                                        <div style={{
+                                            display: "flex", alignItems: "center", gap: "8px",
+                                            padding: "12px 16px",
+                                            borderLeft: "4px solid rgba(99,102,241,0.3)",
+                                            background: "rgba(99,102,241,0.03)"
+                                        }}>
+                                            <span style={{ fontSize: "0.7rem", color: "#6366f1", fontWeight: 700 }}>🧠 AI Thinking</span>
+                                            <div style={{ display: "flex", gap: "4px", alignItems: "center", marginLeft: "2px" }}>
+                                                <span className="aicc-thinking-dot" />
+                                                <span className="aicc-thinking-dot" />
+                                                <span className="aicc-thinking-dot" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -5811,29 +6034,99 @@ export default function AICommandCenter() {
 
                     {/* 3. Collapsible Operations Audit Timeline (Bottom) */}
                     <div className="aicc-card" style={{ padding: "14px" }}>
-                        <div 
+                        <div
                             onClick={() => setShowTimeline(!showTimeline)}
                             style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
                         >
                             <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "6px" }}>
-                                <span>Historical Operations Audit Timeline ({profile.liveMonitor.activityLog.length})</span>
-                                <Clock size={18} style={{ color: "var(--text-secondary)" }} />
+                                <Clock size={16} style={{ color: "var(--accent-indigo)" }} />
+                                <span>Historical Operations Audit Timeline</span>
+                                <span style={{ fontSize: "0.65rem", background: "rgba(99,102,241,0.1)", color: "var(--accent-indigo)", padding: "1px 7px", borderRadius: "20px", fontWeight: 700 }}>
+                                    {profile.liveMonitor.activityLog.length} events
+                                </span>
                             </h3>
                             <span style={{ fontSize: "0.72rem", color: "var(--accent-indigo)", fontWeight: 700 }}>
-                                {showTimeline ? "Collapse Timeline ▲" : "Expand Timeline ▼"}
+                                {showTimeline ? "Collapse ▲" : "Expand ▼"}
                             </span>
                         </div>
+
                         {showTimeline && (
-                            <div className="aicc-timeline" style={{ marginTop: "12px", borderTop: "1px solid var(--glass-border)", paddingTop: "12px", maxHeight: "180px", overflowY: "auto", paddingRight: "4px" }}>
-                                {profile.liveMonitor.activityLog.map((log: any) => (
-                                    <div key={log.id} className="aicc-timeline-item" style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px dashed var(--glass-border)" }}>
-                                        <span className="aicc-timeline-dot" style={{ top: "6px" }} />
-                                        <div className="aicc-timeline-content" style={{ marginLeft: "20px" }}>
-                                            <h5 style={{ margin: 0, fontSize: "0.75rem", fontWeight: 800 }}>[{log.time}] {log.action}</h5>
-                                            <p style={{ margin: "2px 0 0", fontSize: "0.7rem", color: "var(--text-secondary)" }}>{log.detail}</p>
+                            <div style={{ marginTop: "16px", borderTop: "1px solid var(--glass-border)", paddingTop: "16px" }}>
+                                {profile.liveMonitor.activityLog.map((log: any, idx: number) => {
+                                    const isLast = idx === profile.liveMonitor.activityLog.length - 1;
+                                    const isCompleted = log.status === "completed";
+                                    const isActive    = log.status === "active";
+                                    const isPending   = log.status === "pending";
+
+                                    const dotColor   = isCompleted ? "#22c55e" : isActive ? "#6366f1" : "#cbd5e1";
+                                    const dotShadow  = isCompleted ? "0 0 0 3px rgba(34,197,94,0.15)"  : isActive ? "0 0 0 3px rgba(99,102,241,0.2)" : "none";
+                                    const lineColor  = isCompleted ? "#22c55e" : "#e2e8f0";
+                                    const badgeBg    = isCompleted ? "rgba(34,197,94,0.1)"  : isActive ? "rgba(99,102,241,0.1)"  : "rgba(203,213,225,0.4)";
+                                    const badgeColor = isCompleted ? "#166534"               : isActive ? "#4338ca"               : "#64748b";
+                                    const badgeText  = isCompleted ? "Completed"             : isActive ? "In Progress"          : "Pending";
+
+                                    return (
+                                        <div key={log.id} style={{ display: "flex", gap: "0", position: "relative" }}>
+                                            {/* Left: Dot + Line Column */}
+                                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "28px", flexShrink: 0, paddingTop: "2px" }}>
+                                                {/* Dot */}
+                                                <div style={{
+                                                    width: "13px", height: "13px",
+                                                    borderRadius: "50%",
+                                                    boxShadow: dotShadow,
+                                                    flexShrink: 0,
+                                                    zIndex: 1,
+                                                    border: isPending ? "2px dashed #94a3b8" : `2px solid ${dotColor}`,
+                                                    background: isPending ? "white" : dotColor
+                                                }} />
+                                                {/* Connector Line */}
+                                                {!isLast && (
+                                                    <div style={{
+                                                        width: "2px",
+                                                        flex: 1,
+                                                        background: lineColor,
+                                                        minHeight: "32px",
+                                                        marginTop: "2px",
+                                                        borderRadius: "1px"
+                                                    }} />
+                                                )}
+                                            </div>
+
+                                            {/* Right: Content */}
+                                            <div style={{ flex: 1, paddingLeft: "12px", paddingBottom: isLast ? 0 : "16px" }}>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                                                            <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                                                {log.action}
+                                                            </span>
+                                                            <span style={{
+                                                                fontSize: "0.6rem", fontWeight: 800,
+                                                                background: badgeBg, color: badgeColor,
+                                                                padding: "1px 7px", borderRadius: "10px"
+                                                            }}>
+                                                                {badgeText}
+                                                            </span>
+                                                        </div>
+                                                        <p style={{ margin: "4px 0 0", fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                                                            {log.detail}
+                                                        </p>
+                                                    </div>
+                                                    <span style={{
+                                                        fontFamily: "monospace",
+                                                        fontSize: "0.65rem", fontWeight: 700,
+                                                        color: isPending ? "#94a3b8" : "var(--text-secondary)",
+                                                        background: "rgba(0,0,0,0.04)",
+                                                        padding: "2px 6px", borderRadius: "4px",
+                                                        flexShrink: 0, marginTop: "1px"
+                                                    }}>
+                                                        {log.time}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
