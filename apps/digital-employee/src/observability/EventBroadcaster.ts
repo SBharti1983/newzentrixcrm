@@ -1,22 +1,27 @@
 /**
- * EventBroadcaster — Lightweight real-time event emitter for the Neha
- * Orchestration Platform.
+ * EventBroadcaster — Lightweight real-time event emitter for the AI
+ * Digital Employee platform.
  *
  * Lives inside the digital-employee process and POSTs lifecycle events
- * from NehaCognitiveLoop to the CRM API's Neha Events endpoint
- * (POST /api/v1/neha/events). The CRM API then fans them out via
- * Socket.IO to all connected dashboard clients in the tenant room.
+ * from the cognitive loops to the CRM API's events endpoint
+ * (POST /api/v1/neha/events — also receives employee:* events). The CRM
+ * API then fans them out via Socket.IO to all connected dashboard clients
+ * in the tenant room.
+ *
+ * Originally Neha-only (neha:* events). Item 1.5 generalizes it to emit
+ * employee:* events for all three employees (Rohan, Monika, Neha) from
+ * BaseCognitiveLoop. Neha keeps its neha:* events via its own override.
  *
  * Design principles:
  *  - **Fire-and-forget**: never blocks the cognitive loop. Every emit
  *    is wrapped in a detached promise with a short timeout; failures
  *    are logged once and swallowed.
- *  - **No throwing**: the broadcaster must never break Neha's call
- *    handling. If the CRM API is down, events are simply dropped.
+ *  - **No throwing**: the broadcaster must never break call handling.
+ *    If the CRM API is down, events are simply dropped.
  *  - **Configurable endpoint**: reads NEHA_EVENTS_URL (or falls back to
  *    CRM_API_URL + /api/v1/neha/events). Can be disabled entirely with
  *    NEHA_EVENTS_DISABLED=1 (useful for replays/tests).
- *  - **Singleton**: one axios instance reused across all Neha turns.
+ *  - **Singleton**: one axios instance reused across all turns.
  */
 
 import axios, { AxiosInstance } from 'axios';
@@ -43,6 +48,70 @@ export type NehaEventType =
     | 'neha:handoff'
     | 'neha:call_started'
     | 'neha:call_ended';
+
+// ── Generalized employee events (item 1.5) ─────────────────────────
+// Emitted by BaseCognitiveLoop.emitTurnEvents() for Rohan & Monika.
+// Neha keeps its neha:* events via its own override.
+export type EmployeeRole = 'rohan' | 'monika' | 'neha';
+
+export type EmployeeEventType =
+    | 'employee:turn_started'
+    | 'employee:track_a_response'
+    | 'employee:reasoning_complete'
+    | 'employee:reasoning_failed';
+
+export interface EmployeeEventBase {
+    type: EmployeeEventType;
+    role: EmployeeRole;
+    tenant_id: number | string;
+    persona_id?: string;
+    session_id?: string;
+    lead_id?: string | null;
+    caller_phone?: string;
+    caller_name?: string;
+    channel?: string;
+    turn_number?: number;
+    timestamp: number;
+}
+
+export interface EmployeeTurnStartedEvent extends EmployeeEventBase {
+    type: 'employee:turn_started';
+    user_message: string;
+    detected_language?: string;
+}
+
+export interface EmployeeTrackAResponseEvent extends EmployeeEventBase {
+    type: 'employee:track_a_response';
+    response_text: string;
+    latency_ms: number;
+    language: string;
+    filler_prefix?: string;
+}
+
+export interface EmployeeReasoningCompleteEvent extends EmployeeEventBase {
+    type: 'employee:reasoning_complete';
+    intent: string;
+    action: string;
+    emotion: string;
+    /** null = unknown (item 4.5); a number = the model's confidence score. */
+    confidence: number | null;
+    reasoning_latency_ms: number;
+    total_latency_ms: number;
+    next_goal?: string;
+    missing_info?: string[];
+}
+
+export interface EmployeeReasoningFailedEvent extends EmployeeEventBase {
+    type: 'employee:reasoning_failed';
+    error: string;
+    used_fallback: boolean;
+}
+
+export type EmployeeEvent =
+    | EmployeeTurnStartedEvent
+    | EmployeeTrackAResponseEvent
+    | EmployeeReasoningCompleteEvent
+    | EmployeeReasoningFailedEvent;
 
 export interface NehaEventBase {
     type: NehaEventType;
@@ -76,7 +145,8 @@ export interface NehaReasoningCompleteEvent extends NehaEventBase {
     intent: string;
     action: string;
     emotion: string;
-    confidence: number;
+    /** null = unknown (item 4.5); a number = the model's confidence score. */
+    confidence: number | null;
     reasoning_latency_ms: number;
     total_latency_ms: number;
     next_goal?: string;
@@ -130,7 +200,7 @@ export type NehaEvent =
 
 // ── Broadcaster ────────────────────────────────────────────────────
 
-class NehaEventBroadcaster {
+class EventBroadcaster {
     private http: AxiosInstance;
     private disabled: boolean;
     private emitCount = 0;
@@ -163,7 +233,7 @@ class NehaEventBroadcaster {
      * Emit a Neha lifecycle event. Fire-and-forget — returns void and
      * never throws. Safe to call from the hot path of the cognitive loop.
      */
-    emit(event: NehaEvent): void {
+    emit(event: NehaEvent | EmployeeEvent): void {
         if (this.disabled) return;
 
         this.emitCount++;
@@ -206,5 +276,11 @@ class NehaEventBroadcaster {
     }
 }
 
-const nehaEventBroadcaster = new NehaEventBroadcaster();
+const eventBroadcaster = new EventBroadcaster();
+
+// Back-compat: keep the old default export name for Neha's existing imports.
+const nehaEventBroadcaster = eventBroadcaster;
 export default nehaEventBroadcaster;
+
+// Generalized singleton for BaseCognitiveLoop (item 1.5).
+export { eventBroadcaster };

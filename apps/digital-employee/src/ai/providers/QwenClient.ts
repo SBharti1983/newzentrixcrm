@@ -22,6 +22,7 @@ export class QwenClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): Promise<string> {
         if (!this.apiKey) {
@@ -42,6 +43,7 @@ export class QwenClient implements LLMProvider {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${this.apiKey}`,
                 },
+                signal: options?.signal,
             }
         );
 
@@ -54,6 +56,7 @@ export class QwenClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): AsyncGenerator<string, void, unknown> {
         if (!this.apiKey) {
@@ -76,6 +79,7 @@ export class QwenClient implements LLMProvider {
                     stream: true,
                     ...(isJson ? { response_format: { type: 'json_object' } } : {}),
                 }),
+                signal: options?.signal,
             }
         );
 

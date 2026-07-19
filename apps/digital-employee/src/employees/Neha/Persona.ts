@@ -17,73 +17,15 @@ import {
     AccountantRouting,
     AccountantHandoffTarget,
     StaffDirectoryEntry,
-    SupportedLanguage,
-    AIEmployeeRole,
-    PersonaNotFoundError,
 } from '@zentrix/types';
 import { loadPrompt } from '../../utils/prompts';
+import { sanitizeUserField } from '../../utils/promptTemplate';
+import { BasePersonaEngine } from '../BasePersonaEngine';
 
-// ── In-memory persona cache (refreshed every 5 min) ─────────────────
-interface PersonaCacheEntry {
-    persona: DbAIEmployeePersona;
-    cached_at: number;
-}
-
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const personaCache = new Map<number, PersonaCacheEntry>();
-
-export class NehaPersonaEngine {
-    // ── Persona Loading ─────────────────────────────────────────────
-
-    async getPersona(tenantId: number): Promise<DbAIEmployeePersona> {
-        const cached = personaCache.get(tenantId);
-        if (cached && Date.now() - cached.cached_at < CACHE_TTL_MS) {
-            return cached.persona;
-        }
-
-        try {
-            const { rows } = await pool.query(
-                `SELECT * FROM ai_employee_personas
-                 WHERE tenant_id = $1 AND role = 'neha' AND is_active = TRUE
-                 LIMIT 1`,
-                [tenantId]
-            );
-
-            if (rows.length === 0) {
-                throw new PersonaNotFoundError(tenantId);
-            }
-
-            const persona = rows[0] as DbAIEmployeePersona;
-            personaCache.set(tenantId, { persona, cached_at: Date.now() });
-            return persona;
-        } catch (err) {
-            if (err instanceof PersonaNotFoundError) throw err;
-            logger.error(`[NehaPersona] Failed to load persona for tenant ${tenantId}: ${err}`);
-            throw new PersonaNotFoundError(tenantId);
-        }
-    }
-
-    async getPersonaByRole(tenantId: number, role: AIEmployeeRole): Promise<DbAIEmployeePersona> {
-        try {
-            const { rows } = await pool.query(
-                `SELECT * FROM ai_employee_personas
-                 WHERE tenant_id = $1 AND role = $2
-                 LIMIT 1`,
-                [tenantId, role]
-            );
-            if (rows.length === 0) throw new PersonaNotFoundError(tenantId);
-            return rows[0] as DbAIEmployeePersona;
-        } catch (err) {
-            if (err instanceof PersonaNotFoundError) throw err;
-            logger.error(`[NehaPersona] Failed to load persona role=${role} tenant=${tenantId}: ${err}`);
-            throw new PersonaNotFoundError(tenantId);
-        }
-    }
-
-    invalidateCache(tenantId: number): void {
-        personaCache.delete(tenantId);
-        logger.info(`[NehaPersona] Cache invalidated for tenant ${tenantId}`);
-    }
+export class NehaPersonaEngine extends BasePersonaEngine {
+    protected readonly role = 'neha' as const;
+    protected readonly logTag = '[NehaPersona]';
+    // Neha's persona query filters on is_active = TRUE (default requireActive = true).
 
     // ── System Prompt Builder ───────────────────────────────────────
 
@@ -160,8 +102,9 @@ Never use Devnagari. Keep it professional yet warm.`;
 
     private buildManagerDirectoryBlock(context: NehaContext): string {
         if (context.manager_directory && context.manager_directory.length > 0) {
+            // item 2.4: sanitize manager names/titles (defensive — from DB, not callers)
             return context.manager_directory
-                .map((s: StaffDirectoryEntry) => `- ${s.name}: ${s.title || 'Manager'} (role=${s.role})`)
+                .map((s: StaffDirectoryEntry) => `- ${sanitizeUserField(s.name, 100)}: ${sanitizeUserField(s.title, 100) || 'Manager'} (role=${s.role})`)
                 .join('\n');
         }
         return `- Surendra: Manager (handles legal/audit, fee waivers, complaints, human authorization)`;
@@ -183,9 +126,10 @@ Never use Devnagari. Keep it professional yet warm.`;
     private buildCustomerBlock(context: NehaContext): string {
         const c = context.caller;
         if (!c) return 'CUSTOMER: Unknown caller. Ask for their name and GSTIN/PAN.';
-        const parts: string[] = [`Name: ${c.name}`];
+        // item 2.4: caller name/email are user-controlled — sanitize before interpolation.
+        const parts: string[] = [`Name: ${sanitizeUserField(c.name, 100)}`];
         if (c.phone) parts.push(`Phone: ${c.phone}`);
-        if (c.email) parts.push(`Email: ${c.email}`);
+        if (c.email) parts.push(`Email: ${sanitizeUserField(c.email, 150)}`);
         if (c.gstin) parts.push(`GSTIN: ${c.gstin}`);
         if (c.pan) parts.push(`PAN: ${c.pan}`);
         parts.push(`Existing customer: ${c.is_existing_customer ? 'Yes' : 'No'}`);
@@ -334,35 +278,6 @@ ${s.last_user_message ? `Last User Message: "${s.last_user_message}"` : ''}`;
     ): StaffDirectoryEntry | null {
         if (target === 'voicemail') return null;
         return context.manager_directory.find(s => s.role === target) || null;
-    }
-
-    // ── Voice Configuration ─────────────────────────────────────────
-
-    getVoiceForLanguage(
-        persona: DbAIEmployeePersona,
-        language: SupportedLanguage
-    ): string {
-        const voiceConfig = persona.voice_config;
-        const indianLangs: SupportedLanguage[] = ['hindi', 'tamil', 'telugu', 'kannada', 'marathi', 'bengali', 'gujarati', 'punjabi', 'malayalam', 'odia'];
-
-        if (language === 'english') return voiceConfig.english_voice;
-        if (language === 'hinglish' || indianLangs.includes(language)) {
-            return voiceConfig.code_mix_voice || voiceConfig.hindi_voice;
-        }
-        return voiceConfig.hindi_voice;
-    }
-
-    getTTSParams(persona: DbAIEmployeePersona): { speed: number; pitch: number } {
-        const vc = persona.voice_config;
-        return { speed: vc.speed || 1.0, pitch: vc.pitch || 1.0 };
-    }
-
-    // ── Filler Word Injection ───────────────────────────────────────
-
-    getRandomFiller(persona: DbAIEmployeePersona): string | null {
-        const fillers = persona.persona_config.filler_words;
-        if (!fillers || fillers.length === 0) return null;
-        return fillers[Math.floor(Math.random() * fillers.length)];
     }
 
     // ── Greeting Generator ──────────────────────────────────────────

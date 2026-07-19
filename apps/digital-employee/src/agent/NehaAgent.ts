@@ -63,6 +63,7 @@ class NehaCognitiveLoop extends BaseCognitiveLoop<
     AccountantReasoningOutput
 > {
     protected readonly logTag = '[NehaCognitiveLoop]';
+    protected readonly role = 'neha' as const;
 
     // ── Hooks ────────────────────────────────────────────────────────
 
@@ -347,7 +348,8 @@ class NehaCognitiveLoop extends BaseCognitiveLoop<
                     intent: r.intent || 'unknown',
                     action: r.action || 'none',
                     emotion: r.emotion || 'neutral',
-                    confidence: (r.emotion_score ?? 0.5),
+                    // item 4.5: distinguish null (unknown) from a numeric score.
+                    confidence: typeof r.emotion_score === 'number' ? r.emotion_score : null,
                     reasoning_latency_ms: payload?.reasoning_latency_ms || 0,
                     total_latency_ms: payload?.total_latency_ms || 0,
                     next_goal: r.next_goal,

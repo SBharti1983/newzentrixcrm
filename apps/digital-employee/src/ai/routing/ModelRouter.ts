@@ -85,15 +85,23 @@ export class ModelRouter {
     static async generateResponse(
         prompt: string,
         isJson: boolean = true,
-        task: TaskType = 'fast'
+        task: TaskType = 'fast',
+        signal?: AbortSignal
     ): Promise<any> {
         const providers = this.getProviders(task);
         let lastError: Error | null = null;
 
         for (const provider of providers) {
+            // If the caller aborted (e.g. Track B timeout or voice barge-in),
+            // stop trying further providers — the in-flight request was
+            // already cancelled via the signal passed to provider.generate().
+            if (signal?.aborted) {
+                logger.warn(`[ModelRouter] Aborted before ${provider.constructor.name} attempt for task "${task}".`);
+                throw new DOMException('Aborted', 'AbortError');
+            }
             try {
                 logger.info(`[ModelRouter] Attempting generation for task "${task}" with ${provider.constructor.name}...`);
-                const text = await provider.generate(prompt, { isJson });
+                const text = await provider.generate(prompt, { isJson, signal });
 
                 if (isJson) {
                     const cleaned = text
@@ -104,6 +112,12 @@ export class ModelRouter {
                 }
                 return text;
             } catch (error: any) {
+                // Propagate aborts immediately — don't fall through to the
+                // next provider, since the caller intentionally cancelled.
+                if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED' || signal?.aborted) {
+                    logger.warn(`[ModelRouter] Request aborted during ${provider.constructor.name} for task "${task}".`);
+                    throw error;
+                }
                 lastError = error;
                 logger.warn(
                     `[ModelRouter] Provider ${provider.constructor.name} failed for task "${task}": ${error.message}. Trying next fallback...`
@@ -120,27 +134,43 @@ export class ModelRouter {
     static async *generateResponseStream(
         prompt: string,
         isJson: boolean = false,
-        task: TaskType = 'fast'
+        task: TaskType = 'fast',
+        signal?: AbortSignal
     ): AsyncGenerator<string, void, unknown> {
         const providers = this.getProviders(task);
         let lastError: Error | null = null;
 
         for (const provider of providers) {
+            // Honor abort before attempting each provider (barge-in / timeout).
+            if (signal?.aborted) {
+                logger.warn(`[ModelRouter] Stream aborted before ${provider.constructor.name} attempt for task "${task}".`);
+                throw new DOMException('Aborted', 'AbortError');
+            }
             try {
                 if (provider.generateStream) {
                     logger.info(`[ModelRouter] Attempting stream generation for task "${task}" with ${provider.constructor.name}...`);
-                    const stream = provider.generateStream(prompt, { isJson });
+                    const stream = provider.generateStream(prompt, { isJson, signal });
                     for await (const chunk of stream) {
+                        // Stop yielding as soon as the caller aborts.
+                        if (signal?.aborted) {
+                            logger.warn(`[ModelRouter] Stream aborted mid-flight from ${provider.constructor.name}.`);
+                            throw new DOMException('Aborted', 'AbortError');
+                        }
                         yield chunk;
                     }
                     return;
                 } else {
                     logger.warn(`[ModelRouter] Provider ${provider.constructor.name} does not support streaming, falling back to generate()`);
-                    const text = await provider.generate(prompt, { isJson });
+                    const text = await provider.generate(prompt, { isJson, signal });
                     yield text;
                     return;
                 }
             } catch (error: any) {
+                // Propagate aborts immediately — don't fall through.
+                if (error?.name === 'AbortError' || error?.code === 'ERR_CANCELED' || signal?.aborted) {
+                    logger.warn(`[ModelRouter] Stream aborted during ${provider.constructor.name} for task "${task}".`);
+                    throw error;
+                }
                 lastError = error;
                 logger.warn(
                     `[ModelRouter] Stream provider ${provider.constructor.name} failed for task "${task}": ${error.message}. Trying next fallback...`

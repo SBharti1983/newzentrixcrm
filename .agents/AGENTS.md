@@ -87,4 +87,9 @@ graph TD
 * **Module Boundary Isolation:** Domain modules inside the API server should communicate via Event Bus topics (`@zentrix/events`) or explicitly exported service interfaces rather than directly accessing private implementation schemas of sibling modules.
 
 
+---
 
+## 🔑 Pinned Testing Credentials
+Always use these credentials for local testing, browser simulations, and database logins:
+* **Username/Email**: `admin@mayainfratech.in`
+* **Password**: `Maya@2026`

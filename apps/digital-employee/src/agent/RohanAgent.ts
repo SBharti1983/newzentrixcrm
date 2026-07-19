@@ -53,6 +53,7 @@ class RohanCognitiveLoop extends BaseCognitiveLoop<
     ReasoningOutput
 > {
     protected readonly logTag = '[RohanCognitiveLoop]';
+    protected readonly role = 'rohan' as const;
 
     // ── Hooks ────────────────────────────────────────────────────────
 

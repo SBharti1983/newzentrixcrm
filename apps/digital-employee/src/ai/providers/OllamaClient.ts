@@ -17,6 +17,7 @@ export class OllamaClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): Promise<string> {
         const isJson = options?.isJson ?? true;
@@ -31,6 +32,9 @@ export class OllamaClient implements LLMProvider {
                 },
                 stream: false,
                 ...(isJson ? { format: 'json' } : {})
+            },
+            {
+                signal: options?.signal
             }
         );
 
@@ -43,6 +47,7 @@ export class OllamaClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): AsyncGenerator<string, void, unknown> {
         const isJson = options?.isJson ?? true;
@@ -63,6 +68,7 @@ export class OllamaClient implements LLMProvider {
                     stream: true,
                     ...(isJson ? { format: 'json' } : {})
                 }),
+                signal: options?.signal
             }
         );
 

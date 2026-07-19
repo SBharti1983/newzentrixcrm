@@ -16,6 +16,7 @@
 
 import { WebSocket } from 'ws';
 import { logger } from '@zentrix/logger';
+import { redisClient } from '@zentrix/database';
 import { ASRProvider } from './ASRProvider';
 import { TTSProvider } from './TTSProvider';
 import { BargeInHandler } from './BargeInHandler';
@@ -30,6 +31,10 @@ const SPECULATIVE_MIN_CHARS = 6;
 const SPECULATIVE_STABLE_INTERIMS = 2;
 /** Max concurrent speculative starts per session (debounce). */
 const SPECULATIVE_COOLDOWN_MS = 1200;
+/** Max concurrent active voice sessions per tenant (item 3.5). 0 = unlimited. */
+const MAX_CONCURRENT_SESSIONS_PER_TENANT = Number(process.env.MAX_CONCURRENT_SESSIONS_PER_TENANT || 0);
+/** WS close code for "service overloaded" (item 3.5). */
+const WS_CLOSE_TRY_AGAIN_LATER = 1013;
 
 import { SentenceQueue } from './SentenceQueue';
 import { DEFAULT_FILLERS } from './FillerWordManager';
@@ -64,6 +69,9 @@ export interface BaseVoiceSession {
     lastSpeculativeAt: number;
     turnFinalized: boolean;
     turnStartedAt: number;
+
+    // item 3.4: event-driven waiters for speculative completion
+    speculativeResolvers?: Array<(result: any | null) => void>;
 
     // Phase 3 outcome tracking
     startedAt?: number;
@@ -104,6 +112,37 @@ export abstract class BaseVoiceAdapter<
     protected sessions = new Map<string, TSession>();
     protected metrics: TMetrics[] = [];
     protected static fillerAudioCache = new Map<string, Buffer>();
+
+    // ── Redis L2 filler audio cache (item 3.2) ──────────────────────
+    // The in-process `fillerAudioCache` Map is L1 (per-pod). Redis is L2,
+    // shared across all pods so each pod doesn't re-synthesize the same
+    // fillers. Buffers are base64-encoded for string transport in Redis.
+    private static readonly FILLER_REDIS_PREFIX = 'filler:';
+    private static readonly FILLER_REDIS_TTL_SEC = 86400; // 24h
+
+    /** Try to fetch a filler buffer from Redis L2. Returns null on miss/error. */
+    private static async getFillerFromRedis(key: string): Promise<Buffer | null> {
+        try {
+            const b64 = await redisClient.get(`${BaseVoiceAdapter.FILLER_REDIS_PREFIX}${key}`);
+            if (!b64 || typeof b64 !== 'string') return null;
+            return Buffer.from(b64, 'base64');
+        } catch {
+            return null;
+        }
+    }
+
+    /** Store a filler buffer in Redis L2 (fire-and-forget, best-effort). */
+    private static setFillerInRedis(key: string, buf: Buffer): void {
+        redisClient
+            .setEx(
+                `${BaseVoiceAdapter.FILLER_REDIS_PREFIX}${key}`,
+                BaseVoiceAdapter.FILLER_REDIS_TTL_SEC,
+                buf.toString('base64'),
+            )
+            .catch(() => {
+                /* ignore — Redis is best-effort for fillers */
+            });
+    }
 
     // ── Abstract hooks (subclasses must implement) ──────────────────
 
@@ -161,6 +200,26 @@ export abstract class BaseVoiceAdapter<
         const { sessionId, tenantId, language } = metadata;
         const tag = this.getAdapterTag();
 
+        // item 3.5: enforce per-tenant concurrent session limit
+        if (MAX_CONCURRENT_SESSIONS_PER_TENANT > 0) {
+            let activeForTenant = 0;
+            for (const s of this.sessions.values()) {
+                if (s.tenantId === tenantId && s.isActive) activeForTenant++;
+            }
+            if (activeForTenant >= MAX_CONCURRENT_SESSIONS_PER_TENANT) {
+                logger.warn(
+                    `${tag} Rejecting session ${sessionId}: tenant ${tenantId} has ` +
+                    `${activeForTenant}/${MAX_CONCURRENT_SESSIONS_PER_TENANT} active sessions`
+                );
+                try {
+                    ws.close(WS_CLOSE_TRY_AGAIN_LATER, 'Too many concurrent sessions for tenant');
+                } catch {
+                    /* socket may already be closed */
+                }
+                return;
+            }
+        }
+
         logger.info(`${tag} New voice session: ${sessionId} (tenant: ${tenantId})`);
 
         const asr = new ASRProvider(language || 'hinglish');
@@ -183,24 +242,41 @@ export abstract class BaseVoiceAdapter<
         // Wire filler callback
         filler.onDue((fillerText) => {
             if (!session.isActive || ws.readyState !== WebSocket.OPEN) return;
-            
+
             const engine = this.getPersonaEngine();
             engine.getPersona(tenantId).then((persona) => {
                 const voiceId = engine.getVoiceForLanguage(persona, session.language);
                 const key = `${voiceId}_${fillerText}`;
                 const cached = BaseVoiceAdapter.fillerAudioCache.get(key);
                 if (cached) {
-                    logger.info(`${tag} Playing CACHED filler: "${fillerText}"`);
+                    logger.info(`${tag} Playing CACHED filler (L1): "${fillerText}"`);
                     session.bargeIn.setTTSPlaying(true);
                     session.tts.streamBuffer(cached, ws)
                         .finally(() => {
                             session.bargeIn.setTTSPlaying(false);
                         });
                 } else {
-                    logger.info(`${tag} Cache miss for filler: "${fillerText}" - streaming fresh`);
-                    this.streamText(session, fillerText).catch((e) =>
-                        logger.warn(`${tag} filler stream failed: ${e.message}`)
-                    );
+                    // L1 miss → try Redis L2 before synthesizing fresh (item 3.2)
+                    BaseVoiceAdapter.getFillerFromRedis(key).then((l2buf) => {
+                        if (l2buf) {
+                            logger.info(`${tag} Playing CACHED filler (L2/Redis): "${fillerText}"`);
+                            BaseVoiceAdapter.fillerAudioCache.set(key, l2buf); // promote to L1
+                            session.bargeIn.setTTSPlaying(true);
+                            session.tts.streamBuffer(l2buf, ws)
+                                .finally(() => {
+                                    session.bargeIn.setTTSPlaying(false);
+                                });
+                        } else {
+                            logger.info(`${tag} Cache miss (L1+L2) for filler: "${fillerText}" - streaming fresh`);
+                            this.streamText(session, fillerText).catch((e) =>
+                                logger.warn(`${tag} filler stream failed: ${e.message}`)
+                            );
+                        }
+                    }).catch(() => {
+                        this.streamText(session, fillerText).catch((e) =>
+                            logger.warn(`${tag} filler stream failed: ${e.message}`)
+                        );
+                    });
                 }
             }).catch((err) => {
                 this.streamText(session, fillerText).catch((e) =>
@@ -270,6 +346,7 @@ export abstract class BaseVoiceAdapter<
                     tts.synthesizeToBuffer(text, voiceId, ttsParams, session.language)
                         .then((buf) => {
                             BaseVoiceAdapter.fillerAudioCache.set(key, buf);
+                            BaseVoiceAdapter.setFillerInRedis(key, buf); // populate L2 (item 3.2)
                             logger.info(`${tag} Cached filler: "${text}" (${buf.length} bytes)`);
                         })
                         .catch((e) => {
@@ -342,6 +419,7 @@ export abstract class BaseVoiceAdapter<
                 if (!session.isActive) return;
                 session.speculativeResult = result;
                 session.speculativeInFlight = false;
+                this.resolveSpeculativeWaiters(session, result);
                 if (session.turnFinalized) {
                     this.commitResponse(session, result).catch((e) =>
                         logger.error(`${tag} speculative commit failed: ${e.message}`)
@@ -350,8 +428,23 @@ export abstract class BaseVoiceAdapter<
             })
             .catch((err) => {
                 session.speculativeInFlight = false;
+                this.resolveSpeculativeWaiters(session, null);
                 logger.warn(`${tag} Speculative LLM failed: ${err.message}`);
             });
+    }
+
+    /**
+     * item 3.4: Resolve all pending speculative waiters (event-driven).
+     * Called whenever speculativeInFlight flips to false (success, failure, or barge-in).
+     */
+    private resolveSpeculativeWaiters(session: TSession, result: any): void {
+        const waiters = session.speculativeResolvers;
+        if (waiters && waiters.length > 0) {
+            session.speculativeResolvers = [];
+            for (const resolve of waiters) {
+                try { resolve(result); } catch { /* ignore */ }
+            }
+        }
     }
 
     // ── Final transcript → commit turn ──────────────────────────────
@@ -414,11 +507,24 @@ export abstract class BaseVoiceAdapter<
     }
 
     private async waitForSpeculative(session: TSession, timeoutMs: number): Promise<TResult | null> {
-        const start = Date.now();
-        while (session.speculativeInFlight && Date.now() - start < timeoutMs) {
-            await new Promise((r) => setTimeout(r, 20));
+        // item 3.4: event-driven — no busy-poll. If speculative already done,
+        // return immediately; otherwise register a waiter resolved on completion
+        // (or barge-in), racing against the timeout.
+        if (!session.speculativeInFlight) {
+            return session.speculativeResult;
         }
-        return session.speculativeResult;
+        return new Promise<TResult | null>((resolve) => {
+            let settled = false;
+            const done = (v: TResult | null) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                resolve(v);
+            };
+            const timer = setTimeout(() => done(session.speculativeResult), timeoutMs);
+            if (!session.speculativeResolvers) session.speculativeResolvers = [];
+            session.speculativeResolvers.push((r) => done(r as TResult | null));
+        });
     }
 
     // ── Commit: stream the response via TTS ──────────────────────────
@@ -512,6 +618,7 @@ export abstract class BaseVoiceAdapter<
         session.filler.disarm();
         session.speculativeInFlight = false;
         session.speculativeResult = null;
+        this.resolveSpeculativeWaiters(session, null); // item 3.4: wake waiters
         session.turnFinalized = false;
         session.speculativeSentences = [];
         session.streamedAny = false;

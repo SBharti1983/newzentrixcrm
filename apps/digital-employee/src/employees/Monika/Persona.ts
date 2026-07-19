@@ -15,6 +15,7 @@ import {
     StaffDirectoryEntry,
 } from '@zentrix/types';
 import { loadPrompt } from '../../utils/prompts';
+import { sanitizeUserField } from '../../utils/promptTemplate';
 import { BasePersonaEngine } from '../BasePersonaEngine';
 
 export class MonikaPersonaEngine extends BasePersonaEngine {
@@ -56,7 +57,8 @@ export class MonikaPersonaEngine extends BasePersonaEngine {
         prompt += `You can transfer callers to the following departments/managers:\n`;
         if (context.staff_directory && context.staff_directory.length > 0) {
             context.staff_directory.forEach((staff: StaffDirectoryEntry) => {
-                prompt += `- ${staff.name}: role = ${staff.role}. Title: ${staff.title || 'Staff'}.\n`;
+                // item 2.4: sanitize staff names (defensive — they come from DB, not callers)
+                prompt += `- ${sanitizeUserField(staff.name, 100)}: role = ${staff.role}. Title: ${sanitizeUserField(staff.title, 100) || 'Staff'}.\n`;
             });
         } else {
             prompt += `- Surendra: Sales Manager (handles pricing discounts, complex inquiries, complaints)\n`;

@@ -1371,3 +1371,499 @@
     }
 }
 
+/* ── Emotion Controls Card & Grid ── */
+.aicc-emotion-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.aicc-emotion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.aicc-emotion-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.aicc-emotion-stars {
+    display: flex;
+    gap: 2px;
+    color: #f59e0b;
+}
+
+.aicc-emotion-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0 0 20px 0;
+}
+
+.aicc-emotion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.aicc-emotion-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border: 1.5px solid var(--glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.aicc-emotion-tile:hover {
+    transform: translateY(-2px);
+    background: white;
+    border-color: var(--accent-indigo);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.aicc-emotion-tile.active {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 1px var(--accent-indigo), 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.aicc-emotion-emoji {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.aicc-emotion-tile:hover .aicc-emotion-emoji {
+    transform: scale(1.15);
+}
+
+.aicc-emotion-tile.active .aicc-emotion-emoji {
+    animation: wiggle 0.5s ease-in-out;
+}
+
+.aicc-emotion-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg) scale(1.1); }
+    25% { transform: rotate(-10deg) scale(1.1); }
+    75% { transform: rotate(10deg) scale(1.1); }
+}
+
+[data-theme='dark'] .aicc-emotion-tile {
+    background: rgba(30, 41, 59, 0.5);
+}
+[data-theme='dark'] .aicc-emotion-tile:hover {
+    background: rgba(30, 41, 59, 0.8);
+}
+[data-theme='dark'] .aicc-emotion-tile.active {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+/* ── Interruptions (Barge-In) Card ── */
+.aicc-bargein-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aicc-bargein-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.aicc-bargein-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.aicc-bargein-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 0 0 20px 0;
+}
+
+.aicc-bargein-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.aicc-bargein-toggle-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Toggle Switch Styling */
+.aicc-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.aicc-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.aicc-slider-round {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.aicc-slider-round:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+.aicc-switch input:checked + .aicc-slider-round {
+    background-color: var(--accent-indigo);
+}
+
+.aicc-switch input:checked + .aicc-slider-round:before {
+    transform: translateX(20px);
+}
+
+/* Barge-in Controls Group */
+.aicc-bargein-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.aicc-bargein-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.aicc-bargein-field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.aicc-bargein-field-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.aicc-bargein-field-val {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--accent-indigo);
+}
+
+.aicc-bargein-caption {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+[data-theme='dark'] .aicc-bargein-toggle-row {
+    background: rgba(30, 41, 59, 0.5);
+}
+
+/* ── Call Personality Profiles styles ── */
+.aicc-profiles-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0;
+}
+
+.aicc-profile-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.aicc-profile-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border: 1.5px solid var(--glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.aicc-profile-item:hover {
+    transform: translateY(-2px);
+    background: white;
+    border-color: var(--accent-indigo);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.aicc-profile-item.active {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 1px var(--accent-indigo), 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.aicc-profile-emoji {
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aicc-profile-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ── Speaking Style Card & Grid ── */
+.aicc-style-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aicc-style-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.aicc-style-tile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border: 1.5px solid var(--glass-border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.aicc-style-tile:hover {
+    transform: translateY(-2px);
+    background: white;
+    border-color: var(--accent-indigo);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.aicc-style-tile.active {
+    background: rgba(99, 102, 241, 0.06);
+    border-color: var(--accent-indigo);
+    box-shadow: 0 0 0 1px var(--accent-indigo), 0 4px 12px rgba(99, 102, 241, 0.12);
+}
+
+.aicc-style-emoji {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.aicc-style-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Dark mode compatibility for updates */
+[data-theme='dark'] .aicc-profile-item,
+[data-theme='dark'] .aicc-style-tile {
+    background: rgba(30, 41, 59, 0.5);
+}
+
+[data-theme='dark'] .aicc-profile-item:hover,
+[data-theme='dark'] .aicc-style-tile:hover {
+    background: rgba(30, 41, 59, 0.8);
+}
+
+[data-theme='dark'] .aicc-profile-item.active,
+[data-theme='dark'] .aicc-style-tile.active {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+/* ── Collapsible Domain Sections & Progress Tracker ── */
+.aicc-progress-card {
+    background: var(--glass-bg);
+    border: 1.5px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.aicc-collapsible-section {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.aicc-collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    cursor: pointer;
+    background: transparent;
+    user-select: none;
+    transition: background 0.2s ease;
+}
+
+.aicc-collapsible-header:hover {
+    background: rgba(99, 102, 241, 0.02);
+}
+
+.aicc-collapsible-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.aicc-collapsible-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.aicc-status-indicator {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+
+.aicc-status-indicator.complete {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.aicc-status-indicator.pending {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+}
+
+.aicc-collapsible-trigger {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.aicc-collapsible-section.collapsed .aicc-collapsible-trigger {
+    transform: rotate(-90deg);
+}
+
+.aicc-collapsible-content {
+    padding: 0 24px 24px 24px;
+    border-top: 1px solid var(--glass-border);
+    background: transparent;
+    animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+[data-theme='dark'] .aicc-collapsible-header:hover {
+    background: rgba(30, 41, 59, 0.3);
+}
+
+[data-theme='dark'] .aicc-status-indicator.complete {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+}
+
+[data-theme='dark'] .aicc-status-indicator.pending {
+    background: rgba(30, 41, 59, 0.6);
+    color: #94a3b8;
+}
+
+/* ─── Live Voice Test Soundwave Equalizer Bars ─── */
+@keyframes eq-bounce {
+    0% { transform: scaleY(0.4); }
+    100% { transform: scaleY(1); }
+}
+

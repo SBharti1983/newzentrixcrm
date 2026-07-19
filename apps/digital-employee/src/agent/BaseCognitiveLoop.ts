@@ -53,6 +53,7 @@ import {
     SupportedLanguage,
     DbAIEmployeePersona,
 } from '@zentrix/types';
+import { eventBroadcaster, EmployeeRole } from '../observability/EventBroadcaster';
 
 /**
  * Structural shape satisfied by all three cognitive-result variants
@@ -112,6 +113,9 @@ export abstract class BaseCognitiveLoop<
 
     /** Log tag, e.g. '[RohanCognitiveLoop]'. */
     protected abstract readonly logTag: string;
+
+    /** The AI employee role this loop manages ('rohan' | 'monika' | 'neha'). */
+    protected abstract readonly role: EmployeeRole;
 
     /** Fetch this employee's persona for the tenant. */
     protected abstract fetchPersona(tenantId: number): Promise<DbAIEmployeePersona>;
@@ -215,19 +219,108 @@ export abstract class BaseCognitiveLoop<
     }
 
     /**
-     * Optional per-turn observability hook (item 1.5). Subclasses can emit
-     * `employee:turn_started`, `employee:track_a_response`,
-     * `employee:reasoning_complete`, `employee:reasoning_failed` events.
-     * Default no-op; Neha overrides to keep its existing neha:* events.
+     * Per-turn observability hook (item 1.5). The base implementation emits
+     * generic `employee:turn_started`, `employee:track_a_response`,
+     * `employee:reasoning_complete`, `employee:reasoning_failed` events for
+     * all three employees via the shared EventBroadcaster. Neha overrides
+     * this to keep its existing `neha:*` event stream (and avoid double
+     * emission).
      */
-    protected emitTurnEvents(_event: {
+    protected emitTurnEvents(event: {
         type: 'turn_started' | 'track_a_response' | 'reasoning_complete' | 'reasoning_failed';
         input: TInput;
         persona: DbAIEmployeePersona;
         context: TContext;
         payload?: any;
     }): void {
-        // no-op by default
+        const { input, persona, context, payload } = event;
+        const { tenant_id, lead_id, user_phone, caller_name, channel } = input as any;
+        const turnNumber =
+            payload?.turn_number ?? (context as any).conversation_state?.turn_count;
+        const ts = Date.now();
+
+        switch (event.type) {
+            case 'turn_started':
+                eventBroadcaster.emit({
+                    type: 'employee:turn_started',
+                    role: this.role,
+                    tenant_id,
+                    persona_id: persona.id,
+                    lead_id: lead_id || null,
+                    caller_phone: user_phone,
+                    caller_name,
+                    channel,
+                    turn_number: turnNumber,
+                    user_message: payload?.user_message || '',
+                    detected_language: payload?.detected_language,
+                    timestamp: ts,
+                });
+                break;
+
+            case 'track_a_response':
+                eventBroadcaster.emit({
+                    type: 'employee:track_a_response',
+                    role: this.role,
+                    tenant_id,
+                    persona_id: persona.id,
+                    lead_id: lead_id || null,
+                    caller_phone: user_phone,
+                    caller_name,
+                    channel,
+                    turn_number: turnNumber,
+                    response_text: payload?.response_text || '',
+                    latency_ms: payload?.latency_ms || 0,
+                    language: payload?.language,
+                    filler_prefix: payload?.filler_prefix,
+                    timestamp: ts,
+                });
+                break;
+
+            case 'reasoning_complete': {
+                const r = payload?.reasoning || {};
+                // item 4.5: distinguish null (unknown) from a numeric score.
+                const rawScore = r.emotion_score;
+                const confidence = typeof rawScore === 'number' ? rawScore : null;
+                eventBroadcaster.emit({
+                    type: 'employee:reasoning_complete',
+                    role: this.role,
+                    tenant_id,
+                    persona_id: persona.id,
+                    lead_id: lead_id || null,
+                    caller_phone: user_phone,
+                    caller_name,
+                    channel,
+                    turn_number: turnNumber,
+                    intent: r.intent || 'unknown',
+                    action: r.action || 'none',
+                    emotion: r.emotion || 'neutral',
+                    confidence,
+                    reasoning_latency_ms: payload?.reasoning_latency_ms || 0,
+                    total_latency_ms: payload?.total_latency_ms || 0,
+                    next_goal: r.next_goal,
+                    missing_info: r.missing_info,
+                    timestamp: ts,
+                });
+                break;
+            }
+
+            case 'reasoning_failed':
+                eventBroadcaster.emit({
+                    type: 'employee:reasoning_failed',
+                    role: this.role,
+                    tenant_id,
+                    persona_id: persona.id,
+                    lead_id: lead_id || null,
+                    caller_phone: user_phone,
+                    caller_name,
+                    channel,
+                    turn_number: turnNumber,
+                    error: payload?.error || 'unknown',
+                    used_fallback: true,
+                    timestamp: ts,
+                });
+                break;
+        }
     }
 
     // ── Template method: process a single conversation turn ─────────

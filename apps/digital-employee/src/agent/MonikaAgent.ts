@@ -56,6 +56,7 @@ class MonikaCognitiveLoop extends BaseCognitiveLoop<
     ReceptionistReasoningOutput
 > {
     protected readonly logTag = '[MonikaCognitiveLoop]';
+    protected readonly role = 'monika' as const;
 
     // ── Hooks ────────────────────────────────────────────────────────
 

@@ -22,6 +22,7 @@ export class GeminiClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): Promise<string> {
         if (!this.genAI) {
@@ -37,7 +38,9 @@ export class GeminiClient implements LLMProvider {
             },
         });
 
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(prompt, {
+            signal: options?.signal
+        });
         return result.response.text().trim();
     }
 
@@ -47,6 +50,7 @@ export class GeminiClient implements LLMProvider {
             isJson?: boolean;
             temperature?: number;
             maxTokens?: number;
+            signal?: AbortSignal;
         }
     ): AsyncGenerator<string, void, unknown> {
         if (!this.genAI) {
@@ -62,7 +66,9 @@ export class GeminiClient implements LLMProvider {
             },
         });
 
-        const result = await model.generateContentStream(prompt);
+        const result = await model.generateContentStream(prompt, {
+            signal: options?.signal
+        });
         for await (const chunk of result.stream) {
             yield chunk.text();
         }
