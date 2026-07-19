@@ -123,9 +123,9 @@ const INITIAL_PROFILES: Record<string, any> = {
             idleBehavior: "Nurture cold leads via WhatsApp"
         },
         liveMonitor: {
-            activeCall: { leadName: "Dileep Yadav", duration: "1m 24s", sentiment: "Interested", prompt: "Checking plot details on Expressway Sector 150." },
+            activeCall: { leadName: "Deep Yadav", duration: "1m 26s", sentiment: "Interested", currentStage: "Pricing Discussion", prompt: "Checking plot details on Expressway Sector 150." },
             reasoningFeed: [
-                { id: "rfeed1", timestamp: "14:21:05", lead_name: "Dileep Yadav", action: "Plot recommendation", reasoning: "Lead wants 200 sq yard options under 1.5Cr. Generating available inventory from sector 150 layout database.", message: "Dileep ji, Sector 150 mein hamare paas active plots hain under budget, details share kar raha hu." }
+                { id: "rfeed1", timestamp: "14:21:05", lead_name: "Deep Yadav", action: "Intent Detected", reasoning: "Lead query matched layout plots pricing. Analyzing core intent.", message: "Haan ji, Expressway Sector 150 ke plots ke rates check kar raha hu." }
             ],
             activityLog: [
                 { id: "act1", time: "14:20:10", action: "Inbound Call Received", detail: "Connecting call from Dileep Yadav (+91 98765 43210)" },
@@ -788,6 +788,7 @@ export default function AICommandCenter() {
     const [isMonitoringActive, setIsMonitoringActive] = useState<boolean>(false);
     const [monitoringFeed, setMonitoringFeed] = useState<any[]>([]);
     const [monitoringProgress, setMonitoringProgress] = useState<number>(0);
+    const [monitorTranscript, setMonitorTranscript] = useState<{ sender: "ai" | "customer" | "supervisor"; text: string; time: string }[]>([]);
 
     // Analytics / Security Tab States
     const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly'>('daily');
@@ -915,6 +916,14 @@ export default function AICommandCenter() {
         { version: "v1.6", date: "Last week", author: "System", desc: "Initial ElevenLabs baseline profile setup" }
     ]);
     const [showVersionHistoryModal, setShowVersionHistoryModal] = useState<boolean>(false);
+
+    // 🎧 Supervisor Duplex Live Call Monitoring states
+    const [isDuplexListening, setIsDuplexListening] = useState<boolean>(false);
+    const [customerVolume, setCustomerVolume] = useState<number>(80);
+    const [agentVolume, setAgentVolume] = useState<number>(80);
+    const [listenerLatency, setListenerLatency] = useState<number>(82);
+    const [listenerJitter, setListenerJitter] = useState<number>(4);
+    const [showTimeline, setShowTimeline] = useState<boolean>(false);
 
     // 🎙️ Live Voice Test floating widget states
     const [isLiveVoiceTestOpen, setIsLiveVoiceTestOpen] = useState<boolean>(false);
@@ -1140,21 +1149,43 @@ export default function AICommandCenter() {
         if (!isMonitoringActive) {
             setMonitoringFeed([]);
             setMonitoringProgress(0);
+            setMonitorTranscript([]);
             return;
         }
-        const initialFeed = profile.liveMonitor.reasoningFeed || [];
         const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        setMonitoringFeed([{ ...initialFeed[0], timestamp: timeStr }]);
+        const initialFeed = [
+            { id: "rfeed1", timestamp: timeStr, lead_name: profile.liveMonitor.activeCall?.leadName || "Deep Yadav", action: "Intent Detected", reasoning: "Lead query matched layout plots pricing. Analyzing core intent.", message: "Haan ji, Expressway Sector 150 ke plots ke rates check kar raha hu." }
+        ];
+        setMonitoringFeed(initialFeed);
         setMonitoringProgress(1);
 
+        // Seed transcript with initial AI greeting
+        const t0 = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setMonitorTranscript([
+            { sender: "ai", text: "Namaste! Rohan speaking from Maya Infratech. Sector 150 expressway residential layout ki help chahiye thi?", time: t0 }
+        ]);
+
+        // Step 1 — Customer query (after 3s)
+        setTimeout(() => {
+            const t1 = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            setMonitorTranscript(prev => [...prev, { sender: "customer", text: "Haan Rohan, payment configurations details bhej dena — pre-approval rates kya hain?", time: t1 }]);
+        }, 3000);
+
+        // Step 2 — AI response (after 7s)
+        setTimeout(() => {
+            const t2 = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+            setMonitorTranscript(prev => [...prev, { sender: "ai", text: "Sure Deep ji! Sector 150 Expressway plots range from ₹75,000 to ₹85,000 per sq yard. I'm sending the pricing and layout brochure on WhatsApp right now.", time: t2 }]);
+        }, 7000);
+
         const feedSequence = [
-            { id: "rfeed2", timestamp: "", lead_name: "Rahul Singh", action: "Site visit follow-up", reasoning: "Lead requested pricing information. Confirming layout maps delivery via message broker.", message: "Rahul ji, maps details WhatsApp desk pe send kar di hain. Inspect kijiye." },
-            { id: "rfeed3", timestamp: "", lead_name: "Neha Vig", action: "Discount verification", reasoning: "RERA verification completed. Matching builder discount waivers thresholds.", message: "Neha ji, builder discount verification approvals checked, 2.5% waiver applied." }
+            { id: "rfeed2", timestamp: "", lead_name: profile.liveMonitor.activeCall?.leadName || "Deep Yadav", action: "Knowledge Search", reasoning: "Querying vector store for Expressway plot pricing matrix. Retrieval similarity score 94%.", message: null },
+            { id: "rfeed3", timestamp: "", lead_name: profile.liveMonitor.activeCall?.leadName || "Deep Yadav", action: "Escalation Trigger", reasoning: "Lead requested builder waiver limits beyond agent thresholds. Alerting supervisor.", message: "Let me check with my manager on that special waiver for you." },
+            { id: "rfeed4", timestamp: "", lead_name: profile.liveMonitor.activeCall?.leadName || "Deep Yadav", action: "Response Generated", reasoning: "Formulated response from active brochure records: rates at 75k per sq yard.", message: "Deep ji, Sector 150 Expressway plots range from 75,000 to 85,000 per sq yard." }
         ];
 
         const timer = setInterval(() => {
             setMonitoringProgress(prev => {
-                if (prev < 3) {
+                if (prev < 4) {
                     const stepFeed = feedSequence[prev - 1];
                     const tickTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
                     setMonitoringFeed(feed => [...feed, { ...stepFeed, timestamp: tickTime }]);
@@ -1998,9 +2029,15 @@ export default function AICommandCenter() {
 
     const handleSendWhisper = () => {
         if (!whisperMessage.trim()) return;
+        const timeStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
         setSupervisorLogs(prev => [
             ...prev,
             `[Supervisor Whisper]: ${whisperMessage}`
+        ]);
+        // Inject whisper bubble into the live transcript
+        setMonitorTranscript(prev => [
+            ...prev,
+            { sender: "supervisor", text: whisperMessage, time: timeStr }
         ]);
         addToast({
             type: "success",
@@ -2187,18 +2224,18 @@ export default function AICommandCenter() {
             </div>
 
             {/* Dynamic employee enterprise context bar */}
-            <div className="aicc-card" style={{ marginBottom: "24px", background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px" }}>
-                <div className="aicc-employee-context-grid" style={{ display: "flex", flexWrap: "wrap", gap: "24px", alignItems: "center" }}>
+            <div className="aicc-card" style={{ marginBottom: "20px", background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", padding: "12px 16px", borderRadius: "12px" }}>
+                <div className="aicc-employee-context-grid" style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "stretch" }}>
                     
                     {/* Avatar & Name Info */}
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", paddingRight: "8px", borderRight: "1px solid var(--glass-border)" }}>
                         <div style={{
                             width: "42px", height: "42px", borderRadius: "8px", background: "rgba(99, 102, 241, 0.1)",
                             border: "1px solid rgba(99, 102, 241, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem"
                         }}>
                             {profile.role === "rohan" ? "👤" : profile.role === "neha" ? "👩‍💼" : "👩‍💻"}
                         </div>
-                        <div>
+                        <div style={{ minWidth: "120px" }}>
                             <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>{profile.name}</div>
                             <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 500 }}>
                                 {profile.role === "rohan" && "Sales AI Agent"}
@@ -2207,72 +2244,164 @@ export default function AICommandCenter() {
                             </div>
                         </div>
                     </div>
-
+ 
                     {/* Badge 1: Health */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Health</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#166534", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%" }} />
+                    <div style={{
+                        background: "rgba(34, 197, 94, 0.04)",
+                        border: "1px solid rgba(34, 197, 94, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Health</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%", display: "inline-block" }} />
                             {profile.role === "rohan" ? "Excellent" : profile.role === "neha" ? "Good" : "Excellent"}
                         </div>
                     </div>
 
                     {/* Badge 2: Knowledge Coverage */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-                            Knowledge Coverage
-                        </div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                    <div style={{
+                        background: "rgba(99, 102, 241, 0.04)",
+                        border: "1px solid rgba(99, 102, 241, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Knowledge</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--accent-indigo)" }}>
                             {profile.role === "rohan" ? "84.5%" : profile.role === "neha" ? "92.0%" : "75.0%"}
                         </div>
                     </div>
 
                     {/* Badge 3: Confidence */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-                            Confidence
-                        </div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                    <div style={{
+                        background: "rgba(168, 85, 247, 0.04)",
+                        border: "1px solid rgba(168, 85, 247, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Confidence</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#6b21a8" }}>
                             {profile.role === "rohan" ? "98.2%" : profile.role === "neha" ? "99.1%" : "97.5%"}
                         </div>
                     </div>
 
                     {/* Badge 4: Languages */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Languages</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                    <div style={{
+                        background: "rgba(59, 130, 246, 0.04)",
+                        border: "1px solid rgba(59, 130, 246, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Languages</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#1d4ed8" }}>
                             {profile.role === "rohan" ? "English" : profile.role === "neha" ? "Eng/Hindi" : "English"}
                         </div>
                     </div>
 
                     {/* Badge 5: Active Calls */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Active Calls</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: profile.status === "on_call" ? "#b91c1c" : "var(--text-primary)", marginTop: "2px" }}>
-                            {profile.role === "rohan" ? "1 Call" : profile.role === "neha" ? "0 Calls" : "2 Calls"}
+                    <div style={{
+                        background: profile.status === "on_call" ? "rgba(239, 68, 68, 0.06)" : "rgba(100, 116, 139, 0.04)",
+                        border: profile.status === "on_call" ? "1px solid rgba(239, 68, 68, 0.25)" : "1px solid rgba(100, 116, 139, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Active Calls</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: profile.status === "on_call" ? "#dc2626" : "var(--text-primary)" }}>
+                            {profile.role === "rohan" ? "1 Live" : profile.role === "neha" ? "0 Live" : "2 Live"}
                         </div>
                     </div>
 
                     {/* Badge 6: Pending Retraining */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Pending Retraining</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
-                            {profile.role === "rohan" ? "4 items" : profile.role === "neha" ? "0 items" : "1 item"}
+                    <div style={{
+                        background: "rgba(245, 158, 11, 0.04)",
+                        border: "1px solid rgba(245, 158, 11, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Retraining</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#b45309" }}>
+                            {profile.role === "rohan" ? "4 Items" : profile.role === "neha" ? "0 Items" : "1 Item"}
                         </div>
                     </div>
 
                     {/* Badge 7: Average Rating */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Avg Rating</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#166534", marginTop: "2px" }}>
+                    <div style={{
+                        background: "rgba(16, 185, 129, 0.04)",
+                        border: "1px solid rgba(16, 185, 129, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Avg Rating</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#047857" }}>
                             {profile.role === "rohan" ? "4.7 / 5" : profile.role === "neha" ? "4.8 / 5" : "4.9 / 5"}
                         </div>
                     </div>
 
                     {/* Badge 8: Escalation % */}
-                    <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Escalation %</div>
-                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                    <div style={{
+                        background: "rgba(244, 63, 94, 0.04)",
+                        border: "1px solid rgba(244, 63, 94, 0.12)",
+                        borderRadius: "8px",
+                        padding: "6px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: "2px",
+                        minWidth: "95px",
+                        flex: "1 1 0px",
+                        boxShadow: "0 1px 2px rgba(0,0,0,0.02)"
+                    }}>
+                        <div style={{ fontSize: "0.62rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.03em" }}>Escalation %</div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#be123c" }}>
                             {profile.role === "rohan" ? "2.2%" : profile.role === "neha" ? "1.1%" : "0.5%"}
                         </div>
                     </div>
@@ -2303,6 +2432,9 @@ export default function AICommandCenter() {
                 <button onClick={() => setActiveTab("monitor")} className={`aicc-tab-btn tab-monitor ${activeTab === "monitor" ? "active" : ""}`}>
                     <Activity size={16} /> Live Monitor
                 </button>
+                <button onClick={() => setActiveTab("security")} className={`aicc-tab-btn tab-persona ${activeTab === "security" ? "active" : ""}`}>
+                    <Shield size={16} /> Security
+                </button>
                 
                 <div style={{ flex: 1 }} />
                 
@@ -2323,9 +2455,7 @@ export default function AICommandCenter() {
                     <button onClick={() => setActiveTab("analytics")} className={`aicc-tab-btn tab-overview ${activeTab === "analytics" ? "active" : ""}`}>
                         <BarChart3 size={16} /> Analytics
                     </button>
-                    <button onClick={() => setActiveTab("security")} className={`aicc-tab-btn tab-persona ${activeTab === "security" ? "active" : ""}`}>
-                        <Shield size={16} /> Security
-                    </button>
+
                     <button onClick={() => setActiveTab("training")} className={`aicc-tab-btn tab-training ${activeTab === "training" ? "active" : ""}`}>
                         <Brain size={16} /> AI Training
                     </button>
@@ -3108,57 +3238,6 @@ export default function AICommandCenter() {
                         </div>
                     )}
 
-                    <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Semantic Vector Search Simulator</span>
-                            <Search size={18} style={{ color: "var(--text-secondary)" }} />
-                        </h3>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                            <div className="aicc-tag-input-row">
-                                <input
-                                    type="text"
-                                    placeholder="Type search queries (e.g., pricing schemes, RERA codes, site visit driver cab)..."
-                                    className="aicc-input"
-                                    style={{ flex: 1 }}
-                                    value={vectorSearchQuery}
-                                    onChange={(e) => setVectorSearchQuery(e.target.value)}
-                                    onKeyDown={(e) => e.key === "Enter" && triggerVectorSearch()}
-                                />
-                                <button className="aicc-btn-primary" onClick={triggerVectorSearch}>Search</button>
-                            </div>
-
-                            {vectorSearchResult && (
-                                <div style={{ background: "rgba(248, 250, 252, 0.8)", border: "1px dashed var(--glass-border)", padding: "14px", borderRadius: "8px", fontSize: "0.8rem", color: "var(--text-primary)" }}>
-                                    <div style={{ fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                                        <span style={{ color: "var(--accent-indigo)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                            <Brain size={14} /> Retrieved Vector Context:
-                                        </span>
-                                        <div style={{ display: "flex", gap: "8px" }}>
-                                            <button 
-                                                onClick={() => {
-                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'up' }));
-                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
-                                                }}
-                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'up' ? "#22c55e" : "var(--text-secondary)" }}
-                                            >
-                                                <ThumbsUp size={14} />
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'down' }));
-                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
-                                                }}
-                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'down' ? "#e11d48" : "var(--text-secondary)" }}
-                                            >
-                                                <ThumbsDown size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div>{vectorSearchResult}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
                     <div className="aicc-card aicc-chunk-visualizer-card">
                         <h3 className="aicc-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3545,6 +3624,59 @@ export default function AICommandCenter() {
                                 </div>
                             </div>
 
+                        </div>
+                    </div>
+
+                    {/* Semantic Vector Search Simulator Card */}
+                    <div className="aicc-card" style={{ background: "white" }}>
+                        <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                            <span>Semantic Vector Search Simulator</span>
+                            <Search size={18} style={{ color: "var(--text-secondary)" }} />
+                        </h3>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+                            <div className="aicc-tag-input-row">
+                                <input
+                                    type="text"
+                                    placeholder="Type search queries (e.g., pricing schemes, RERA codes, site visit driver cab)..."
+                                    className="aicc-input"
+                                    style={{ flex: 1 }}
+                                    value={vectorSearchQuery}
+                                    onChange={(e) => setVectorSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && triggerVectorSearch()}
+                                />
+                                <button className="aicc-btn-primary" onClick={triggerVectorSearch}>Search</button>
+                            </div>
+
+                            {vectorSearchResult && (
+                                <div style={{ background: "rgba(248, 250, 252, 0.8)", border: "1px dashed var(--glass-border)", padding: "14px", borderRadius: "8px", fontSize: "0.8rem", color: "var(--text-primary)" }}>
+                                    <div style={{ fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                                        <span style={{ color: "var(--accent-indigo)", display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <Brain size={14} /> Retrieved Vector Context:
+                                        </span>
+                                        <div style={{ display: "flex", gap: "8px" }}>
+                                            <button 
+                                                onClick={() => {
+                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'up' }));
+                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
+                                                }}
+                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'up' ? "#22c55e" : "var(--text-secondary)" }}
+                                            >
+                                                <ThumbsUp size={14} />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setFeedbackThumbs(prev => ({ ...prev, [vectorSearchQuery]: 'down' }));
+                                                    addToast({ type: "success", title: "RAG Optimizer", message: "Thank you! Feedback recorded to optimize vector retrieval weights." });
+                                                }}
+                                                style={{ border: "none", background: "transparent", cursor: "pointer", color: feedbackThumbs[vectorSearchQuery] === 'down' ? "#e11d48" : "var(--text-secondary)" }}
+                                            >
+                                                <ThumbsDown size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>{vectorSearchResult}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -4965,233 +5097,747 @@ export default function AICommandCenter() {
 
             {/* ─── TAB 6: LIVE MONITOR ────────────────────────────────────── */}
             {activeTab === "monitor" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                    <div className="aicc-live-monitor-split" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "20px" }}>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                            {profile.liveMonitor.activeCall && (
-                                <div 
-                                    className="aicc-active-call-alert" 
-                                    onClick={() => setIsMonitoringActive(!isMonitoringActive)}
-                                    style={{ border: isMonitoringActive ? "1px solid #ef4444" : "1px solid var(--glass-border)", cursor: "pointer" }}
-                                >
-                                    <span className="aicc-active-call-pulse" />
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#ef4444" }}>
-                                            🔴 In Progress Active Dialing Interaction {isMonitoringActive ? "(Monitoring)" : "(Click to Monitor Live)"}
-                                        </div>
-                                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "4px" }}>
-                                            Lead Name: <strong>{profile.liveMonitor.activeCall.leadName}</strong> · Duration: <strong>{profile.liveMonitor.activeCall.duration}</strong> · Sentiment: <span style={{ background: "#dcfce7", color: "#166534", padding: "1px 6px", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700 }}>{profile.liveMonitor.activeCall.sentiment}</span>
-                                        </div>
-                                    </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    
+                    {/* 1. Live Call Banner (Top Active Interaction) */}
+                    {profile.liveMonitor.activeCall && (
+                        <div 
+                            className="aicc-active-call-alert" 
+                            onClick={() => setIsMonitoringActive(!isMonitoringActive)}
+                            style={{ 
+                                border: isMonitoringActive ? "2px solid #ef4444" : "1px solid rgba(239, 68, 68, 0.2)", 
+                                cursor: "pointer",
+                                padding: "14px 18px",
+                                background: isMonitoringActive ? "linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02))" : "var(--card-bg)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "24px",
+                                borderRadius: "12px",
+                                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                                boxShadow: isMonitoringActive ? "0 4px 20px rgba(239, 68, 68, 0.08)" : "0 4px 12px rgba(0,0,0,0.02)"
+                            }}
+                        >
+                            {/* Alert Header Badge */}
+                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", minWidth: "100px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                    <span className="aicc-active-call-pulse" style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%", display: "inline-block", boxShadow: "0 0 10px #ef4444" }} />
+                                    <span style={{ fontSize: "0.72rem", fontWeight: 900, color: "#ef4444", letterSpacing: "0.05em", textTransform: "uppercase" }}>🔴 LIVE CALL</span>
                                 </div>
-                            )}
+                                {isMonitoringActive && (
+                                    <span style={{ background: "#ef4444", color: "white", padding: "2px 6px", borderRadius: "4px", fontSize: "0.58rem", fontWeight: 800, textTransform: "uppercase", width: "fit-content", letterSpacing: "0.02em" }}>
+                                        MONITORING
+                                    </span>
+                                )}
+                            </div>
 
-                            <div className="aicc-card" style={{ marginTop: 0 }}>
-                                <h3 className="aicc-card-title">
-                                    <span>Live Reasoning & Event Logs</span>
-                                    <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
-                                </h3>
-                                <div style={{ display: "flex", flexDirection: "column", background: "rgba(248, 250, 252, 0.5)", borderRadius: "12px", border: "1px solid var(--glass-border)", maxHeight: "250px", overflowY: "auto" }}>
-                                    {monitoringFeed.map(item => (
-                                        <div key={item.id} className="aicc-reasoning-item" style={{ padding: "12px", borderBottom: "1px solid var(--glass-border)" }}>
-                                            <div className="aicc-reasoning-hdr" style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-secondary)", marginBottom: "4px" }}>
-                                                <span className="aicc-reasoning-title" style={{ fontWeight: 800, color: "var(--text-primary)" }}>Lead Name: {item.lead_name}</span>
-                                                <span>{item.timestamp}</span>
+                            {/* Details Grid */}
+                            <div style={{ display: "flex", flex: 1, gap: "32px", flexWrap: "wrap", alignItems: "center" }}>
+                                
+                                {/* Lead */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Lead</span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                                        {profile.liveMonitor.activeCall.leadName}
+                                    </span>
+                                </div>
+
+                                {/* Duration */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Duration</span>
+                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
+                                        {profile.liveMonitor.activeCall.duration}
+                                    </span>
+                                </div>
+
+                                {/* Sentiment */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Sentiment</span>
+                                    <span style={{ 
+                                        background: profile.liveMonitor.activeCall.sentiment.toLowerCase() === 'interested' ? "#dcfce7" : "#fef3c7", 
+                                        color: profile.liveMonitor.activeCall.sentiment.toLowerCase() === 'interested' ? "#166534" : "#92400e", 
+                                        padding: "2px 8px", borderRadius: "20px", fontSize: "0.68rem", fontWeight: 800, width: "fit-content" 
+                                    }}>
+                                        {profile.liveMonitor.activeCall.sentiment}
+                                    </span>
+                                </div>
+
+                                {/* Current Stage */}
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.03em" }}>Current Stage</span>
+                                    <span style={{ 
+                                        background: "rgba(99, 102, 241, 0.08)", 
+                                        color: "var(--accent-indigo)", 
+                                        padding: "2px 8px", borderRadius: "20px", fontSize: "0.68rem", fontWeight: 800, width: "fit-content" 
+                                    }}>
+                                        {profile.liveMonitor.activeCall.currentStage || "Pricing Discussion"}
+                                    </span>
+                                </div>
+
+                            </div>
+
+                            {/* Stream Control Action */}
+                            <button 
+                                className="aicc-btn-primary" 
+                                style={{ 
+                                    background: isMonitoringActive ? "#dc2626" : "var(--accent-indigo)", 
+                                    border: "none", 
+                                    fontSize: "0.75rem", 
+                                    fontWeight: 800,
+                                    padding: "8px 16px", 
+                                    cursor: "pointer", 
+                                    borderRadius: "8px",
+                                    boxShadow: isMonitoringActive ? "0 4px 12px rgba(220, 38, 38, 0.2)" : "0 4px 12px rgba(99, 102, 241, 0.25)",
+                                    transition: "all 0.2s"
+                                }}
+                            >
+                                {isMonitoringActive ? "Disconnect" : "Monitor Live Stream"}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* 2. Main Layout Split */}
+                    <div className="aicc-live-monitor-split" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "16px" }}>
+                        
+                        {/* LEFT: Live Call Console (Transcript, Mixer, Copilot) */}
+                        {isMonitoringActive ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div className="aicc-card" style={{ marginTop: 0, padding: "14px", border: "1px solid rgba(99, 102, 241, 0.15)" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
+                                        <h3 style={{ margin: 0, fontSize: "0.9rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <span>🎙️ Live Duplex Call & Copilot Console</span>
+                                        </h3>
+                                        <span style={{ background: "#fee2e2", color: "#ef4444", fontSize: "0.6rem", padding: "1px 6px", borderRadius: "4px", fontWeight: 800 }}>LIVE DUPLEX</span>
+                                    </div>
+
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                        
+                                        {/* Duplex Live Audio Monitor Panel */}
+                                        <div style={{
+                                            background: "linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(255, 255, 255, 0.8))",
+                                            border: "1px solid rgba(99, 102, 241, 0.12)",
+                                            borderRadius: "8px", padding: "10px 12px",
+                                            display: "flex", flexDirection: "column", gap: "10px"
+                                        }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                                    <span style={{
+                                                        width: "8px", height: "8px", borderRadius: "50%",
+                                                        background: isDuplexListening ? "#22c55e" : "#94a3b8",
+                                                        boxShadow: isDuplexListening ? "0 0 6px #22c55e" : "none",
+                                                        animation: isDuplexListening ? "pulse 1.5s infinite" : "none"
+                                                    }} />
+                                                    <span style={{ fontSize: "0.75rem", fontWeight: 800 }}>Duplex Call Telephony Bridge</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        setIsDuplexListening(!isDuplexListening);
+                                                        addToast({
+                                                            type: isDuplexListening ? "info" : "success",
+                                                            title: isDuplexListening ? "Audio Stream Muted" : "Duplex Call Active",
+                                                            message: isDuplexListening 
+                                                                ? "Muted silent supervisor monitoring feed." 
+                                                                : "Connected to live WebRTC duplex media stream."
+                                                        });
+                                                    }}
+                                                    style={{
+                                                        padding: "4px 10px", fontSize: "0.7rem", fontWeight: 800, borderRadius: "5px",
+                                                        border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px",
+                                                        background: isDuplexListening ? "#fee2e2" : "var(--accent-indigo)",
+                                                        color: isDuplexListening ? "#991b1b" : "white",
+                                                        transition: "all 0.2s ease"
+                                                    }}
+                                                >
+                                                    <span>{isDuplexListening ? "🔇 Mute Audio" : "🔊 Listen In Live"}</span>
+                                                </button>
                                             </div>
-                                            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
-                                                <strong>Decision:</strong> {item.reasoning}
-                                            </div>
-                                            {item.message && (
-                                                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", marginTop: "4px" }}>
-                                                    <strong>AI Output:</strong> “{item.message}”
+
+                                            {isDuplexListening ? (
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "8px", borderTop: "1px solid var(--glass-border)", paddingTop: "8px" }}>
+                                                    {/* Volume Mixer Controls */}
+                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                                                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", fontWeight: 700 }}>
+                                                                <span style={{ color: "var(--text-secondary)" }}>👤 Customer Vol</span>
+                                                                <span style={{ color: "var(--text-primary)" }}>{customerVolume}%</span>
+                                                            </div>
+                                                            <input 
+                                                                type="range" min="0" max="100" 
+                                                                value={customerVolume} 
+                                                                onChange={(e) => setCustomerVolume(Number(e.target.value))}
+                                                                style={{ width: "100%", accentColor: "var(--accent-indigo)", cursor: "pointer", height: "4px" }}
+                                                            />
+                                                        </div>
+                                                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.65rem", fontWeight: 700 }}>
+                                                                <span style={{ color: "var(--text-secondary)" }}>🤖 Rohan AI Vol</span>
+                                                                <span style={{ color: "var(--text-primary)" }}>{agentVolume}%</span>
+                                                            </div>
+                                                            <input 
+                                                                type="range" min="0" max="100" 
+                                                                value={agentVolume} 
+                                                                onChange={(e) => setAgentVolume(Number(e.target.value))}
+                                                                style={{ width: "100%", accentColor: "var(--accent-indigo)", cursor: "pointer", height: "4px" }}
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Duplex Voice Equalizer Waves */}
+                                                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "rgba(248,250,252,0.6)", padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--glass-border)" }}>
+                                                        {/* Left channel (Customer) */}
+                                                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                            <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Inbound Wave (Customer)</span>
+                                                            <div style={{ display: "flex", gap: "2px", alignItems: "center", height: "18px" }}>
+                                                                {[12, 6, 20, 8, 16, 10, 18, 4, 12].map((h, idx) => (
+                                                                    <div key={idx} style={{
+                                                                        flex: 1, borderRadius: "1px", background: "#3b82f6",
+                                                                        animation: `eq-bounce 0.${3 + (idx % 3)}s ease-in-out infinite alternate`,
+                                                                        height: `${h * 0.7}px`, opacity: 0.8,
+                                                                        transformOrigin: "bottom"
+                                                                    }} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {/* Right channel (Rohan AI) */}
+                                                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                            <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Outbound Wave (Rohan AI)</span>
+                                                            <div style={{ display: "flex", gap: "2px", alignItems: "center", height: "18px" }}>
+                                                                {[8, 18, 10, 14, 22, 6, 12, 16, 8].map((h, idx) => (
+                                                                    <div key={idx} style={{
+                                                                        flex: 1, borderRadius: "1px", background: "#8b5cf6",
+                                                                        animation: `eq-bounce 0.${4 + (idx % 4)}s ease-in-out infinite alternate`,
+                                                                        height: `${h * 0.7}px`, opacity: 0.8,
+                                                                        transformOrigin: "bottom"
+                                                                    }} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Audio Gateway Telemetry Stats */}
+                                                    <div style={{ display: "flex", justifyContent: "space-between", background: "rgba(248,250,252,0.6)", padding: "4px 6px", borderRadius: "5px", fontSize: "0.6rem", color: "var(--text-secondary)" }}>
+                                                        <span>📡 WS Jitter: <strong>{listenerJitter}ms</strong></span>
+                                                        <span>⚡ Latency: <strong>{listenerLatency}ms</strong></span>
+                                                        <span>🚫 Packet Loss: <strong>0.0%</strong></span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontStyle: "italic", marginTop: "2px" }}>
+                                                    Duplex audio stream muted. Click Listen In Live to establish supervisor monitoring link.
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Real-time Transcript Stream Box — Contact Center Style */}
+                                        <div
+                                            className="aicc-transcript-stream-box"
+                                            id="live-monitor-transcript-scroll"
+                                            style={{
+                                                minHeight: "180px",
+                                                maxHeight: "260px",
+                                                overflowY: "auto",
+                                                border: "1px solid var(--glass-border)",
+                                                borderRadius: "12px",
+                                                padding: "12px 10px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "10px",
+                                                background: "#f1f5f9"
+                                            }}
+                                        >
+                                            {monitorTranscript.length === 0 && !isMonitoringActive && (
+                                                <div style={{ textAlign: "center", padding: "30px 0", color: "var(--text-secondary)", fontSize: "0.72rem", opacity: 0.6 }}>
+                                                    Activate monitoring to stream live transcript
                                                 </div>
                                             )}
-                                            <span className="aicc-reasoning-action" style={{ display: "inline-block", background: "rgba(99,102,241,0.1)", color: "var(--accent-indigo)", fontSize: "0.65rem", padding: "1px 6px", borderRadius: "4px", marginTop: "6px", width: "fit-content" }}>{item.action}</span>
+
+                                            {monitorTranscript.map((bubble, idx) => {
+                                                if (bubble.sender === "ai") {
+                                                    return (
+                                                        <div key={idx} style={{ display: "flex", flexDirection: "column", alignSelf: "flex-start", maxWidth: "80%", gap: "3px" }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                <span style={{ width: "7px", height: "7px", background: "#6366f1", borderRadius: "50%", flexShrink: 0 }} />
+                                                                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.05em" }}>🤖 Rohan AI</span>
+                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", marginLeft: "2px", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                            </div>
+                                                            <div style={{
+                                                                background: "white",
+                                                                border: "1px solid rgba(99,102,241,0.18)",
+                                                                borderLeft: "4px solid #6366f1",
+                                                                padding: "9px 12px",
+                                                                borderRadius: "2px 12px 12px 12px",
+                                                                fontSize: "0.74rem",
+                                                                color: "#1e293b",
+                                                                lineHeight: 1.5,
+                                                                boxShadow: "0 1px 4px rgba(99,102,241,0.08)"
+                                                            }}>
+                                                                {bubble.text}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                if (bubble.sender === "customer") {
+                                                    return (
+                                                        <div key={idx} style={{ display: "flex", flexDirection: "column", alignSelf: "flex-end", maxWidth: "80%", gap: "3px", alignItems: "flex-end" }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", marginRight: "2px", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                                <span style={{ fontSize: "0.6rem", fontWeight: 800, color: "#1d4ed8", textTransform: "uppercase", letterSpacing: "0.05em" }}>👤 Customer</span>
+                                                                <span style={{ width: "7px", height: "7px", background: "#3b82f6", borderRadius: "50%", flexShrink: 0 }} />
+                                                            </div>
+                                                            <div style={{
+                                                                background: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                                                                color: "white",
+                                                                padding: "9px 12px",
+                                                                borderRadius: "12px 2px 12px 12px",
+                                                                fontSize: "0.74rem",
+                                                                lineHeight: 1.5,
+                                                                boxShadow: "0 2px 8px rgba(59,130,246,0.25)"
+                                                            }}>
+                                                                {bubble.text}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                if (bubble.sender === "supervisor") {
+                                                    return (
+                                                        <div key={idx} style={{
+                                                            display: "flex",
+                                                            alignSelf: "center",
+                                                            maxWidth: "90%",
+                                                            flexDirection: "column",
+                                                            alignItems: "center",
+                                                            gap: "4px"
+                                                        }}>
+                                                            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                                                <span style={{ fontSize: "0.58rem", color: "#92400e", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>🛡️ Supervisor Whisper</span>
+                                                                <span style={{ fontSize: "0.58rem", color: "#94a3b8", fontFamily: "monospace" }}>{bubble.time}</span>
+                                                            </div>
+                                                            <div style={{
+                                                                background: "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.1))",
+                                                                border: "1px solid rgba(245,158,11,0.35)",
+                                                                borderLeft: "4px solid #f59e0b",
+                                                                padding: "8px 14px",
+                                                                borderRadius: "8px",
+                                                                fontSize: "0.72rem",
+                                                                color: "#78350f",
+                                                                fontStyle: "italic",
+                                                                lineHeight: 1.45,
+                                                                textAlign: "center",
+                                                                boxShadow: "0 1px 6px rgba(245,158,11,0.12)"
+                                                            }}>
+                                                                {bubble.text}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                return null;
+                                            })}
                                         </div>
-                                    ))}
+
+                                        {/* Equalizer animation bar */}
+                                        <div className="aicc-live-equalizer-wrap" style={{ background: "#ef4444", color: "white", padding: "6px 10px", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <span style={{ fontSize: "0.65rem", fontWeight: 800 }}>LIVE BROADCAST DECODING CHANNEL</span>
+                                            <div className="aicc-live-monitor-eq-bars" style={{ display: "flex", gap: "2px", alignItems: "flex-end", height: "10px" }}>
+                                                <span className="aicc-live-monitor-eq-bar" style={{ width: "3px" }} />
+                                                <span className="aicc-live-monitor-eq-bar" style={{ width: "3px" }} />
+                                                <span className="aicc-live-monitor-eq-bar" style={{ width: "3px" }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Supervisor Copilot Actions */}
+                                        <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "var(--text-primary)" }}>🛡️ Supervisor Live Copilot Actions</span>
+                                                {takeoverActive && (
+                                                    <span style={{ fontSize: "0.6rem", background: "#fee2e2", color: "#ef4444", padding: "1px 4px", borderRadius: "3px", fontWeight: 800 }}>⚡ TAKEOVER ACTIVE</span>
+                                                )}
+                                            </div>
+
+                                            {/* Whispering Box */}
+                                            <div style={{ display: "flex", gap: "6px" }}>
+                                                <input 
+                                                    type="text" 
+                                                    value={whisperMessage} 
+                                                    onChange={(e) => setWhisperMessage(e.target.value)}
+                                                    placeholder="Type whisper instruction to Rohan (e.g. Offer Unit 402)..."
+                                                    className="aicc-input"
+                                                    style={{ flex: 1, padding: "6px 10px", fontSize: "0.72rem" }}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
+                                                />
+                                                <button 
+                                                    onClick={handleSendWhisper}
+                                                    className="aicc-btn-primary"
+                                                    style={{ padding: "6px 12px", fontSize: "0.72rem", whiteSpace: "nowrap", cursor: "pointer", borderRadius: "5px" }}
+                                                >
+                                                    Send Whisper
+                                                </button>
+                                            </div>
+
+                                            {/* Takeover Control Trigger */}
+                                            <button 
+                                                onClick={handleToggleTakeover}
+                                                className={takeoverActive ? "aicc-btn-secondary" : "aicc-btn-primary"}
+                                                style={{ 
+                                                    padding: "8px", 
+                                                    fontSize: "0.72rem", 
+                                                    fontWeight: 800, 
+                                                    background: takeoverActive ? "#fee2e2" : "#ea580c", 
+                                                    color: takeoverActive ? "#991b1b" : "white",
+                                                    border: "none",
+                                                    borderRadius: "5px",
+                                                    cursor: "pointer",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    gap: "4px",
+                                                    transition: "background 0.2s ease"
+                                                }}
+                                            >
+                                                {takeoverActive ? "Release Call control back to AI Rohan" : "⚡ FORCE CALL TAKEOVER (Mute Rohan)"}
+                                            </button>
+
+                                            {/* Supervisor Live Action Log Feed — Whisper Toast Rows */}
+                                            {supervisorLogs.length > 0 && (
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "4px", maxHeight: "80px", overflowY: "auto" }}>
+                                                    {supervisorLogs.map((logStr, i) => {
+                                                        const isWhisper = logStr.includes("Whisper");
+                                                        return (
+                                                            <div key={i} style={{
+                                                                display: "flex", alignItems: "center", gap: "8px",
+                                                                padding: "5px 10px",
+                                                                background: isWhisper ? "rgba(245,158,11,0.08)" : "rgba(239,68,68,0.06)",
+                                                                border: `1px solid ${isWhisper ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.15)"}`,
+                                                                borderLeft: `3px solid ${isWhisper ? "#f59e0b" : "#ef4444"}`,
+                                                                borderRadius: "6px",
+                                                                fontSize: "0.65rem"
+                                                            }}>
+                                                                <span style={{ fontSize: "0.7rem" }}>{isWhisper ? "📡" : "⚡"}</span>
+                                                                <span style={{ fontWeight: 800, color: isWhisper ? "#92400e" : "#991b1b", textTransform: "uppercase", fontSize: "0.58rem", letterSpacing: "0.04em", flexShrink: 0 }}>
+                                                                    {isWhisper ? "Supervisor" : "Action"}
+                                                                </span>
+                                                                <span style={{ color: isWhisper ? "#78350f" : "#7f1d1d", lineHeight: 1.3, fontStyle: "italic" }}>{logStr}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "340px", color: "var(--text-secondary)", gap: "10px", border: "1px dashed var(--glass-border)", borderRadius: "12px", background: "var(--card-bg)", padding: "20px" }}>
+                                <PhoneCall size={32} style={{ color: "var(--accent-indigo)" }} />
+                                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)" }}>No Active Call Selected</span>
+                                <span style={{ fontSize: "0.72rem", color: "var(--text-secondary)", textAlign: "center" }}>Click the active call alert at the top to monitor duplex streams.</span>
+                            </div>
+                        )}
+
+                        {/* RIGHT COLUMN: AI Health & Live Reasoning Log Streams */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                            
+                            {/* Health Monitor Card */}
+                            <div className="aicc-card" style={{ marginTop: 0, padding: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ marginBottom: "14px" }}>
+                                    <span>AI Health Monitor</span>
+                                    <Activity size={18} style={{ color: "var(--accent-indigo)" }} />
+                                </h3>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+
+                                    {/* 1. Online Agents */}
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "12px",
+                                        padding: "10px 14px",
+                                        background: "linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.02))",
+                                        borderRadius: "10px",
+                                        border: "1px solid rgba(34, 197, 94, 0.15)",
+                                        borderLeft: "4px solid #22c55e"
+                                    }}>
+                                        <span style={{ width: "10px", height: "10px", background: "#22c55e", borderRadius: "50%", flexShrink: 0, boxShadow: "0 0 8px rgba(34,197,94,0.6)" }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#166534" }}>Online Agents</span>
+                                                <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#15803d", lineHeight: 1 }}>12</span>
+                                            </div>
+                                            <div style={{ width: "100%", height: "4px", background: "rgba(34,197,94,0.12)", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: "80%", height: "100%", background: "linear-gradient(90deg, #4ade80, #22c55e)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>ONLINE</span>
+                                    </div>
+
+                                    {/* 2. Training Required */}
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "12px",
+                                        padding: "10px 14px",
+                                        background: "linear-gradient(135deg, rgba(234, 179, 8, 0.06), rgba(234, 179, 8, 0.02))",
+                                        borderRadius: "10px",
+                                        border: "1px solid rgba(234, 179, 8, 0.15)",
+                                        borderLeft: "4px solid #eab308"
+                                    }}>
+                                        <span style={{ width: "10px", height: "10px", background: "#eab308", borderRadius: "50%", flexShrink: 0, boxShadow: "0 0 8px rgba(234,179,8,0.5)" }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#854d0e" }}>Training Required</span>
+                                                <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#a16207", lineHeight: 1 }}>2</span>
+                                            </div>
+                                            <div style={{ width: "100%", height: "4px", background: "rgba(234,179,8,0.12)", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: "20%", height: "100%", background: "linear-gradient(90deg, #fde047, #eab308)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fef3c7", color: "#854d0e", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>PENDING</span>
+                                    </div>
+
+                                    {/* 3. Escalations */}
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "12px",
+                                        padding: "10px 14px",
+                                        background: "linear-gradient(135deg, rgba(239, 68, 68, 0.07), rgba(239, 68, 68, 0.02))",
+                                        borderRadius: "10px",
+                                        border: "1px solid rgba(239, 68, 68, 0.2)",
+                                        borderLeft: "4px solid #ef4444"
+                                    }}>
+                                        <span style={{ width: "10px", height: "10px", background: "#ef4444", borderRadius: "50%", flexShrink: 0, boxShadow: "0 0 8px rgba(239,68,68,0.6)", animation: "pulse 1.5s infinite" }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#991b1b" }}>Escalations</span>
+                                                <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#dc2626", lineHeight: 1 }}>3</span>
+                                            </div>
+                                            <div style={{ width: "100%", height: "4px", background: "rgba(239,68,68,0.1)", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: "40%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>URGENT</span>
+                                    </div>
+
+                                    {/* 4. Failed Responses */}
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "12px",
+                                        padding: "10px 14px",
+                                        background: "linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.01))",
+                                        borderRadius: "10px",
+                                        border: "1px solid rgba(239, 68, 68, 0.12)",
+                                        borderLeft: "4px solid #f87171"
+                                    }}>
+                                        <span style={{ width: "10px", height: "10px", background: "#ef4444", borderRadius: "50%", flexShrink: 0, boxShadow: "0 0 6px rgba(239,68,68,0.4)" }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#b91c1c" }}>Failed Responses</span>
+                                                <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#dc2626", lineHeight: 1 }}>1</span>
+                                            </div>
+                                            <div style={{ width: "100%", height: "4px", background: "rgba(239,68,68,0.08)", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: "10%", height: "100%", background: "linear-gradient(90deg, #fca5a5, #ef4444)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>ERROR</span>
+                                    </div>
+
+                                    {/* 5. Hallucination Risk */}
+                                    <div style={{
+                                        display: "flex", alignItems: "center", gap: "12px",
+                                        padding: "10px 14px",
+                                        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(59, 130, 246, 0.02))",
+                                        borderRadius: "10px",
+                                        border: "1px solid rgba(59, 130, 246, 0.15)",
+                                        borderLeft: "4px solid #3b82f6"
+                                    }}>
+                                        <span style={{ width: "10px", height: "10px", background: "#3b82f6", borderRadius: "50%", flexShrink: 0, boxShadow: "0 0 8px rgba(59,130,246,0.5)" }} />
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "5px" }}>
+                                                <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#1e40af" }}>Hallucination Risk</span>
+                                                <span style={{ fontSize: "1rem", fontWeight: 900, color: "#1d4ed8", lineHeight: 1 }}>Low</span>
+                                            </div>
+                                            <div style={{ width: "100%", height: "4px", background: "rgba(59,130,246,0.1)", borderRadius: "2px", overflow: "hidden" }}>
+                                                <div style={{ width: "12%", height: "100%", background: "linear-gradient(90deg, #93c5fd, #3b82f6)", borderRadius: "2px", transition: "width 0.6s ease" }} />
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: "0.65rem", fontWeight: 800, background: "#dbeafe", color: "#1e40af", padding: "2px 7px", borderRadius: "20px", flexShrink: 0, letterSpacing: "0.02em" }}>SAFE</span>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            {/* Live Reasoning Log Card */}
+                            <div className="aicc-card" style={{ marginTop: 0, padding: "16px" }}>
+                                <h3 className="aicc-card-title" style={{ marginBottom: "12px" }}>
+                                    <span>Live Reasoning Log</span>
+                                    <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                                </h3>
+                                <div style={{
+                                    display: "flex", flexDirection: "column", gap: "0",
+                                    background: "rgba(248, 250, 252, 0.5)",
+                                    borderRadius: "10px",
+                                    border: "1px solid var(--glass-border)",
+                                    maxHeight: "220px",
+                                    overflowY: "auto"
+                                }}>
+                                    {monitoringFeed.map((item, idx) => {
+                                        // Derive icon, color, label, confidence from action string
+                                        const actionLower = (item.action || "").toLowerCase();
+                                        let icon = "🧠";
+                                        let typeLabel = "Intent Detected";
+                                        let confidence: number | null = 97;
+                                        let accentColor = "#6366f1";
+                                        let bgColor = "rgba(99,102,241,0.05)";
+                                        let borderColor = "rgba(99,102,241,0.15)";
+
+                                        if (actionLower.includes("escalat")) {
+                                            icon = "⚠️"; typeLabel = "Escalation Trigger";
+                                            confidence = null;
+                                            accentColor = "#ef4444"; bgColor = "rgba(239,68,68,0.05)"; borderColor = "rgba(239,68,68,0.2)";
+                                        } else if (actionLower.includes("response") || actionLower.includes("reply") || actionLower.includes("sent") || actionLower.includes("generat")) {
+                                            icon = "✅"; typeLabel = "Response Generated";
+                                            confidence = 99;
+                                            accentColor = "#22c55e"; bgColor = "rgba(34,197,94,0.05)"; borderColor = "rgba(34,197,94,0.15)";
+                                        } else if (actionLower.includes("knowledge") || actionLower.includes("search") || actionLower.includes("retriev") || actionLower.includes("inventory") || actionLower.includes("recommendation") || actionLower.includes("plot")) {
+                                            icon = "📍"; typeLabel = "Knowledge Search";
+                                            confidence = 94;
+                                            accentColor = "#3b82f6"; bgColor = "rgba(59,130,246,0.05)"; borderColor = "rgba(59,130,246,0.15)";
+                                        } else if (actionLower.includes("handoff") || actionLower.includes("transfer") || actionLower.includes("forward")) {
+                                            icon = "🔁"; typeLabel = "Agent Handoff";
+                                            confidence = null;
+                                            accentColor = "#f59e0b"; bgColor = "rgba(245,158,11,0.05)"; borderColor = "rgba(245,158,11,0.2)";
+                                        } else if (actionLower.includes("sentiment") || actionLower.includes("emotion")) {
+                                            icon = "💬"; typeLabel = "Sentiment Analysis";
+                                            confidence = 91;
+                                            accentColor = "#8b5cf6"; bgColor = "rgba(139,92,246,0.05)"; borderColor = "rgba(139,92,246,0.15)";
+                                        }
+
+                                        return (
+                                            <div key={item.id} style={{
+                                                padding: "14px 16px",
+                                                borderBottom: idx < monitoringFeed.length - 1 ? "1px solid var(--glass-border)" : "none",
+                                                background: idx === monitoringFeed.length - 1 ? bgColor : "transparent",
+                                                borderLeft: `4px solid ${accentColor}`,
+                                                transition: "all 0.2s ease",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "6px"
+                                            }}>
+                                                {/* Header Row: Timestamp & Status badge */}
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                    <span style={{
+                                                        fontFamily: "monospace",
+                                                        fontSize: "0.68rem",
+                                                        fontWeight: 800,
+                                                        color: "var(--text-secondary)",
+                                                        background: "rgba(0, 0, 0, 0.04)",
+                                                        padding: "2px 6px",
+                                                        borderRadius: "4px",
+                                                        letterSpacing: "0.03em"
+                                                    }}>
+                                                        {item.timestamp}
+                                                    </span>
+                                                    {confidence !== null && (
+                                                        <span style={{
+                                                            fontSize: "0.65rem",
+                                                            fontWeight: 800,
+                                                            color: accentColor,
+                                                            background: "white",
+                                                            border: `1px solid ${borderColor}`,
+                                                            padding: "1px 7px",
+                                                            borderRadius: "10px"
+                                                        }}>
+                                                            Confidence {confidence}%
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Title block with Type Icon and Label */}
+                                                <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "2px" }}>
+                                                    <span style={{ fontSize: "0.9rem" }}>{icon}</span>
+                                                    <span style={{
+                                                        fontSize: "0.75rem",
+                                                        fontWeight: 900,
+                                                        color: "var(--text-primary)",
+                                                        letterSpacing: "0.01em"
+                                                    }}>
+                                                        {typeLabel}
+                                                    </span>
+                                                </div>
+
+                                                {/* Reasoning Description */}
+                                                <div style={{
+                                                    fontSize: "0.72rem",
+                                                    color: "var(--text-secondary)",
+                                                    lineHeight: 1.45,
+                                                    paddingLeft: "2px",
+                                                    marginTop: "2px"
+                                                }}>
+                                                    {item.reasoning}
+                                                </div>
+
+                                                {/* Quote Bubble */}
+                                                {item.message && (
+                                                    <div style={{
+                                                        marginTop: "6px",
+                                                        fontSize: "0.68rem",
+                                                        color: "var(--text-secondary)",
+                                                        fontStyle: "italic",
+                                                        background: "rgba(255, 255, 255, 0.6)",
+                                                        borderRadius: "6px",
+                                                        padding: "6px 10px",
+                                                        borderLeft: `3px solid ${accentColor}`,
+                                                        border: `1px solid ${borderColor}`,
+                                                        lineHeight: 1.4
+                                                    }}>
+                                                        "{item.message}"
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                     {monitoringFeed.length === 0 && (
-                                        <div style={{ padding: "20px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.75rem" }}>
-                                            Activate live call monitoring to stream reasoning loops.
+                                        <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--text-secondary)", fontSize: "0.72rem", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
+                                            <Brain size={24} style={{ color: "var(--accent-indigo)", opacity: 0.4 }} />
+                                            <span>Activate live monitoring to stream reasoning loops.</span>
+                                            <div style={{ display: "flex", gap: "8px", fontSize: "0.65rem", opacity: 0.7 }}>
+                                                <span>🧠 Intent</span>
+                                                <span>📍 Knowledge</span>
+                                                <span>⚠️ Escalation</span>
+                                                <span>✅ Response</span>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="aicc-card" style={{ marginTop: 0, marginBottom: "20px" }}>
-                            <h3 className="aicc-card-title">
-                                <span>AI Health Monitor</span>
-                                <Activity size={18} style={{ color: "var(--accent-indigo)" }} />
+                        </div>
+                    </div>
+
+                    {/* 3. Collapsible Operations Audit Timeline (Bottom) */}
+                    <div className="aicc-card" style={{ padding: "14px" }}>
+                        <div 
+                            onClick={() => setShowTimeline(!showTimeline)}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                        >
+                            <h3 style={{ margin: 0, fontSize: "0.88rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "6px" }}>
+                                <span>Historical Operations Audit Timeline ({profile.liveMonitor.activityLog.length})</span>
+                                <Clock size={18} style={{ color: "var(--text-secondary)" }} />
                             </h3>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%" }} /> Online Agents
-                                    </span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#dcfce7", color: "#166534", padding: "2px 8px", borderRadius: "6px" }}>12</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ width: "8px", height: "8px", background: "#f59e0b", borderRadius: "50%" }} /> Training Required
-                                    </span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: "6px" }}>2</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%" }} /> Escalation Alerts
-                                    </span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 8px", borderRadius: "6px" }}>3</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid var(--glass-border)", paddingBottom: "8px" }}>
-                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ width: "8px", height: "8px", background: "#ef4444", borderRadius: "50%" }} /> Failed Responses
-                                    </span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#fee2e2", color: "#991b1b", padding: "2px 8px", borderRadius: "6px" }}>1</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                    <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "6px" }}>
-                                        <span style={{ width: "8px", height: "8px", background: "#3b82f6", borderRadius: "50%" }} /> Hallucination Risk
-                                    </span>
-                                    <span style={{ fontSize: "0.85rem", fontWeight: 800, background: "#dbeafe", color: "#1e40af", padding: "2px 8px", borderRadius: "6px" }}>Low</span>
-                                </div>
+                            <span style={{ fontSize: "0.72rem", color: "var(--accent-indigo)", fontWeight: 700 }}>
+                                {showTimeline ? "Collapse Timeline ▲" : "Expand Timeline ▼"}
+                            </span>
+                        </div>
+                        {showTimeline && (
+                            <div className="aicc-timeline" style={{ marginTop: "12px", borderTop: "1px solid var(--glass-border)", paddingTop: "12px", maxHeight: "180px", overflowY: "auto", paddingRight: "4px" }}>
+                                {profile.liveMonitor.activityLog.map((log: any) => (
+                                    <div key={log.id} className="aicc-timeline-item" style={{ marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px dashed var(--glass-border)" }}>
+                                        <span className="aicc-timeline-dot" style={{ top: "6px" }} />
+                                        <div className="aicc-timeline-content" style={{ marginLeft: "20px" }}>
+                                            <h5 style={{ margin: 0, fontSize: "0.75rem", fontWeight: 800 }}>[{log.time}] {log.action}</h5>
+                                            <p style={{ margin: "2px 0 0", fontSize: "0.7rem", color: "var(--text-secondary)" }}>{log.detail}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
-
-                        <div className="aicc-card aicc-stream-card" style={{ marginTop: 0 }}>
-                            <h3 className="aicc-card-title">
-                                <span>Voice Transcript Stream</span>
-                                <MessageSquare size={18} style={{ color: isMonitoringActive ? "#ef4444" : "var(--text-secondary)" }} />
-                            </h3>
-                            {isMonitoringActive ? (
-                                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                                    <div className="aicc-live-equalizer-wrap" style={{ background: "#ef4444", color: "white", padding: "8px 12px", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ fontSize: "0.7rem", fontWeight: 800 }}>LIVE BROADCAST CHANNEL</span>
-                                        <div className="aicc-live-monitor-eq-bars" style={{ display: "flex", gap: "3px", alignItems: "flex-end", height: "12px" }}>
-                                            <span className="aicc-live-monitor-eq-bar" />
-                                            <span className="aicc-live-monitor-eq-bar" />
-                                            <span className="aicc-live-monitor-eq-bar" />
-                                        </div>
-                                    </div>
-                                    <div className="aicc-transcript-stream-box" style={{ height: "200px", overflowY: "auto", border: "1px solid var(--glass-border)", borderRadius: "8px", padding: "10px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                                        {monitoringProgress >= 1 && (
-                                            <div style={{ background: "#f1f5f9", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-start" }}>
-                                                <strong>AI:</strong> Namaste! Rohan speaking from Maya Infratech. Sector 150 expressway residential layout ki help chahiye thi?
-                                            </div>
-                                        )}
-                                        {monitoringProgress >= 2 && (
-                                            <div style={{ background: "var(--accent-indigo)", color: "white", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-end" }}>
-                                                <strong>Customer:</strong> Haan Rohan, payment configurations details bhej dena options list ki, pre-approval rates kya hain?
-                                            </div>
-                                        )}
-                                        {monitoringProgress >= 3 && (
-                                            <div style={{ background: "#f1f5f9", padding: "6px 10px", borderRadius: "8px", fontSize: "0.75rem", alignSelf: "flex-start" }}>
-                                                <strong>AI:</strong> Sure Rahul ji, registry rates starting structure specifications and maps route links check karke WhatsApp card share kar raha hu.
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Supervisor Copilot Controls */}
-                                    <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>🛡️ Supervisor Live Copilot Actions</span>
-                                            {takeoverActive && (
-                                                <span style={{ fontSize: "0.62rem", background: "#fee2e2", color: "#ef4444", padding: "2px 6px", borderRadius: "4px", fontWeight: 800 }}>⚡ TAKEOVER ACTIVE</span>
-                                            )}
-                                        </div>
-
-                                        {/* Whispering Box */}
-                                        <div style={{ display: "flex", gap: "8px" }}>
-                                            <input 
-                                                type="text" 
-                                                value={whisperMessage} 
-                                                onChange={(e) => setWhisperMessage(e.target.value)}
-                                                placeholder="Type whisper instruction to Rohan (e.g. Offer Unit 402)..."
-                                                className="aicc-input"
-                                                style={{ flex: 1, padding: "6px 10px", fontSize: "0.72rem" }}
-                                                onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
-                                            />
-                                            <button 
-                                                onClick={handleSendWhisper}
-                                                className="aicc-btn-primary"
-                                                style={{ padding: "6px 12px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
-                                            >
-                                                Send Whisper
-                                            </button>
-                                        </div>
-
-                                        {/* Takeover Control Trigger */}
-                                        <button 
-                                            onClick={handleToggleTakeover}
-                                            className={takeoverActive ? "aicc-btn-secondary" : "aicc-btn-primary"}
-                                            style={{ 
-                                                padding: "8px 12px", 
-                                                fontSize: "0.75rem", 
-                                                fontWeight: 800, 
-                                                background: takeoverActive ? "#fee2e2" : "#ea580c", 
-                                                color: takeoverActive ? "#991b1b" : "white",
-                                                border: "none",
-                                                borderRadius: "6px",
-                                                cursor: "pointer",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: "6px"
-                                            }}
-                                        >
-                                            {takeoverActive ? "Release Call control back to AI Rohan" : "⚡ FORCE CALL TAKEOVER (Mute Rohan)"}
-                                        </button>
-
-                                        {/* Supervisor Live Action Log Feed */}
-                                        {supervisorLogs.length > 0 && (
-                                            <div style={{ 
-                                                background: "#fafafa", 
-                                                border: "1px solid var(--glass-border)", 
-                                                borderRadius: "6px", 
-                                                padding: "8px", 
-                                                fontSize: "0.68rem", 
-                                                maxHeight: "80px", 
-                                                overflowY: "auto",
-                                                fontFamily: "monospace",
-                                                display: "flex",
-                                                flexDirection: "column",
-                                                gap: "2px"
-                                            }}>
-                                                {supervisorLogs.map((logStr, i) => (
-                                                    <span key={i} style={{ color: logStr.includes("Whisper") ? "var(--accent-indigo)" : "#b45309" }}>
-                                                        {logStr}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                </div>
-                            ) : (
-                                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", color: "var(--text-secondary)", gap: "10px", border: "1px dashed var(--glass-border)", borderRadius: "12px" }}>
-                                    <Clock size={28} />
-                                    <span style={{ fontSize: "0.75rem" }}>Select the active dialing alert to monitor live transcript.</span>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
 
-                    <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Historical Operations Audit Timeline</span>
-                            <Clock size={18} style={{ color: "var(--text-secondary)" }} />
-                        </h3>
-                        <div className="aicc-timeline">
-                            {profile.liveMonitor.activityLog.map((log: any) => (
-                                <div key={log.id} className="aicc-timeline-item">
-                                    <span className="aicc-timeline-dot" />
-                                    <div className="aicc-timeline-content">
-                                        <h5>[{log.time}] {log.action}</h5>
-                                        <p>{log.detail}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             )}
 
