@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Building2, User, Mail, Lock, Phone, ArrowRight, CheckCircle } from 'lucide-react';
 import { authApi, setToken } from '../../api/client';
 import { useBranding } from '../../context/BrandingContext';
+import { useMobile } from '../../hooks/useMobile';
 
 const getSubdomain = () => {
     const host = window.location.hostname;
+    // Ignore default Vercel preview/production domains
+    if (host.endsWith('.vercel.app') && host.split('.').length === 3) return null;
+
     const parts = host.split('.');
     if (parts.length >= 3) {
         if (parts[0] === 'www' && parts.length > 3) return parts[1];
@@ -22,7 +26,9 @@ export default function Register() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
-    const handleSubmit = async (e) => {
+    const isMobile = useMobile();
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         if (!form.name || !form.email || !form.password) {
@@ -41,23 +47,14 @@ export default function Register() {
             sessionStorage.setItem('zentrix_refresh_token', res.refreshToken);
             sessionStorage.setItem('zentrix_user', JSON.stringify(res.user));
             navigate('/');
-            window.location.reload();
-        } catch (err) {
-            setError(err.error || 'Registration failed');
+        } catch (err: any) {
+            setError(err?.error || 'Registration failed');
         } finally {
             setLoading(false);
         }
     };
 
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-
-    useEffect(() => {
-        const handler = () => setIsMobile(window.innerWidth < 1024);
-        window.addEventListener('resize', handler);
-        return () => window.removeEventListener('resize', handler);
-    }, []);
-
-    const update = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    const update = (k: keyof typeof form, v: string) => setForm(f => ({ ...f, [k]: v }));
 
     const tenantLogo = branding?.logo_url ? (
         <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 12 }} />
@@ -131,7 +128,7 @@ export default function Register() {
                             borderRadius: 10, padding: '10px 14px', marginBottom: 16,
                             fontSize: '0.8rem', color: '#fca5a5', display: 'flex', alignItems: 'center', gap: 8
                         }}>
-                             <span style={{ fontSize: '1rem' }}>⚠️</span> {error}
+                            <span style={{ fontSize: '1rem' }}>⚠️</span> {error}
                         </div>
                     )}
 
@@ -208,29 +205,29 @@ export default function Register() {
                     position: 'relative',
                 }}>
                     <div style={{ maxWidth: '400px' }}>
-                        <div style={{ 
-                            background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', 
-                            padding: '4px 12px', borderRadius: '30px', fontSize: '0.7rem', 
+                        <div style={{
+                            background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8',
+                            padding: '4px 12px', borderRadius: '30px', fontSize: '0.7rem',
                             fontWeight: 800, width: 'fit-content', marginBottom: 16,
                             textTransform: 'uppercase', letterSpacing: '0.1em',
                             display: 'flex', alignItems: 'center', gap: 6
                         }}>
                             <CheckCircle size={12} /> Pro Tier Included
                         </div>
-                        
+
                         <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff', lineHeight: 1.1, marginBottom: 20, letterSpacing: '-0.03em' }}>
                             Scale your <span style={{ color: '#4f46e5' }}>velocity</span> beyond limits.
                         </h2>
-                        
+
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {[
                                 { title: 'AI Pipeline', desc: 'Predict closures with AI scoring.', icon: '🎯' },
                                 { title: 'Fast Routing', desc: 'Distribute leads in <1 second.', icon: '⚡' },
                                 { title: 'Data Core', desc: 'All interactions in one place.', icon: '📦' }
                             ].map((feature, i) => (
-                                <div key={i} className="hover-lift" style={{ 
-                                    display: 'flex', gap: 12, padding: '12px', borderRadius: '12px', 
-                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)' 
+                                <div key={i} className="hover-lift" style={{
+                                    display: 'flex', gap: 12, padding: '12px', borderRadius: '12px',
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)'
                                 }}>
                                     <div style={{ fontSize: '1.2rem', marginTop: 2 }}>{feature.icon}</div>
                                     <div>
@@ -243,7 +240,7 @@ export default function Register() {
 
                         {/* Social Proof */}
                         <div style={{ marginTop: 24, padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ display: 'flex', gap: -6, marginBottom: 8 }}>
+                            <div style={{ display: 'flex', marginBottom: 8 }}>
                                 {[...Array(4)].map((_, i) => (
                                     <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: `hsl(${i * 40 + 200}, 60%, 50%)`, border: '2px solid #0f172a', marginLeft: i === 0 ? 0 : -6 }} />
                                 ))}
@@ -257,9 +254,9 @@ export default function Register() {
                     </div>
 
                     {/* Decorative Elements */}
-                    <div style={{ 
-                        position: 'absolute', bottom: -50, right: -50, width: 200, height: 200, 
-                        background: 'radial-gradient(circle, rgba(99,102,241,0.4), transparent)', filter: 'blur(60px)' 
+                    <div style={{
+                        position: 'absolute', bottom: -50, right: -50, width: 200, height: 200,
+                        background: 'radial-gradient(circle, rgba(99,102,241,0.4), transparent)', filter: 'blur(60px)'
                     }} />
                 </div>
             </div>

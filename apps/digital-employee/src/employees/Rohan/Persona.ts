@@ -1,69 +1,29 @@
 /**
  * RohanPersonaEngine — Identity, Tone, Knowledge & Escalation
  *
+ * Extends BasePersonaEngine (item 2.1) so the shared persona loading,
+ * caching, voice, and filler logic is inherited. This class keeps only
+ * the Rohan-specific logic:
+ *   - buildSystemPrompt()      — identity + knowledge + context + track blocks
+ *   - evaluateEscalation()     — sales escalation rules
+ *   - getEscalationAction()    — escalation → action/role mapping
+ *   - generateGreeting()       — sales greeting with project + channel variants
+ *
  * NOTE: This module runs inside apps/digital-employee — isolated from CRM API traffic.
  */
 
-import { pool } from '@zentrix/database';
-import { logger } from '@zentrix/logger';
 import {
     DbAIEmployeePersona,
-    PersonaConfig,
-    VoiceConfig,
-    KnowledgeScope,
-    EscalationRules,
     ReasoningOutput,
     EscalationType,
     RohanContext,
-    SupportedLanguage,
-    PersonaNotFoundError,
 } from '@zentrix/types';
 import { loadPrompt } from '../../utils/prompts';
+import { BasePersonaEngine } from '../BasePersonaEngine';
 
-// ── In-memory persona cache (refreshed every 5 min) ─────────────────
-interface PersonaCacheEntry {
-    persona: DbAIEmployeePersona;
-    cached_at: number;
-}
-
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const personaCache = new Map<number, PersonaCacheEntry>();
-
-export class RohanPersonaEngine {
-    // ── Persona Loading ─────────────────────────────────────────────
-
-    async getPersona(tenantId: number): Promise<DbAIEmployeePersona> {
-        const cached = personaCache.get(tenantId);
-        if (cached && Date.now() - cached.cached_at < CACHE_TTL_MS) {
-            return cached.persona;
-        }
-
-        try {
-            const { rows } = await pool.query(
-                `SELECT * FROM ai_employee_personas
-                 WHERE tenant_id = $1 AND role = 'rohan' AND is_active = TRUE
-                 LIMIT 1`,
-                [tenantId]
-            );
-
-            if (rows.length === 0) {
-                throw new PersonaNotFoundError(tenantId);
-            }
-
-            const persona = rows[0] as DbAIEmployeePersona;
-            personaCache.set(tenantId, { persona, cached_at: Date.now() });
-            return persona;
-        } catch (err) {
-            if (err instanceof PersonaNotFoundError) throw err;
-            logger.error(`[RohanPersona] Failed to load persona for tenant ${tenantId}: ${err}`);
-            throw new PersonaNotFoundError(tenantId);
-        }
-    }
-
-    invalidateCache(tenantId: number): void {
-        personaCache.delete(tenantId);
-        logger.info(`[RohanPersona] Cache invalidated for tenant ${tenantId}`);
-    }
+export class RohanPersonaEngine extends BasePersonaEngine {
+    protected readonly role = 'rohan' as const;
+    protected readonly logTag = '[RohanPersona]';
 
     // ── System Prompt Builder ───────────────────────────────────────
 
@@ -304,41 +264,6 @@ ${state.last_rohan_message ? `Last Rohan Message: "${state.last_rohan_message}"`
             default:
                 return null;
         }
-    }
-
-    // ── Voice Configuration ─────────────────────────────────────────
-
-    getVoiceForLanguage(
-        persona: DbAIEmployeePersona,
-        language: SupportedLanguage
-    ): string {
-        const voiceConfig = persona.voice_config;
-        const indianLangs: SupportedLanguage[] = ['hindi', 'tamil', 'telugu', 'kannada', 'marathi', 'bengali', 'gujarati', 'punjabi', 'malayalam', 'odia'];
-
-        if (language === 'english') {
-            return voiceConfig.english_voice;
-        }
-
-        if (language === 'hinglish' || indianLangs.includes(language)) {
-            return voiceConfig.code_mix_voice || voiceConfig.hindi_voice;
-        }
-
-        return voiceConfig.hindi_voice;
-    }
-
-    getTTSParams(persona: DbAIEmployeePersona): { speed: number; pitch: number } {
-        return {
-            speed: persona.voice_config.speed || 1.0,
-            pitch: persona.voice_config.pitch || 1.0,
-        };
-    }
-
-    // ── Filler Word Injection ────────────────────────────────────────
-
-    getRandomFiller(persona: DbAIEmployeePersona): string | null {
-        const fillers = persona.persona_config.filler_words;
-        if (!fillers || fillers.length === 0) return null;
-        return fillers[Math.floor(Math.random() * fillers.length)];
     }
 
     // ── Greeting Generator ───────────────────────────────────────────

@@ -341,6 +341,43 @@ export default function AICommandCenter() {
     const visualizerNodes = useMemo(() => vectorNodeData[selectedAgent] || vectorNodeData.rohan, [selectedAgent]);
     const [selectedVisualizerNode, setSelectedVisualizerNode] = useState<any | null>(null);
 
+    const knowledgeStats = useMemo(() => {
+        const statsMap: Record<string, {
+            questionsToday: number;
+            accuracy: string;
+            responseTime: string;
+            confidence: string;
+            coverage: string;
+            failedQueries: number;
+        }> = {
+            rohan: {
+                questionsToday: 142,
+                accuracy: "94.0%",
+                responseTime: "540ms",
+                confidence: "98.2%",
+                coverage: "84.5%",
+                failedQueries: 3
+            },
+            monika: {
+                questionsToday: 248,
+                accuracy: "98.0%",
+                responseTime: "500ms",
+                confidence: "99.1%",
+                coverage: "95.2%",
+                failedQueries: 1
+            },
+            neha: {
+                questionsToday: 89,
+                accuracy: "96.0%",
+                responseTime: "555ms",
+                confidence: "97.5%",
+                coverage: "91.0%",
+                failedQueries: 2
+            }
+        };
+        return statsMap[selectedAgent] || statsMap.rohan;
+    }, [selectedAgent]);
+
     // Initial node selection in visualizer
     useEffect(() => {
         setSelectedVisualizerNode(visualizerNodes[0] || null);
@@ -1433,7 +1470,7 @@ export default function AICommandCenter() {
 
             {/* Dynamic employee enterprise context bar */}
             <div className="aicc-card" style={{ marginBottom: "24px", background: "rgba(255, 255, 255, 0.45)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px" }}>
-                <div className="aicc-employee-context-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: "16px", alignItems: "center" }}>
+                <div className="aicc-employee-context-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr", gap: "16px", alignItems: "center" }}>
                     
                     {/* Avatar & Name Info */}
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -1453,20 +1490,19 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    {/* Badge 1: Accuracy */}
+                    {/* Badge 1: Health */}
                     <div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Acc Rating</div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Health</div>
                         <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#166534", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
                             <span style={{ width: "6px", height: "6px", background: "#22c55e", borderRadius: "50%" }} />
-                            {profile.role === "rohan" ? "94.0%" : profile.role === "neha" ? "96.0%" : "98.0%"}
+                            {profile.role === "rohan" ? "Excellent" : profile.role === "neha" ? "Good" : "Excellent"}
                         </div>
                     </div>
 
-                    {/* Badge 2: RAG Coverage */}
+                    {/* Badge 2: Knowledge Coverage */}
                     <div>
                         <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-                            RAG Coverage
-                            <span className="aicc-info-icon" title="% of queries answered from the Knowledge Base vs. LLM fallback. Higher = better knowledge coverage.">i</span>
+                            Knowledge Coverage
                         </div>
                         <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
                             {profile.role === "rohan" ? "84.5%" : profile.role === "neha" ? "92.0%" : "75.0%"}
@@ -1477,7 +1513,6 @@ export default function AICommandCenter() {
                     <div>
                         <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
                             Confidence
-                            <span className="aicc-info-icon" title="Average model certainty score (0–100%) across all AI responses in the selected period. Below 70% triggers coaching alerts.">i</span>
                         </div>
                         <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
                             {profile.role === "rohan" ? "98.2%" : profile.role === "neha" ? "99.1%" : "97.5%"}
@@ -1500,7 +1535,23 @@ export default function AICommandCenter() {
                         </div>
                     </div>
 
-                    {/* Badge 6: Escalation % */}
+                    {/* Badge 6: Pending Retraining */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Pending Retraining</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "4 items" : profile.role === "neha" ? "0 items" : "1 item"}
+                        </div>
+                    </div>
+
+                    {/* Badge 7: Average Rating */}
+                    <div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Avg Rating</div>
+                        <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "#166534", marginTop: "2px" }}>
+                            {profile.role === "rohan" ? "4.7 / 5" : profile.role === "neha" ? "4.8 / 5" : "4.9 / 5"}
+                        </div>
+                    </div>
+
+                    {/* Badge 8: Escalation % */}
                     <div>
                         <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>Escalation %</div>
                         <div style={{ fontSize: "0.9rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>
@@ -2060,31 +2111,48 @@ export default function AICommandCenter() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                     <div className="aicc-knowledge-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", background: "rgba(255, 255, 255, 0.45)", border: "1px solid var(--glass-border)", padding: "16px 20px", borderRadius: "12px", backdropFilter: "blur(12px)" }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>RAG Knowledge Files</span>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Knowledge Files</span>
                             <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{dynamicDocCount}</span>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Total Chunks Indexed</span>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Chunks</span>
                             <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{dynamicChunksCount}</span>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Vector Core Status</span>
-                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#166534", display: "flex", alignItems: "center", gap: "6px" }}>
-                                <span style={{ width: "8px", height: "8px", background: "#22c55e", borderRadius: "50%" }} /> Active
-                            </span>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Questions Answered Today</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{knowledgeStats.questionsToday}</span>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Sync Database</span>
-                            <button onClick={triggerDbSync} className="aicc-btn-secondary" style={{ padding: "4px 8px", fontSize: "0.7rem", display: "flex", alignItems: "center", gap: "6px", width: "fit-content", alignSelf: "flex-start", marginTop: "2px" }}>
-                                <RefreshCw size={10} /> {syncRelativeTime}
-                            </button>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Answer Accuracy</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#166534" }}>{knowledgeStats.accuracy}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Average Response Time</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{knowledgeStats.responseTime}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Confidence Score</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{knowledgeStats.confidence}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Knowledge Coverage</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)" }}>{knowledgeStats.coverage}</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.7rem", textTransform: "uppercase", fontWeight: 800, color: "var(--text-secondary)", letterSpacing: "0.5px" }}>Failed Queries</span>
+                            <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#991b1b" }}>{knowledgeStats.failedQueries}</span>
                         </div>
                     </div>
 
                     <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Knowledge Base Ingestion (RAG)</span>
-                            <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                        <h3 className="aicc-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span>Knowledge Base Ingestion (RAG)</span>
+                                <Brain size={18} style={{ color: "var(--accent-indigo)" }} />
+                            </span>
+                            <button onClick={triggerDbSync} className="aicc-btn-secondary" style={{ padding: "6px 12px", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: "6px" }}>
+                                <RefreshCw size={12} /> Sync Database ({syncRelativeTime})
+                            </button>
                         </h3>
                         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                             <div className="aicc-dropzone" onClick={simulateRAGIngest}>

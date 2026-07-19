@@ -10,7 +10,10 @@ const getSubdomain = () => {
     const host = window.location.hostname;
     // return null if host is an IP address
     if (/^\d+\.\d+\.\d+\.\d+$/.test(host)) return null;
-    
+
+    // Ignore default Vercel preview/production domains
+    if (host.endsWith('.vercel.app') && host.split('.').length === 3) return null;
+
     const parts = host.split('.');
     if (parts.length >= 3) {
         if (parts[0] === 'www' && parts.length > 3) return parts[1];
@@ -168,7 +171,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [loginError, setLoginError] = useState('');
     const [showPwd, setShowPwd] = useState(false);
-    const formRef = useRef(null);
     const [mounted, setMounted] = useState(false);
 
     const PRIMARY_COLOR = branding?.primary_color || '#6366f1';
@@ -185,13 +187,13 @@ export default function Login() {
         }, 1000); // Wait 1s for login page to render first
         return () => clearTimeout(timer);
     }, []);
-    
+
     // Derived branding states
     const tenantName = branding?.company_name || 'Zentrix CRM';
     const tenantLogo = branding?.logo_url ? (
         <img src={branding.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 14 }} />
     ) : (branding?.logo_icon || 'Z');
-    
+
     const tenantColor = branding?.primary_color || '#1e3a8a';
     const bgGradient = `linear-gradient(135deg, #050d21 0%, #172554 100%)`; // Midnight Navy background
 
@@ -218,7 +220,7 @@ export default function Login() {
         // Branding is now handled by the global BrandingContext provider
     }, [subdomain]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setLoginError('');
@@ -234,7 +236,7 @@ export default function Login() {
         }
     };
 
-    const anim = (delay) => mounted ? {
+    const anim = (delay: number) => mounted ? {
         animation: `loginSlideUp 0.6s ${delay}s cubic-bezier(0.16, 1, 0.3, 1) both`,
     } : { opacity: 0 };
 
@@ -351,19 +353,17 @@ export default function Login() {
 
             {/* ═══ RIGHT PANEL — Login Form ═══ */}
             <div style={{
-                width: '100%', 
-                maxWidth: isMobile ? '100%' : 520, 
+                width: '100%',
+                maxWidth: isMobile ? '100%' : 520,
                 minHeight: isMobile ? '100vh' : 'auto',
-                display: 'flex', 
-                alignItems: 'center', 
+                display: 'flex',
+                alignItems: 'center',
                 justifyContent: 'center',
                 padding: isMobile ? '24px 20px' : 'clamp(24px, 5vw, 48px)',
                 background: isMobile ? '#f8fafc' : 'rgba(255,255,255,0.98)',
-                backdropFilter: isMobile ? 'none' : 'none',
-                borderRadius: isMobile ? 0 : 0,
                 borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.06)',
                 border: 'none',
-                position: 'relative', 
+                position: 'relative',
                 zIndex: 2,
                 boxShadow: isMobile ? 'none' : '-24px 0 80px rgba(0,0,0,0.25)',
                 ...(mounted ? { animation: 'loginScaleIn 0.5s 0.05s cubic-bezier(0.16, 1, 0.3, 1) both' } : {}),
@@ -478,11 +478,6 @@ export default function Login() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                     <span style={{ fontSize: '1.2rem' }}>⚠️</span> {loginError}
                                 </div>
-                                {loginError.includes('server side') && (
-                                    <div style={{ fontSize: '0.7rem', color: '#dc2626', opacity: 0.8, paddingLeft: 30, fontWeight: 500 }}>
-                                        Technical details: {email && `Attempted for ${email}`}
-                                    </div>
-                                )}
                             </div>
                         )}
 
