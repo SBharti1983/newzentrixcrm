@@ -2676,7 +2676,7 @@ export default function AICommandCenter() {
                     <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: "20px" }}>
                         
                         {/* Left Column: Ingestion Controls & Sources */}
-                        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
                             
                             <div className="aicc-card" style={{ marginTop: 0 }}>
                         <h3 className="aicc-card-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -3149,7 +3149,7 @@ export default function AICommandCenter() {
                 </div> {/* Closes Left Column wrapper */}
 
                 {/* Right Column: Ingestion Timeline & Knowledge Analytics */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px", minWidth: 0 }}>
                     
                     {/* Ingestion Timeline Card (Item 8) */}
                     <div className="aicc-card" style={{ marginTop: 0, background: "white" }}>
