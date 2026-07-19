@@ -796,6 +796,11 @@ export default function AICommandCenter() {
     const [twinCallLogs, setTwinCallLogs] = useState<string[]>([]);
     const [selectedTwinAvatar, setSelectedTwinAvatar] = useState<string>("receptionist_model_a");
 
+    // ⚡ Supervisor takeover & whisper states
+    const [takeoverActive, setTakeoverActive] = useState<boolean>(false);
+    const [whisperMessage, setWhisperMessage] = useState<string>("");
+    const [supervisorLogs, setSupervisorLogs] = useState<string[]>([]);
+
     const [auditLogs, setAuditLogs] = useState<any[]>([
         { 
             id: "aud-001", 
@@ -1787,6 +1792,46 @@ export default function AICommandCenter() {
                     message: "Live WebRTC video feed is streaming."
                 });
             }, 1500);
+        }
+    };
+
+    const handleSendWhisper = () => {
+        if (!whisperMessage.trim()) return;
+        setSupervisorLogs(prev => [
+            ...prev,
+            `[Supervisor Whisper]: ${whisperMessage}`
+        ]);
+        addToast({
+            type: "success",
+            title: "Whisper Sent",
+            message: `Prompt instruction pushed to Rohan's short-term context.`
+        });
+        setWhisperMessage("");
+    };
+
+    const handleToggleTakeover = () => {
+        if (takeoverActive) {
+            setTakeoverActive(false);
+            setSupervisorLogs(prev => [
+                ...prev,
+                `[System]: Call handed back to AI Agent Rohan. Active reasoning resumed.`
+            ]);
+            addToast({
+                type: "info",
+                title: "Call Released",
+                message: "Rohan has resumed voice control."
+            });
+        } else {
+            setTakeoverActive(true);
+            setSupervisorLogs(prev => [
+                ...prev,
+                `[System]: Rohan MUTED. Supervisor Arjun Sharma has taken over the call.`
+            ]);
+            addToast({
+                type: "warning",
+                title: "Supervisor Taken Over",
+                message: "Live WebRTC audio is routed to your microphone now."
+            });
         }
     };
 
@@ -3946,6 +3991,82 @@ export default function AICommandCenter() {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Supervisor Copilot Controls */}
+                                    <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                            <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--text-primary)" }}>🛡️ Supervisor Live Copilot Actions</span>
+                                            {takeoverActive && (
+                                                <span style={{ fontSize: "0.62rem", background: "#fee2e2", color: "#ef4444", padding: "2px 6px", borderRadius: "4px", fontWeight: 800 }}>⚡ TAKEOVER ACTIVE</span>
+                                            )}
+                                        </div>
+
+                                        {/* Whispering Box */}
+                                        <div style={{ display: "flex", gap: "8px" }}>
+                                            <input 
+                                                type="text" 
+                                                value={whisperMessage} 
+                                                onChange={(e) => setWhisperMessage(e.target.value)}
+                                                placeholder="Type whisper instruction to Rohan (e.g. Offer Unit 402)..."
+                                                className="aicc-input"
+                                                style={{ flex: 1, padding: "6px 10px", fontSize: "0.72rem" }}
+                                                onKeyDown={(e) => { if (e.key === 'Enter') handleSendWhisper(); }}
+                                            />
+                                            <button 
+                                                onClick={handleSendWhisper}
+                                                className="aicc-btn-primary"
+                                                style={{ padding: "6px 12px", fontSize: "0.72rem", whiteSpace: "nowrap" }}
+                                            >
+                                                Send Whisper
+                                            </button>
+                                        </div>
+
+                                        {/* Takeover Control Trigger */}
+                                        <button 
+                                            onClick={handleToggleTakeover}
+                                            className={takeoverActive ? "aicc-btn-secondary" : "aicc-btn-primary"}
+                                            style={{ 
+                                                padding: "8px 12px", 
+                                                fontSize: "0.75rem", 
+                                                fontWeight: 800, 
+                                                background: takeoverActive ? "#fee2e2" : "#ea580c", 
+                                                color: takeoverActive ? "#991b1b" : "white",
+                                                border: "none",
+                                                borderRadius: "6px",
+                                                cursor: "pointer",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: "6px"
+                                            }}
+                                        >
+                                            {takeoverActive ? "Release Call control back to AI Rohan" : "⚡ FORCE CALL TAKEOVER (Mute Rohan)"}
+                                        </button>
+
+                                        {/* Supervisor Live Action Log Feed */}
+                                        {supervisorLogs.length > 0 && (
+                                            <div style={{ 
+                                                background: "#fafafa", 
+                                                border: "1px solid var(--glass-border)", 
+                                                borderRadius: "6px", 
+                                                padding: "8px", 
+                                                fontSize: "0.68rem", 
+                                                maxHeight: "80px", 
+                                                overflowY: "auto",
+                                                fontFamily: "monospace",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                gap: "2px"
+                                            }}>
+                                                {supervisorLogs.map((logStr, i) => (
+                                                    <span key={i} style={{ color: logStr.includes("Whisper") ? "var(--accent-indigo)" : "#b45309" }}>
+                                                        {logStr}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
                                 </div>
                             ) : (
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "200px", color: "var(--text-secondary)", gap: "10px", border: "1px dashed var(--glass-border)", borderRadius: "12px" }}>
