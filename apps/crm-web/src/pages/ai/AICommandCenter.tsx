@@ -715,6 +715,40 @@ export default function AICommandCenter() {
     // Overview Enhancement States
     const [dashPeriod, setDashPeriod] = useState<'today' | '7d' | '30d'>('30d');
 
+    // Manager Analytics States & Datasets
+    const [analyticsPeriod, setAnalyticsPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+
+    const conversationTrendData = {
+        daily: [
+            { name: 'Mon', calls: 120, latency: 1.30, cost: 9.6 },
+            { name: 'Tue', calls: 180, latency: 1.22, cost: 14.4 },
+            { name: 'Wed', calls: 160, latency: 1.28, cost: 12.8 },
+            { name: 'Thu', calls: 240, latency: 1.20, cost: 19.2 },
+            { name: 'Fri', calls: 290, latency: 1.25, cost: 23.2 },
+            { name: 'Sat', calls: 110, latency: 1.32, cost: 8.8 },
+            { name: 'Sun', calls: 80, latency: 1.28, cost: 6.4 }
+        ],
+        weekly: [
+            { name: 'Wk 24', calls: 820, latency: 1.28, cost: 65.6 },
+            { name: 'Wk 25', calls: 940, latency: 1.24, cost: 75.2 },
+            { name: 'Wk 26', calls: 1050, latency: 1.22, cost: 84.0 },
+            { name: 'Wk 27', calls: 1190, latency: 1.21, cost: 95.2 }
+        ],
+        monthly: [
+            { name: 'Apr', calls: 3200, latency: 1.32, cost: 256 },
+            { name: 'May', calls: 3800, latency: 1.28, cost: 304 },
+            { name: 'Jun', calls: 4400, latency: 1.24, cost: 352 },
+            { name: 'Jul', calls: 5200, latency: 1.22, cost: 416 }
+        ]
+    };
+
+    const sourceUtilizationData = [
+        { name: 'Maya Brochure', value: 45, color: 'var(--accent-indigo)' },
+        { name: 'CRM database', value: 25, color: '#3b82f6' },
+        { name: 'FAQ Scraper', value: 18, color: '#10b981' },
+        { name: 'Direct Config', value: 12, color: '#f59e0b' }
+    ];
+
     // Mock data for RAG Analytics charts
     const queryTrendData = [
         { name: 'Mon', asked: 140 },
@@ -3546,83 +3580,175 @@ export default function AICommandCenter() {
             {/* ─── TAB 7: PERFORMANCE ANALYTICS ───────────────────────────── */}
             {activeTab === "analytics" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                    {/* Filter controls */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Performance KPIs</span>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-secondary)", textTransform: "uppercase" }}>Executive Manager Analytics</span>
                         <div style={{ display: "flex", gap: "6px" }}>
-                            <button onClick={() => setChartPeriod("daily")} className="aicc-btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem", background: chartPeriod === "daily" ? "var(--accent-indigo)" : "white", color: chartPeriod === "daily" ? "white" : "var(--text-primary)" }}>Daily</button>
-                            <button onClick={() => setChartPeriod("weekly")} className="aicc-btn-secondary" style={{ padding: "4px 10px", fontSize: "0.75rem", background: chartPeriod === "weekly" ? "var(--accent-indigo)" : "white", color: chartPeriod === "weekly" ? "white" : "var(--text-primary)" }}>Weekly</button>
+                            {['daily', 'weekly', 'monthly'].map((period) => (
+                                <button 
+                                    key={period} 
+                                    onClick={() => setAnalyticsPeriod(period as any)} 
+                                    className="aicc-btn-secondary" 
+                                    style={{ 
+                                        padding: "4px 10px", fontSize: "0.75rem", textTransform: "capitalize",
+                                        background: analyticsPeriod === period ? "var(--accent-indigo)" : "white", 
+                                        color: analyticsPeriod === period ? "white" : "var(--text-primary)" 
+                                    }}
+                                >
+                                    {period}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
+                    {/* Top Row KPIs */}
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "16px" }}>
-                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Avg call MOS</span>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>4.7/5</span>
-                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>★ Excellent QoS</span>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Avg Response Time</span>
+                            <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>1.22s</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>⚡ 12% faster (Optimal)</span>
                         </div>
-                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Interruptions</span>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>12%</span>
-                            <span style={{ fontSize: "0.6rem", color: "#b45309", fontWeight: 700 }}>Within SLA limit</span>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>User Satisfaction</span>
+                            <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>4.8/5</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>★ 96% Positive CSAT</span>
                         </div>
-                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Voice Dropouts</span>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>0.2%</span>
-                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Stable Connection</span>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Escalation Rate</span>
+                            <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>6.5%</span>
+                            <span style={{ fontSize: "0.6rem", color: "#166534", fontWeight: 700 }}>✓ Within SLA limit</span>
                         </div>
-                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Silence Time</span>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>8%</span>
-                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Optimal Pacing</span>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Hallucination Rate</span>
+                            <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>0.05%</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>🛡️ Extremely Low Risk</span>
                         </div>
-                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center" }}>
-                            <span style={{ fontSize: "0.65rem", color: "var(--text-secondary)", textTransform: "uppercase", display: "block" }}>Talk Speed</span>
-                            <span style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", display: "block", marginTop: "6px" }}>148 WPM</span>
-                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>Natural pace</span>
+                        <div className="aicc-card" style={{ padding: "16px", textAlign: "center", display: "flex", flexDirection: "column", gap: "4px" }}>
+                            <span style={{ fontSize: "0.62rem", color: "var(--text-secondary)", textTransform: "uppercase", fontWeight: 800 }}>Cost per Conversation</span>
+                            <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }}>$0.08</span>
+                            <span style={{ fontSize: "0.6rem", color: "#22c55e", fontWeight: 700 }}>📉 Save 35% vs human</span>
                         </div>
                     </div>
 
-                    <div className="aicc-card">
-                        <h3 className="aicc-card-title">
-                            <span>Interactive Telemetry QoS Chart ({chartPeriod === "daily" ? "Daily Call Volumes" : "Weekly Performance Breakdown"})</span>
-                            <BarChart3 size={18} style={{ color: "var(--accent-indigo)" }} />
-                        </h3>
-                        <div style={{ height: "240px", border: "1px solid var(--glass-border)", borderRadius: "12px", background: "#f8fafc", position: "relative", display: "flex", alignItems: "flex-end", justifyContent: "space-around", padding: "30px 20px 20px" }}>
-                            
-                            {chartPeriod === "daily" ? (
-                                <>
+                    {/* Charts Row */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px" }}>
+                        {/* Conversation Volumes & Response Time Trends */}
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Conversation Volumes & API Costs ({analyticsPeriod})</span>
+                                <span style={{ fontSize: "1rem" }}>📈</span>
+                            </h3>
+                            <div style={{ width: "100%", height: "240px", marginTop: "16px" }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={conversationTrendData[analyticsPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="callsGrad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--accent-indigo)" stopOpacity={0.2}/>
+                                                <stop offset="95%" stopColor="var(--accent-indigo)" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226,232,240,0.4)" />
+                                        <XAxis dataKey="name" style={{ fontSize: "0.65rem" }} tickLine={false} />
+                                        <YAxis style={{ fontSize: "0.65rem" }} tickLine={false} />
+                                        <RechartsTooltip contentStyle={{ fontSize: "0.7rem", borderRadius: "8px" }} />
+                                        <Area type="monotone" dataKey="calls" name="Total Calls" stroke="var(--accent-indigo)" fillOpacity={1} fill="url(#callsGrad)" strokeWidth={2} />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Cost & Resource Savings */}
+                        <div className="aicc-card">
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Cost Trend & Voice Fees ({analyticsPeriod})</span>
+                                <span style={{ fontSize: "1rem" }}>💵</span>
+                            </h3>
+                            <div style={{ width: "100%", height: "240px", marginTop: "16px" }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={conversationTrendData[analyticsPeriod]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226,232,240,0.4)" />
+                                        <XAxis dataKey="name" style={{ fontSize: "0.65rem" }} tickLine={false} />
+                                        <YAxis style={{ fontSize: "0.65rem" }} tickLine={false} />
+                                        <RechartsTooltip contentStyle={{ fontSize: "0.7rem", borderRadius: "8px" }} />
+                                        <Bar dataKey="cost" name="API Cost ($)" fill="var(--accent-indigo)" radius={[4, 4, 0, 0]} barSize={25} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bottom Row: Most Asked Questions & Knowledge Utilization */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px" }}>
+                        {/* Most Asked Questions */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0 }}>
+                                <span>Most Asked RAG Questions</span>
+                                <span style={{ fontSize: "1rem" }}>❓</span>
+                            </h3>
+                            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.75rem", marginTop: "8px" }}>
+                                <thead>
+                                    <tr style={{ background: "#f8fafc", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", fontWeight: 800 }}>
+                                        <th style={{ padding: "8px 10px", textAlign: "left" }}>Top Question Asked</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "left" }}>Topic Category</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "right" }}>Queries Count</th>
+                                        <th style={{ padding: "8px 10px", textAlign: "right" }}>Resolution Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     {[
-                                        { day: "Mon", calls: 42 },
-                                        { day: "Tue", calls: 58 },
-                                        { day: "Wed", calls: 74 },
-                                        { day: "Thu", calls: 62 },
-                                        { day: "Fri", calls: 95 },
-                                        { day: "Sat", calls: 35 },
-                                        { day: "Sun", calls: 18 }
-                                    ].map((d) => (
-                                        <div key={d.day} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "40px" }}>
-                                            <span style={{ fontSize: "0.65rem", fontWeight: 800, marginBottom: "4px" }}>{d.calls}</span>
-                                            <div style={{ height: `${d.calls * 1.8}px`, width: "16px", background: "var(--accent-indigo)", borderRadius: "4px 4px 0 0", transition: "height 0.3s" }} />
-                                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "6px", fontWeight: 700 }}>{d.day}</span>
-                                        </div>
+                                        { q: "RERA approval status and layout number?", cat: "Regulatory / Compliance", count: 482, acc: "98%" },
+                                        { q: "What pre-launch discount rates are offered?", cat: "Sales Pricing / Offers", count: 310, acc: "92%" },
+                                        { q: "What residential configurations are available?", cat: "Project Specifications", count: 280, acc: "95%" },
+                                        { q: "Is the site visit transfer allowed on Sundays?", cat: "Operations Scheduling", count: 120, acc: "96%" }
+                                    ].map((row, idx) => (
+                                        <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                                            <td style={{ padding: "8px 10px", fontWeight: 800, color: "var(--text-primary)" }}>{row.q}</td>
+                                            <td style={{ padding: "8px 10px", color: "var(--text-secondary)" }}>{row.cat}</td>
+                                            <td style={{ padding: "8px 10px", textAlign: "right", fontWeight: 700 }}>{row.count}</td>
+                                            <td style={{ padding: "8px 10px", textAlign: "right", color: "#166534", fontWeight: 800 }}>{row.acc}</td>
+                                        </tr>
                                     ))}
-                                </>
-                            ) : (
-                                <>
-                                    {[
-                                        { week: "Week 24", efficiency: 91 },
-                                        { week: "Week 25", efficiency: 94 },
-                                        { week: "Week 26", efficiency: 92 },
-                                        { week: "Week 27", efficiency: 95 }
-                                    ].map((w) => (
-                                        <div key={w.week} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "60px" }}>
-                                            <span style={{ fontSize: "0.65rem", fontWeight: 800, marginBottom: "4px" }}>{w.efficiency}%</span>
-                                            <div style={{ height: `${w.efficiency * 1.8}px`, width: "24px", background: "#10b981", borderRadius: "4px 4px 0 0", transition: "height 0.3s" }} />
-                                            <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "6px", fontWeight: 700 }}>{w.week}</span>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Knowledge Utilization Source Breakdown */}
+                        <div className="aicc-card" style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+                            <h3 className="aicc-card-title" style={{ margin: 0, width: "100%" }}>
+                                <span>Knowledge Utilization Breakdown</span>
+                                <span style={{ fontSize: "1.1rem" }}>📊</span>
+                            </h3>
+                            <div style={{ width: "100%", height: "140px", marginTop: "10px" }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={sourceUtilizationData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={30}
+                                            outerRadius={50}
+                                            paddingAngle={3}
+                                            dataKey="value"
+                                        >
+                                            {sourceUtilizationData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <RechartsTooltip contentStyle={{ fontSize: "0.65rem", borderRadius: "8px" }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 20px", width: "100%", fontSize: "0.65rem", marginTop: "6px" }}>
+                                {sourceUtilizationData.map((item, idx) => (
+                                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                                            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: item.color }} />
+                                            <span style={{ color: "var(--text-secondary)" }}>{item.name}</span>
                                         </div>
-                                    ))}
-                                </>
-                            )}
+                                        <span style={{ fontWeight: 800 }}>{item.value}%</span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
