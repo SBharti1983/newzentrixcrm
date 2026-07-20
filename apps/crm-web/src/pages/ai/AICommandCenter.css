@@ -25,7 +25,8 @@
 }
 
 .ai-command-center-container {
-    padding: 24px;
+    padding: 24px 40px;
+    margin: -16px -28px -28px -28px;
     background: var(--bg-main);
     min-height: calc(100vh - 64px);
     font-family: 'Inter', system-ui, sans-serif;
@@ -1943,6 +1944,7 @@
 @media (max-width: 1024px) {
     .ai-command-center-container {
         padding: 16px;
+        margin: 0;
     }
     .aicc-tabs-nav {
         gap: 4px;
@@ -1968,6 +1970,7 @@
 @media (max-width: 768px) {
     .ai-command-center-container {
         padding: 12px;
+        margin: 0;
     }
     .aicc-title-area h1 {
         font-size: 1.2rem;
@@ -1997,6 +2000,7 @@
 @media (max-width: 480px) {
     .ai-command-center-container {
         padding: 8px;
+        margin: 0;
     }
     .aicc-tabs-nav {
         padding: 4px 6px;

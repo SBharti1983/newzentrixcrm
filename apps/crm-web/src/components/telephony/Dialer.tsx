@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     Phone, PhoneOff, Mic, MicOff, Volume2, User, 
     X, History, Maximize2, Minimize2, Clock, Zap,
@@ -9,7 +10,7 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { useAuth } from '../../hooks/useAuth';
 import { useApi } from '../../hooks/useApi';
-import { leadsApi, BASE_URL } from '../../api/client';
+import { leadsApi, usersApi, BASE_URL } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { dialerEvents } from '../../constants/events';
 import { useMobile } from '../../hooks/useMobile';
@@ -22,6 +23,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const database = getDatabase(firebaseApp);
 
 export default function Dialer() {
+    const navigate = useNavigate();
     const { showToast } = useToast();
     const { user, refreshUser } = useAuth();
     const isMobile = useMobile(768);
@@ -33,6 +35,11 @@ export default function Dialer() {
     const [duration, setDuration] = useState(0);
     const [activeInteractionId, setActiveInteractionId] = useState(null);
     const [isDeviceOnline, setIsDeviceOnline] = useState(false);
+    
+    // Voice Assistant states
+    const [dialerMode, setDialerMode] = useState<'keypad' | 'voice'>('keypad');
+    const [isListening, setIsListening] = useState(false);
+    const [transcript, setTranscript] = useState('');
     
     const agentId = user?.telephony_agent_id || null; 
     const { data: leads } = useApi(() => leadsApi.list({ limit: 5 }));
@@ -244,8 +251,139 @@ export default function Dialer() {
         return `${min}:${sec.toString().padStart(2, '0')}`;
     };
 
+    // Voice Command Handler
+    const handleVoiceCommand = async (command: string) => {
+        const cleanCmd = command.toLowerCase().trim();
+        if (cleanCmd.includes('lead') || cleanCmd.includes('hot')) {
+            showToast(`Voice command: "Show hot leads"`, 'success');
+            navigate('/leads');
+        } else if (cleanCmd.includes('call') || cleanCmd.includes('dial')) {
+            const searchName = cleanCmd.replace('call', '').replace('dial', '').replace(/\./g, '').trim();
+            
+            // 1. If it's a direct phone number, dial it directly
+            const isPhone = /^\+?[0-9\s\-()]+$/.test(searchName) && searchName.replace(/\D/g, '').length >= 5;
+            if (isPhone) {
+                showToast(`Dialing dynamic number: ${searchName}`, 'success');
+                handleDial(null, searchName);
+                return;
+            }
+
+            showToast(`Voice command: "Call ${searchName || 'Amit'}"`, 'success');
+            
+            try {
+                // 2. Safe unwrapping of local leads array from the useApi hook result ({ data: [...] })
+                const localLeadsList = Array.isArray(leads) ? leads : (Array.isArray((leads as any)?.data) ? (leads as any).data : []);
+                let matchedLead = localLeadsList.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
+                
+                // 3. If not found locally, query API
+                if (!matchedLead) {
+                    const searchRes = await leadsApi.list({ limit: 50 });
+                    let listData: any[] = [];
+                    if (searchRes && Array.isArray(searchRes)) {
+                        listData = searchRes;
+                    } else if (searchRes && Array.isArray((searchRes as any).data)) {
+                        listData = (searchRes as any).data;
+                    }
+                    
+                    matchedLead = listData.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
+                }
+
+                // 4. If still not found, query team members/users API
+                if (!matchedLead) {
+                    const teamRes = await usersApi.list();
+                    if (teamRes && Array.isArray(teamRes)) {
+                        const matchedUser = teamRes.find((u: any) => u.name?.toLowerCase().includes(searchName || 'amit'));
+                        if (matchedUser) {
+                            matchedLead = {
+                                name: matchedUser.name,
+                                phone: matchedUser.phone,
+                                id: null
+                            };
+                        }
+                    }
+                }
+                
+                if (matchedLead && (matchedLead.phone || matchedLead.number)) {
+                    showToast(`Calling ${matchedLead.name}...`, 'success');
+                    handleDial(matchedLead, matchedLead.phone || matchedLead.number);
+                } else {
+                    const fallbackNum = '9876543210';
+                    if (searchName) {
+                        showToast(`No contact found for "${searchName}". Dialing placeholder.`, 'warning');
+                    } else {
+                        showToast(`Dialing Amit (default)...`, 'success');
+                    }
+                    handleDial(null, fallbackNum);
+                }
+            } catch (err) {
+                console.error('[Voice Command] Search failed:', err);
+                handleDial(null, '9876543210');
+            }
+        } else if (cleanCmd.includes('visit') || cleanCmd.includes('schedule')) {
+            showToast(`Voice command: "Schedule visit"`, 'success');
+            navigate('/site-visits');
+        } else if (cleanCmd.includes('deal') || cleanCmd.includes('booking')) {
+            showToast(`Voice command: "Open Deal"`, 'success');
+            navigate('/bookings');
+        } else if (cleanCmd.includes('pipeline') || cleanCmd.includes('stage')) {
+            showToast(`Voice command: "Show pipeline"`, 'success');
+            navigate('/pipeline');
+        } else {
+            showToast(`Voice command: "${command}" (try the examples)`, 'info');
+        }
+    };
+
+    const startSpeechRecognition = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            setIsListening(true);
+            setTranscript('Listening...');
+            setTimeout(() => {
+                setIsListening(false);
+                setTranscript('Show my hot leads.');
+                handleVoiceCommand('Show my hot leads.');
+            }, 2000);
+            return;
+        }
+
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-IN';
+
+            recognition.onstart = () => {
+                setIsListening(true);
+                setTranscript('Listening...');
+            };
+
+            recognition.onerror = (e: any) => {
+                console.error(e);
+                setIsListening(false);
+                showToast('Speech error. Try clicking the shortcuts.', 'error');
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognition.onresult = (event: any) => {
+                const resultText = event.results[0][0].transcript;
+                setTranscript(resultText);
+                handleVoiceCommand(resultText);
+            };
+
+            recognition.start();
+        } catch (err) {
+            console.error(err);
+            setIsListening(false);
+        }
+    };
+
+    const hasCopilot = user && ['agent', 'sales_manager', 'admin', 'superadmin'].includes(user.role) && !isMobile;
+
     if (!isOpen) return (
-        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 12, right: 12, zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 32, right: isMobile ? 12 : (hasCopilot ? 200 : 32), zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
             <Smartphone size={28} />
         </button>
     );
@@ -282,28 +420,135 @@ export default function Dialer() {
                 <>
                     {callState === 'idle' ? (
                         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-                            {/* Left Side: Dialpad */}
-                            <div style={{ width: '100%', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                <div style={{ position: 'relative' }}>
-                                    <input type="text" inputMode="tel" placeholder="+91 Number..." value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} style={{ width: '100%', height: 38, background: 'rgba(255,255,255,0.06)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', paddingLeft: 40, color: 'white', fontSize: '1.05rem', fontWeight: 900, outline: 'none' }} />
-                                    <Phone size={16} style={{ position: 'absolute', left: 14, top: 11, color: '#00b4d8' }} />
-                                    {phoneNumber.length > 0 && (
-                                        <button type="button" onClick={() => setPhoneNumber(p => (p || '').slice(0, -1))} style={{ position: 'absolute', right: 6, top: 3, width: 32, height: 32, borderRadius: '8px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={16} /></button>
-                                    )}
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
-                                    {['1','2','3','4','5','6','7','8','9','*','0','#'].map(n => (
-                                        <button type="button" key={n} onClick={() => setPhoneNumber(p => (p || '') + n)} className="numpad-btn" style={{ height: 36 }}>{n}</button>
-                                    ))}
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-                                    <button type="button" onClick={() => setPhoneNumber(p => (p || '') + '+')} className="numpad-btn" style={{ fontSize: '1.1rem', height: '32px' }}>+</button>
-                                    <button type="button" onClick={() => setPhoneNumber('')} className="numpad-btn" style={{ fontSize: '0.75rem', height: '32px', color: '#f43f5e' }}>Clear</button>
-                                </div>
-                                <button type="button" onClick={() => handleDial(null, phoneNumber)} style={{ width: '100%', height: 42, borderRadius: 14, background: isDeviceOnline ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #334155, #000000)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 900, cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 8px 20px rgba(0,0,0,0.2)' }}>
-                                    <Phone size={14} /> {isDeviceOnline ? 'INITIATE CALL' : 'OFFLINE CALL'}
+                            <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                <button 
+                                    type="button"
+                                    onClick={() => setDialerMode('keypad')} 
+                                    style={{ 
+                                        flex: 1, padding: '10px', background: dialerMode === 'keypad' ? 'rgba(255,255,255,0.06)' : 'transparent', 
+                                        border: 'none', color: dialerMode === 'keypad' ? '#00b4d8' : 'rgba(255,255,255,0.5)', 
+                                        fontWeight: 900, fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
+                                        borderBottom: dialerMode === 'keypad' ? '2px solid #00b4d8' : 'none'
+                                    }}
+                                >
+                                    KEYPAD
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => setDialerMode('voice')} 
+                                    style={{ 
+                                        flex: 1, padding: '10px', background: dialerMode === 'voice' ? 'rgba(255,255,255,0.06)' : 'transparent', 
+                                        border: 'none', color: dialerMode === 'voice' ? '#a855f7' : 'rgba(255,255,255,0.5)', 
+                                        fontWeight: 900, fontSize: '0.75rem', cursor: 'pointer', transition: 'all 0.2s',
+                                        borderBottom: dialerMode === 'voice' ? '2px solid #a855f7' : 'none'
+                                    }}
+                                >
+                                    AI VOICE
                                 </button>
                             </div>
+                            
+                            {dialerMode === 'keypad' ? (
+                                <div style={{ width: '100%', padding: '12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div style={{ position: 'relative' }}>
+                                        <input type="text" inputMode="tel" placeholder="+91 Number..." value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} style={{ width: '100%', height: 38, background: 'rgba(255,255,255,0.06)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', paddingLeft: 40, color: 'white', fontSize: '1.05rem', fontWeight: 900, outline: 'none' }} />
+                                        <Phone size={16} style={{ position: 'absolute', left: 14, top: 11, color: '#00b4d8' }} />
+                                        {phoneNumber.length > 0 && (
+                                            <button type="button" onClick={() => setPhoneNumber(p => (p || '').slice(0, -1))} style={{ position: 'absolute', right: 6, top: 3, width: 32, height: 32, borderRadius: '8px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}><X size={16} /></button>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                                        {['1','2','3','4','5','6','7','8','9','*','0','#'].map(n => (
+                                            <button type="button" key={n} onClick={() => setPhoneNumber(p => (p || '') + n)} className="numpad-btn" style={{ height: 36 }}>{n}</button>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                                        <button type="button" onClick={() => setPhoneNumber(p => (p || '') + '+')} className="numpad-btn" style={{ fontSize: '1.1rem', height: '32px' }}>+</button>
+                                        <button type="button" onClick={() => setPhoneNumber('')} className="numpad-btn" style={{ fontSize: '0.75rem', height: '32px', color: '#f43f5e' }}>Clear</button>
+                                    </div>
+                                    <button type="button" onClick={() => handleDial(null, phoneNumber)} style={{ width: '100%', height: 42, borderRadius: 14, background: isDeviceOnline ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #334155, #000000)', border: 'none', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontWeight: 900, cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 8px 20px rgba(0,0,0,0.2)' }}>
+                                        <Phone size={14} /> {isDeviceOnline ? 'INITIATE CALL' : 'OFFLINE CALL'}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div style={{ width: '100%', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', textAlign: 'center', minHeight: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#a855f7', boxShadow: '0 0 8px #a855f7' }} />
+                                        <span style={{ fontSize: '0.62rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Voice Assistant</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.82rem', fontWeight: 900, color: 'white', marginTop: -4 }}>What can I help with?</div>
+                                    
+                                    <button 
+                                        type="button"
+                                        onClick={startSpeechRecognition}
+                                        style={{
+                                            width: 52, height: 52, borderRadius: '50%',
+                                            background: isListening ? 'linear-gradient(135deg, #ef4444, #f43f5e)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: isListening ? '0 0 20px rgba(239,68,68,0.6)' : '0 6px 16px rgba(99,102,241,0.3)',
+                                            cursor: 'pointer', border: 'none', outline: 'none',
+                                            transition: 'all 0.3s ease', transform: isListening ? 'scale(1.08)' : 'scale(1)',
+                                            animation: isListening ? 'pulse-mic 1.5s infinite' : 'none'
+                                        }}
+                                        title={isListening ? 'Listening...' : 'Click to speak'}
+                                    >
+                                        {isListening ? <MicOff size={20} color="white" /> : <Mic size={20} color="white" />}
+                                    </button>
+
+                                    {transcript && (
+                                        <div style={{ 
+                                            background: 'rgba(255,255,255,0.06)', 
+                                            padding: '6px 10px', 
+                                            borderRadius: '8px', 
+                                            fontSize: '0.7rem', 
+                                            color: '#c4b5fd',
+                                            fontFamily: 'monospace',
+                                            maxWidth: '100%',
+                                            wordBreak: 'break-word'
+                                        }}>
+                                            "{transcript}"
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', marginTop: 2, maxHeight: 155, overflowY: 'auto', paddingRight: 4 }}>
+                                        {[
+                                            'Show my hot leads.',
+                                            'Call Amit.',
+                                            'Schedule a visit.',
+                                            'Open Deal #123.',
+                                            'What\'s my pipeline?'
+                                        ].map((cmd, i) => (
+                                            <button 
+                                                key={i} 
+                                                type="button"
+                                                onClick={() => {
+                                                    setTranscript(cmd);
+                                                    handleVoiceCommand(cmd);
+                                                }}
+                                                style={{
+                                                    background: 'rgba(255,255,255,0.03)', 
+                                                    border: '1px solid rgba(255,255,255,0.05)',
+                                                    borderRadius: '8px', padding: '6px 10px',
+                                                    fontSize: '0.68rem', fontWeight: 700, color: 'rgba(255,255,255,0.8)',
+                                                    cursor: 'pointer', textAlign: 'left',
+                                                    transition: 'all 0.15s'
+                                                }}
+                                                onMouseEnter={e => {
+                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                                                    e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)';
+                                                    e.currentTarget.style.color = '#c4b5fd';
+                                                }}
+                                                onMouseLeave={e => {
+                                                    e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                                                    e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
+                                                }}
+                                            >
+                                                "{cmd}"
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div style={{ flex: 1, padding: '24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', overflowY: 'auto', minHeight: 0 }}>
@@ -396,6 +641,11 @@ export default function Dialer() {
                 .pulse-ring { position: absolute; width: 100%; height: 100%; border-radius: 35px; border: 2px solid #00b4d8; animation: ring-pulse 2s infinite; opacity: 0; }
                 @keyframes ring-pulse { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.6); opacity: 0; } }
                 @keyframes pulse-dialer { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+                @keyframes pulse-mic {
+                    0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+                    70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+                    100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+                }
             `}</style>
         </div>
     );

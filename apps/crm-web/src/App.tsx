@@ -304,7 +304,7 @@ function ProtectedApp() {
             </Suspense>
           </main>
         </div>
-        {(user?.role === 'agent' || user?.role === 'sales_manager') && !isMobile && <AgentCopilotWidget />}
+        {(user?.role === 'agent' || user?.role === 'sales_manager' || user?.role === 'admin' || user?.role === 'superadmin') && !isMobile && <AgentCopilotWidget />}
         {isMobile && <MobileBottomNav onOpenSidebar={() => setMobileOpen(true)} />}
         <PWAInstallManager isMobile={isMobile} />
       </div>

@@ -818,7 +818,7 @@ export default function AICommandCenter() {
     // Analytics / Security Tab States
     const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly'>('daily');
     const [apiKey, setApiKey] = useState<string>("zntx_live_pk_7482_aicc_secret_key_prod");
-    const [row2Expanded, setRow2Expanded] = useState<boolean>(true);
+    const [row2Expanded, setRow2Expanded] = useState<boolean>(false);
 
     // 🧪 Playground Sandbox States
     const [playgroundPrompt, setPlaygroundPrompt] = useState<string>("You are Rohan, a helpful real estate assistant. Empathize with callers and answer details about BKC or Noida premium housing projects using RAG context.");

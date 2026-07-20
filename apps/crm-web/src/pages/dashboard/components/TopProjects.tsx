@@ -9,13 +9,12 @@ interface TopProjectsProps {
   onProjectsPeriodChange: (v: PeriodValue) => void;
 }
 
-const PROJECT_COLORS = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#06b6d4', '#ef4444'];
-const PROJECT_IMAGES = [
-  'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=100&auto=format&fit=crop&q=60',
-  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=100&auto=format&fit=crop&q=60',
-  'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=100&auto=format&fit=crop&q=60',
-  'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=100&auto=format&fit=crop&q=60',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=100&auto=format&fit=crop&q=60',
+const PROJECT_COLORS = [
+  { bar: '#10b981', bg: 'rgba(16,185,129,0.07)', badge: 'rgba(16,185,129,0.12)', text: '#059669' },
+  { bar: '#6366f1', bg: 'rgba(99,102,241,0.07)', badge: 'rgba(99,102,241,0.12)', text: '#4f46e5' },
+  { bar: '#f59e0b', bg: 'rgba(245,158,11,0.07)', badge: 'rgba(245,158,11,0.12)', text: '#d97706' },
+  { bar: '#06b6d4', bg: 'rgba(6,182,212,0.07)', badge: 'rgba(6,182,212,0.12)', text: '#0891b2' },
+  { bar: '#ef4444', bg: 'rgba(239,68,68,0.07)', badge: 'rgba(239,68,68,0.12)', text: '#dc2626' },
 ];
 
 const formatValue = (v: number) => {
@@ -30,16 +29,25 @@ export default function TopProjects({ data, projectsPeriod, onProjectsPeriodChan
     const raw: any[] = data?.top_projects || [];
     if (!raw.length) return [];
 
-    const maxVal = Math.max(...raw.map((p: any) => Number(p.total_value) || 0), 1);
+    return raw.map((p: any, idx: number) => {
+      const totalUnits = Number(p.total_units) || 0;
+      const availableUnits = Number(p.available_units) || 0;
+      const soldUnits = totalUnits > 0 ? totalUnits - availableUnits : Number(p.bookings_count) || 0;
+      const soldPct = totalUnits > 0 ? Math.round((soldUnits / totalUnits) * 100) : Number(p.sold_pct) || 0;
 
-    return raw.map((p: any, idx: number) => ({
-      name: p.name || 'Unknown Project',
-      bookings: `${p.bookings_count || 0} Bookings`,
-      value: formatValue(Number(p.total_value) || 0),
-      progress: Math.round(((Number(p.total_value) || 0) / maxVal) * 100),
-      color: PROJECT_COLORS[idx % PROJECT_COLORS.length],
-      img: PROJECT_IMAGES[idx % PROJECT_IMAGES.length],
-    }));
+      return {
+        name: p.name || 'Unknown Project',
+        location: p.location || '',
+        totalUnits,
+        availableUnits,
+        soldUnits,
+        soldPct,
+        bookingsCount: Number(p.bookings_count) || 0,
+        revenue: formatValue(Number(p.total_value) || 0),
+        rawValue: Number(p.total_value) || 0,
+        color: PROJECT_COLORS[idx % PROJECT_COLORS.length],
+      };
+    });
   }, [data?.top_projects]);
 
   return (
@@ -61,22 +69,80 @@ export default function TopProjects({ data, projectsPeriod, onProjectsPeriodChan
         />
       </div>
 
-      <div key={projectsPeriod} className="dash-data-fade dash-project-list">
+      <div key={projectsPeriod} className="dash-data-fade dash-project-grid">
         {topProjectsData.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: '0.82rem', fontWeight: 600 }}>No project data available</div>
+          <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: '0.82rem', fontWeight: 600, gridColumn: '1 / -1' }}>
+            No project data available
+          </div>
         )}
         {topProjectsData.map((project, idx) => (
-          <div key={idx} className="dash-project-item" onClick={() => navigate('/projects')}>
-            <div className="dash-project-top">
-              <img src={project.img} alt={project.name} className="dash-project-img" />
-              <div className="dash-project-info">
-                <div className="dash-project-name">{project.name}</div>
-                <div className="dash-project-bookings">{project.bookings}</div>
+          <div
+            key={idx}
+            className="dash-project-card"
+            style={{ background: project.color.bg, borderColor: project.color.bar + '33' }}
+            onClick={() => navigate('/projects')}
+          >
+            {/* Header row: rank + name */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+                <span style={{
+                  width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                  background: project.color.bar, color: '#fff',
+                  fontSize: '0.65rem', fontWeight: 900,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {idx + 1}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {project.name}
+                  </div>
+                  {project.location && (
+                    <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>{project.location}</div>
+                  )}
+                </div>
               </div>
-              <div className="dash-project-value">{project.value}</div>
+              {/* Revenue badge */}
+              <span style={{
+                background: project.color.badge, color: project.color.text,
+                fontSize: '0.72rem', fontWeight: 800, borderRadius: '8px',
+                padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0,
+              }}>
+                {project.revenue}
+              </span>
             </div>
-            <div className="dash-project-bar-track">
-              <div className="dash-project-bar-fill" style={{ width: `${project.progress}%`, background: project.color }} />
+
+            {/* Inventory stats row */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{project.totalUnits || project.soldUnits}</div>
+                <div style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>Inventory</div>
+              </div>
+              <div style={{ width: '1px', background: '#e2e8f0' }} />
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 900, color: project.color.text, lineHeight: 1 }}>{project.soldUnits}</div>
+                <div style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>Sold</div>
+              </div>
+              <div style={{ width: '1px', background: '#e2e8f0' }} />
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', lineHeight: 1 }}>{project.bookingsCount}</div>
+                <div style={{ fontSize: '0.6rem', color: '#94a3b8', fontWeight: 700, marginTop: '2px', textTransform: 'uppercase' }}>Bookings</div>
+              </div>
+            </div>
+
+            {/* Sold % progress bar */}
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>Sold</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 900, color: project.color.text }}>{project.soldPct}%</span>
+              </div>
+              <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${project.soldPct}%`, height: '100%',
+                  background: project.color.bar, borderRadius: '4px',
+                  transition: 'width 0.6s ease',
+                }} />
+              </div>
             </div>
           </div>
         ))}

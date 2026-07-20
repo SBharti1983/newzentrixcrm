@@ -33,9 +33,25 @@ import { RedisBus } from '@zentrix/messaging';
 interface PersonaCacheEntry {
     persona: DbAIEmployeePersona;
     cached_at: number;
+    /**
+     * Snapshot of the persona row's `updated_at` at cache-fill time.
+     * Used by the version probe (item 2.3) to detect stale cache entries
+     * even when the Redis `persona:updated` invalidation (item 2.2) is
+     * missed (e.g. Redis briefly down, pod restarts mid-update, or an
+     * admin path that doesn't fire NOTIFY).
+     */
+    cached_updated_at: Date;
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+/**
+ * Within this window after cache-fill, the entry is trusted without a
+ * DB probe (the Redis invalidation from item 2.2 covers it). Beyond this
+ * window but within CACHE_TTL_MS, we issue a cheap `SELECT updated_at`
+ * probe to detect silent staleness. Tuned to keep probe volume low while
+ * bounding the stale-window to ~30s.
+ */
+const CACHE_FRESHNESS_PROBE_MS = 30 * 1000; // 30 seconds
 
 /** Indian languages that share the code-mix / Hindi voice fallback. */
 const INDIAN_LANGUAGES: SupportedLanguage[] = [
@@ -79,7 +95,49 @@ export abstract class BasePersonaEngine {
     async getPersona(tenantId: number): Promise<DbAIEmployeePersona> {
         const cached = this.cache.get(tenantId);
         if (cached && Date.now() - cached.cached_at < CACHE_TTL_MS) {
-            return cached.persona;
+            // Within TTL. If the entry is still "fresh" (within
+            // CACHE_FRESHNESS_PROBE_MS), trust it + the Redis invalidation
+            // from item 2.2 — no DB probe needed.
+            if (Date.now() - cached.cached_at < CACHE_FRESHNESS_PROBE_MS) {
+                return cached.persona;
+            }
+            // item 2.3: entry is older than the freshness window but still
+            // within TTL. Issue a cheap single-column probe to detect silent
+            // staleness (missed NOTIFY, admin path without NOTIFY, etc.).
+            // On probe error, fall through to full re-fetch (safe default).
+            try {
+                const probe = await pool.query(
+                    `SELECT updated_at FROM ai_employee_personas
+                     WHERE tenant_id = $1 AND role = $2
+                     LIMIT 1`,
+                    [tenantId, this.role]
+                );
+                if (probe.rows.length === 0) {
+                    // Row vanished underneath us — drop cache and throw.
+                    this.cache.delete(tenantId);
+                    throw new PersonaNotFoundError(tenantId);
+                }
+                const dbUpdatedAt = new Date(probe.rows[0].updated_at);
+                if (dbUpdatedAt.getTime() === cached.cached_updated_at.getTime()) {
+                    // Unchanged — bump cached_at so we don't probe again
+                    // for another freshness window, then return cached row.
+                    cached.cached_at = Date.now();
+                    return cached.persona;
+                }
+                // updated_at changed → fall through to full re-fetch.
+                logger.info(
+                    `${this.logTag} Persona row updated_at changed for tenant ${tenantId} ` +
+                    `(cached=${cached.cached_updated_at.toISOString()}, db=${dbUpdatedAt.toISOString()}) — re-fetching (item 2.3)`
+                );
+            } catch (err) {
+                if (err instanceof PersonaNotFoundError) throw err;
+                // Probe failed (transient DB error) — serve stale cache
+                // rather than failing the turn. Log and return cached.
+                logger.warn(
+                    `${this.logTag} updated_at probe failed for tenant ${tenantId}: ${err}. Serving cached persona.`
+                );
+                return cached.persona;
+            }
         }
 
         try {
@@ -97,7 +155,11 @@ export abstract class BasePersonaEngine {
             }
 
             const persona = rows[0] as DbAIEmployeePersona;
-            this.cache.set(tenantId, { persona, cached_at: Date.now() });
+            this.cache.set(tenantId, {
+                persona,
+                cached_at: Date.now(),
+                cached_updated_at: new Date(persona.updated_at),
+            });
             return persona;
         } catch (err) {
             if (err instanceof PersonaNotFoundError) throw err;

@@ -232,9 +232,19 @@ BEGIN
     -- ── Top Projects ──
     SELECT COALESCE(json_agg(row_to_json(tp)), '[]'::json) INTO v_top_projects
     FROM (
-        SELECT p.name, p.id,
+        SELECT p.name, p.id, p.location,
+               COALESCE(p.total_units, 0) as total_units,
+               COALESCE(p.available_units, 0) as available_units,
                (SELECT COUNT(*) FROM bookings b WHERE b.project_id = p.id AND b.status != 'Cancelled') as bookings_count,
-               COALESCE((SELECT SUM(total_amount) FROM bookings b WHERE b.project_id = p.id AND b.status != 'Cancelled'), 0) as total_value
+               COALESCE((SELECT SUM(total_amount) FROM bookings b WHERE b.project_id = p.id AND b.status != 'Cancelled'), 0) as total_value,
+               CASE
+                 WHEN COALESCE(p.total_units, 0) > 0 THEN
+                   ROUND(
+                     (COALESCE(p.total_units, 0) - COALESCE(p.available_units, 0))::numeric
+                     / COALESCE(p.total_units, 0) * 100
+                   )
+                 ELSE 0
+               END as sold_pct
         FROM projects p
         WHERE p.tenant_id = p_tenant_id
         ORDER BY total_value DESC, bookings_count DESC LIMIT 5

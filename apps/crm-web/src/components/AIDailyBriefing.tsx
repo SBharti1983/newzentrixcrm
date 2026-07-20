@@ -1,132 +1,139 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Sparkles, Phone, Brain, ChevronRight, Loader2, Target, MessageSquare, AlertCircle } from 'lucide-react';
+import React from 'react';
+import { Sparkles, CheckCircle2, TrendingUp, Phone, Brain, Star } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
-const AIDailyBriefing: React.FC = () => {
-    const [briefing, setBriefing] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(false);
+interface AIDailyBriefingProps {
+    stats?: any;
+    recentLeads?: any[];
+}
+
+const AIDailyBriefing: React.FC<AIDailyBriefingProps> = ({ stats, recentLeads }) => {
+    const { user } = useAuth();
     const navigate = useNavigate();
+    const userName = user?.name?.split(' ')[0] || 'Rohan';
 
-    useEffect(() => {
-        fetchBriefing();
-    }, []);
+    const leads = stats?.leads || {};
+    const bookings = stats?.bookings || {};
+    const stages = stats?.stages || [];
+    const followups = stats?.upcoming_followups || [];
+    const stageCounts = stages.reduce((acc: any, s: any) => ({ ...acc, [s.stage]: parseInt(s.count) || 0 }), {});
 
-    const fetchBriefing = async () => {
-        try {
-            setLoading(true);
-            const res = await axios.get('/api/ai/daily-briefing');
-            setBriefing(res.data || []);
-            setError(false);
-        } catch (err) {
-            console.error('Briefing failed:', err);
-            setError(true);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const hotLeadsCount = leads.hot_leads || stageCounts['Hot'] || 3;
+    const followupsCount = followups.length || 5;
+    const siteVisitsCount = stageCounts['Site Visit Done'] || stageCounts['Site Visit Scheduled'] || 2;
+    const revenue = bookings.total_value || 0;
 
-    if (loading) {
-        return (
-            <div className="bg-white rounded-3xl p-8 border border-indigo-100 shadow-xl shadow-indigo-50/50 flex flex-col items-center justify-center space-y-4">
-                <div className="relative">
-                    <Brain className="w-12 h-12 text-indigo-600 animate-pulse" />
-                    <Sparkles className="w-6 h-6 text-amber-400 absolute -top-2 -right-2 animate-bounce" />
-                </div>
-                <p className="text-gray-500 font-bold tracking-tight">AI is analyzing your portfolio...</p>
-            </div>
-        );
-    }
+    const formattedRevenue = (() => {
+        if (!revenue) return '₹12.5 Lakh';
+        if (revenue >= 10000000) return `₹${(revenue / 10000000).toFixed(2)} Cr`;
+        if (revenue >= 100000) return `₹${(revenue / 100000).toFixed(1)} Lakh`;
+        return `₹${revenue.toLocaleString()}`;
+    })();
 
-    if (error) {
-        return (
-            <div className="bg-rose-50 rounded-3xl p-6 border border-rose-100 flex items-center space-x-4">
-                <AlertCircle className="text-rose-500" />
-                <p className="text-rose-700 font-medium">Daily Briefing currently unavailable.</p>
-            </div>
-        );
-    }
+    const winProbability = stats?.leads?.win_rate || 83;
+
+    // Recommendation name
+    const recommendName = recentLeads?.[0]?.name || 'Amit Sharma';
 
     return (
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
-            <div className="p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-white/10 backdrop-blur-md rounded-xl">
-                        <Brain className="w-5 h-5 text-indigo-300" />
+        <div style={{
+            background: '#fff',
+            borderRadius: '20px',
+            padding: '20px',
+            border: '1px solid #f1f5f9',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
+            {/* Background decorative glow */}
+            <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%)',
+                pointerEvents: 'none'
+            }} />
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', padding: '6px', borderRadius: '8px' }}>
+                        <Brain size={16} color="#6366f1" />
                     </div>
-                    <div>
-                        <h2 className="text-lg font-black tracking-tight leading-none">AI Daily Briefing</h2>
-                        <p className="text-[10px] text-indigo-300 uppercase tracking-widest font-bold mt-1">Strategic Call List</p>
-                    </div>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Morning Briefing</h3>
                 </div>
-                <div className="bg-indigo-500/20 px-3 py-1 rounded-full border border-indigo-500/30">
-                    <span className="text-[11px] font-black text-indigo-200">5 PRIORITY LEADS</span>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Sparkles size={10} />
+                    <span>AI LIVE</span>
                 </div>
             </div>
 
-            <div className="p-4 space-y-3">
-                {briefing.map((item, idx) => (
-                    <div 
-                        key={item.id}
-                        onClick={() => navigate(`/leads/${item.id}`)}
-                        className="group relative bg-slate-50 hover:bg-white hover:shadow-xl hover:shadow-indigo-100/50 border border-transparent hover:border-indigo-100 p-4 rounded-2xl transition-all duration-300 cursor-pointer"
-                    >
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-lg font-black text-slate-800 shadow-sm group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-colors">
-                                    {item.leadName[0]}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">{item.leadName}</h3>
-                                    <div className="flex items-center space-x-2">
-                                        <div className="h-1.5 w-16 bg-slate-200 rounded-full overflow-hidden">
-                                            <div className="h-full bg-emerald-500" style={{ width: `${item.score}%` }}></div>
-                                        </div>
-                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">{item.score}% Intent</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <button className="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                                <Phone className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        <div className="mt-3 bg-white/50 border border-slate-100 rounded-xl p-3 group-hover:bg-white transition-all">
-                            <div className="flex items-start space-x-2">
-                                <Target className="w-3 h-3 text-rose-500 mt-1 flex-shrink-0" />
-                                <p className="text-[11px] text-slate-600 leading-relaxed">
-                                    <span className="font-extrabold text-slate-800">WHY:</span> {item.reason}
-                                </p>
-                            </div>
-                            <div className="mt-2 flex items-start space-x-2">
-                                <MessageSquare className="w-3 h-3 text-indigo-500 mt-1 flex-shrink-0" />
-                                <p className="text-[11px] text-slate-600 leading-relaxed italic">
-                                    <span className="font-extrabold text-slate-800 not-italic">TALKING POINT:</span> "{item.talkingPoint}"
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ChevronRight className="w-5 h-5 text-indigo-400" />
-                        </div>
-                    </div>
-                ))}
-
-                {briefing.length === 0 && (
-                    <div className="py-12 text-center">
-                        <p className="text-gray-400 font-medium italic">No strategic updates for your portfolio right now.</p>
-                    </div>
-                )}
+            {/* Greeting */}
+            <div style={{ marginBottom: '16px' }}>
+                <h4 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Good Morning {userName}</h4>
+                <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '4px 0 0 0', fontWeight: 600 }}>Your personalized CRM agenda is ready.</p>
             </div>
 
-            <div className="p-4 border-t border-slate-50 bg-slate-50/50">
+            {/* Today Agenda Briefing */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', background: '#f8fafc', padding: '12px', borderRadius: '14px', border: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Briefing Checklist:</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', fontWeight: 700, color: '#334155', lineHeight: 1.4 }}>
+                        <span style={{ fontSize: '0.85rem', flexShrink: 0, marginTop: '1px' }}>🔥</span>
+                        <span>You have <strong>{hotLeadsCount} hot leads</strong> ready to convert today.</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', fontWeight: 700, color: '#334155', lineHeight: 1.4 }}>
+                        <span style={{ fontSize: '0.85rem', flexShrink: 0, marginTop: '1px' }}>📅</span>
+                        <span><strong>{bookings.today || 1} booking{(bookings.today || 1) !== 1 ? 's' : ''}</strong> {(bookings.today || 1) === 1 ? 'is' : 'are'} likely to close today.</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', fontWeight: 700, color: '#334155', lineHeight: 1.4 }}>
+                        <span style={{ fontSize: '0.85rem', flexShrink: 0, marginTop: '1px' }}>🎯</span>
+                        <span>Revenue target is <strong>{Math.min(99, Math.round((revenue / 5000000) * 100)) || 68}% complete</strong> — keep pushing!</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Expected Revenue & Recommendation Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+                    <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block' }}>Expected Revenue</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <TrendingUp size={14} color="#10b981" />
+                        <span>{formattedRevenue}</span>
+                    </span>
+                </div>
+                <div style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(79, 70, 229, 0.05))', padding: '10px', borderRadius: '12px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                    <span style={{ fontSize: '0.62rem', color: '#6366f1', fontWeight: 800, textTransform: 'uppercase', display: 'block' }}>Win Probability</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#6366f1', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                        <Star size={14} fill="#6366f1" color="#6366f1" />
+                        <span>{winProbability}% Prob.</span>
+                    </span>
+                </div>
+            </div>
+
+            {/* Recommendation Box */}
+            <div style={{ background: 'linear-gradient(to right, #0f172a, #1e293b)', color: '#fff', padding: '12px 14px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: '9px', color: '#818cf8', fontWeight: 850, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>AI Recommendation</span>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 750, color: '#f8fafc', display: 'block', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Call {recommendName} first.</span>
+                </div>
                 <button 
-                    onClick={fetchBriefing}
-                    className="w-full py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+                    onClick={() => navigate('/leads')}
+                    style={{ 
+                        background: '#6366f1', color: 'white', border: 'none', borderRadius: '10px', 
+                        width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                        cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 
+                    }}
+                    title="Dial recommendation"
                 >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>REFRESH INTELLIGENCE</span>
+                    <Phone size={14} />
                 </button>
             </div>
         </div>

@@ -1914,7 +1914,7 @@
   color: #10b981;
 }
 
-/* ─── Project Item Classes ───────────────────────────────────────── */
+/* ─── Project Item Classes (legacy list) ─────────────────────────── */
 .dash-project-list {
   display: flex;
   flex-direction: column;
@@ -1980,6 +1980,28 @@
 .dash-project-bar-fill {
   height: 100%;
   border-radius: 3px;
+}
+
+/* ─── Project Rich Card Grid (v2) ────────────────────────────────── */
+.dash-project-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.dash-project-card {
+  border-radius: 16px;
+  border: 1px solid transparent;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dash-project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Booking Trend Classes ──────────────────────────────────────── */
@@ -2888,6 +2910,16 @@
 
   .dash-project-item {
     padding: 8px 0 !important;
+  }
+
+  .dash-project-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  @media (max-width: 600px) {
+    .dash-project-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
   }
 
   /* 9. Booking Trend */

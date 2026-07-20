@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { X, Book, MessageSquare, Phone, Mail, Globe, ShieldQuestion } from 'lucide-react';
+import { X, Book, MessageSquare, Phone, Mail, Globe, ShieldQuestion, Mic } from 'lucide-react';
 
 interface HelpModalProps {
     onClose: () => void;
@@ -49,7 +49,52 @@ export default function HelpModal({ onClose }: HelpModalProps) {
                         </div>
                     </div>
 
-                    <div className="support-footer">
+                    {/* Voice Assistant Support Guide */}
+                    <div style={{
+                        marginTop: '16px',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                        border: '1px solid rgba(99, 102, 241, 0.15)',
+                        borderRadius: '16px',
+                        padding: '16px 20px',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.1)', pointerEvents: 'none' }} />
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ background: 'rgba(99, 102, 241, 0.15)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Mic size={16} color="#6366f1" />
+                            </div>
+                            <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>AI Voice Assistant Guide</h4>
+                        </div>
+
+                        <p style={{ fontSize: '0.75rem', color: '#475569', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+                            To trigger Rohan (AI Sales Voice Agent), open the Dialer from the mobile hub or floating button and tap the <strong>AI Voice</strong> tab. You can speak directly or click these shortcut commands:
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {[
+                                '"Show my hot leads."',
+                                '"Call Amit."',
+                                '"Schedule a visit."',
+                                '"Open Deal #123."',
+                                '"What\'s my pipeline?"',
+                            ].map((cmd, i) => (
+                                <span key={i} style={{
+                                    background: 'white',
+                                    border: '1px solid rgba(99, 102, 241, 0.15)',
+                                    borderRadius: '8px',
+                                    padding: '4px 10px',
+                                    fontSize: '0.68rem',
+                                    fontWeight: 700,
+                                    color: '#4f46e5',
+                                    fontFamily: 'monospace'
+                                }}>{cmd}</span>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="support-footer" style={{ marginTop: '16px' }}>
                         <div className="version-info">
                             <span>ZentrixCRM Version 1.2.4 (Enterprise Edition)</span>
                             <Globe size={14} />
