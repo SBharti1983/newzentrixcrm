@@ -323,7 +323,7 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                         .replace('Channel Partner', 'Ch. Partner')}
                 </span>
             </td>
-            <td style={{ textAlign: 'center', padding: '5px' }}>
+            <td style={{ textAlign: 'center', padding: '5px 5px 5px 15px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -357,12 +357,12 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                     </td>
                 </>
             )}
-            <td style={{ textAlign: 'center', padding: '5px' }}>
+            <td style={{ textAlign: 'center', padding: '5px 5px 5px 15px' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                     {(lead.created_by_name || 'System').split(' ')[0]}
                 </span>
             </td>
-            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px' }}>
+            <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px 5px 5px 15px' }}>
                 {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </td>
             <td className="ll-assigned-cell" title={lead.assigned_to_name || 'Unassigned'}>
@@ -1009,18 +1009,20 @@ export default function Leads() {
                                         />
                                     </th>
                                     {(() => {
-                                        const SORT_MAP: Record<string, string> = { 'Lead': 'name', 'Score': 'score', 'Status': 'status', 'Stage': 'stage', 'Source': 'source', 'Create Date': 'created_at', 'Last Contacted': 'last_contact_at' };
-                                        return ['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Created On', 'Assigned To', 'Last Contacted', 'Actions'].map((h, i) => {
-                                            const widths: Record<string, string> = { 'Lead': '130px', 'Contact': '140px', 'Status': '80px', 'Stage': '120px', 'Source': '80px', 'Score': '55px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Created On': '80px', 'Assigned To': '115px', 'Last Contacted': '110px', 'Actions': '100px' };
+                                        const SORT_MAP: Record<string, string> = { 'Lead': 'name', 'Score': 'score', 'Status': 'status', 'Stage': 'stage', 'Source': 'source', 'Created On': 'created_at', 'Last Contact': 'last_contact_at' };
+                                        return ['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Created On', 'Assigned To', 'Last Contact', 'Actions'].map((h, i) => {
+                                            const widths: Record<string, string> = { 'Lead': '130px', 'Contact': '140px', 'Status': '80px', 'Stage': '120px', 'Source': '80px', 'Score': '55px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '90px', 'Created On': '95px', 'Assigned To': '115px', 'Last Contact': '95px', 'Actions': '100px' };
                                             const isSticky = h === 'Actions';
                                             const sortKey = SORT_MAP[h];
                                             const isSorted = sortField === sortKey;
                                             return (
                                                 <th key={h}
-                                                    className={sortKey ? `ll-sortable-th ${isSorted ? `ll-sort-active ll-sort-active-${sortDir}` : ''}` : ''}
+                                                    className={`${h === 'Assigned To' ? 'll-assigned-th' : ''} ${h === 'Lead' ? 'll-shift-right-30' : ''} ${h === 'Contact' ? 'll-shift-right-35' : ''} ${(h === 'Score' || h === 'Created By' || h === 'Created On') ? 'll-shift-right-10' : ''} ${sortKey ? `ll-sortable-th ${isSorted ? `ll-sort-active ll-sort-active-${sortDir}` : ''}` : ''}`.trim()}
                                                     onClick={sortKey ? () => handleSort(sortKey) : undefined}
                                                     style={{
-                                                        width: widths[h] || 'auto', minWidth: widths[h] || 'auto', textAlign: 'center',
+                                                        width: widths[h] || 'auto', minWidth: widths[h] || 'auto',
+                                                        textAlign: (h === 'Lead' || h === 'Contact' || h === 'Assigned To') ? 'left' : 'center',
+                                                        paddingLeft: h === 'Assigned To' ? '32px' : undefined,
                                                         position: isSticky ? 'sticky' : 'static', right: isSticky ? 0 : 'auto',
                                                         zIndex: isSticky ? 30 : 1, boxShadow: isSticky ? '-4px 0 12px rgba(0,0,0,0.04)' : 'none'
                                                     }}>
@@ -1363,13 +1365,10 @@ export default function Leads() {
 
             {/* Floating Bulk Action Bar */}
             {selectedIds.size > 0 && (
-                <div style={{
-                    position: 'fixed', bottom: isMobile ? 90 : 30,
-                    left: isMobile ? 16 : 'calc(var(--sidebar-width, 240px) + 16px)',
-                    right: isMobile ? 16 : 'auto',
+                <div className="ll-floating-bulk-bar" style={{
                     background: 'var(--navy-900)', color: 'white',
                     padding: '12px 20px', borderRadius: 100,
-                    display: 'flex', alignItems: 'center', gap: 20, zIndex: 100,
+                    display: 'flex', alignItems: 'center', gap: 20,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
                     animation: 'barSlideUp 0.3s ease-out'
                 }}>

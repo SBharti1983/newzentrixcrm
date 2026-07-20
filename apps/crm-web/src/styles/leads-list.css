@@ -55,22 +55,54 @@
   color: var(--navy-900);
 }
 
-/* ─── Assigned To Cell — Force center alignment ──────────────────── */
+/* ─── Assigned To Cell & Header Alignment ────────────────────────── */
+.ll-thead-premium th.ll-assigned-th {
+  text-align: left !important;
+  padding-left: 32px !important;
+}
+
+.ll-thead-premium th.ll-shift-right-10 {
+  padding-left: 14px !important;
+}
+
+.ll-thead-premium th.ll-shift-right-30 {
+  padding-left: 34px !important;
+}
+
+.ll-thead-premium th.ll-shift-right-35 {
+  padding-left: 39px !important;
+}
+
 .ll-assigned-cell {
-  position: relative !important;
-  padding: 5px !important;
+  text-align: left !important;
   vertical-align: middle !important;
+  padding: 5px 12px 5px 32px !important;
 }
 
 .ll-assigned-cell .ll-assigned-inner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+}
+
+/* ─── Floating Bulk Action Bar ───────────────────────────────────── */
+.ll-floating-bulk-bar {
+  position: fixed !important;
+  bottom: 80px !important;
+  left: calc(var(--sidebar-width, 240px) + 28px) !important;
+  transform: none !important;
+  right: auto !important;
+  z-index: 1000 !important;
+}
+
+@media (max-width: 768px) {
+  .ll-floating-bulk-bar {
+    bottom: 120px !important;
+    left: 16px !important;
+    transform: none !important;
+  }
 }
 
 /* ─── Table Container Override (suppress card:hover lift) ────────── */
