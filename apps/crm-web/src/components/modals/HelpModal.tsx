@@ -72,25 +72,65 @@ export default function HelpModal({ onClose }: HelpModalProps) {
                             To trigger Rohan (AI Sales Voice Agent), open the Dialer from the mobile hub or floating button and tap the <strong>AI Voice</strong> tab. You can speak directly or click these shortcut commands:
                         </p>
 
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                            {[
-                                '"Show my hot leads."',
-                                '"Call Amit."',
-                                '"Schedule a visit."',
-                                '"Open Deal #123."',
-                                '"What\'s my pipeline?"',
-                            ].map((cmd, i) => (
-                                <span key={i} style={{
-                                    background: 'white',
-                                    border: '1px solid rgba(99, 102, 241, 0.15)',
-                                    borderRadius: '8px',
-                                    padding: '4px 10px',
-                                    fontSize: '0.68rem',
-                                    fontWeight: 700,
-                                    color: '#4f46e5',
-                                    fontFamily: 'monospace'
-                                }}>{cmd}</span>
-                            ))}
+                        {/* Leads Commands */}
+                        <div style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#6366f1', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>📋 Lead Filters</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {[
+                                    '"Show lost leads."',
+                                    '"Show won leads."',
+                                    '"Show hot leads."',
+                                    '"Show cold leads."',
+                                    '"Show nurture leads."',
+                                    '"Show new leads."',
+                                    '"Show all leads."',
+                                ].map((cmd, i) => (
+                                    <span key={i} style={{
+                                        background: 'white', border: '1px solid rgba(99, 102, 241, 0.15)',
+                                        borderRadius: '8px', padding: '4px 10px',
+                                        fontSize: '0.67rem', fontWeight: 700, color: '#4f46e5', fontFamily: 'monospace'
+                                    }}>{cmd}</span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Call Commands */}
+                        <div style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#0891b2', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>📞 Calling</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {[
+                                    '"Call Amit."',
+                                    '"Call Priya."',
+                                    '"Dial 9876543210."',
+                                ].map((cmd, i) => (
+                                    <span key={i} style={{
+                                        background: 'white', border: '1px solid rgba(8, 145, 178, 0.15)',
+                                        borderRadius: '8px', padding: '4px 10px',
+                                        fontSize: '0.67rem', fontWeight: 700, color: '#0e7490', fontFamily: 'monospace'
+                                    }}>{cmd}</span>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Navigation Commands */}
+                        <div>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#059669', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>🧭 Navigation</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                {[
+                                    '"Show my pipeline."',
+                                    '"Show follow-ups."',
+                                    '"Schedule a visit."',
+                                    '"Open deals."',
+                                    '"Go to dashboard."',
+                                    '"Open calendar."',
+                                ].map((cmd, i) => (
+                                    <span key={i} style={{
+                                        background: 'white', border: '1px solid rgba(5, 150, 105, 0.15)',
+                                        borderRadius: '8px', padding: '4px 10px',
+                                        fontSize: '0.67rem', fontWeight: 700, color: '#059669', fontFamily: 'monospace'
+                                    }}>{cmd}</span>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
@@ -120,6 +160,7 @@ export default function HelpModal({ onClose }: HelpModalProps) {
                 .help-modal {
                     width: 100%;
                     max-width: 620px;
+                    max-height: 88vh;
                     background: white;
                     border-radius: var(--border-radius-xl);
                     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -167,6 +208,23 @@ export default function HelpModal({ onClose }: HelpModalProps) {
                 .help-body {
                     padding: 20px 24px;
                     flex: 1;
+                    overflow-y: auto;
+                    max-height: calc(88vh - 72px);
+                    scrollbar-width: thin;
+                    scrollbar-color: #cbd5e1 transparent;
+                }
+                .help-body::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .help-body::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .help-body::-webkit-scrollbar-thumb {
+                    background: #cbd5e1;
+                    border-radius: 99px;
+                }
+                .help-body::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
                 }
 
                 .help-grid {

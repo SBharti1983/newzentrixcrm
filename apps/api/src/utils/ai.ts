@@ -44,66 +44,89 @@ function getAIFallbackResponse(prompt: string, isJson: boolean): any {
  */
 const _generateAIResponse = async (prompt: string, isJson: boolean = true, customKey: string | null = null): Promise<any> => {
     const aiKey = (customKey || process.env.GEMINI_API_KEY || '').trim();
-    if (!aiKey) {
-        throw new Error('GEMINI_API_KEY is not configured');
-    }
-    const localGenAI = new GoogleGenerativeAI(aiKey);
-
     let finalPrompt = prompt;
     if (isJson) {
         finalPrompt += "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no triple backticks, just the raw JSON string.";
     }
 
-    // Using Gemini 2.5 Flash as the primary engine for high-speed sales training simulations.
-    const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
-    let lastError = null;
+    // Try Gemini models first
+    if (aiKey) {
+        const localGenAI = new GoogleGenerativeAI(aiKey);
+        const modelsToTry = ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro", "gemini-pro"];
+        let lastError = null;
 
-    for (const modelName of modelsToTry) {
-        let attempts = 0;
-        const maxAttempts = 2; // Retry once if it's a transient error
-
-        while (attempts < maxAttempts) {
-            try {
-                attempts++;
-                const model = localGenAI.getGenerativeModel({ 
-                    model: modelName,
-                    generationConfig: { temperature: 0.7, topP: 0.8, topK: 40 },
-                    safetySettings: [
-                        { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-                        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-                        { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-                        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
-                    ]
-                });
-                const result = await model.generateContent(finalPrompt);
-                const response = result.response;
-                let text = response.text();
-                
-                if (isJson) {
-                    // Extract JSON block if AI wrapped it in triple backticks
-                    const jsonMatch = text.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        text = jsonMatch[0];
+        for (const modelName of modelsToTry) {
+            let attempts = 0;
+            const maxAttempts = 2;
+            while (attempts < maxAttempts) {
+                try {
+                    attempts++;
+                    const model = localGenAI.getGenerativeModel({ 
+                        model: modelName,
+                        generationConfig: { temperature: 0.7, topP: 0.8, topK: 40 },
+                        safetySettings: [
+                            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
+                        ]
+                    });
+                    const result = await model.generateContent(finalPrompt);
+                    let text = result.response.text();
+                    if (isJson) {
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) text = jsonMatch[0];
+                        return { __model: `Gemini ${modelName}`, __text: JSON.parse(text) };
                     }
-                    return JSON.parse(text);
+                    return { __model: `Gemini ${modelName}`, __text: text };
+                } catch (err: any) {
+                    lastError = err;
+                    logger.warn(`[AI] Attempt ${attempts} with ${modelName} failed: ${err.message}`);
+                    if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                        await new Promise(r => setTimeout(r, 2000));
+                        continue;
+                    }
+                    break;
                 }
-                return text;
-            } catch (err: any) {
-                lastError = err;
-                logger.warn(`[AI] Attempt ${attempts} with ${modelName} failed: ${err.message}`);
-                
-                // If transient (503/429) and we have attempts left, wait and retry
-                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
-                    await new Promise(r => setTimeout(r, 2000)); // Wait 2s
-                    continue;
-                }
-                
-                // If definitive 404 or exhausted retries, try next model in the list
-                break; 
             }
         }
     }
-    throw lastError || new Error('All Gemini models failed');
+
+    // Fallback to Groq
+    const groqKey = (process.env.GROQ_API_KEY || '').trim();
+    if (groqKey) {
+        logger.info('🔄 [AI FALLBACK] Gemini failed/exhausted. Falling back to Groq LLaMA...');
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${groqKey}` },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: finalPrompt }],
+                    temperature: 0.7,
+                    max_tokens: isJson ? 1024 : 512,
+                    ...(isJson ? { response_format: { type: 'json_object' } } : {})
+                })
+            });
+            if (response.ok) {
+                const resJson = (await response.json()) as any;
+                let text = resJson.choices[0]?.message?.content?.trim() || '';
+                if (isJson) {
+                    const jsonMatch = text.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) text = jsonMatch[0];
+                    return { __model: 'Groq LLaMA 3.3', __text: JSON.parse(text) };
+                }
+                return { __model: 'Groq LLaMA 3.3', __text: text };
+            } else {
+                const errText = await response.text();
+                logger.error(`[AI] Groq fallback failed with status ${response.status}: ${errText}`);
+            }
+        } catch (groqErr: any) {
+            logger.error('[AI] Groq fallback execution failed:', groqErr);
+        }
+    }
+
+    throw new Error('All AI models failed — no Gemini key and Groq unavailable');
 };
 
 // Instantiate the AI Circuit Breaker

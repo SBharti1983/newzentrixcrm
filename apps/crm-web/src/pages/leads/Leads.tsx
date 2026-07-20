@@ -49,6 +49,24 @@ const STAGE_DOT_COLORS: Record<string, string> = {
     'Lost': '#f43f5e'
 };
 
+const getSourceColor = (source: string) => {
+    if (!source) return '#475569';
+    const s = source.toLowerCase();
+    if (s.includes('facebook')) return '#1877f2'; // Facebook blue
+    if (s.includes('whatsapp')) return '#25d366'; // WhatsApp green
+    if (s.includes('google')) return '#ea4335'; // Google red/orange
+    if (s.includes('website') || s.includes('direct')) return '#2563eb'; // Royal blue
+    if (s.includes('referral') || s.includes('partner')) return '#16a34a'; // Green
+    if (s.includes('walk')) return '#d97706'; // Amber/orange
+    if (s.includes('acres') || s.includes('housing') || s.includes('magic')) return '#ea580c'; // Portal orange
+    return '#475569'; // Default Slate
+};
+
+const normalizeStage = (stage: string) => {
+    if (!stage) return 'New Lead';
+    return stage === 'New' ? 'New Lead' : stage;
+};
+
 const SOURCE_COLORS = {
     Website: 'badge-blue',
     Referral: 'badge-green',
@@ -125,19 +143,29 @@ const MobileLeadCard = memo(({ lead, isSelected, search, onSelect, onDelete, onE
             {/* Top row: Avatar + Name + Stage badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <div onClick={e => { e.stopPropagation(); onSelect(lead.id); }} style={{ flexShrink: 0 }}>
-                    <div className="avatar avatar-sm" style={{ 
-                        background: isSelected ? 'var(--navy-500)' : `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, 
-                        width: 36, height: 36, fontSize: '12px', 
-                        border: isSelected ? '2px solid var(--navy-300)' : 'none'
+                    <div style={{ 
+                        background: isSelected ? 'var(--navy-500)' : `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 32%)`, 
+                        color: 'white', 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: '6px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontWeight: 800, 
+                        fontSize: '12px',
+                        border: isSelected ? '2px solid var(--navy-300)' : `1px solid hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 22%)`,
+                        flexShrink: 0,
+                        textTransform: 'uppercase'
                     }}>
-                        {isSelected ? '✓' : String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
+                        {isSelected ? '✓' : String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2)}
                     </div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{highlightText(lead.name || '—', search)}</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1 }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
                 </div>
-                <span className={`badge ${STAGE_COLORS[lead.stage] || 'badge-slate'}`} style={{ fontSize: '0.65rem', padding: '2px 8px', flexShrink: 0 }}>{lead.stage || '—'}</span>
+                <span className={`badge ${STAGE_COLORS[normalizeStage(lead.stage)] || 'badge-slate'}`} style={{ fontSize: '0.65rem', padding: '2px 8px', flexShrink: 0 }}>{normalizeStage(lead.stage) || '—'}</span>
             </div>
 
             {/* Contact row */}
@@ -207,8 +235,9 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
     const scoreClass = leadScore > 80 ? 'll-score-high' : leadScore > 50 ? 'll-score-mid' : 'll-score-low';
     const staggerClass = `ll-stagger-${Math.min(rowIndex + 1, 20)}`;
     const statusKey = (lead.status || 'Active').toLowerCase();
-    const stageDotColor = STAGE_DOT_COLORS[lead.stage] || '#94a3b8';
-    const stageBgColor = STAGE_BG[lead.stage] || '#f8fafc';
+    const normalizedStage = normalizeStage(lead.stage);
+    const stageDotColor = STAGE_DOT_COLORS[normalizedStage] || '#94a3b8';
+    const stageBgColor = STAGE_BG[normalizedStage] || '#f8fafc';
 
     const scoreAccent = leadScore > 80 ? 'll-score-accent-high' : leadScore > 50 ? 'll-score-accent-mid' : 'll-score-accent-low';
 
@@ -225,10 +254,22 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
             </td>
             <td style={{ padding: '5px 8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="ll-avatar-ring">
-                        <div className="avatar avatar-sm" style={{ background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 60%, 55%)`, flexShrink: 0, width: 28, height: 28, fontSize: '10px' }}>
-                            {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('')}
-                        </div>
+                    <div style={{ 
+                        background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 32%)`, 
+                        color: 'white', 
+                        width: 28, 
+                        height: 28, 
+                        borderRadius: '6px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontWeight: 800, 
+                        fontSize: '11px',
+                        border: `1px solid hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 22%)`,
+                        flexShrink: 0,
+                        textTransform: 'uppercase'
+                    }}>
+                        {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2)}
                     </div>
                     <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ height: 14, opacity: hovered ? 1 : 0, visibility: hovered ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
@@ -259,9 +300,18 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                 <span className={`ll-status-pill ll-status-${statusKey}`}>{lead.status || 'Active'}</span>
             </td>
             <td style={{ textAlign: 'center', padding: '5px' }}>
-                <span className="ll-stage-pill" style={{ '--ll-stage-dot': stageDotColor, '--ll-stage-bg': stageBgColor, '--ll-stage-border': `${stageDotColor}25`, '--ll-stage-color': stageDotColor } as any}>{lead.stage || '—'}</span>
+                <span className="ll-stage-pill" style={{ '--ll-stage-dot': stageDotColor, '--ll-stage-bg': stageBgColor, '--ll-stage-border': `${stageDotColor}25`, '--ll-stage-color': stageDotColor } as any}>{normalizeStage(lead.stage)}</span>
             </td>
-            <td style={{ textAlign: 'center', padding: '5px' }}><span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{lead.source || '—'}</span></td>
+            <td style={{ textAlign: 'center', padding: '5px' }}>
+                <span style={{ 
+                    fontSize: '0.72rem', 
+                    fontWeight: 700, 
+                    color: getSourceColor(lead.source),
+                    letterSpacing: '0.02em'
+                }}>
+                    {lead.source || '—'}
+                </span>
+            </td>
             <td style={{ textAlign: 'center', padding: '5px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div className={`ll-score-ring ${scoreClass}`}>
@@ -661,19 +711,7 @@ export default function Leads() {
                                 </span>
                             )}
                         </div>
-                        {/* Telemetry Quality Bar */}
-                        {leads.length > 0 && (
-                            <div className="ll-telemetry-container" style={{ display: 'flex', alignItems: 'center', gap: 8 }} title="Lead Quality Split (Hot / Warm / Cold)">
-                                <div className="ll-telemetry-bar" style={{ display: 'flex', height: 4, borderRadius: 2, overflow: 'hidden', background: '#e2e8f0', width: 140 }}>
-                                    <div style={{ width: `${scoreCounts.hotPct}%`, background: '#10b981' }} />
-                                    <div style={{ width: `${scoreCounts.warmPct}%`, background: '#f59e0b' }} />
-                                    <div style={{ width: `${scoreCounts.coldPct}%`, background: '#f43f5e' }} />
-                                </div>
-                                <span className="ll-telemetry-label" style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                                    🔥 {scoreCounts.hot} · ⚡ {scoreCounts.warm} · ❄️ {scoreCounts.cold}
-                                </span>
-                            </div>
-                        )}
+
                     </div>
                 </div>
                 

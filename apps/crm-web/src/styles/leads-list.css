@@ -177,32 +177,32 @@
 }
 
 .ll-status-active {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  color: #065f46;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: transparent;
+  color: #059669;
+  border: none;
 }
-.ll-status-active::before { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+.ll-status-active::before { background: #10b981; }
 
 .ll-status-won {
-  background: linear-gradient(135deg, #ecfdf5 0%, #bbf7d0 100%);
-  color: #14532d;
-  border: 1px solid rgba(34, 197, 94, 0.25);
+  background: transparent;
+  color: #16a34a;
+  border: none;
 }
-.ll-status-won::before { background: #22c55e; box-shadow: 0 0 6px rgba(34, 197, 94, 0.5); }
+.ll-status-won::before { background: #22c55e; }
 
 .ll-status-lost {
-  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
-  color: #881337;
-  border: 1px solid rgba(244, 63, 94, 0.2);
+  background: transparent;
+  color: #e11d48;
+  border: none;
 }
-.ll-status-lost::before { background: #f43f5e; box-shadow: 0 0 6px rgba(244, 63, 94, 0.4); }
+.ll-status-lost::before { background: #f43f5e; }
 
 .ll-status-nurture {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
-  color: #581c87;
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  background: transparent;
+  color: #9333ea;
+  border: none;
 }
-.ll-status-nurture::before { background: #a855f7; box-shadow: 0 0 6px rgba(168, 85, 247, 0.4); }
+.ll-status-nurture::before { background: #a855f7; }
 
 /* ─── Stage Badge with Color Dot ─────────────────────────────────── */
 .ll-stage-pill {
@@ -211,12 +211,12 @@
   gap: 5px;
   font-size: 0.68rem;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  border: 1px solid var(--ll-stage-border, rgba(100, 116, 139, 0.15));
-  background: var(--ll-stage-bg, #f8fafc);
+  padding: 2px 4px;
+  border-radius: 0;
+  border: none;
+  background: transparent;
   color: var(--ll-stage-color, #475569);
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -239,11 +239,11 @@
   gap: 4px;
   font-size: 0.65rem;
   font-weight: 600;
-  color: #b45309;
-  background: rgba(245, 158, 11, 0.08);
-  padding: 1px 7px;
-  border-radius: 10px;
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  border: none;
 }
 
 /* ─── Action Button Micro-Interactions ───────────────────────────── */

@@ -254,11 +254,43 @@ export default function Dialer() {
     // Voice Command Handler
     const handleVoiceCommand = async (command: string) => {
         const cleanCmd = command.toLowerCase().trim();
-        if (cleanCmd.includes('lead') || cleanCmd.includes('hot')) {
-            showToast(`Voice command: "Show hot leads"`, 'success');
+
+        // ── LOST LEADS ──────────────────────────────────────────────────
+        if (cleanCmd.includes('lost')) {
+            showToast('Showing Lost leads...', 'success');
+            navigate('/leads?status=Lost');
+
+        // ── WON LEADS ───────────────────────────────────────────────────
+        } else if (cleanCmd.includes('won') || cleanCmd.includes('win') || cleanCmd.includes('closed')) {
+            showToast('Showing Won leads...', 'success');
+            navigate('/leads?status=Won');
+
+        // ── NURTURE LEADS ────────────────────────────────────────────────
+        } else if (cleanCmd.includes('nurture')) {
+            showToast('Showing Nurture leads...', 'success');
+            navigate('/leads?status=Nurture');
+
+        // ── HOT / COLD / WARM / SCORE LEADS ─────────────────────────────
+        } else if (cleanCmd.includes('hot lead') || (cleanCmd.includes('hot') && cleanCmd.includes('lead'))) {
+            showToast('Showing Hot leads (score > 80)...', 'success');
+            navigate('/leads?score=hot');
+
+        } else if (cleanCmd.includes('cold lead') || (cleanCmd.includes('cold') && cleanCmd.includes('lead'))) {
+            showToast('Showing Cold leads (score < 40)...', 'success');
+            navigate('/leads?score=cold');
+
+        // ── NEW LEADS ────────────────────────────────────────────────────
+        } else if ((cleanCmd.includes('new') && cleanCmd.includes('lead')) || cleanCmd.includes('new lead')) {
+            showToast('Showing New leads...', 'success');
+            navigate('/leads?stage=New Lead');
+
+        // ── ALL LEADS / GENERAL LEADS ────────────────────────────────────
+        } else if (cleanCmd.includes('lead') || cleanCmd.includes('show lead') || cleanCmd.includes('all lead')) {
+            showToast('Opening Leads...', 'success');
             navigate('/leads');
+
+        // ── CALL / DIAL ──────────────────────────────────────────────────
         } else if (cleanCmd.includes('call') || cleanCmd.includes('dial') || cleanCmd.startsWith('priya')) {
-            // Smart name extraction: extract target word after call/dial, if any, otherwise clean noise
             let searchName = cleanCmd;
             const callIdx = cleanCmd.indexOf('call');
             const dialIdx = cleanCmd.indexOf('dial');
@@ -267,92 +299,85 @@ export default function Dialer() {
             } else if (dialIdx !== -1) {
                 searchName = cleanCmd.substring(dialIdx + 4);
             }
-            
             searchName = searchName
                 .replace(/\b(to|up|a|the|now|please|phone|contact)\b/g, '')
                 .replace(/\./g, '')
                 .trim();
-            
-            // 1. If it's a direct phone number, dial it directly
+
             const isPhone = /^\+?[0-9\s\-()]+$/.test(searchName) && searchName.replace(/\D/g, '').length >= 5;
             if (isPhone) {
-                showToast(`Dialing dynamic number: ${searchName}`, 'success');
+                showToast(`Dialing ${searchName}`, 'success');
                 handleDial(null, searchName);
                 return;
             }
 
-            showToast(`Voice command: "Call ${searchName || 'Amit'}"`, 'success');
-            
+            showToast(`Searching for "${searchName || 'contact'}"...`, 'success');
             let matchedLead: any = null;
-
             try {
-                // 2. Search local leads list
                 const localLeadsList = Array.isArray(leads) ? leads : (Array.isArray((leads as any)?.data) ? (leads as any).data : []);
                 matchedLead = localLeadsList.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
-
-                // 3. Search via Leads API with q filter (query matching in DB)
                 if (!matchedLead) {
                     try {
                         const searchRes = await leadsApi.list({ q: searchName || 'amit', limit: 10 });
                         let listData: any[] = [];
-                        if (searchRes && Array.isArray(searchRes)) {
-                            listData = searchRes;
-                        } else if (searchRes && Array.isArray((searchRes as any).data)) {
-                            listData = (searchRes as any).data;
-                        }
+                        if (searchRes && Array.isArray(searchRes)) { listData = searchRes; }
+                        else if (searchRes && Array.isArray((searchRes as any).data)) { listData = (searchRes as any).data; }
                         matchedLead = listData.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
-                    } catch (leadsErr) {
-                        console.error('[Voice Command] Leads API list query failed:', leadsErr);
-                    }
+                    } catch (leadsErr) { console.error('[Voice Command] Leads API list query failed:', leadsErr); }
                 }
-
-                // 4. Search via Users API (team members) as a fallback
                 if (!matchedLead) {
                     try {
                         const teamRes = await usersApi.list();
                         if (teamRes && Array.isArray(teamRes)) {
                             const matchedUser = teamRes.find((u: any) => u.name?.toLowerCase().includes(searchName || 'amit'));
-                            if (matchedUser) {
-                                matchedLead = {
-                                    name: matchedUser.name,
-                                    phone: matchedUser.phone,
-                                    id: null
-                                };
-                            }
+                            if (matchedUser) { matchedLead = { name: matchedUser.name, phone: matchedUser.phone, id: null }; }
                         }
-                    } catch (usersErr) {
-                        console.error('[Voice Command] Users API query failed:', usersErr);
-                    }
+                    } catch (usersErr) { console.error('[Voice Command] Users API query failed:', usersErr); }
                 }
-                
                 if (matchedLead && (matchedLead.phone || matchedLead.number)) {
                     const finalPhone = matchedLead.phone || matchedLead.number;
                     showToast(`Calling ${matchedLead.name} (${finalPhone})...`, 'success');
                     handleDial(matchedLead, finalPhone);
                 } else {
-                    const fallbackNum = '9876543210';
-                    if (searchName) {
-                        showToast(`No contact found for "${searchName}". Dialing placeholder.`, 'warning');
-                    } else {
-                        showToast(`Dialing Amit (default)...`, 'success');
-                    }
-                    handleDial(null, fallbackNum);
+                    showToast(`No contact found for "${searchName}". Try "Call [name]".`, 'warning');
                 }
             } catch (err) {
                 console.error('[Voice Command] Search overall failed:', err);
-                handleDial(null, '9876543210');
             }
+
+        // ── SCHEDULE VISIT ───────────────────────────────────────────────
         } else if (cleanCmd.includes('visit') || cleanCmd.includes('schedule')) {
-            showToast(`Voice command: "Schedule visit"`, 'success');
+            showToast('Opening Site Visits...', 'success');
             navigate('/site-visits');
+
+        // ── FOLLOW-UPS ───────────────────────────────────────────────────
+        } else if (cleanCmd.includes('follow') || cleanCmd.includes('follow-up') || cleanCmd.includes('callback')) {
+            showToast('Opening Follow-Ups...', 'success');
+            navigate('/follow-ups');
+
+        // ── DEALS / BOOKINGS ─────────────────────────────────────────────
         } else if (cleanCmd.includes('deal') || cleanCmd.includes('booking')) {
-            showToast(`Voice command: "Open Deal"`, 'success');
+            showToast('Opening Deals...', 'success');
             navigate('/bookings');
+
+        // ── PIPELINE ─────────────────────────────────────────────────────
         } else if (cleanCmd.includes('pipeline') || cleanCmd.includes('stage')) {
-            showToast(`Voice command: "Show pipeline"`, 'success');
+            showToast('Opening Pipeline...', 'success');
             navigate('/pipeline');
+
+        // ── DASHBOARD ────────────────────────────────────────────────────
+        } else if (cleanCmd.includes('dashboard') || cleanCmd.includes('home') || cleanCmd.includes('overview')) {
+            showToast('Going to Dashboard...', 'success');
+            navigate('/dashboard');
+
+        // ── CALENDAR ────────────────────────────────────────────────────
+        } else if (cleanCmd.includes('calendar') || cleanCmd.includes('meeting')) {
+            showToast('Opening Calendar...', 'success');
+            navigate('/calendar');
+
+        // ── UNKNOWN ──────────────────────────────────────────────────────
         } else {
-            showToast(`Voice command: "${command}" (try the examples)`, 'info');
+            showToast(`Try: "Show lost leads", "Call Priya", "Show hot leads"`, 'info');
         }
     };
 
@@ -406,8 +431,8 @@ export default function Dialer() {
     const hasCopilot = user && ['agent', 'sales_manager', 'admin', 'superadmin'].includes(user.role) && !isMobile;
 
     if (!isOpen) return (
-        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 32, right: isMobile ? 12 : (hasCopilot ? 200 : 32), zIndex: 9999, width: 56, height: 56, borderRadius: '18px', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
-            <Smartphone size={28} />
+        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 12, right: isMobile ? 12 : 70, zIndex: 9999, width: 48, height: 48, borderRadius: '50%', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+            <Smartphone size={20} />
         </button>
     );
 
@@ -426,10 +451,19 @@ export default function Dialer() {
             display: 'flex', flexDirection: 'column',
             border: '1px solid rgba(255,255,255,0.12)' 
         }}>
-            <div style={{ padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none' }} />
-                    <span style={{ fontWeight: 900, fontSize: '0.75rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ padding: '0 16px', height: 48, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1, marginRight: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: !agentId ? '#94a3b8' : (isDeviceOnline ? '#10b981' : '#f43f5e'), animation: callState === 'active' ? 'pulse-dialer 1.5s infinite' : 'none', flexShrink: 0 }} />
+                    <span style={{ 
+                        fontWeight: 900, 
+                        fontSize: '0.75rem', 
+                        letterSpacing: '0.12em', 
+                        textTransform: 'uppercase', 
+                        color: 'rgba(255,255,255,0.6)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                    }}>
                         {agentId ? (isDeviceOnline ? `ONLINE: ${agentId}` : `OFFLINE`) : 'NO HANDSET'}
                     </span>
                 </div>
@@ -534,11 +568,14 @@ export default function Dialer() {
 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%', marginTop: 2, maxHeight: 155, overflowY: 'auto', paddingRight: 4 }}>
                                         {[
-                                            'Show my hot leads.',
+                                            'Show lost leads.',
+                                            'Show won leads.',
+                                            'Show hot leads.',
+                                            'Show nurture leads.',
                                             'Call Amit.',
+                                            'Show my pipeline.',
+                                            'Show follow-ups.',
                                             'Schedule a visit.',
-                                            'Open Deal #123.',
-                                            'What\'s my pipeline?'
                                         ].map((cmd, i) => (
                                             <button 
                                                 key={i} 

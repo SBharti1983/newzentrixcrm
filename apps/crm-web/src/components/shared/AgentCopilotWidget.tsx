@@ -115,15 +115,13 @@ export default function AgentCopilotWidget() {
                 onClick={() => setIsOpen(true)}
                 className="hover-lift"
                 style={{
-                    position: 'fixed', bottom: 32, right: 32, zIndex: 9999,
-                    height: 48, borderRadius: '24px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '0 20px', color: 'white',
-                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4)', border: 'none', cursor: 'pointer',
-                    fontWeight: 800, fontSize: '13px', letterSpacing: '0.02em'
+                    position: 'fixed', bottom: 12, right: 12, zIndex: 9999,
+                    width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: 'white',
+                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4)', border: 'none', cursor: 'pointer'
                 }}
             >
-                <Sparkles size={16} />
-                <span>Ask AI Copilot</span>
+                <Sparkles size={18} />
             </button>
         );
     }

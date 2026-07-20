@@ -10,6 +10,7 @@ import recordingsRoutes from './recordings/RecordingsRoutes';
 import campaignsRoutes from './campaigns/CampaignsRoutes';
 import sipRoutes from './sip/SipRoutes';
 import webhookRoutes from './webhook/WebhookRoutes';
+import analyticsRoutes from './analytics/AnalyticsRoutes';
 
 const telephonyRouter = express.Router();
 
@@ -20,5 +21,6 @@ telephonyRouter.use('/recordings', recordingsRoutes);
 telephonyRouter.use('/campaigns', campaignsRoutes);
 telephonyRouter.use('/sip', sipRoutes);
 telephonyRouter.use('/webhook', webhookRoutes);
+telephonyRouter.use('/analytics', analyticsRoutes);
 
 export default telephonyRouter;
