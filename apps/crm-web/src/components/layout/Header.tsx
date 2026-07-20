@@ -78,6 +78,13 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
 
     const { logout } = useAuth();
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good Morning';
+        if (hour < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    };
+
     const page = PAGE_TITLES[location.pathname] || { title: branding?.company_name || 'Zentrix CRM', subtitle: '' };
 
     const headerClass = [
@@ -163,21 +170,29 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
         <header className={headerClass} style={{ height: 72 }}>
             <div className="header-left">
                 <button 
-                    className="toggle-btn" 
                     onClick={onToggle} 
                     aria-label="Toggle menu"
-                    style={{ 
+                    style={isMobile ? {
+                        background: 'none', border: 'none', boxShadow: 'none',
+                        color: '#64748b', cursor: 'pointer', padding: 0,
+                        width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    } : { 
                         width: 40, height: 40, borderRadius: 12, 
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                         cursor: 'pointer'
                     }}
+                    className={isMobile ? '' : 'toggle-btn'}
                 >
-                    <Menu size={18} />
+                    <Menu size={isMobile ? 22 : 18} />
                 </button>
                 <div style={{ marginLeft: 8 }}>
-                    <div className="header-title" style={{ fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{pageInfo.title || page.title}</div>
-                    <div className="header-breadcrumb hide-mobile" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginTop: 2 }}>{pageInfo.subtitle || page.subtitle}</div>
+                    <div className="header-title" style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1, fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
+                        {isMobile ? (branding?.company_name || 'Mayaa Infratech') : (pageInfo.title || page.title)}
+                    </div>
+                    <div className={isMobile ? '' : 'header-breadcrumb hide-mobile'} style={{ fontSize: isMobile ? '0.72rem' : '0.8rem', fontWeight: 600, color: isMobile ? '#64748b' : '#475569', marginTop: isMobile ? 3 : 2 }}>
+                        {isMobile ? `${getGreeting()}, ${user?.name?.split(' ')[0] || 'Rohan'}! 👋` : (pageInfo.subtitle || page.subtitle)}
+                    </div>
                 </div>
             </div>
 
@@ -300,12 +315,11 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     /* Mobile Search: expandable overlay */
                     <>
                         <button 
-                            className="icon-btn" 
                             onClick={() => setShowMobileSearch(true)}
                             aria-label="Search"
-                            style={{ marginRight: 8, width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', background: '#f1f5f9' }}
+                            style={{ marginRight: 16, width: 34, height: 34, border: 'none', background: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
                         >
-                            <Search size={18} />
+                            <Search size={22} color="#475569" />
                         </button>
 
                         {showMobileSearch && (
@@ -458,22 +472,25 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                     </button>
                 )}
 
-                <div style={{ position: 'relative', marginRight: 16 }}>
+                <div style={{ position: 'relative', marginRight: isMobile ? 22 : 16 }}>
                     <button 
-                        className="icon-btn"
                         onClick={() => setShowNotifications(!showNotifications)}
                         aria-label="Notifications"
-                        style={{ width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
+                        style={isMobile ? {
+                            width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative',
+                            background: 'none', border: 'none', padding: 0
+                        } : { width: 40, height: 40, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}
+                        className={isMobile ? '' : 'icon-btn'}
                     >
-                        <Bell size={18} />
+                        <Bell size={isMobile ? 22 : 18} color={isMobile ? '#475569' : undefined} />
                         <span style={{ 
-                            position: 'absolute', top: 4, right: 4, 
+                            position: 'absolute', top: isMobile ? -2 : 4, right: isMobile ? -2 : 4, 
                             background: '#ef4444', color: 'white', 
                             borderRadius: '50%', fontSize: '0.62rem', 
                             fontWeight: 900, width: 14, height: 14, 
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             border: '2px solid white' 
-                        }}>5</span>
+                        }}>{isMobile ? 3 : 5}</span>
                     </button>
                     {showNotifications && (
                         <NotificationDropdown onClose={() => setShowNotifications(false)} />
@@ -485,18 +502,18 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                         onClick={() => setShowUserMenu(!showUserMenu)}
                         title={user?.name || 'User Profile'}
                         style={{
-                            width: 40, height: 40,
+                            width: isMobile ? 36 : 40, height: isMobile ? 36 : 40,
                             borderRadius: '50%',
-                            background: '#0ea5e9',
+                            background: '#1e73e8',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 800, fontSize: '1rem', color: 'white',
+                            fontWeight: 800, fontSize: isMobile ? '0.85rem' : '1rem', color: 'white',
                             cursor: 'pointer', flexShrink: 0,
                             transition: 'transform 0.2s',
                             transform: showUserMenu ? 'scale(1.05)' : 'scale(1)',
                             position: 'relative'
                         }}
                     >
-                        {getInitials(user?.name) || 'MA'}
+                        {getInitials(user?.name) || 'RM'}
                         <div style={{ 
                             position: 'absolute', bottom: 0, right: 0, 
                             width: 10, height: 10, borderRadius: '50%', 

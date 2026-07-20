@@ -13,6 +13,7 @@ import {
 import { useMobile } from '../../hooks/useMobile';
 import AIDailyBriefing from '../../components/AIDailyBriefing';
 import * as dateUtils from '../../utils/dateUtils';
+import AgentMobileDashboard from './AgentMobileDashboard';
 
 // --- DEMO DATA ---
 const YEARLY_TREND = [
@@ -702,6 +703,12 @@ export default function AgentDashboardView({ user, data = {}, recentLeads = [], 
         if (hour < 17) return 'Good afternoon';
         return 'Good evening';
     };
+
+
+    // Render dedicated mobile dashboard for small screens
+    if (isMobile) {
+        return <AgentMobileDashboard user={user} data={data} recentLeads={recentLeads} loading={loading} />;
+    }
 
     return (
         <div style={{ 

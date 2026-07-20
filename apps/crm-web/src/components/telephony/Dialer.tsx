@@ -431,8 +431,31 @@ export default function Dialer() {
     const hasCopilot = user && ['agent', 'sales_manager', 'admin', 'superadmin'].includes(user.role) && !isMobile;
 
     if (!isOpen) return (
-        <button onClick={() => setIsOpen(true)} style={{ position: 'fixed', bottom: isMobile ? 80 : 12, right: isMobile ? 12 : 70, zIndex: 9999, width: 48, height: 48, borderRadius: '50%', background: '#0a1628', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
-            <Smartphone size={20} />
+        <button
+            onClick={() => setIsOpen(true)}
+            title="Open Dialer"
+            style={{
+                position: 'fixed',
+                bottom: isMobile ? 80 : 12,
+                right: isMobile ? 12 : 70,
+                zIndex: 9999,
+                width: 50,
+                height: 50,
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 8px 24px rgba(99,102,241,0.45), 0 2px 8px rgba(0,0,0,0.15)',
+                border: '2px solid rgba(255,255,255,0.18)',
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 32px rgba(99,102,241,0.55), 0 2px 8px rgba(0,0,0,0.2)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 24px rgba(99,102,241,0.45), 0 2px 8px rgba(0,0,0,0.15)'; }}
+        >
+            <Smartphone size={20} strokeWidth={2} />
         </button>
     );
 
