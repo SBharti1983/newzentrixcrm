@@ -257,8 +257,21 @@ export default function Dialer() {
         if (cleanCmd.includes('lead') || cleanCmd.includes('hot')) {
             showToast(`Voice command: "Show hot leads"`, 'success');
             navigate('/leads');
-        } else if (cleanCmd.includes('call') || cleanCmd.includes('dial')) {
-            const searchName = cleanCmd.replace('call', '').replace('dial', '').replace(/\./g, '').trim();
+        } else if (cleanCmd.includes('call') || cleanCmd.includes('dial') || cleanCmd.startsWith('priya')) {
+            // Smart name extraction: extract target word after call/dial, if any, otherwise clean noise
+            let searchName = cleanCmd;
+            const callIdx = cleanCmd.indexOf('call');
+            const dialIdx = cleanCmd.indexOf('dial');
+            if (callIdx !== -1) {
+                searchName = cleanCmd.substring(callIdx + 4);
+            } else if (dialIdx !== -1) {
+                searchName = cleanCmd.substring(dialIdx + 4);
+            }
+            
+            searchName = searchName
+                .replace(/\b(to|up|a|the|now|please|phone|contact)\b/g, '')
+                .replace(/\./g, '')
+                .trim();
             
             // 1. If it's a direct phone number, dial it directly
             const isPhone = /^\+?[0-9\s\-()]+$/.test(searchName) && searchName.replace(/\D/g, '').length >= 5;
@@ -270,42 +283,52 @@ export default function Dialer() {
 
             showToast(`Voice command: "Call ${searchName || 'Amit'}"`, 'success');
             
+            let matchedLead: any = null;
+
             try {
-                // 2. Safe unwrapping of local leads array from the useApi hook result ({ data: [...] })
+                // 2. Search local leads list
                 const localLeadsList = Array.isArray(leads) ? leads : (Array.isArray((leads as any)?.data) ? (leads as any).data : []);
-                let matchedLead = localLeadsList.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
-                
-                // 3. If not found locally, query API
+                matchedLead = localLeadsList.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
+
+                // 3. Search via Leads API with q filter (query matching in DB)
                 if (!matchedLead) {
-                    const searchRes = await leadsApi.list({ limit: 50 });
-                    let listData: any[] = [];
-                    if (searchRes && Array.isArray(searchRes)) {
-                        listData = searchRes;
-                    } else if (searchRes && Array.isArray((searchRes as any).data)) {
-                        listData = (searchRes as any).data;
+                    try {
+                        const searchRes = await leadsApi.list({ q: searchName || 'amit', limit: 10 });
+                        let listData: any[] = [];
+                        if (searchRes && Array.isArray(searchRes)) {
+                            listData = searchRes;
+                        } else if (searchRes && Array.isArray((searchRes as any).data)) {
+                            listData = (searchRes as any).data;
+                        }
+                        matchedLead = listData.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
+                    } catch (leadsErr) {
+                        console.error('[Voice Command] Leads API list query failed:', leadsErr);
                     }
-                    
-                    matchedLead = listData.find((l: any) => l.name?.toLowerCase().includes(searchName || 'amit'));
                 }
 
-                // 4. If still not found, query team members/users API
+                // 4. Search via Users API (team members) as a fallback
                 if (!matchedLead) {
-                    const teamRes = await usersApi.list();
-                    if (teamRes && Array.isArray(teamRes)) {
-                        const matchedUser = teamRes.find((u: any) => u.name?.toLowerCase().includes(searchName || 'amit'));
-                        if (matchedUser) {
-                            matchedLead = {
-                                name: matchedUser.name,
-                                phone: matchedUser.phone,
-                                id: null
-                            };
+                    try {
+                        const teamRes = await usersApi.list();
+                        if (teamRes && Array.isArray(teamRes)) {
+                            const matchedUser = teamRes.find((u: any) => u.name?.toLowerCase().includes(searchName || 'amit'));
+                            if (matchedUser) {
+                                matchedLead = {
+                                    name: matchedUser.name,
+                                    phone: matchedUser.phone,
+                                    id: null
+                                };
+                            }
                         }
+                    } catch (usersErr) {
+                        console.error('[Voice Command] Users API query failed:', usersErr);
                     }
                 }
                 
                 if (matchedLead && (matchedLead.phone || matchedLead.number)) {
-                    showToast(`Calling ${matchedLead.name}...`, 'success');
-                    handleDial(matchedLead, matchedLead.phone || matchedLead.number);
+                    const finalPhone = matchedLead.phone || matchedLead.number;
+                    showToast(`Calling ${matchedLead.name} (${finalPhone})...`, 'success');
+                    handleDial(matchedLead, finalPhone);
                 } else {
                     const fallbackNum = '9876543210';
                     if (searchName) {
@@ -316,7 +339,7 @@ export default function Dialer() {
                     handleDial(null, fallbackNum);
                 }
             } catch (err) {
-                console.error('[Voice Command] Search failed:', err);
+                console.error('[Voice Command] Search overall failed:', err);
                 handleDial(null, '9876543210');
             }
         } else if (cleanCmd.includes('visit') || cleanCmd.includes('schedule')) {
