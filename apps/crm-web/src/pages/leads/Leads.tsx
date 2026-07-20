@@ -252,47 +252,55 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
             <td onClick={e => e.stopPropagation()} style={{ padding: '5px 0 5px 8px' }}>
                 <input type="checkbox" className="ll-checkbox" checked={isSelected} onChange={() => onSelect(lead.id)} />
             </td>
-            <td style={{ padding: '5px 8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <td style={{ padding: '5px 8px', minWidth: 160 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ 
                         background: `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 32%)`, 
                         color: 'white', 
-                        width: 28, 
-                        height: 28, 
-                        borderRadius: '6px', 
+                        width: 32, 
+                        height: 32, 
+                        borderRadius: '8px', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
                         fontWeight: 800, 
-                        fontSize: '11px',
+                        fontSize: '12px',
                         border: `1px solid hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 22%)`,
                         flexShrink: 0,
                         textTransform: 'uppercase'
                     }}>
                         {String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2)}
                     </div>
-                    <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ height: 14, opacity: hovered ? 1 : 0, visibility: hovered ? 'visible' : 'hidden', transition: 'all 0.15s ease', display: 'flex', alignItems: 'center' }}>
-                            <button onClick={(e) => { e.stopPropagation(); onPreview(lead.id); }} style={{ background: '#ffffff', border: '1px solid #cbd6e2', borderRadius: 3, padding: '0px 4px', fontSize: '9px', color: '#516f90', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', lineHeight: '1.2' }}>Preview</button>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                        <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', maxWidth: 145 }}>
+                            {highlightText(lead.name || '—', search)}
                         </div>
-                        <div data-tooltip={lead.name || ''} style={{ fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--navy-900)', lineHeight: 1.1 }}>{highlightText(lead.name || '—', search)}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
+                        {hovered && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onPreview(lead.id); }}
+                                style={{
+                                    position: 'absolute', top: '100%', left: 0, marginTop: 2,
+                                    background: '#f1f5f9', border: '1px solid #cbd6e2',
+                                    borderRadius: 4, padding: '1px 6px', fontSize: '9px',
+                                    color: '#516f90', cursor: 'pointer', fontWeight: 700,
+                                    whiteSpace: 'nowrap', lineHeight: '13px', zIndex: 2
+                                }}
+                            >Preview</button>
+                        )}
                     </div>
                 </div>
             </td>
             <td style={{ padding: '5px 8px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', minWidth: 0, alignItems: 'center' }}>
+                    {lead.email && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <Mail size={10} style={{ color: '#15803d', flexShrink: 0 }} />
+                            <span style={{ color: '#15803d', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 130 }}>{lead.email}</span>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Mail size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        {lead.email ? (
-                            <span style={{ color: 'var(--text-secondary)', overflowWrap: 'anywhere', lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.email}</span>
-                        ) : (
-                            <span className="ll-email-missing">⚠ No email</span>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <Phone size={10} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{lead.phone || '—'}</span>
+                        <Phone size={10} style={{ color: '#475569', flexShrink: 0 }} />
+                        <span style={{ color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>{lead.phone || '—'}</span>
                     </div>
                 </div>
             </td>
@@ -307,26 +315,32 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                     fontSize: '0.72rem', 
                     fontWeight: 700, 
                     color: getSourceColor(lead.source),
-                    letterSpacing: '0.02em'
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
                 }}>
-                    {lead.source || '—'}
+                    {(lead.source || '—')
+                        .replace('Facebook Ads', 'Facebook')
+                        .replace('Channel Partner', 'Ch. Partner')}
                 </span>
             </td>
             <td style={{ textAlign: 'center', padding: '5px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div className={`ll-score-ring ${scoreClass}`}>
-                        <svg width="38" height="38" viewBox="0 0 38 38" className="ll-score-svg">
-                            <circle cx="19" cy="19" r="16" fill="transparent" stroke="var(--slate-200)" strokeWidth="3" />
-                            <circle cx="19" cy="19" r="16" fill="transparent" stroke="currentColor" strokeWidth="3"
-                                strokeDasharray={2 * Math.PI * 16}
-                                strokeDashoffset={2 * Math.PI * 16 * (1 - leadScore / 100)}
-                                strokeLinecap="round"
-                                transform="rotate(-90 19 19)"
-                            />
-                        </svg>
-                        <span className="ll-score-text">{leadScore}</span>
-                        <span className="ll-score-tooltip">{leadScore > 80 ? '🔥 Hot Lead' : leadScore > 50 ? '⚡ Warm Lead' : '❄️ Cold Lead'}</span>
-                    </div>
+                    <span style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        flexWrap: 'nowrap',
+                        gap: 3,
+                        minWidth: 48, height: 24,
+                        padding: '0 10px',
+                        borderRadius: 7,
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        whiteSpace: 'nowrap',
+                        background: leadScore > 80 ? '#dcfce7' : leadScore > 50 ? '#fef9c3' : '#f1f5f9',
+                        color: leadScore > 80 ? '#16a34a' : leadScore > 50 ? '#b45309' : '#64748b',
+                        border: `1px solid ${leadScore > 80 ? '#bbf7d0' : leadScore > 50 ? '#fde68a' : '#e2e8f0'}`,
+                    }}>
+                        {leadScore}&thinsp;{leadScore > 80 ? '🔥' : leadScore > 50 ? '⚡' : '❄️'}
+                    </span>
                 </div>
             </td>
             {filterNurtureDue && (
@@ -344,22 +358,34 @@ const LeadRow = memo(({ lead, isSelected, filterNurtureDue, rowIndex, search, on
                 </>
             )}
             <td style={{ textAlign: 'center', padding: '5px' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>{lead.created_by_name || 'System'}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    {(lead.created_by_name || 'System').split(' ')[0]}
+                </span>
             </td>
             <td style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px' }}>
                 {lead.created_at ? new Date(lead.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
             </td>
-            <td style={{ textAlign: 'center', padding: '5px' }} title={lead.assigned_to_name || 'Unassigned'}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
-                    <div className="avatar avatar-sm" style={{ background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 50%)`, width: 24, height: 24, fontSize: '10px' }}>{lead.agent_avatar || '?'}</div>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 600 }}>{lead.agent_name?.split(' ')[0] || '—'}</span>
+            <td className="ll-assigned-cell" title={lead.assigned_to_name || 'Unassigned'}>
+                <div className="ll-assigned-inner">
+                    <div style={{
+                        width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                        background: `hsl(${(lead.agent_avatar || 'XX').charCodeAt(0) * 60 + 200}, 55%, 45%)`,
+                        color: 'white', fontSize: '9px', fontWeight: 800,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        letterSpacing: '0.01em', textTransform: 'uppercase'
+                    }}>
+                        {lead.agent_avatar || '?'}
+                    </div>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 65 }}>
+                        {lead.agent_name?.split(' ')[0] || '—'}
+                    </span>
                 </div>
             </td>
             <td style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textAlign: 'center', padding: '5px' }}>
                 {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
             </td>
-            <td onClick={e => e.stopPropagation()} className="ll-actions-sticky" style={{ textAlign: 'center', padding: '3px 6px' }}>
-                <div style={{ display: 'flex', gap: 4, justifyContent: 'center', minWidth: '90px' }}>
+            <td onClick={e => e.stopPropagation()} className="ll-actions-sticky" style={{ textAlign: 'center', padding: '3px 8px' }}>
+                <div style={{ display: 'flex', gap: 7, justifyContent: 'center', minWidth: '96px' }}>
                     <button className="ll-action-btn ll-action-call" onClick={() => onCall(lead.id, lead.phone, lead.name)} aria-label="Call lead"><Phone size={14} style={{ color: '#00a38d' }} /></button>
                     <button className="ll-action-btn ll-action-edit" onClick={() => onEdit(lead)} aria-label="Edit lead"><Edit2 size={14} /></button>
                     <button className="ll-action-btn ll-action-delete" onClick={() => onDelete(lead.id)} aria-label="Delete lead"><Trash2 size={14} style={{ color: 'var(--accent-rose)' }} /></button>
@@ -838,12 +864,11 @@ export default function Leads() {
                             />
                         </div>
                         <div style={{ 
-                            background: 'linear-gradient(135deg, #3b82f6, #6366f1)', 
-                            color: 'white', fontSize: '0.6rem', fontWeight: 800, 
-                            padding: '0 8px', height: '100%', display: 'flex', alignItems: 'center',
-                            letterSpacing: '0.05em', textTransform: 'uppercase'
+                            color: '#94a3b8', fontSize: '0.65rem', fontWeight: 600, 
+                            padding: '0 6px', height: '100%', display: 'flex', alignItems: 'center',
+                            letterSpacing: '0.08em'
                         }}>
-                            to
+                            →
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px' }}>
                             <input 
@@ -985,8 +1010,8 @@ export default function Leads() {
                                     </th>
                                     {(() => {
                                         const SORT_MAP: Record<string, string> = { 'Lead': 'name', 'Score': 'score', 'Status': 'status', 'Stage': 'stage', 'Source': 'source', 'Create Date': 'created_at', 'Last Contacted': 'last_contact_at' };
-                                        return ['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Create Date', 'Assigned To', 'Last Contacted', 'Actions'].map((h, i) => {
-                                            const widths: Record<string, string> = { 'Lead': '130px', 'Contact': '140px', 'Status': '80px', 'Stage': '120px', 'Source': '80px', 'Score': '55px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Create Date': '80px', 'Assigned To': '90px', 'Last Contacted': '110px', 'Actions': '100px' };
+                                        return ['Lead', 'Contact', 'Status', 'Stage', 'Source', 'Score', ...(filterNurtureDue ? ['Re-connect', 'Reason'] : []), 'Created By', 'Created On', 'Assigned To', 'Last Contacted', 'Actions'].map((h, i) => {
+                                            const widths: Record<string, string> = { 'Lead': '130px', 'Contact': '140px', 'Status': '80px', 'Stage': '120px', 'Source': '80px', 'Score': '55px', 'Re-connect': '90px', 'Reason': '120px', 'Created By': '80px', 'Created On': '80px', 'Assigned To': '115px', 'Last Contacted': '110px', 'Actions': '100px' };
                                             const isSticky = h === 'Actions';
                                             const sortKey = SORT_MAP[h];
                                             const isSorted = sortField === sortKey;
@@ -1339,7 +1364,9 @@ export default function Leads() {
             {/* Floating Bulk Action Bar */}
             {selectedIds.size > 0 && (
                 <div style={{
-                    position: 'fixed', bottom: isMobile ? 90 : 30, left: isMobile ? 16 : 280, right: isMobile ? 16 : 'auto',
+                    position: 'fixed', bottom: isMobile ? 90 : 30,
+                    left: isMobile ? 16 : 'calc(var(--sidebar-width, 240px) + 16px)',
+                    right: isMobile ? 16 : 'auto',
                     background: 'var(--navy-900)', color: 'white',
                     padding: '12px 20px', borderRadius: 100,
                     display: 'flex', alignItems: 'center', gap: 20, zIndex: 100,
