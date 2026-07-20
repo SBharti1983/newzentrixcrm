@@ -86,8 +86,8 @@
 
   /* Text */
   --text-primary: var(--slate-900);
-  --text-secondary: var(--slate-600);
-  --text-muted: var(--slate-400);
+  --text-secondary: var(--slate-700);
+  --text-muted: var(--slate-500);
   --text-inverse: #ffffff;
   --text-accent: var(--navy-600);
 

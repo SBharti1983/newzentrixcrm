@@ -42,17 +42,46 @@
 
 /* ─── Premium Row Hover ──────────────────────────────────────────── */
 .ll-premium-row {
-  transition: background 0.18s ease, border-color 0.18s ease;
-  border-left: 3px solid transparent;
+  position: relative;
 }
 
-.ll-premium-row:hover {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(99, 102, 241, 0.01) 100%) !important;
-  border-left-color: #6366f1;
+.ll-premium-row td {
+  padding-top: 12.5px !important;
+  padding-bottom: 12.5px !important;
+  transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1), border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), transform 200ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background-color: white;
+}
+
+.ll-premium-row.ll-row-selected td {
+  background-color: #f0f7ff !important;
+  border-top: 1px dashed rgba(99, 102, 241, 0.2) !important;
+  border-bottom: 1px dashed rgba(99, 102, 241, 0.2) !important;
 }
 
 .ll-premium-row:hover td {
+  background-color: #f0f7ff !important;
+  transform: translateY(-1.5px);
+  border-top: 1px solid rgba(59, 130, 246, 0.15) !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15) !important;
   color: var(--navy-900);
+}
+
+.ll-premium-row:hover td:first-child {
+  border-left: 3.5px solid #3b82f6 !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+  box-shadow: -4px 6px 14px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.ll-premium-row:hover td:last-child {
+  border-right: 1px solid rgba(59, 130, 246, 0.15) !important;
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+  box-shadow: 4px 6px 14px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(255,255,255,0.9);
+}
+
+.ll-premium-row:hover td:not(:first-child):not(:last-child) {
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.09), inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
 /* ─── Assigned To Cell & Header Alignment ────────────────────────── */
@@ -203,18 +232,20 @@
 }
 
 /* ─── Status Pill Premium ────────────────────────────────────────── */
+/* ─── Enterprise Status Badge ───────────────────────────────────── */
 .ll-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.7rem;
-  font-weight: 700;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
   padding: 3px 10px;
   border-radius: 20px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .ll-status-pill::before {
@@ -226,56 +257,60 @@
 }
 
 .ll-status-active {
-  background: transparent;
-  color: #059669;
-  border: none;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
-.ll-status-active::before { background: #10b981; }
+.ll-status-active::before { 
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
 
 .ll-status-won {
-  background: transparent;
-  color: #16a34a;
-  border: none;
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }
 .ll-status-won::before { background: #22c55e; }
 
 .ll-status-lost {
-  background: transparent;
-  color: #e11d48;
-  border: none;
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
 }
 .ll-status-lost::before { background: #f43f5e; }
 
 .ll-status-nurture {
-  background: transparent;
-  color: #9333ea;
-  border: none;
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
 }
 .ll-status-nurture::before { background: #a855f7; }
 
-/* ─── Stage Badge with Color Dot ─────────────────────────────────── */
+/* ─── Enterprise Stage Badge ────────────────────────────────────── */
 .ll-stage-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 4px;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  color: var(--ll-stage-color, #475569);
-  transition: color 0.2s ease;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--ll-stage-border, #cbd5e1);
+  background: var(--ll-stage-bg, #f8fafc);
+  color: var(--ll-stage-color, #334155);
+  transition: all 0.2s ease;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
   max-width: 100%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .ll-stage-pill::before {
   content: '';
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--ll-stage-dot, #94a3b8);
   flex-shrink: 0;
@@ -550,10 +585,10 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #cbd5e1;
-  border-radius: 5px;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 4px;
   background: white;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -563,24 +598,24 @@
 
 .ll-checkbox:hover {
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 2.5px rgba(99, 102, 241, 0.12);
 }
 
 .ll-checkbox:checked {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   border-color: transparent;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 5px rgba(99, 102, 241, 0.28);
 }
 
 .ll-checkbox:checked::after {
   content: '';
   position: absolute;
-  left: 5px;
-  top: 2px;
-  width: 5px;
-  height: 9px;
+  left: 4.5px;
+  top: 1.5px;
+  width: 4px;
+  height: 7.5px;
   border: solid white;
-  border-width: 0 2px 2px 0;
+  border-width: 0 1.8px 1.8px 0;
   transform: rotate(45deg);
 }
 

@@ -177,7 +177,7 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                 </button>
                 <div style={{ marginLeft: 8 }}>
                     <div className="header-title" style={{ fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1 }}>{pageInfo.title || page.title}</div>
-                    <div className="header-breadcrumb hide-mobile" style={{ fontSize: '0.8rem', fontWeight: 500, color: '#94a3b8', marginTop: 2 }}>{pageInfo.subtitle || page.subtitle}</div>
+                    <div className="header-breadcrumb hide-mobile" style={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', marginTop: 2 }}>{pageInfo.subtitle || page.subtitle}</div>
                 </div>
             </div>
 

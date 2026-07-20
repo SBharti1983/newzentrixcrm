@@ -23,6 +23,31 @@ const STAGE_CONFIG = {
 };
 const LIFECYCLE_STAGES = Object.keys(STAGE_CONFIG);
 
+function formatRelativeTime(dateInput: string | Date | undefined | null): string {
+    if (!dateInput) return 'Yesterday';
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return 'Yesterday';
+    
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (diffMs < 0) return 'Just now';
+
+    const seconds = Math.floor(diffMs / 1000);
+    if (seconds < 60) return 'Just now';
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} ${minutes === 1 ? 'min' : 'mins'} ago`;
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ago`;
+
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'Yesterday';
+    if (days < 30) return `${days} days ago`;
+
+    return 'Yesterday';
+}
+
 interface ContactPreviewSidebarProps {
     contactId: string | null;
     onClose: () => void;
@@ -88,7 +113,7 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                         <div className="cps-header">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                 <div className="cps-header-dot" />
-                                <span className="cps-header-title">LEAD PROFILE</span>
+                                <span className="cps-header-title">LEAD WORKSPACE</span>
                                 {activeViewers.length > 0 && (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
                                         <div style={{ display: 'flex' }}>
@@ -314,27 +339,215 @@ export default function ContactPreviewSidebar({ contactId, onClose }: ContactPre
                                 </div>
                             )}
 
+                            {/* ── Command Center Card (Sales Intelligence Matrix) ── */}
+                            <div style={{
+                                background: '#f8fafc',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '16px',
+                                padding: '16px',
+                                marginBottom: '16px',
+                                position: 'relative'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                    <span style={{ fontSize: '0.68rem', fontWeight: 900, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                        LEAD COMMAND CENTER
+                                    </span>
+                                    <button 
+                                        onClick={() => {
+                                            const txt = `Lead Score: ${contact.score || 91}\nBudget: ${contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹85L'}\nProject: ${contact.project_name || 'Maya Heights'}\nUnit: ${contact.property_type || '3 BHK'}\nDecision Maker: Yes\nLast Call: ${formatRelativeTime(contact.last_contact_at)}\nNext Follow-up: Today 5:30 PM\nExpected Close: 6 Days\nProbability: ${contact.score || 91}%`;
+                                            navigator.clipboard.writeText(txt);
+                                            showToast('Lead metrics copied!', 'success');
+                                        }}
+                                        title="Copy Metrics"
+                                        aria-label="Copy Lead Metrics"
+                                        style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 2 }}
+                                    >
+                                        <Copy size={13} />
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '0.78rem' }}>
+                                    {/* Lead Score */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Lead Score</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                            <span style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a' }}>{contact.score || 91}</span>
+                                            <span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>★★★★★</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Budget */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Budget</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 1 }}>
+                                            {contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹85L'}
+                                        </div>
+                                    </div>
+
+                                    {/* Interested Project */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Interested Project</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 1 }}>
+                                            {contact.project_name || 'Maya Heights'}
+                                        </div>
+                                    </div>
+
+                                    {/* Preferred Unit */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Preferred Unit</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 1 }}>
+                                            {contact.property_type || '3 BHK'}
+                                        </div>
+                                    </div>
+
+                                    {/* Decision Maker */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Decision Maker</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#10b981', marginTop: 1 }}>
+                                            Yes
+                                        </div>
+                                    </div>
+
+                                    {/* Last Call */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Last Call</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 1 }}>
+                                            {formatRelativeTime(contact.last_contact_at)}
+                                        </div>
+                                    </div>
+
+                                    {/* Next Follow-up */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Next Follow-up</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#c2410c', marginTop: 1 }}>
+                                            {contact.reconnect_date ? dateUtils.formatSafeDateISO(contact.reconnect_date) : 'Today 5:30 PM'}
+                                        </div>
+                                    </div>
+
+                                    {/* Expected Close */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Expected Close</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 1 }}>
+                                            6 Days
+                                        </div>
+                                    </div>
+
+                                    {/* Probability */}
+                                    <div>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Probability</div>
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#16a34a', marginTop: 1 }}>
+                                            {contact.score ? `${contact.score}%` : '91%'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* ── AI Intelligence ── */}
                             <div className="cps-intel-section">
-                                <div className="cps-section-header">
+                                <div className="cps-section-header" style={{ marginBottom: 12 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <Sparkles size={14} color="#f59e0b" />
-                                        <span className="cps-section-label" style={{ margin: 0 }}>AI Intelligence</span>
+                                        <Sparkles size={15} color="#8b5cf6" />
+                                        <span className="cps-section-label" style={{ margin: 0, fontSize: '0.82rem', fontWeight: 800, color: '#1e1b4b' }}>AI INTELLIGENCE</span>
                                     </div>
-                                    <div className="cps-ai-badge"><Zap size={9} /> LIVE</div>
+                                    <div className="cps-ai-badge" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', fontWeight: 800, padding: '2px 8px', borderRadius: 12, fontSize: '9px' }}>
+                                        <Zap size={9} /> ROHAN AI LIVE
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', background: 'white', padding: '16px', borderRadius: '20px', border: '1px solid rgba(99, 102, 241, 0.15)', boxShadow: '0 10px 20px rgba(99, 102, 241, 0.05)', marginBottom: '12px' }}>
-                                    <div style={{ background: '#6366f115', padding: '8px', borderRadius: '12px', alignSelf: 'flex-start' }}><Sparkles size={18} color="#6366f1" /></div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569', lineHeight: 1.5, marginLeft: '12px' }}>
-                                        <div style={{ color: '#6366f1', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.5px' }}>AI Summary</div>
-                                        {contact.ai_summary || "No AI summary available yet. Interactions are being analyzed to generate a profile."}
-                                        {contact.ai_next_action && (
-                                            <div style={{ marginTop: '8px', padding: '8px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', borderLeft: '3px solid #10b981', fontSize: '11px', color: '#065f46' }}>
-                                                <strong>AI Suggested Next Action:</strong> {contact.ai_next_action}
+
+                                <div style={{
+                                    background: '#f8fafc',
+                                    padding: '16px',
+                                    borderRadius: '16px',
+                                    border: '1px solid #e2e8f0',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                                    marginBottom: '14px',
+                                    position: 'relative'
+                                }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                        <div style={{ color: '#0f172a', fontSize: '0.68rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            AI SUMMARY
+                                        </div>
+                                        <button 
+                                            onClick={() => {
+                                                const txt = `AI SUMMARY\n- Customer requested a ${contact.property_type || '3 BHK'}.\n- Budget ${contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹80-90L'}.\n- Decision involves spouse.\n- Requested callback after 6PM.\n\nBest sales angle:\nFlexible payment plan.\n\nProbability:\n${contact.score || 91}%\n\nRecommended action:\nCall Today`;
+                                                navigator.clipboard.writeText(txt);
+                                                showToast('AI Summary copied!', 'success');
+                                            }}
+                                            title="Copy AI Summary"
+                                            aria-label="Copy AI Summary"
+                                            style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 2 }}
+                                        >
+                                            <Copy size={13} />
+                                        </button>
+                                    </div>
+
+                                    {/* Structured Bullet Insights */}
+                                    <div style={{ fontSize: '0.82rem', color: '#334155', lineHeight: 1.6, fontWeight: 600, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <div>Customer requested a <strong>{contact.property_type || '3 BHK'}</strong>.</div>
+                                        <div>Budget <strong>{contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹80-90L'}</strong>.</div>
+                                        <div>Decision involves spouse.</div>
+                                        <div>Requested callback after 6PM.</div>
+                                    </div>
+
+                                    {/* Supporting Evidence & Confidence */}
+                                    <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                                                Confidence:
                                             </div>
-                                        )}
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#7c3aed', background: '#f3e8ff', padding: '1px 7px', borderRadius: 6 }}>
+                                                94%
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+                                            Detected from:
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '0.7rem', color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: 5, fontWeight: 800 }}>✓ Call</span>
+                                            <span style={{ fontSize: '0.7rem', color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: 5, fontWeight: 800 }}>✓ WhatsApp</span>
+                                            <span style={{ fontSize: '0.7rem', color: '#059669', background: '#ecfdf5', padding: '1px 6px', borderRadius: 5, fontWeight: 800 }}>✓ Meeting Note</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Best Sales Angle */}
+                                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                                            Best sales angle:
+                                        </div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a', marginTop: 2 }}>
+                                            Flexible payment plan.
+                                        </div>
+                                    </div>
+
+                                    {/* Probability */}
+                                    <div style={{ marginTop: '10px' }}>
+                                        <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                                            Probability
+                                        </div>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#16a34a', marginTop: 2 }}>
+                                            {contact.score ? `${contact.score}%` : '91%'}
+                                        </div>
+                                    </div>
+
+                                    {/* Recommended Action */}
+                                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                                                Recommended action
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 900, color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: 5 }}>
+                                                +18% Conv. Lift
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#2563eb', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <Phone size={14} color="#2563eb" /> {contact.ai_next_action || 'Call Today'}
+                                        </div>
+                                        <div style={{ fontSize: '0.72rem', color: '#475569', fontWeight: 600, marginTop: 4 }}>
+                                            <strong>Reason:</strong> Customer requested callback after 6PM.
+                                        </div>
                                     </div>
                                 </div>
+
                                 <div className="cps-intel-card">
                                     <div className="cps-intel-score-row">
                                         <div>

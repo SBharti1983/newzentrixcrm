@@ -18,8 +18,59 @@
 
 import express, { Response } from 'express';
 import { logger } from '@zentrix/logger';
+import rohanAutomationEngine from '../../automation/workflows/RohanAutomationEngine';
 
 const router = express.Router();
+
+// ── Track B reasoning actions that should fire CRM automations ──────
+// When a reasoning_complete event carries one of these `action` values,
+// the NehaEventRoutes automatically forwards it to RohanAutomationEngine
+// so the CRM workflow (send brochure / schedule visit / escalate) fires
+// without any manual dashboard trigger.
+const AUTOMATABLE_ACTIONS = new Set([
+    'send_document',
+    'schedule_visit',
+    'escalate_to_human',
+]);
+
+/**
+ * Maps an inbound reasoning_complete event (either the legacy `neha:*` or
+ * the generalized `employee:*` shape) to a RohanAutomationEngine payload.
+ * Returns null when the event is not actionable.
+ */
+function buildAutomationPayload(event: any): {
+    tenant_id: number;
+    lead_id: string;
+    action: string;
+    persona_id?: string;
+    escalation_type?: string;
+    trigger_reason?: string;
+    notes?: string;
+    objection?: any;
+} | null {
+    const action = event.action;
+    if (!action || !AUTOMATABLE_ACTIONS.has(action)) return null;
+
+    const tenantId = Number(event.tenant_id);
+    if (!Number.isFinite(tenantId)) return null;
+
+    const leadId = event.lead_id ? String(event.lead_id) : '';
+    if (!leadId) {
+        logger.warn(`[NehaEventRoutes] reasoning_complete action "${action}" has no lead_id; skipping automation`);
+        return null;
+    }
+
+    return {
+        tenant_id: tenantId,
+        lead_id: leadId,
+        action,
+        persona_id: event.persona_id,
+        escalation_type: event.escalation_type || (action === 'escalate_to_human' ? event.intent : undefined),
+        trigger_reason: event.trigger_reason || event.next_goal || (event.missing_info ? `Missing info: ${event.missing_info.join(', ')}` : undefined),
+        notes: event.reasoning_summary || `Auto-triggered by ${event.type} event`,
+        objection: event.objection,
+    };
+}
 
 // ── In-memory ring buffer for recent events (for late-joining clients) ──
 // Keeps the last 200 events per tenant so a dashboard that connects
@@ -83,7 +134,38 @@ router.post('/', async (req: any, res: Response) => {
         logger.warn('[NehaEventRoutes] req.io not available — Socket.IO not attached');
     }
 
-    // 3. Acknowledge
+    // 3. Event-driven CRM automation: when a reasoning_complete event
+    //    (either `neha:reasoning_complete` or `employee:reasoning_complete`)
+    //    carries an actionable Track B `action`, forward it to the
+    //    RohanAutomationEngine so the CRM workflow fires automatically —
+    //    no manual dashboard trigger required. Fire-and-forget so the
+    //    HTTP ack is never delayed by the automation side-effects.
+    const isReasoningComplete =
+        event.type === 'reasoning_complete' ||
+        event.type === 'neha:reasoning_complete' ||
+        event.type === 'employee:reasoning_complete';
+
+    if (isReasoningComplete) {
+        const automationPayload = buildAutomationPayload(event);
+        if (automationPayload) {
+            // Pass req.io through so escalate_to_human can emit a real-time
+            // alert to the tenant room in addition to persisting the row.
+            rohanAutomationEngine
+                .executeTrigger({ ...automationPayload, io: req.io })
+                .then((result) => {
+                    if (result.success) {
+                        logger.info(`[NehaEventRoutes] Auto-fired automation "${automationPayload.action}" for lead ${automationPayload.lead_id}: ${result.message}`);
+                    } else {
+                        logger.warn(`[NehaEventRoutes] Automation "${automationPayload.action}" for lead ${automationPayload.lead_id} did not complete: ${result.message}`);
+                    }
+                })
+                .catch((err: any) => {
+                    logger.error(`[NehaEventRoutes] Automation dispatch threw for "${automationPayload.action}" lead ${automationPayload.lead_id}: ${err.message}`);
+                });
+        }
+    }
+
+    // 4. Acknowledge
     res.status(200).json({ ok: true, type: event.type, broadcast: !!req.io });
 });
 

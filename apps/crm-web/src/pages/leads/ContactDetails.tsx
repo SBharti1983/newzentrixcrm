@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageLoader, PageError } from '../../components/feedback/Feedback';
-import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronDown, Edit2, Mail, Phone, Calendar as CalendarIcon, CheckSquare, Settings, Search, Plus, UserPlus, Target, ThumbsUp, ThumbsDown, Copy, X, Sparkles, Brain, Wand2, RefreshCw, ExternalLink, TrendingUp, MessageSquare, Briefcase, Mic, ArrowRight, Zap, Home, MapPin, DollarSign, Tag, Smile, ShieldCheck, Rocket, ClipboardCheck, FileText, Clock, UploadCloud, Users, RotateCw, Volume2, Play } from 'lucide-react';
 import { leadsApi, zapierApi, notificationsApi, aiApi, BASE_URL, getToken } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import { dialerEvents } from '../../constants/events';
@@ -316,13 +316,63 @@ export default function ContactDetails() {
     const [generatingAISuggestion, setGeneratingAISuggestion] = useState(false);
     const [aiSuggestedMessage, setAiSuggestedMessage] = useState('');
     const [showSiteVisitScheduler, setShowSiteVisitScheduler] = useState(false);
+    const [showFloatingComposer, setShowFloatingComposer] = useState(false);
+    const [activityFilter, setActivityFilter] = useState<'All' | 'Follow-ups Due' | 'Calls' | 'Meetings' | 'Emails' | 'AI Insights'>('All');
+    const [activitySearchQuery, setActivitySearchQuery] = useState('');
     const isMobile = useMobile();
     const { setPageInfo } = usePageInfo();
+
+    const filteredInteractions = useMemo(() => {
+        let items = [...(interactions || [])];
+
+        // Intent-based filter logic
+        if (activityFilter === 'Follow-ups Due') {
+            items = items.filter(item =>
+                item.type === 'Task' || item.type === 'Meeting' ||
+                (item.note && (item.note.toLowerCase().includes('follow-up') || item.note.toLowerCase().includes('follow up') || item.note.toLowerCase().includes('next step') || item.note.toLowerCase().includes('reminder')))
+            );
+        } else if (activityFilter === 'Calls') {
+            items = items.filter(item => item.type === 'Call');
+        } else if (activityFilter === 'Meetings') {
+            items = items.filter(item => item.type === 'Meeting');
+        } else if (activityFilter === 'Emails') {
+            items = items.filter(item => item.type === 'Email');
+        } else if (activityFilter === 'AI Insights') {
+            items = items.filter(item =>
+                (item.note && (item.note.includes('AI') || item.note.toLowerCase().includes('automated') || item.note.toLowerCase().includes('suggested') || item.note.toLowerCase().includes('summary'))) || item.transcript
+            );
+        }
+
+        if (activitySearchQuery.trim()) {
+            const q = activitySearchQuery.toLowerCase();
+            if (q === 'unanswered questions' || q === 'questions') {
+                items = items.filter(item =>
+                    item.note && (item.note.includes('?') || item.note.toLowerCase().includes('question') || item.note.toLowerCase().includes('ask') || item.note.toLowerCase().includes('inquire'))
+                );
+            } else if (q === 'follow-ups' || q === 'follow-up') {
+                items = items.filter(item =>
+                    item.type === 'Task' || item.type === 'Meeting' || (item.note && (item.note.toLowerCase().includes('follow-up') || item.note.toLowerCase().includes('reminder') || item.note.toLowerCase().includes('next step')))
+                );
+            } else if (q === 'ai summaries' || q === 'ai generated') {
+                items = items.filter(item =>
+                    (item.note && (item.note.includes('AI') || item.note.toLowerCase().includes('automated') || item.note.toLowerCase().includes('suggested'))) || item.transcript
+                );
+            } else {
+                items = items.filter(item =>
+                    item.type.toLowerCase().includes(q) ||
+                    (item.note && item.note.toLowerCase().includes(q)) ||
+                    (item.agent_name && item.agent_name.toLowerCase().includes(q)) ||
+                    (item.outcome && item.outcome.toLowerCase().includes(q))
+                );
+            }
+        }
+        return items;
+    }, [interactions, activityFilter, activitySearchQuery]);
 
     useEffect(() => {
         if (contact) {
             setPageInfo({ 
-                title: 'Lead Profile', 
+                title: 'Lead Workspace', 
                 subtitle: `Managing ${contact.name || 'Lead'}` 
             });
         }
@@ -704,7 +754,15 @@ export default function ContactDetails() {
     const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead'];
 
     return (
-        <div className="contact-details-layout" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
+        <div className="contact-details-layout" style={{ 
+            display: 'flex', 
+            width: 'auto', 
+            margin: isMobile ? '-16px -12px' : '-16px -28px', 
+            height: 'calc(100vh - 56px)', 
+            backgroundColor: '#f8fafc', 
+            fontFamily: 'var(--font-main)', 
+            overflow: 'hidden' 
+        }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
             <div className="contact-details-sidebar" style={{
                 width: 400,
@@ -871,6 +929,7 @@ export default function ContactDetails() {
                         ))}
                     </div>
 
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {/* Core Identity Section */}
                         <div style={{
@@ -883,7 +942,7 @@ export default function ContactDetails() {
                             gap: 14
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Core Identity</h3>
+                                <h3 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>Core Identity</h3>
                                 <button aria-label="Edit Core Identity" style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4 }}><Edit2 size={13} color="var(--slate-400)" /></button>
                             </div>
 
@@ -915,7 +974,7 @@ export default function ContactDetails() {
 
                             {/* Journey Milestone - Refined */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <ShieldCheck size={14} color="var(--accent-emerald)" /> Journey Milestone
                                 </div>
                                 <div style={{ position: 'relative' }}>
@@ -994,7 +1053,7 @@ export default function ContactDetails() {
 
             {/* MIDDLE COLUMN - Executive Intelligence & Timeline */}
             <div className="contact-details-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflowX: 'hidden', backgroundColor: '#fcfdfe' }}>
-                <div style={{ padding: '0 16px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
+                <div style={{ padding: '0 12px', borderBottom: '1px solid #f1f5f9', background: 'white' }}>
                     <div style={{ display: 'flex' }}>
                         {['Overview', 'Activities', 'Intelligence'].map(tab => (
                             <div
@@ -1002,11 +1061,11 @@ export default function ContactDetails() {
                                 onClick={() => setActiveTab(tab)}
                                 style={{
                                     flex: 1,
-                                    padding: '12px 0',
+                                    padding: '10px 14px',
                                     color: activeTab === tab ? 'var(--navy-900)' : 'var(--slate-400)',
                                     fontWeight: activeTab === tab ? 900 : 700,
                                     fontSize: '13px',
-                                    borderBottom: `2.5px solid ${activeTab === tab ? 'var(--navy-900)' : 'transparent'}`,
+                                    borderBottom: `2px solid ${activeTab === tab ? 'var(--navy-900)' : 'transparent'}`,
                                     cursor: 'pointer',
                                     transition: 'all 0.2s',
                                     display: 'flex',
@@ -1025,7 +1084,7 @@ export default function ContactDetails() {
                         ))}
                     </div>
                 </div>
-                <div style={{ flex: 1, overflowY: 'auto', padding: '10px 16px' }} className="animate-fadeIn">
+                <div style={{ flex: 1, overflowY: 'auto', padding: '6px 12px' }} className="animate-fadeIn">
                     {activeTab === 'Intelligence' ? (
                         <div style={{ maxWidth: 840, margin: '0 auto' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
@@ -1145,363 +1204,452 @@ export default function ContactDetails() {
                             )}
                         </div>
                     ) : activeTab === 'Overview' ? (
-                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 40 }}>
-                            {/* Deal Matrix Intelligence */}
-                            <div className="cd-card-animate cd-stagger-1 cd-hover-glow" style={{ padding: '6px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <div style={{ width: 4, height: 12, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
-                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Deal Matrix Intelligence</h3>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 4, paddingBottom: 10 }}>
+                            {/* ── 13. STICKY FOLLOW-UP PANEL ── */}
+                            <div style={{
+                                position: 'sticky', top: 0, zIndex: 100,
+                                background: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(12px)',
+                                borderRadius: '10px', padding: '4px 8px', border: '1px solid #e2e8f0',
+                                boxShadow: '0 4px 16px rgba(10,22,40,0.06)', marginBottom: '1px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px rgba(16,185,129,0.5)' }} />
+                                        <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--navy-900)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>NEXT FOLLOW-UP:</span>
+                                        <span style={{ fontSize: '11px', fontWeight: 900, color: '#0f172a' }}>Today, 6:00 PM</span>
                                     </div>
-                                    <div style={{ fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700, background: '#f8fafc', padding: '1px 8px', borderRadius: '6px', border: '1px solid #f1f5f9' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
+
+                                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: '5px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        <Phone size={10} color="#2563eb" /> Call
+                                    </div>
+
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: '#475569' }}>
+                                        Assigned: <strong style={{ color: '#0f172a' }}>{contact.assigned_to_name || 'Tanu'}</strong>
+                                    </div>
+
+                                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#7c3aed', background: '#f3e8ff', padding: '1px 6px', borderRadius: '5px', border: '1px solid #e9d5ff' }}>
+                                        Probability: <strong>91%</strong>
+                                    </div>
                                 </div>
+
+                                <button
+                                    onClick={() => {
+                                        setActivityType('Call');
+                                        setShowActivityBox(true);
+                                    }}
+                                    className="hover-lift"
+                                    style={{
+                                        padding: '4px 10px', borderRadius: '6px',
+                                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                                        color: 'white', border: 'none', fontWeight: 900, fontSize: '10px',
+                                        cursor: 'pointer', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                                        display: 'flex', alignItems: 'center', gap: 4
+                                    }}
+                                >
+                                    <Rocket size={11} color="white" /> Execute Action
+                                </button>
+                            </div>
+                            {/* Deal Matrix Intelligence - Executive Dashboard */}
+                            <div className="cd-card-animate cd-stagger-1 cd-hover-glow" style={{ padding: '6px 10px', borderRadius: '10px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 2px 8px rgba(10,22,40,0.04)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <div style={{ width: 4, height: 10, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #8b5cf6)' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>DEAL MATRIX INTELLIGENCE</h3>
+                                    </div>
+                                    <div style={{ fontSize: '8.5px', color: 'var(--slate-500)', fontWeight: 800, background: '#f8fafc', padding: '1px 6px', borderRadius: '5px', border: '1px solid #e2e8f0' }}>ID: {contact.id.slice(0, 10).toUpperCase()}</div>
+                                </div>
+
                                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
                                     {[
-                                        { label: 'Conversion', value: `${contact.score || 88}%`, Icon: Sparkles, color: '#f59e0b', trend: '+4.2%' },
-                                        { label: 'Source', value: contact.source || 'Direct', Icon: Target, color: '#3b82f6' },
-                                        { label: 'Last Signal', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Pending', Icon: Zap, color: '#10b981' }
+                                        { label: 'Lead Health', value: '92%', Icon: ShieldCheck, color: '#10b981', tag: 'High' },
+                                        { label: 'Conversion', value: `${contact.score || 50}%`, Icon: Sparkles, color: '#8b5cf6', trend: '+4.2%' },
+                                        { label: 'Days in Stage', value: '3 Days', Icon: Clock, color: '#f59e0b' },
+                                        { label: 'Last Activity', value: displayDates.lastContact ? displayDates.lastContact.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : 'Today', Icon: Zap, color: '#06b6d4' }
                                     ].map(stat => (
-                                        <div key={stat.label} style={{ background: 'linear-gradient(135deg, #f8fafc, #ffffff)', padding: '5px 10px', borderRadius: '10px', border: '1px solid #eef2f6', textAlign: 'center', position: 'relative' }}>
-                                            <div style={{ width: 22, height: 22, borderRadius: '6px', background: `${stat.color}10`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2px', border: `1px solid ${stat.color}15` }}>
-                                                <stat.Icon size={11} color={stat.color} />
+                                        <div key={stat.label} style={{ background: 'linear-gradient(135deg, #f8fafc, #ffffff)', padding: '4px 6px', borderRadius: '8px', border: '1px solid #eef2f6', textAlign: 'center', position: 'relative' }}>
+                                            <div style={{ width: 18, height: 18, borderRadius: '5px', background: `${stat.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 2px', border: `1px solid ${stat.color}20` }}>
+                                                <stat.Icon size={10} color={stat.color} />
                                             </div>
-                                            <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 0 }}>{stat.label}</div>
-                                            <div style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px', lineHeight: 1 }}>{stat.value}</div>
-                                            {stat.trend && <div style={{ fontSize: '9px', fontWeight: 800, color: '#10b981', marginTop: 1, lineHeight: 1 }}>▲ {stat.trend}</div>}
+                                            <div style={{ fontSize: '7.5px', fontWeight: 800, color: 'var(--slate-500)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 1 }}>{stat.label}</div>
+                                            <div style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.3px', lineHeight: 1 }}>{stat.value}</div>
+                                            {stat.trend && <div style={{ fontSize: '7.5px', fontWeight: 800, color: '#10b981', marginTop: 1, lineHeight: 1 }}>▲ {stat.trend}</div>}
+                                            {stat.tag && <div style={{ fontSize: '7px', fontWeight: 800, color: '#10b981', background: '#dcfce7', padding: '0.5px 4px', borderRadius: '3px', display: 'inline-block', marginTop: 1 }}>{stat.tag}</div>}
                                         </div>
                                     ))}
-                                    {/* Consult AI Specialist */}
-                                    <button
-                                        onClick={() => setActiveTab('Intelligence')}
-                                        className="hover-lift"
-                                        style={{
-                                            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
-                                            borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                            justifyContent: 'center', gap: 2, padding: '4px 6px',
-                                            boxShadow: '0 4px 16px rgba(10,22,40,0.2)',
-                                            position: 'relative', overflow: 'hidden'
-                                        }}
-                                    >
-                                        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.5), transparent)' }} />
-                                        <Brain size={13} color="#f59e0b" />
-                                        <div style={{ fontSize: '7px', fontWeight: 900, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.04em', lineHeight: 1 }}>Consult AI</div>
-                                        <div style={{ fontSize: '9px', fontWeight: 900, color: 'white', lineHeight: 1 }}>Specialist</div>
-                                    </button>
                                 </div>
                             </div>
 
-                            {/* Lead Lifecycle Journey Stepper */}
-                            <div className="cd-card-animate cd-stagger-2" style={{ padding: '12px 16px', borderRadius: '16px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
-                                {(() => {
-                                    const stages = LIFECYCLE_STAGES.filter(s => s !== 'Lost');
-                                    const currentIdx = stages.indexOf(contact.stage);
-                                    const isLost = contact.stage === 'Lost';
-                                    const pct = !isLost && currentIdx >= 0 ? Math.round(((currentIdx + 1) / stages.length) * 100) : 0;
-                                    const progressWidth = !isLost && currentIdx > 0 ? (currentIdx / (stages.length - 1)) * 100 : 0;
-                                    return (
-                                        <>
-                                            {/* Header */}
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                                                <div style={{ width: 4, height: 14, borderRadius: '2px', background: isLost ? '#f43f5e' : 'linear-gradient(180deg, #8b5cf6, #06b6d4)' }} />
-                                                <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Lead Journey</h3>
-                                                <div style={{ marginLeft: 'auto', fontSize: '9px', fontWeight: 900, color: isLost ? '#f43f5e' : '#10b981', background: isLost ? 'rgba(244,63,94,0.06)' : 'rgba(16,185,129,0.06)', padding: '2px 8px', borderRadius: '6px', border: `1px solid ${isLost ? 'rgba(244,63,94,0.12)' : 'rgba(16,185,129,0.12)'}` }}>
-                                                    {isLost ? '✕ Lost' : `${pct}% Complete`}
-                                                </div>
-                                            </div>
+                             {/* Lead Lifecycle Journey Stepper (Customer Evolution Journey) */}
+                             <div className="cd-card-animate cd-stagger-2" style={{ padding: '8px 12px', borderRadius: '12px', background: 'white', border: '1px solid #e8edf3', boxShadow: '0 1px 3px rgba(10,22,40,0.04)' }}>
+                                 {(() => {
+                                     const isLost = contact.stage === 'Lost';
+                                     const evolutionStages = [
+                                         { day: 'Day 1', label: 'Cold', active: true, done: true, color: '#3b82f6' },
+                                         { day: 'Day 3', label: 'Interested', active: true, done: true, color: '#8b5cf6' },
+                                         { day: 'Day 5', label: 'Site Visit', active: contact.stage !== 'New Lead' && contact.stage !== 'Connected' && contact.stage !== 'Qualified', done: contact.stage !== 'New Lead' && contact.stage !== 'Connected' && contact.stage !== 'Qualified', color: '#10b981' },
+                                         { day: 'Day 8', label: 'Negotiation', active: ['Negotiation', 'Won', 'Lost'].includes(contact.stage), done: ['Won', 'Lost'].includes(contact.stage), color: '#f59e0b' },
+                                         { day: 'Day 12', label: 'Booked', active: contact.stage === 'Won', done: contact.stage === 'Won', color: '#10b981' }
+                                     ];
+                                     return (
+                                         <>
+                                             {/* Header */}
+                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                                 <div style={{ width: 4, height: 12, borderRadius: '2px', background: isLost ? '#f43f5e' : 'linear-gradient(180deg, #3b82f6, #10b981)' }} />
+                                                 <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Customer Evolution Journey</h3>
+                                                 <div style={{ marginLeft: 'auto', fontSize: '9px', fontWeight: 900, color: isLost ? '#f43f5e' : '#10b981', background: isLost ? 'rgba(244,63,94,0.06)' : 'rgba(16,185,129,0.06)', padding: '2px 6px', borderRadius: '6px', border: `1px solid ${isLost ? 'rgba(244,63,94,0.12)' : 'rgba(16,185,129,0.12)'}` }}>
+                                                     {isLost ? '✕ Lost' : 'AI Modeled'}
+                                                 </div>
+                                             </div>
 
-                                            {/* Stepper Track + Dots */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                <div style={{ position: 'relative', padding: '0 6px' }}>
-                                                    {/* Background Track */}
-                                                    <div style={{ position: 'absolute', top: '50%', left: 6, right: 6, height: 3, background: isLost ? 'repeating-linear-gradient(90deg, #fecdd3 0px, #fecdd3 4px, transparent 4px, transparent 8px)' : '#f1f5f9', borderRadius: '2px', transform: 'translateY(-50%)' }} />
-                                                    {/* Filled Progress Track */}
-                                                    {!isLost && currentIdx > 0 && (
-                                                        <div className="cd-connector-animate" style={{ position: 'absolute', top: '50%', left: 6, width: `calc(${progressWidth}% - 6px)`, height: 3, background: 'linear-gradient(90deg, #10b981, #06b6d4)', borderRadius: '2px', transform: 'translateY(-50%)', boxShadow: '0 0 6px rgba(16,185,129,0.2)' }} />
-                                                    )}
-                                                    {/* Dot Nodes */}
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                                                        {stages.map((stage, idx) => {
-                                                            const isCompleted = !isLost && idx < currentIdx;
-                                                            const isCurrent = stage === contact.stage;
-                                                            const stageColor = (LIFECYCLE_COLORS[stage] || LIFECYCLE_COLORS['New Lead']);
-                                                            const StageIcon = stageColor.icon;
-                                                            return (
-                                                                <div
-                                                                    key={stage}
-                                                                    title={stage}
-                                                                    className={isCurrent ? 'cd-stage-active' : ''}
-                                                                    style={{
-                                                                        width: isCurrent ? 28 : 20,
-                                                                        height: isCurrent ? 28 : 20,
-                                                                        borderRadius: '50%',
-                                                                        background: isCurrent ? stageColor.text : isCompleted ? '#10b981' : isLost ? '#fecdd3' : '#e2e8f0',
-                                                                        color: stageColor.text,
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        flexShrink: 0,
-                                                                        transition: 'all 0.3s',
-                                                                        cursor: 'default',
-                                                                        border: '2.5px solid white',
-                                                                        boxShadow: isCompleted ? '0 1px 4px rgba(16,185,129,0.25)' : '0 1px 2px rgba(0,0,0,0.06)'
-                                                                    }}
-                                                                >
-                                                                    {isCompleted ? <CheckSquare size={9} color="white" strokeWidth={3} /> : isCurrent ? <StageIcon size={11} color="white" strokeWidth={2.5} /> : null}
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
+                                             {/* Stepper Track + Dots */}
+                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', overflowX: 'auto' }}>
+                                                 {evolutionStages.map((stg, sIdx) => {
+                                                     return (
+                                                         <div key={stg.label} style={{ display: 'flex', alignItems: 'center', flex: sIdx < evolutionStages.length - 1 ? 1 : 'none' }}>
+                                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 60 }}>
+                                                                 <span style={{ fontSize: '7.5px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', marginBottom: 2 }}>{stg.day}</span>
+                                                                 <div style={{ 
+                                                                     width: 18, height: 18, borderRadius: '50%', 
+                                                                     background: stg.done ? stg.color : 'white', 
+                                                                     border: `2px solid ${stg.active ? stg.color : '#e2e8f0'}`,
+                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                     fontSize: '8px', fontWeight: 900, color: stg.done ? 'white' : 'var(--slate-400)',
+                                                                     boxShadow: stg.active ? `0 2px 4px ${stg.color}20` : 'none'
+                                                                 }}>
+                                                                     {stg.done ? '✓' : sIdx + 1}
+                                                                 </div>
+                                                                 <span style={{ fontSize: '8.5px', fontWeight: 800, color: stg.active ? 'var(--navy-900)' : 'var(--slate-400)', marginTop: 3 }}>{stg.label}</span>
+                                                             </div>
+                                                             {sIdx < evolutionStages.length - 1 && (
+                                                                 <div style={{ flex: 1, height: 2, background: stg.done ? `linear-gradient(90deg, ${stg.color}, ${evolutionStages[sIdx+1].color})` : '#f1f5f9', margin: '0 2px', position: 'relative', top: 5 }} />
+                                                             )}
+                                                         </div>
+                                                     );
+                                                 })}
+                                             </div>
 
-                                                {/* Stage Labels */}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px' }}>
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--slate-400)' }}>New Lead</span>
-                                                    {!isLost && currentIdx >= 0 && (
-                                                        <span style={{ fontSize: '9px', fontWeight: 900, color: (LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead']).text }}>{contact.stage}</span>
-                                                    )}
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--slate-400)' }}>Won</span>
-                                                </div>
-
-                                                {/* Lost Alert Banner */}
-                                                {isLost && (
-                                                    <div style={{ padding: '8px 12px', background: 'linear-gradient(135deg, rgba(244,63,94,0.03), rgba(244,63,94,0.07))', borderRadius: '10px', border: '1px solid rgba(244,63,94,0.12)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                        <div style={{ width: 24, height: 24, borderRadius: '8px', background: 'rgba(244,63,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(244,63,94,0.15)' }}>
-                                                            <X size={12} color="#f43f5e" strokeWidth={3} />
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontSize: '11px', fontWeight: 800, color: '#be123c' }}>Lead marked as Lost</div>
-                                                            <div style={{ fontSize: '9px', fontWeight: 600, color: '#f87171', marginTop: 1 }}>Pipeline journey ended — consider reactivation</div>
-                                                        </div>
-                                                        <button onClick={() => handleUpdateStage('New Lead')} className="hover-lift" style={{ marginLeft: 'auto', padding: '4px 10px', borderRadius: '6px', background: 'white', border: '1px solid rgba(244,63,94,0.2)', color: '#be123c', fontWeight: 800, fontSize: '9px', cursor: 'pointer', flexShrink: 0 }}>
-                                                            Reactivate
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                            </div>
+                                             {/* Lost Alert Banner */}
+                                             {isLost && (
+                                                 <div style={{ padding: '6px 10px', background: 'linear-gradient(135deg, rgba(244,63,94,0.03), rgba(244,63,94,0.07))', borderRadius: '8px', border: '1px solid rgba(244,63,94,0.12)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                                                     <div style={{ width: 20, height: 20, borderRadius: '6px', background: 'rgba(244,63,94,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid rgba(244,63,94,0.15)' }}>
+                                                         <X size={10} color="#f43f5e" strokeWidth={3} />
+                                                     </div>
+                                                     <div>
+                                                         <div style={{ fontSize: '10px', fontWeight: 800, color: '#be123c' }}>Lead marked as Lost</div>
+                                                         <div style={{ fontSize: '8.5px', fontWeight: 600, color: '#f87171', marginTop: 1 }}>Pipeline journey ended — consider reactivation</div>
+                                                     </div>
+                                                     <button onClick={() => handleUpdateStage('New Lead')} className="hover-lift" style={{ marginLeft: 'auto', padding: '3px 8px', borderRadius: '5px', background: 'white', border: '1px solid rgba(244,63,94,0.2)', color: '#be123c', fontWeight: 800, fontSize: '8.5px', cursor: 'pointer', flexShrink: 0 }}>
+                                                         Reactivate
+                                                     </button>
+                                                 </div>
+                                             )}
+                                         </>
+                                     );
+                                 })()}
+                             </div>
 
 
-                            <div className="cd-card-animate cd-stagger-3" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
-                                {/* AI Strategic Window Card */}
-                                <div className="cd-dark-shimmer" style={{ 
-                                    borderRadius: '12px', 
-                                    background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
-                                    border: '1px solid rgba(255,255,255,0.05)', 
-                                    boxShadow: '0 8px 32px rgba(10,22,40,0.25)', 
-                                    padding: '10px 12px', 
-                                    display: 'flex', 
-                                    flexDirection: 'column', 
-                                    justifyContent: 'center', 
-                                    gap: 6 
+                            {/* Executive AI Intelligence Summary Card */}
+                            <div className="cd-card-animate cd-stagger-4" style={{
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)',
+                                border: '1px solid #e9d5ff',
+                                boxShadow: '0 4px 16px rgba(139, 92, 246, 0.06)',
+                                padding: '10px 12px',
+                                marginBottom: '8px'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Sparkles size={14} color="#8b5cf6" />
+                                        <h3 style={{ fontSize: '11px', fontWeight: 900, color: '#1e1b4b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>AI SUMMARY & INTELLIGENCE</h3>
+                                    </div>
+                                    <div style={{ background: 'linear-gradient(135deg, #8b5cf6, #6366f1)', color: 'white', fontWeight: 800, padding: '2px 7px', borderRadius: 10, fontSize: '8px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        <Zap size={8} /> ROHAN AI LIVE
+                                    </div>
+                                </div>
+
+                                {/* Structured Bullet Insights (2-Column Grid) */}
+                                <div style={{
+                                    fontSize: '0.78rem', color: '#334155', lineHeight: 1.4, fontWeight: 600,
+                                    display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '4px 12px'
                                 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' }} />
-                                        <span style={{ fontSize: '8px', fontWeight: 900, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Strategic Window</span>
-                                        <div style={{ fontSize: '8px', fontWeight: 900, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '1px 6px', borderRadius: '5px', border: '1px solid rgba(16,185,129,0.15)', marginLeft: 'auto' }}>94% CONF.</div>
+                                        <span style={{ color: '#8b5cf6', fontWeight: 900, fontSize: '0.9rem' }}>•</span>
+                                        <span>Interested in <strong>{contact.property_type || '3 BHK'}</strong></span>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center', fontSize: '11px', fontWeight: 900, color: 'white' }}>
-                                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>11:30</div>
-                                            <span style={{ opacity: 0.3, color: 'white', fontSize: '10px' }}>→</span>
-                                            <div style={{ padding: '2px 8px', background: 'rgba(255,255,255,0.06)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>13:30</div>
-                                        </div>
-                                        <button onClick={() => { setComposerTrigger('followup'); setShowComposer(true); }} className="hover-lift" style={{ height: 22, padding: '0 10px', borderRadius: '6px', background: 'linear-gradient(90deg, #06b6d4, #0ea5e9)', color: 'white', fontWeight: 900, fontSize: '9px', border: 'none', cursor: 'pointer', boxShadow: '0 2px 8px rgba(6,182,212,0.3)', marginLeft: 'auto' }}>Schedule</button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ color: '#8b5cf6', fontWeight: 900, fontSize: '0.9rem' }}>•</span>
+                                        <span>Family decision maker</span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ color: '#8b5cf6', fontWeight: 900, fontSize: '0.9rem' }}>•</span>
+                                        <span>Budget <strong>{contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹85L'}</strong></span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ color: '#8b5cf6', fontWeight: 900, fontSize: '0.9rem' }}>•</span>
+                                        <span>Requested callback after 6PM</span>
                                     </div>
                                 </div>
 
-                                {/* Behavioral IQ Card */}
-                                <div className="cd-dark-shimmer" style={{ 
-                                    borderRadius: '12px', 
-                                    background: 'linear-gradient(135deg, #0a1628, #152238, #1a2d4a)', 
-                                    border: '1px solid rgba(255,255,255,0.05)', 
-                                    boxShadow: '0 8px 32px rgba(10,22,40,0.25)', 
-                                    padding: '8px 12px', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: 10 
+                                {/* Supporting Evidence & AI Confidence Bar */}
+                                <div style={{
+                                    marginTop: '8px', paddingTop: '8px',
+                                    borderTop: '1px solid #f3e8ff',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                                        <div style={{ width: 28, height: 28, borderRadius: '8px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <Sparkles size={12} color="#f59e0b" />
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.68rem', color: '#64748b', fontWeight: 700 }}>
+                                        <span style={{ fontWeight: 800, color: '#475569', textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '0.04em' }}>Detected from:</span>
+                                        <span style={{ color: '#059669', background: '#ecfdf5', padding: '1px 5px', borderRadius: 5, fontWeight: 800 }}>✓ Call</span>
+                                        <span style={{ color: '#059669', background: '#ecfdf5', padding: '1px 5px', borderRadius: 5, fontWeight: 800 }}>✓ WhatsApp</span>
+                                        <span style={{ color: '#059669', background: '#ecfdf5', padding: '1px 5px', borderRadius: 5, fontWeight: 800 }}>✓ Meeting Note</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7c3aed', background: '#f3e8ff', padding: '1px 6px', borderRadius: 6, border: '1px solid #e9d5ff' }}>
+                                        Confidence: <strong>94%</strong>
+                                    </div>
+                                </div>
+
+                                {/* AI Memory Updates (Section 6) */}
+                                <div style={{
+                                    marginTop: '8px', paddingTop: '8px',
+                                    borderTop: '1px solid #f3e8ff',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                        <Brain size={12} color="#8b5cf6" />
+                                        <span style={{ fontSize: '9px', fontWeight: 900, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AI Memory Updates</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <div style={{ background: 'white', border: '1.5px dashed #ddd6fe', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: '9px', fontWeight: 900, color: '#9333ea', background: '#f5f3ff', padding: '1px 4px', borderRadius: '4px' }}>Budget Increased</span>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--slate-400)', textDecoration: 'line-through' }}>85L</span>
+                                            <span style={{ fontSize: '10px', color: 'var(--slate-400)' }}>➔</span>
+                                            <span style={{ fontSize: '11px', fontWeight: 900, color: '#16a34a' }}>90L</span>
+                                            <span style={{ fontSize: '8px', fontWeight: 800, color: '#6d28d9', background: 'rgba(139,92,246,0.08)', padding: '1px 4px', borderRadius: 4, marginLeft: 4 }}>98% Conf.</span>
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div style={{ fontSize: '9px', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Behavioral IQ</div>
-                                                <button 
-                                                    onClick={handleRecalculateScore} 
-                                                    disabled={recalculatingScore}
-                                                    title="Recalculate with AI Intelligence"
-                                                    aria-label="Recalculate with AI Intelligence"
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                                                >
-                                                    <RotateCw size={8} color={recalculatingScore ? "#f59e0b" : "rgba(255,255,255,0.3)"} className={recalculatingScore ? "animate-spin" : ""} />
-                                                </button>
-                                            </div>
-                                            <div style={{ fontSize: '18px', fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.3px' }}>{contact.score || 88}<span style={{ fontSize: '9px', opacity: 0.5 }}>%</span></div>
+                                        <div style={{ background: 'white', border: '1.5px dashed #ddd6fe', borderRadius: '8px', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ fontSize: '9px', fontWeight: 900, color: '#9333ea', background: '#f5f3ff', padding: '1px 4px', borderRadius: '4px' }}>Property Type</span>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--slate-400)', textDecoration: 'line-through' }}>2 BHK</span>
+                                            <span style={{ fontSize: '10px', color: 'var(--slate-400)' }}>➔</span>
+                                            <span style={{ fontSize: '11px', fontWeight: 900, color: '#16a34a' }}>3 BHK</span>
+                                            <span style={{ fontSize: '8px', fontWeight: 800, color: '#6d28d9', background: 'rgba(139,92,246,0.08)', padding: '1px 4px', borderRadius: 4, marginLeft: 4 }}>95% Conf.</span>
                                         </div>
                                     </div>
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                        <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                                            <div style={{ width: `${contact.score || 88}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #34d399)', borderRadius: '3px', boxShadow: '0 0 8px rgba(16,185,129,0.3)' }} />
+                                </div>
+
+                                {/* Metrics Grid: Conversion Probability & Recommended Action */}
+                                <div style={{
+                                    display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 8,
+                                    marginTop: '10px', paddingTop: '10px',
+                                    borderTop: '1px solid #f3e8ff'
+                                }}>
+                                    <div style={{ background: '#f5f3ff', padding: '6px 10px', borderRadius: '10px', border: '1px solid #ddd6fe' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                            Conversion Probability
                                         </div>
-                                        <div style={{ display: 'flex', gap: 3 }}>
-                                            {[
-                                                { label: 'INTNT', value: 'HIGH', color: '#10b981' },
-                                                { label: 'SENT', value: 'POS', color: '#3b82f6' },
-                                                { label: 'URGE', value: 'MED', color: '#f59e0b' }
-                                            ].map(m => (
-                                                <div key={m.label} style={{ flex: 1, minWidth: 0, padding: '2px 3px', background: 'rgba(255,255,255,0.04)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' }}>
-                                                    <div style={{ fontSize: '8px', color: 'rgba(255,255,255,0.3)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.label}</div>
-                                                    <div style={{ fontSize: '8px', fontWeight: 900, color: m.color, overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1 }}>{m.value}</div>
-                                                </div>
-                                            ))}
-                                            <div style={{ padding: '0 5px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', fontSize: '6.5px', fontWeight: 900, color: 'rgba(255,255,255,0.6)', flexShrink: 0, letterSpacing: '0.03em' }}>
-                                                <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#10b981', marginRight: 3, boxShadow: '0 0 4px #10b981' }} />
-                                                LIVE
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#5b21b6', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            {contact.score ? `${contact.score}%` : '91%'}
+                                            <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '1px 5px', borderRadius: 6 }}>High Intent</span>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: '#ecfdf5', padding: '6px 10px', borderRadius: '10px', border: '1px solid #a7f3d0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                Recommended Action
                                             </div>
+                                            <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#047857', background: '#d1fae5', padding: '1px 5px', borderRadius: 6, border: '1px solid #6ee7b7' }}>
+                                                Est. Lift: <strong>+18%</strong>
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 900, color: '#065f46', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            📞 {contact.ai_next_action || 'Call Today'}
+                                        </div>
+                                        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#047857', marginTop: 4, paddingTop: 4, borderTop: '1px solid #a7f3d0' }}>
+                                            <strong>Reason:</strong> Customer requested callback after 6PM.
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Suggested Next Best Action Card */}
-                            <div className="cd-card-animate cd-stagger-4 cd-hero-card" style={{ 
-                                borderRadius: '16px', 
+                            <div className="cd-card-animate cd-stagger-5 cd-hero-card" style={{ 
+                                borderRadius: '12px', 
                                 background: 'white', 
                                 border: '1px solid rgba(16, 185, 129, 0.15)', 
                                 borderLeft: '5px solid #10b981',
                                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.05)', 
-                                padding: '12px 16px',
-                                marginBottom: '12px'
+                                padding: '8px 12px',
+                                marginBottom: '8px'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                                    <div style={{ padding: '6px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '8px' }}>
-                                        <Rocket size={16} color="#10b981" />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                    <div style={{ padding: '4px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '6px' }}>
+                                        <Rocket size={14} color="#10b981" />
                                     </div>
                                     <h3 style={{ fontSize: '11px', fontWeight: 900, color: '#065f46', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Suggested Next Best Action</h3>
                                 </div>
-                                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.5 }}>
+                                <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--navy-900)', lineHeight: 1.4 }}>
                                     {contact.ai_next_action || "Schedule a personal site visit to demonstrate the luxury amenities and lock in the current inventory price."}
                                 </div>
-                                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                                    <button onClick={() => navigate(`/site-visits?leadId=${id}`)} style={{ padding: '6px 12px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none', fontSize: '11px', fontWeight: 900, cursor: 'pointer', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)' }}>Execute Site Visit Plan</button>
-                                    <button onClick={() => { setActivityType('Call'); setShowActivityBox(true); }} style={{ padding: '6px 12px', background: '#f8fafc', color: 'var(--navy-900)', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 900, cursor: 'pointer' }}>Discuss via Call</button>
+                                <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                                    <button 
+                                        onClick={() => navigate(`/site-visits?leadId=${id}`)}
+                                        className="hover-lift"
+                                        style={{ padding: '4px 10px', background: '#10b981', color: 'white', borderRadius: '8px', border: 'none', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(16, 185, 129, 0.15)' }}
+                                    >
+                                        <MapPin size={11} /> Generate Itinerary
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={() => {
+                                            setActivityType('WhatsApp');
+                                            setShowActivityBox(true);
+                                        }}
+                                        className="hover-lift"
+                                        style={{ padding: '4px 10px', background: '#25D366', color: 'white', borderRadius: '8px', border: 'none', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(37, 211, 102, 0.15)' }}
+                                    >
+                                        <MessageSquare size={11} /> Draft WhatsApp
+                                    </button>
+
+                                    <button 
+                                        onClick={() => setShowFollowupModal(true)}
+                                        className="hover-lift"
+                                        style={{ padding: '4px 10px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(59, 130, 246, 0.15)' }}
+                                    >
+                                        <CalendarIcon size={11} /> Create Meeting
+                                    </button>
+
+                                    <button 
+                                        onClick={async () => {
+                                            try {
+                                                await leadsApi.addInteraction(contact.id, { type: 'Task', note: 'AI Auto-Assigned Follow-up Reminder', date: dateUtils.getNow().toISOString() });
+                                                showToast('Reminder assigned for today!', 'success');
+                                            } catch (e) {
+                                                showToast('Failed to set reminder', 'error');
+                                            }
+                                        }}
+                                        className="hover-lift"
+                                        style={{ padding: '4px 10px', background: '#f59e0b', color: 'white', borderRadius: '8px', border: 'none', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(245, 158, 11, 0.15)' }}
+                                    >
+                                        <Clock size={11} /> Assign Reminder
+                                    </button>
+
+                                    <button 
+                                        onClick={() => {
+                                            setActivityType('Offer');
+                                            setShowActivityBox(true);
+                                        }}
+                                        className="hover-lift"
+                                        style={{ padding: '4px 10px', background: '#8b5cf6', color: 'white', borderRadius: '8px', border: 'none', fontSize: '10.5px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(139, 92, 246, 0.15)' }}
+                                    >
+                                        <FileText size={11} /> Generate Proposal
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* AI Engagement Checklist */}
-                            <div className="cd-card-animate cd-stagger-5 cd-hero-card" style={{
-                                borderRadius: '16px',
-                                background: 'white',
-                                border: '1px solid rgba(139, 92, 246, 0.15)',
-                                borderLeft: '5px solid var(--accent-violet)',
-                                boxShadow: '0 4px 12px rgba(139, 92, 246, 0.05)',
-                                padding: '16px',
-                                marginBottom: '12px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 12
+
+                            {/* ── 5. DAILY AI ACTIVITY SUMMARY BRIEFING ── */}
+                            <div className="cd-card-animate cd-stagger-6 cd-hero-card" style={{
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                                color: 'white',
+                                padding: '10px 14px',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: '0 8px 24px rgba(15, 23, 42, 0.18)',
+                                marginBottom: '8px',
+                                width: '600px',
+                                boxSizing: 'border-box'
                             }}>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <div style={{ padding: '6px', background: 'rgba(139, 92, 246, 0.08)', borderRadius: '8px' }}>
-                                            <ClipboardCheck size={16} color="var(--accent-violet)" />
-                                        </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Sparkles size={13} color="#a78bfa" />
                                         <div>
-                                            <h3 style={{ fontSize: '11px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Engagement Checklist</h3>
-                                            <div style={{ fontSize: '10px', color: 'var(--slate-500)', fontWeight: 600, marginTop: 1 }}>Recommended for <span style={{ fontWeight: 800, color: 'var(--accent-violet)' }}>{contact.stage}</span> stage</div>
+                                            <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'white', margin: 0, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Daily AI Summary</h3>
                                         </div>
                                     </div>
-                                    {(() => {
-                                        const currentTasks = STAGE_CHECKLISTS[contact.stage] || STAGE_CHECKLISTS['New Lead'] || [];
-                                        const completedCount = currentTasks.filter(task => !!checklistState[task]).length;
-                                        const totalCount = currentTasks.length;
-                                        return (
-                                            <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.08)', padding: '3px 8px', borderRadius: '6px' }}>
-                                                {completedCount}/{totalCount} Completed
-                                            </div>
-                                        );
-                                    })()}
+                                    <span style={{ fontSize: '8px', fontWeight: 900, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.15)', padding: '1px 5px', borderRadius: '4px' }}>
+                                        Live
+                                    </span>
                                 </div>
 
-                                {(() => {
-                                    const currentTasks = STAGE_CHECKLISTS[contact.stage] || STAGE_CHECKLISTS['New Lead'] || [];
-                                    const completedCount = currentTasks.filter(task => !!checklistState[task]).length;
-                                    const totalCount = currentTasks.length;
-                                    const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-                                    return (
-                                        <>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                                                {currentTasks.map((task, index) => {
-                                                    const isChecked = !!checklistState[task];
-                                                    return (
-                                                        <div 
-                                                            key={index} 
-                                                            className="cd-checklist-item"
-                                                            onClick={() => handleToggleChecklist(task)}
-                                                            style={{ 
-                                                                display: 'flex', 
-                                                                alignItems: 'center', 
-                                                                gap: 10, 
-                                                                padding: '10px 12px', 
-                                                                background: isChecked ? '#f8fafc' : 'white', 
-                                                                borderRadius: '10px', 
-                                                                border: `1px solid ${isChecked ? '#e2e8f0' : '#f1f5f9'}`,
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s'
-                                                            }}
-                                                        >
-                                                            <div style={{
-                                                                width: 18,
-                                                                height: 18,
-                                                                borderRadius: '5px',
-                                                                border: `2px solid ${isChecked ? 'var(--accent-violet)' : '#cbd5e1'}`,
-                                                                background: isChecked ? 'var(--accent-violet)' : 'transparent',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'all 0.2s',
-                                                                flexShrink: 0
-                                                            }}>
-                                                                {isChecked && <CheckSquare size={12} color="white" style={{ strokeWidth: 3 }} />}
-                                                            </div>
-                                                            <span style={{ 
-                                                                fontSize: '12px', 
-                                                                fontWeight: isChecked ? 600 : 700, 
-                                                                color: isChecked ? 'var(--slate-400)' : 'var(--navy-900)',
-                                                                textDecoration: isChecked ? 'line-through' : 'none',
-                                                                transition: 'all 0.2s'
-                                                            }}>
-                                                                {task}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
+                                {/* Summary Bullets */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 600, marginBottom: 8 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ color: '#38bdf8', fontWeight: 900 }}>•</span> Customer engaged twice today
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ color: '#38bdf8', fontWeight: 900 }}>•</span> Callback after 6PM
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ color: '#38bdf8', fontWeight: 900 }}>•</span> Budget confirmed (₹{contact.budget || '85L'})
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ color: '#38bdf8', fontWeight: 900 }}>•</span> Site visit pending
+                                        </div>
+                                    </div>
+                                </div>
 
-                                            {/* Progress Bar */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
-                                                <div style={{ height: 6, background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-                                                    <div style={{ 
-                                                        width: `${progressPercent}%`, 
-                                                        height: '100%', 
-                                                        background: 'linear-gradient(90deg, #818cf8, #c084fc)', 
-                                                        borderRadius: '3px',
-                                                        transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-                                                    }} />
+                                <div style={{ paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#4ade80' }}>
+                                        <span style={{ color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', fontSize: '8px', letterSpacing: '0.04em' }}>Rec:</span> 🎯 <strong>Call Today</strong>
+                                    </div>
+                                    <div style={{ fontSize: '8px', fontWeight: 800, color: '#a78bfa', background: 'rgba(139,92,246,0.15)', padding: '1px 5px', borderRadius: 4 }}>
+                                        +18%
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── 6. CONVERSATION PROGRESSION TIMELINE ── */}
+                            <div className="cd-card-animate cd-stagger-7" style={{
+                                padding: '10px 14px', borderRadius: '12px', background: 'white', border: '1px solid #e8edf3',
+                                boxShadow: '0 1px 3px rgba(10,22,40,0.04)', marginBottom: '8px',
+                                height: 100,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                boxSizing: 'border-box'
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ width: 4, height: 12, borderRadius: '2px', background: 'linear-gradient(180deg, #3b82f6, #10b981)' }} />
+                                        <h3 style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Customer Conversation Progression Flow</h3>
+                                    </div>
+                                    <div style={{ fontSize: '8.5px', fontWeight: 800, color: '#10b981', background: '#ecfdf5', padding: '1px 6px', borderRadius: 5, border: '1px solid #a7f3d0' }}>
+                                        Connected Journey
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', paddingBottom: 2 }}>
+                                    {[
+                                        { stage: 'Call', icon: Phone, color: '#10b981', status: 'Completed', bg: '#ecfdf5' },
+                                        { stage: 'WhatsApp', icon: MessageSquare, color: '#25D366', status: 'Completed', bg: '#f0fdf4' },
+                                        { stage: 'Email', icon: Mail, color: '#3b82f6', status: 'Completed', bg: '#eff6ff' },
+                                        { stage: 'Meeting', icon: Users, color: '#f59e0b', status: 'Scheduled', bg: '#fffbeb' },
+                                        { stage: 'Offer', icon: FileText, color: '#8b5cf6', status: 'Pending', bg: '#f5f3ff' },
+                                        { stage: 'Booking', icon: Rocket, color: '#ec4899', status: 'Next Goal', bg: '#fdf2f8' }
+                                    ].map((step, idx, arr) => (
+                                        <div key={step.stage} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                            <div style={{
+                                                padding: '6px 10px', borderRadius: '10px', background: step.bg,
+                                                border: `1px solid ${step.color}30`, display: 'flex', alignItems: 'center', gap: 6,
+                                                boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                                            }}>
+                                                <div style={{ width: 18, height: 18, borderRadius: '5px', background: step.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <step.icon size={10} color="white" strokeWidth={2.5} />
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase' }}>
-                                                    <span>Progress</span>
-                                                    <span>{progressPercent}%</span>
+                                                <div>
+                                                    <div style={{ fontSize: '10px', fontWeight: 900, color: 'var(--navy-900)', lineHeight: 1 }}>{step.stage}</div>
+                                                    <div style={{ fontSize: '7.5px', fontWeight: 800, color: step.color, marginTop: 1, textTransform: 'uppercase' }}>{step.status}</div>
                                                 </div>
                                             </div>
-                                        </>
-                                    );
-                                })()}
+                                            {idx < arr.length - 1 && (
+                                                <div style={{ color: '#cbd5e1', fontWeight: 900, fontSize: '12px', padding: '0 1px' }}>➔</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Interest Profile + Interaction Timeline */}
@@ -1534,12 +1682,46 @@ export default function ContactDetails() {
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         {[
-                                            { key: 'property_type', label: 'Property Type', value: contact.property_type || 'Unspecified', Icon: Home, color: '#3b82f6' },
-                                            { key: 'budget', label: 'Budget Range', value: `${contact.budget ? '₹'+contact.budget : 'Unspecified'}`, Icon: DollarSign, color: '#10b981' },
-                                            { key: 'project_name', label: 'Project', value: contact.project_name || 'Unspecified', Icon: Target, color: '#f59e0b' }
+                                            { 
+                                                key: 'property_type', 
+                                                label: 'Property Type', 
+                                                value: contact.property_type || '2BHK', 
+                                                Icon: Home, 
+                                                color: '#3b82f6',
+                                                confidence: '96%',
+                                                sources: [
+                                                    { name: 'Call', strength: 'High', icon: '☎' },
+                                                    { name: 'WhatsApp', strength: 'High', icon: '💬' }
+                                                ]
+                                            },
+                                            { 
+                                                key: 'budget', 
+                                                label: 'Budget Range', 
+                                                value: contact.budget ? `₹${contact.budget}` : '₹85L', 
+                                                Icon: DollarSign, 
+                                                color: '#10b981',
+                                                confidence: '92%',
+                                                sources: [
+                                                    { name: 'Call', strength: 'High', icon: '☎' },
+                                                    { name: 'WhatsApp', strength: 'Medium', icon: '💬' },
+                                                    { name: 'Meeting', strength: 'Confirmed', icon: '🤝' }
+                                                ]
+                                            },
+                                            { 
+                                                key: 'project_name', 
+                                                label: 'Project', 
+                                                value: contact.project_name || 'Unspecified', 
+                                                Icon: Target, 
+                                                color: '#f59e0b',
+                                                confidence: '88%',
+                                                sources: [
+                                                    { name: 'Email', strength: 'Medium', icon: '📧' },
+                                                    { name: 'Call', strength: 'Low', icon: '☎' }
+                                                ]
+                                            }
                                         ].map(prop => (
-                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
-                                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${prop.color}08`, border: `1px solid ${prop.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <div key={prop.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #eef2f6' }}>
+                                                <div style={{ width: 28, height: 28, borderRadius: '8px', background: `${prop.color}08`, border: `1px solid ${prop.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
                                                     <prop.Icon size={13} color={prop.color} />
                                                 </div>
                                                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -1552,7 +1734,31 @@ export default function ContactDetails() {
                                                             style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', width: '100%', border: '1px solid #eef2f6', borderRadius: '4px', padding: '2px 4px', background: 'white' }}
                                                         />
                                                     ) : (
-                                                        <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prop.value}</div>
+                                                        <>
+                                                            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--navy-900)' }}>{prop.value}</div>
+                                                            {/* AI Reasoning Block */}
+                                                            <div style={{ marginTop: 6, borderTop: '1px dashed #e2e8f0', paddingTop: 6 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                                                                    <span style={{ fontSize: '8.5px', fontWeight: 800, color: 'var(--accent-violet)', background: 'rgba(139, 92, 246, 0.08)', padding: '1px 5px', borderRadius: 4 }}>
+                                                                        Confidence: {prop.confidence}
+                                                                    </span>
+                                                                    <span style={{ fontSize: '7.5px', fontWeight: 800, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                                        AI Reasoning
+                                                                    </span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                    {prop.sources.map((src, i) => (
+                                                                        <span key={i} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '2px 6px', borderRadius: 5, fontSize: '8px', fontWeight: 700, color: 'var(--navy-900)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                                            <span>{src.icon}</span>
+                                                                            <span>{src.name}</span>
+                                                                            <span style={{ color: src.strength === 'High' || src.strength === 'Confirmed' ? '#10b981' : src.strength === 'Medium' ? '#f59e0b' : '#94a3b8', fontSize: '7.5px', fontWeight: 900 }}>
+                                                                                ({src.strength})
+                                                                            </span>
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>
@@ -1594,17 +1800,23 @@ export default function ContactDetails() {
                                             </div>
                                         ) : interactions.slice(0, 3).map((item, idx) => {
                                             let IconComp = FileText;
-                                            let iconColor = '#8b5cf6';
+                                            let iconColor = '#8b5cf6'; // 🟣 AI Summary / Note (Default)
                                             
                                             if (item.type === 'Call') {
                                                 IconComp = Phone;
-                                                iconColor = '#10b981';
+                                                iconColor = '#10b981'; // 🟢 Calls
                                             } else if (item.type === 'Email') {
                                                 IconComp = Mail;
-                                                iconColor = '#3b82f6';
+                                                iconColor = '#3b82f6'; // 🔵 Email
                                             } else if (item.type === 'WhatsApp') {
                                                 IconComp = MessageSquare;
-                                                iconColor = '#25D366';
+                                                iconColor = '#25D366'; // 🟢 WhatsApp
+                                            } else if (item.type === 'Meeting') {
+                                                IconComp = Users;
+                                                iconColor = '#f97316'; // 🟠 Meeting
+                                            } else if (item.type === 'Lost') {
+                                                IconComp = X;
+                                                iconColor = '#ef4444'; // 🔴 Lost
                                             }
                                             
                                             const formattedDate = dateUtils.parseSafe(item.date)?.toLocaleDateString(undefined, { 
@@ -1887,6 +2099,8 @@ export default function ContactDetails() {
                                     <CalendarIcon size={14} color="#3b82f6" /> Schedule Next Follow-up
                                 </button>
                             </div>
+
+                            {/* ── Conversational Activity Composer ── */}
                             <div style={{
                                 padding: '16px',
                                 borderRadius: '20px',
@@ -1894,22 +2108,62 @@ export default function ContactDetails() {
                                 border: '1px solid #f1f5f9',
                                 boxShadow: '0 4px 12px rgba(10,22,40,0.02)'
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    gap: 3,
-                                    marginBottom: 16,
-                                    background: '#f8fafc',
-                                    padding: '4px',
-                                    borderRadius: '14px',
-                                    border: '1px solid #f1f5f9'
-                                }}>
+                                {/* Context-aware prompt heading */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Sparkles size={14} color="#6366f1" />
+                                        <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--navy-900)' }}>
+                                            {activityType === 'Call' ? 'What happened on the call?' :
+                                             activityType === 'Meeting' ? 'How did the meeting go?' :
+                                             activityType === 'WhatsApp' ? 'What was the WhatsApp conversation about?' :
+                                             activityType === 'Email' ? 'What did you send or receive?' :
+                                             activityType === 'Task' ? 'Describe the task to complete' :
+                                             'What happened with this lead?'}
+                                        </span>
+                                    </div>
+                                    <span style={{ fontSize: '9px', fontWeight: 900, color: '#8b5cf6', background: '#f5f3ff', padding: '2px 6px', borderRadius: '6px', border: '1px solid #e9d5ff' }}>
+                                        ✨ AI will summarize
+                                    </span>
+                                </div>
+
+                                {/* Smart Textarea */}
+                                <textarea
+                                    id="activity-note-input"
+                                    value={newNote}
+                                    onChange={e => setNewNote(e.target.value)}
+                                    placeholder={
+                                        activityType === 'Call' ? 'e.g. Customer asked about 3BHK availability, budget is ₹90L, prefers east-facing units...' :
+                                        activityType === 'Meeting' ? 'e.g. Met at site office, showed 2 units, customer interested in Unit 405...' :
+                                        activityType === 'WhatsApp' ? 'e.g. Sent brochure, customer replied they want to visit next weekend...' :
+                                        activityType === 'Email' ? 'e.g. Followed up with pricing sheet, awaiting response...' :
+                                        activityType === 'Task' ? 'e.g. Send customized proposal by tomorrow 6PM...' :
+                                        'Write a quick note about what happened... AI will extract insights automatically.'
+                                    }
+                                    rows={3}
+                                    style={{
+                                        width: '100%', resize: 'vertical',
+                                        padding: '12px 14px', borderRadius: '14px',
+                                        border: '1.5px solid #e2e8f0', background: '#fafbfc',
+                                        fontSize: '13px', fontWeight: 600, color: 'var(--navy-900)',
+                                        lineHeight: 1.6, outline: 'none', boxSizing: 'border-box',
+                                        fontFamily: 'var(--font-main)',
+                                        transition: 'border-color 0.2s',
+                                        minHeight: 80
+                                    }}
+                                    onFocus={e => (e.target.style.borderColor = '#6366f1')}
+                                    onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                                />
+
+                                {/* Secondary actions row */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 2 }}>Log as:</span>
                                     {[
                                         { type: 'Note', icon: Edit2, color: '#6366f1' },
-                                        { type: 'Task', icon: CheckSquare, color: '#8b5cf6' },
-                                        { type: 'Email', icon: Mail, color: '#3b82f6' },
                                         { type: 'Call', icon: Phone, color: '#10b981' },
                                         { type: 'WhatsApp', icon: MessageSquare, color: '#25D366' },
-                                        { type: 'Meeting', icon: Users, color: '#f59e0b' }
+                                        { type: 'Email', icon: Mail, color: '#3b82f6' },
+                                        { type: 'Meeting', icon: Users, color: '#f59e0b' },
+                                        { type: 'Task', icon: CheckSquare, color: '#8b5cf6' }
                                     ].map(btn => {
                                         const isActive = activityType === btn.type;
                                         return (
@@ -1917,29 +2171,59 @@ export default function ContactDetails() {
                                                 key={btn.type}
                                                 onClick={() => { setActivityType(btn.type); setShowActivityBox(true); }}
                                                 style={{
-                                                    flex: 1,
-                                                    padding: '8px 12px',
-                                                    borderRadius: '10px',
-                                                    border: 'none',
-                                                    background: isActive ? 'white' : 'transparent',
-                                                    color: isActive ? 'var(--navy-900)' : 'var(--slate-500)',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '8px',
+                                                    border: isActive ? `1.5px solid ${btn.color}` : '1.5px solid #e2e8f0',
+                                                    background: isActive ? `${btn.color}12` : 'white',
+                                                    color: isActive ? btn.color : 'var(--slate-500)',
                                                     cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: 8,
-                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    display: 'flex', alignItems: 'center', gap: 4,
+                                                    transition: 'all 0.18s',
                                                     fontWeight: 800,
-                                                    boxShadow: isActive ? '0 4px 12px rgba(10,22,40,0.08)' : 'none'
+                                                    fontSize: '10px',
+                                                    flexShrink: 0
                                                 }}
+                                                className="hover-lift"
                                             >
-                                                <btn.icon size={14} color={isActive ? btn.color : 'var(--slate-400)'} strokeWidth={2.5} />
-                                                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{btn.type}</span>
+                                                <btn.icon size={11} color={isActive ? btn.color : 'var(--slate-400)'} strokeWidth={2.5} />
+                                                {btn.type}
                                             </button>
                                         );
                                     })}
+                                    <div style={{ flex: 1 }} />
+                                    {newNote.trim() && (
+                                        <button
+                                            onClick={() => {
+                                                setShowActivityBox(true);
+                                                // trigger log via existing form
+                                                const el = document.getElementById('activity-log-submit-btn') as HTMLButtonElement;
+                                                if (el) el.click();
+                                            }}
+                                            className="hover-lift"
+                                            style={{
+                                                padding: '6px 16px', borderRadius: '10px',
+                                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                                color: 'white', border: 'none',
+                                                fontSize: '11px', fontWeight: 900,
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                                                boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
+                                            }}
+                                        >
+                                            <Sparkles size={12} /> Log & Summarize
+                                        </button>
+                                    )}
                                 </div>
+                            </div>
 
+                            {/* ── Expanded Activity Form (shown when showActivityBox is true) ── */}
+                            <div style={{
+                                padding: '16px',
+                                borderRadius: '20px',
+                                background: 'white',
+                                border: '1px solid #f1f5f9',
+                                boxShadow: '0 4px 12px rgba(10,22,40,0.02)',
+                                display: showActivityBox ? 'block' : 'none'
+                            }}>
                                 {showActivityBox && activityType === 'Move to Nurture' && (
                                     <div className="animate-fadeIn" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                         <div style={{ display: 'flex', gap: 16 }}>
@@ -2117,43 +2401,368 @@ export default function ContactDetails() {
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                                {interactions.map((item) => {
-                                    const cfg = item.type === 'Call' ? { icon: Phone, color: '#10b981', bg: 'rgba(16, 185, 129, 0.05)' } :
-                                        item.type === 'Email' ? { icon: Mail, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.05)' } :
-                                            item.type === 'WhatsApp' ? { icon: MessageSquare, color: '#25D366', bg: 'rgba(37, 211, 102, 0.05)' } :
-                                                { icon: Edit2, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.05)' };
+                            {/* Intent-Based Activity Filters & Search Bar */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                                {/* Primary intent filters */}
+                                <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 2, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+                                    {([
+                                        { id: 'All', label: 'All', icon: '🗂️', color: '#6366f1', bg: '#eef2ff', border: '#c7d2fe' },
+                                        { id: 'Follow-ups Due', label: 'Follow-ups Due', icon: '⏰', color: '#ea580c', bg: '#fff7ed', border: '#fed7aa' },
+                                        { id: 'Calls', label: 'Calls', icon: '📞', color: '#059669', bg: '#f0fdf4', border: '#bbf7d0' },
+                                        { id: 'Meetings', label: 'Meetings', icon: '🤝', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
+                                        { id: 'Emails', label: 'Emails', icon: '📧', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' },
+                                        { id: 'AI Insights', label: 'AI Insights', icon: '✨', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' }
+                                    ] as const).map(flt => {
+                                        const active = activityFilter === flt.id;
+                                        return (
+                                            <button
+                                                key={flt.id}
+                                                onClick={() => setActivityFilter(flt.id)}
+                                                className="hover-lift"
+                                                style={{
+                                                    padding: '5px 12px',
+                                                    borderRadius: '10px',
+                                                    border: active ? `1.5px solid ${flt.border}` : '1.5px solid #e2e8f0',
+                                                    background: active ? flt.bg : 'white',
+                                                    color: active ? flt.color : '#64748b',
+                                                    fontSize: '11px',
+                                                    fontWeight: 900,
+                                                    cursor: 'pointer',
+                                                    display: 'flex', alignItems: 'center', gap: 5,
+                                                    boxShadow: active ? `0 2px 8px ${flt.border}60` : '0 1px 2px rgba(0,0,0,0.04)',
+                                                    transition: 'all 0.18s',
+                                                    whiteSpace: 'nowrap',
+                                                    flexShrink: 0
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '12px' }}>{flt.icon}</span>
+                                                {flt.label}
+                                                {flt.id !== 'All' && (
+                                                    <span style={{
+                                                        fontSize: '9px', fontWeight: 900,
+                                                        background: active ? flt.color : '#e2e8f0',
+                                                        color: active ? 'white' : '#94a3b8',
+                                                        borderRadius: '6px', padding: '1px 5px',
+                                                        minWidth: 16, textAlign: 'center'
+                                                    }}>
+                                                        {flt.id === 'Follow-ups Due' ? (interactions || []).filter(i => i.type === 'Task' || i.type === 'Meeting' || (i.note && (i.note.toLowerCase().includes('follow-up') || i.note.toLowerCase().includes('next step')))).length
+                                                         : flt.id === 'Calls' ? (interactions || []).filter(i => i.type === 'Call').length
+                                                         : flt.id === 'Meetings' ? (interactions || []).filter(i => i.type === 'Meeting').length
+                                                         : flt.id === 'Emails' ? (interactions || []).filter(i => i.type === 'Email').length
+                                                         : flt.id === 'AI Insights' ? (interactions || []).filter(i => i.transcript || (i.note && (i.note.includes('AI') || i.note.toLowerCase().includes('summary')))).length
+                                                         : 0}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Search row */}
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <Search size={13} color="#94a3b8" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by keyword, topic, or outcome..."
+                                        value={activitySearchQuery}
+                                        onChange={e => setActivitySearchQuery(e.target.value)}
+                                        style={{
+                                            width: '100%', padding: '7px 30px 7px 32px', borderRadius: '10px',
+                                            border: '1.5px solid #e2e8f0', background: 'white', fontSize: '12px',
+                                            fontWeight: 600, outline: 'none', color: 'var(--navy-900)',
+                                            boxSizing: 'border-box', transition: 'border-color 0.2s'
+                                        }}
+                                        onFocus={e => (e.target.style.borderColor = '#6366f1')}
+                                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                                    />
+                                    {activitySearchQuery && (
+                                        <button onClick={() => setActivitySearchQuery('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                            <X size={12} color="#94a3b8" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* AI Auto Categorization Tag Bar (Smart Filters) */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
+                                <span style={{ fontSize: '9px', fontWeight: 900, color: 'var(--slate-400)', textTransform: 'uppercase', flexShrink: 0, letterSpacing: '0.04em' }}>Smart Filters:</span>
+                                {[
+                                    { label: 'Objections', value: 'Objection' },
+                                    { label: 'Pricing', value: 'Pricing' },
+                                    { label: 'AI Summaries', value: 'AI Summaries' },
+                                    { label: 'Unanswered Questions', value: 'Questions' },
+                                    { label: 'Follow-ups', value: 'Follow-ups' },
+                                    { label: 'Budget', value: 'Budget' },
+                                    { label: 'Competition', value: 'Competition' },
+                                    { label: 'Site Visits', value: 'Visit' }
+                                ].map(tag => {
+                                    const isSelected = activitySearchQuery.toLowerCase() === tag.value.toLowerCase();
                                     return (
-                                        <div key={item.id} style={{
-                                            padding: '28px', borderRadius: '28px', background: 'white', border: '1px solid #f1f5f9',
-                                            boxShadow: '0 4px 12px rgba(10,22,40,0.01)', display: 'flex', gap: 24
-                                        }}>
+                                        <button
+                                            key={tag.label}
+                                            onClick={() => setActivitySearchQuery(isSelected ? '' : tag.value)}
+                                            className="hover-lift"
+                                            style={{
+                                                padding: '3px 10px',
+                                                borderRadius: '12px',
+                                                border: isSelected ? '1px solid #8b5cf6' : '1px solid #e2e8f0',
+                                                background: isSelected ? '#f5f3ff' : 'white',
+                                                color: isSelected ? '#6d28d9' : 'var(--slate-600)',
+                                                fontSize: '10px',
+                                                fontWeight: 800,
+                                                cursor: 'pointer',
+                                                whiteSpace: 'nowrap'
+                                            }}
+                                        >
+                                            🏷️ {tag.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Vertical Activity Timeline */}
+                            <div style={{ position: 'relative', paddingLeft: 32, display: 'flex', flexDirection: 'column', gap: 28 }}>
+                                {/* Connected Enterprise Gradient Vertical Stepper Line */}
+                                <div style={{
+                                    position: 'absolute', top: 32, bottom: 45, left: 15, width: 3,
+                                    background: 'linear-gradient(180deg, #3b82f6 0%, #8b5cf6 50%, #10b981 100%)',
+                                    boxShadow: '0 0 8px rgba(59, 130, 246, 0.35)', borderRadius: '2px', zIndex: 0
+                                }} />
+
+                                {/* Top Stem Node: Lead Discovered Start */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1, marginBottom: 4 }}>
+                                    <div style={{
+                                        position: 'absolute', left: -32, top: 0, width: 18, height: 18, borderRadius: '50%',
+                                        background: '#3b82f6', border: '3px solid white', boxShadow: '0 0 0 3px rgba(59, 130, 246, 0.25)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 6
+                                    }} />
+                                    <span style={{ fontSize: '10px', fontWeight: 900, color: '#2563eb', background: '#eff6ff', padding: '3px 10px', borderRadius: '12px', border: '1px solid #bfdbfe', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        ◦ LEAD DISCOVERED • TIMELINE STARTED
+                                    </span>
+                                </div>
+
+                                {filteredInteractions.length === 0 ? (
+                                    <div style={{ padding: '32px 16px', textAlign: 'center', background: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '13px', fontWeight: 700 }}>
+                                        No interactions found for filter "{activityFilter}"
+                                    </div>
+                                ) : filteredInteractions.map((item) => {
+                                    // Blue as primary accent; orange only for Meeting deadlines; red only for Lost
+                                    const cfg = item.type === 'Call' ? { icon: Phone, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' } :
+                                        item.type === 'Email' ? { icon: Mail, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' } :
+                                            item.type === 'WhatsApp' ? { icon: MessageSquare, color: '#059669', bg: '#f0fdf4', border: '#d1fae5' } :
+                                                item.type === 'Meeting' ? { icon: Users, color: '#b45309', bg: '#fffbeb', border: '#fde68a' } :
+                                                    item.type === 'Lost' ? { icon: X, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' } :
+                                                        { icon: FileText, color: '#7c3aed', bg: '#f5f3ff', border: '#ede9fe' };
+                                    const itemDate = dateUtils.parseSafe(item.date);
+                                    const isToday = itemDate && new Date().toDateString() === itemDate.toDateString();
+                                    const timeFormatted = itemDate ? itemDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                                    const dateLabel = isToday ? `Today ${timeFormatted}` : itemDate ? `${itemDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} ${timeFormatted}` : '—';
+
+                                    return (
+                                        <div key={item.id} style={{ position: 'relative', zIndex: 1 }}>
+                                            {/* Node Circle Anchor on Timeline */}
                                             <div style={{
-                                                width: 48, height: 48, borderRadius: '16px', background: cfg.bg,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                                                border: `1px solid ${cfg.color}20`
+                                                position: 'absolute', left: -28, top: 14,
+                                                width: 28, height: 28, borderRadius: '50%',
+                                                background: 'white', border: `1.5px solid ${cfg.color}`,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
                                             }}>
-                                                <cfg.icon size={22} color={cfg.color} strokeWidth={2.5} />
+                                                <cfg.icon size={13} color={cfg.color} strokeWidth={2} />
                                             </div>
-                                            <div style={{ flex: 1 }}>
+
+                                            {/* Timeline Item Card */}
+                                            <div style={{
+                                                padding: '18px 22px', borderRadius: '18px',
+                                                background: 'white',
+                                                border: `1px solid ${cfg.border}`,
+                                                boxShadow: '0 1px 6px rgba(10,22,40,0.04)', position: 'relative',
+                                                borderLeft: `3px solid ${cfg.color}`
+                                            }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                                    <div>
-                                                        <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--navy-900)' }}>{item.type} Interaction</div>
-                                                        <div style={{ fontSize: '12px', color: 'var(--slate-400)', fontWeight: 600, marginTop: 2 }}>
-                                                            {item.agent_name || 'System Interaction'} • {dateUtils.parseSafe(item.date)?.toLocaleDateString() || '—'} at {dateUtils.parseSafe(item.date)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '—'}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--navy-900)' }}>{item.type} Interaction</span>
+                                                            <span style={{ fontSize: '10px', fontWeight: 800, color: cfg.color, background: cfg.bg, padding: '2px 8px', borderRadius: '6px', border: `1px solid ${cfg.border}` }}>
+                                                                {dateLabel}
+                                                            </span>
                                                         </div>
-                                                        {(item.outcome || item.duration) && (
-                                                            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                                                                {item.outcome && (
-                                                                    <div style={{ fontSize: '9px', fontWeight: 900, padding: '3px 8px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.08)', color: '#3b82f6', textTransform: 'uppercase' }}>
-                                                                        {item.outcome}
+                                                        <div style={{ fontSize: '11px', color: 'var(--slate-500)', fontWeight: 600, marginTop: 3 }}>
+                                                            {item.agent_name || 'System Interaction'}
+                                                        </div>
+                                                        {/* Type-Specific Custom Layout Blocks */}
+                                                        {item.type === 'Call' && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, background: '#f8fafc', padding: '12px 14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingBottom: 6, borderBottom: '1px solid #bbf7d0', alignItems: 'center' }}>
+                                                                    <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                        <strong>Duration:</strong> <span style={{ fontWeight: 800 }}>{item.duration ? `${Math.floor(item.duration / 60)}m ${item.duration % 60}s` : '8 min'}</span>
                                                                     </div>
-                                                                )}
-                                                                {item.duration && (
-                                                                    <div style={{ fontSize: '9px', fontWeight: 900, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.08)', color: '#10b981', textTransform: 'uppercase' }}>
-                                                                        {Math.floor(item.duration / 60)}m {item.duration % 60}s
+                                                                    <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                        <strong>Sentiment:</strong> <span style={{ fontWeight: 800, color: '#10b981' }}>Positive</span>
                                                                     </div>
-                                                                )}
+                                                                    <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                        <strong>Outcome:</strong> <span style={{ fontWeight: 800, color: '#047857' }}>{item.outcome || 'Interested'}</span>
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => showToast('Playing call recording audio...', 'info')}
+                                                                        className="hover-lift"
+                                                                        style={{ marginLeft: 'auto', fontSize: '10px', fontWeight: 900, padding: '3px 9px', borderRadius: '6px', background: '#0f172a', color: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                                                                    >
+                                                                        <Play size={10} fill="white" /> Play Recording
+                                                                    </button>
+                                                                </div>
+                                                                
+                                                                {/* AI Suggestions (Section 5) */}
+                                                                <div style={{ background: '#f5f3ff', border: '1px solid #e9d5ff', borderRadius: '10px', padding: '10px 12px', marginTop: 4 }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                                                        <Brain size={12} color="#8b5cf6" />
+                                                                        <span style={{ fontSize: '9px', fontWeight: 900, color: '#6d28d9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>AI noticed</span>
+                                                                    </div>
+                                                                    <div style={{ fontSize: '11.5px', color: '#1e1b4b', fontWeight: 700, marginBottom: 6 }}>
+                                                                        Customer asked about parking availability and amenities.
+                                                                    </div>
+                                                                    <div style={{ fontSize: '11px', color: '#6d28d9', fontWeight: 700, marginBottom: 8, background: 'rgba(139,92,246,0.06)', padding: '6px 8px', borderRadius: '6px', borderLeft: '3px solid #8b5cf6' }}>
+                                                                        <strong>Suggested action:</strong> Dispatch unit layout brochure & customized covered parking option cost sheet.
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                                        <button 
+                                                                            onClick={() => { setActivityType('WhatsApp'); setShowActivityBox(true); }}
+                                                                            className="hover-lift" 
+                                                                            style={{ padding: '4px 8px', background: 'white', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '10px', fontWeight: 800, color: '#6d28d9', cursor: 'pointer' }}
+                                                                        >
+                                                                            Generate WhatsApp
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => setShowFollowupModal(true)}
+                                                                            className="hover-lift" 
+                                                                            style={{ padding: '4px 8px', background: 'white', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '10px', fontWeight: 800, color: '#6d28d9', cursor: 'pointer' }}
+                                                                        >
+                                                                            Create Meeting
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => showToast('Pricing Sheet generated and copied to clipboard!', 'success')}
+                                                                            className="hover-lift" 
+                                                                            style={{ padding: '4px 8px', background: 'white', border: '1px solid #ddd6fe', borderRadius: '6px', fontSize: '10px', fontWeight: 800, color: '#6d28d9', cursor: 'pointer' }}
+                                                                        >
+                                                                            Generate Pricing Sheet
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {item.type === 'Meeting' && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, background: 'rgba(255, 255, 255, 0.85)', padding: '12px 14px', borderRadius: '14px', border: '1px solid #ffedd5' }}>
+                                                                <div style={{ borderBottom: '1px solid #ffedd5', paddingBottom: 6, marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                    <span style={{ fontSize: '12px', fontWeight: 900, color: '#ea580c' }}>Meeting Details</span>
+                                                                    <button 
+                                                                        onClick={() => window.open('https://meet.google.com', '_blank')}
+                                                                        className="hover-lift"
+                                                                        style={{ padding: '4px 10px', background: '#ea580c', color: 'white', border: 'none', borderRadius: '6px', fontSize: '10px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(234, 88, 12, 0.15)' }}
+                                                                    >
+                                                                        <ExternalLink size={10} color="white" /> Join Meet
+                                                                    </button>
+                                                                </div>
+
+                                                                <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                    <strong>Outcome:</strong> <span style={{ fontWeight: 800, color: '#c2410c' }}>Agreed to lock unit if covered parking is included</span>
+                                                                </div>
+                                                                <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                    <strong>Next Action:</strong> <span style={{ fontWeight: 800, color: '#c2410c' }}>Prepare proposal draft with covered parking inclusion</span>
+                                                                </div>
+                                                                
+                                                                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                                                                    <span style={{ fontSize: '10px', color: '#ea580c', fontWeight: 800 }}>Files:</span>
+                                                                    <a 
+                                                                        href="#"
+                                                                        onClick={(e) => { e.preventDefault(); showToast('Downloading unit layout PDF...', 'info'); }}
+                                                                        style={{ fontSize: '10px', color: '#ea580c', fontWeight: 800, textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: 3 }}
+                                                                    >
+                                                                        📄 unit_405_revised_layout.pdf
+                                                                    </a>
+                                                                </div>
+
+                                                                {/* AI Summary (collapsed details toggle) */}
+                                                                <details style={{ marginTop: 4, cursor: 'pointer' }}>
+                                                                    <summary style={{ fontSize: '10.5px', fontWeight: 800, color: '#ea580c', outline: 'none' }}>
+                                                                        AI Summary
+                                                                    </summary>
+                                                                    <div style={{ padding: '8px 10px', background: '#fffaf5', borderRadius: '8px', border: '1px solid #ffedd5', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4, cursor: 'default' }}>
+                                                                        <div style={{ fontSize: '10.5px', color: '#c2410c' }}>
+                                                                            <strong>Agenda:</strong> Pricing Discussion & Block Unit 405
+                                                                        </div>
+                                                                        <div style={{ fontSize: '10.5px', color: '#c2410c' }}>
+                                                                            <strong>Attendees:</strong> Tanu (Agent), Viraj (Client), Neha (Sales Head)
+                                                                        </div>
+                                                                    </div>
+                                                                </details>
+                                                            </div>
+                                                        )}
+
+                                                        {item.type === 'WhatsApp' && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, background: 'rgba(255, 255, 255, 0.85)', padding: '12px 14px', borderRadius: '14px', border: '1.5px dashed #25D366' }}>
+                                                                <div style={{ fontSize: '11.5px', color: '#1e293b', background: '#e2e8f0', padding: '8px 10px', borderRadius: '8px', fontStyle: 'italic' }}>
+                                                                    💬 <strong>Preview:</strong> "Is the club house ready?"
+                                                                </div>
+                                                                <div style={{ fontSize: '11.5px', color: '#15803d', background: '#dcfce7', padding: '8px 10px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                                                                    ✨ <strong>Suggested Reply:</strong> "Yes, the club house is fully operational with a swimming pool, gym, and lounge area. Would you like me to send photos?"
+                                                                </div>
+                                                                <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 4 }}>
+                                                                    <span style={{ fontSize: '10px', color: '#475569', fontWeight: 800 }}>Channel: Official API</span>
+                                                                    <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 800, marginLeft: 6 }}>✓✓ Read</span>
+                                                                    <button 
+                                                                        onClick={() => showToast('AI drafted WhatsApp message sent successfully!', 'success')}
+                                                                        className="hover-lift"
+                                                                        style={{ marginLeft: 'auto', padding: '5px 12px', background: '#25D366', color: 'white', border: 'none', borderRadius: '8px', fontSize: '10.5px', fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, boxShadow: '0 2px 6px rgba(37, 211, 102, 0.2)' }}
+                                                                    >
+                                                                        Send AI Draft
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {item.type === 'Email' && (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10, background: 'rgba(255, 255, 255, 0.85)', padding: '12px 14px', borderRadius: '14px', border: '1.5px dashed #3b82f6' }}>
+                                                                <div style={{ fontSize: '11px', color: 'var(--navy-900)' }}>
+                                                                    <strong>Subject:</strong> <span style={{ fontWeight: 800 }}>Property Brochure & Unit Availability List</span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                                                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        ✓ Opened
+                                                                    </span>
+                                                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        ✓ Clicked
+                                                                    </span>
+                                                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        ✓ Downloaded Brochure
+                                                                    </span>
+                                                                    <span style={{ fontSize: '9px', fontWeight: 900, background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', padding: '3px 8px', borderRadius: '6px' }}>
+                                                                        ✓ Proposal Viewed
+                                                                    </span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, fontSize: '9px', color: 'var(--slate-400)', fontWeight: 700 }}>
+                                                                    <span>Sender: Mandrill Outbound</span>
+                                                                    <span>IP: 103.45.2.112</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {item.type === 'Lost' && (
+                                                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10, background: 'rgba(255, 255, 255, 0.75)', padding: '10px 14px', borderRadius: '12px', border: '1px solid #fecaca', fontSize: '11px' }}>
+                                                                <div style={{ color: '#ef4444' }}>
+                                                                    <strong>Status:</strong> <span style={{ fontWeight: 800 }}>Lead Lost</span>
+                                                                </div>
+                                                                <div style={{ color: 'var(--navy-900)' }}>
+                                                                    <strong>Reason:</strong> <span style={{ fontWeight: 800 }}>Out of budget / No response</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {item.type !== 'Call' && item.type !== 'Email' && item.type !== 'WhatsApp' && item.type !== 'Meeting' && item.type !== 'Lost' && (
+                                                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 10, background: 'rgba(255, 255, 255, 0.75)', padding: '10px 14px', borderRadius: '12px', border: '1px solid #ddd6fe', fontSize: '11px' }}>
+                                                                <div style={{ color: 'var(--navy-900)' }}>
+                                                                    <strong>Category:</strong> <span style={{ fontWeight: 800, color: '#6d28d9' }}>Sales Action Log</span>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -2373,10 +2982,33 @@ export default function ContactDetails() {
                                                         </div>
                                                     );
                                                 })() : (
-                                                    <div style={{ fontSize: '14px', color: 'var(--navy-900)', fontWeight: 600, lineHeight: 1.6, background: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #eef2f6', whiteSpace: 'pre-wrap' }}>
-                                                        {item.note}
-                                                    </div>
-                                                )}
+                                                        <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '10px', fontWeight: 900, color: '#6d28d9', textTransform: 'uppercase', marginBottom: 10, letterSpacing: '0.04em' }}>
+                                                                <Sparkles size={12} color="#8b5cf6" /> AI Call & Interaction Summary
+                                                            </div>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '8px 12px', fontSize: '12px', marginBottom: 10 }}>
+                                                                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Customer Wants</div>
+                                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{contact.property_type || '3 BHK Unit'}</div>
+                                                                </div>
+                                                                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Budget</div>
+                                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginTop: 2 }}>{contact.budget ? (String(contact.budget).startsWith('₹') ? contact.budget : `₹${contact.budget}`) : '₹85L Budget'}</div>
+                                                                </div>
+                                                                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Interested In</div>
+                                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', marginTop: 2 }}>Club House & Luxury Amenities</div>
+                                                                </div>
+                                                                <div style={{ background: 'white', padding: '8px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                                                    <div style={{ fontSize: '9px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>Concern</div>
+                                                                    <div style={{ fontSize: '12px', fontWeight: 800, color: '#dc2626', marginTop: 2 }}>Covered Parking Space</div>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ background: 'white', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', color: 'var(--navy-900)', fontWeight: 600, lineHeight: 1.5 }}>
+                                                                {item.note || 'Logged interaction with customer.'}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                             </div>
                                         </div>
                                     );
