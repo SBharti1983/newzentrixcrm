@@ -55,7 +55,7 @@
   inset: 0;
   background: var(--surface-overlay);
   
-  z-index: 200;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;

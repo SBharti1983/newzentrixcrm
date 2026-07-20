@@ -160,6 +160,7 @@
     max-height: 92vh;
     border-radius: 20px 20px 0 0;
     animation: slideUp var(--transition-normal) ease;
+    padding-bottom: 110px;
   }
 
   .modal-lg {
