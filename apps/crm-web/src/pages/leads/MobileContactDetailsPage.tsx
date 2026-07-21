@@ -1489,7 +1489,7 @@ export default function MobileContactDetailsPage({
                         {/* Interaction Timeline — point 4: full-height rail, point 6: richer empty state, Visual Polish */}
                         <div style={{ background: 'white', borderRadius: 16, padding: '16px 14px', border: '1px solid #f1f5f9', marginTop: 4 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h3 style={{ fontSize: '0.58rem', fontWeight: 800, color: C.slate500, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                                <h3 style={{ fontSize: '0.68rem', fontWeight: 700, color: C.slate400, textTransform: 'none', margin: 0 }}>
                                     Activity Timeline
                                 </h3>
                                 {activityFilter !== 'All' && (
