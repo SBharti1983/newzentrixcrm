@@ -1,13 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    ChevronLeft, Phone, Mail, MessageSquare, MapPin, Edit2, MoreVertical, CheckSquare,
+    ChevronLeft, ChevronRight, Phone, Mail, MessageSquare, MapPin, Edit2, MoreVertical, CheckSquare, Trash2,
     Calendar as CalendarIcon, TrendingUp, Sparkles, Wand2, ShieldCheck,
     ArrowRight, RefreshCw, RotateCw, ExternalLink, Brain, UserPlus, Users, Home, Target, Zap,
     Flame, Thermometer, Snowflake, BarChart2, FileText, Paperclip, ListChecks, Filter,
     Search, Pin, ChevronUp, ChevronDown, Download, Copy, Share2, Eye, X
 } from 'lucide-react';
 import { dialerEvents } from '../../constants/events';
+import { leadsApi } from '../../api/client';
+import { useToast } from '../../hooks/useToast';
 import * as dateUtils from '../../utils/dateUtils';
 
 // ─── Color Tokens ───────────────────────────────────────────────────────────
@@ -115,6 +117,7 @@ export default function MobileContactDetailsPage({
     showActivityBox
 }: MobileContactDetailsPageProps) {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const score = contact?.score || 0;
     const stageColor = STAGE_DOT_COLORS[contact?.stage] || C.indigo;
     const [activityFilter, setActivityFilter] = useState<string>('All');
@@ -127,6 +130,59 @@ export default function MobileContactDetailsPage({
     const [expandedAttachIdx, setExpandedAttachIdx] = useState<number | null>(null);
     const [showLeadInfo, setShowLeadInfo] = useState<boolean>(true);
     const [followupCompleted, setFollowupCompleted] = useState<boolean>(false);
+
+    // ── Edit & Options Modals State ──
+    const [showEditModal, setShowEditModal] = useState<boolean>(false);
+    const [showMoreOptions, setShowMoreOptions] = useState<boolean>(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+    const [isSavingLead, setIsSavingLead] = useState<boolean>(false);
+    const [editForm, setEditForm] = useState({
+        name: '', phone: '', email: '', city: '',
+        requirement: '', budget: '', status: 'Active', stage: 'New Lead'
+    });
+
+    useEffect(() => {
+        if (contact) {
+            setEditForm({
+                name: contact.name || '',
+                phone: contact.phone || '',
+                email: contact.email || '',
+                city: contact.city || '',
+                requirement: contact.requirement || contact.property_type || '',
+                budget: contact.budget || '',
+                status: contact.status || 'Active',
+                stage: contact.stage || 'New Lead'
+            });
+        }
+    }, [contact]);
+
+    const handleSaveEdit = async () => {
+        if (!editForm.name || !editForm.phone) {
+            showToast('Name and Phone are required', 'error');
+            return;
+        }
+        setIsSavingLead(true);
+        try {
+            await leadsApi.update(id, editForm);
+            showToast('Lead details updated successfully', 'success');
+            setShowEditModal(false);
+            window.location.reload();
+        } catch (err: any) {
+            showToast(err?.error || err?.message || 'Failed to update lead', 'error');
+        } finally {
+            setIsSavingLead(false);
+        }
+    };
+
+    const handleDeleteLead = async () => {
+        try {
+            await leadsApi.delete(id);
+            showToast('Lead deleted successfully', 'success');
+            navigate('/leads');
+        } catch (err: any) {
+            showToast(err?.error || err?.message || 'Failed to delete lead', 'error');
+        }
+    };
 
     const toggleTaskComplete = (taskId: string) => {
         setCompletedTaskIds(prev => {
@@ -175,250 +231,271 @@ export default function MobileContactDetailsPage({
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
         }}>
 
-
-            <div style={{ padding: '6px 6px' }}>
-                {/* Compact Native Hero Card — lead info + inline actions */}
+            <div style={{ padding: '4px 4px' }}>
+                {/* Profile Header Card */}
                 <div style={{
-                    background: `linear-gradient(135deg, ${avatarBg}10 0%, ${avatarBg}04 60%, transparent 100%)`,
-                    borderRadius: 18, padding: '14px 14px', marginBottom: 10,
-                    border: `1px solid ${avatarBg}15`,
-                    boxShadow: '0 1px 6px rgba(10,22,40,0.02)',
-                    position: 'relative', overflow: 'hidden'
+                    background: 'white', borderRadius: 16, padding: '14px',
+                    border: '1px solid #e2e8f0',
+                    boxShadow: '0 2px 10px rgba(15,23,42,0.03)',
+                    position: 'relative', overflow: 'hidden',
+                    marginBottom: 12
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                        {/* Avatar with Intent Ring */}
-                        <div style={{ position: 'relative', width: 52, height: 52, flexShrink: 0 }}>
-                            <svg width="52" height="52" viewBox="0 0 52 52" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
-                                <circle cx="26" cy="26" r="23" fill="none" stroke={`${avatarBg}20`} strokeWidth="3" />
-                                <circle cx="26" cy="26" r="23" fill="none"
-                                    stroke={avatarBg} strokeWidth="3"
-                                    strokeDasharray={`${(score / 100) * 144.5} 144.5`}
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <div style={{
-                                position: 'absolute', inset: 5,
-                                background: avatarBg, color: 'white', borderRadius: 12,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '17px', fontWeight: 900,
-                                boxShadow: `0 4px 12px ${avatarBg}40`
-                            }}>
-                                {initial}
+                    {/* Top Row: Avatar & Contact Info (Left) + Score & Badges & Actions (Right) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
+                        {/* Left: Avatar + Name + Phone + Last Activity + Chips */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0, flex: 1 }}>
+                            <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+                                <svg width="44" height="44" viewBox="0 0 44 44" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+                                    <circle cx="22" cy="22" r="19" fill="none" stroke={`${avatarBg}20`} strokeWidth="3" />
+                                    <circle cx="22" cy="22" r="19" fill="none"
+                                        stroke={avatarBg} strokeWidth="3"
+                                        strokeDasharray={`${(score / 100) * 119.3} 119.3`}
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', inset: 4,
+                                    background: avatarBg, color: 'white', borderRadius: 11,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '15px', fontWeight: 900,
+                                    boxShadow: `0 2px 8px ${avatarBg}40`
+                                }}>
+                                    {initial}
+                                </div>
+                                <div style={{
+                                    position: 'absolute', bottom: -1, right: -1,
+                                    width: 10, height: 10, borderRadius: '50%',
+                                    background: C.emerald, border: '2px solid white'
+                                }} />
+                            </div>
+
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <h1 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.2px', lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {contact.name}
+                                    </h1>
+                                    <ShieldCheck size={14} color="#3b82f6" fill="#3b82f6" style={{ flexShrink: 0, color: 'white' }} />
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: C.slate800, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                    <span>📞</span>
+                                    <span>{contact.phone || '53532532445'}</span>
+                                </div>
+                                <div style={{ fontSize: '0.6rem', color: C.slate500, fontWeight: 700, marginTop: 2, marginBottom: 5 }}>
+                                    Last Activity: <span style={{ color: C.emerald, fontWeight: 800 }}>Today • Log Call</span>
+                                </div>
+
+                                {/* Metadata Chips (2BHK, 21 Jul, Rohan Mishra) */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: C.slate700, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        🏠 {contact.project || contact.requirement || '2BHK'}
+                                    </span>
+                                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: C.slate700, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        📅 {contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '21 Jul'}
+                                    </span>
+                                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: C.slate700, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 6px', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                        👤 {contact.agent_name || contact.assigned_agent || 'Rohan Mishra'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Name, Phone & Critical Info */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            {/* Row 1: Lead Name + Inline actions */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 2 }}>
-                                <h1 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.3px', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {contact.name}
-                                </h1>
-                                {/* Inline lead actions */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                        {/* Right: Actions (Edit & More) + Score + Warm Badge + Pipeline Stage */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                {/* Edit & More Buttons Container */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center',
+                                    background: 'white', border: '1px solid #e2e8f0', borderRadius: 8,
+                                    padding: '2px 4px', gap: 2
+                                }}>
                                     <button
-                                        onClick={() => setShowStageMenu(!showStageMenu)}
-                                        title="Edit Stage"
-                                        style={{
-                                            width: 30, height: 30, borderRadius: 8,
-                                            border: '1px solid #cbd5e1', background: 'white',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            cursor: 'pointer'
-                                        }}
+                                        onClick={() => setShowEditModal(true)}
+                                        title="Edit Lead Details"
+                                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
                                     >
-                                        <Edit2 size={13} color={C.slate700} strokeWidth={2.2} />
+                                        <Edit2 size={11} color={C.slate700} strokeWidth={2.2} />
                                     </button>
+                                    <div style={{ width: 1, height: 12, background: '#e2e8f0' }} />
                                     <button
-                                        onClick={() => dialerEvents.call(contact.id, contact.phone, contact.name)}
-                                        title="Call Lead"
-                                        style={{
-                                            width: 30, height: 30, borderRadius: 8,
-                                            border: '1px solid #bbf7d0', background: '#f0fdf4',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <Phone size={13} color={C.emerald} strokeWidth={2.2} />
-                                    </button>
-                                    <button
+                                        onClick={() => setShowMoreOptions(true)}
                                         title="More Options"
-                                        style={{
-                                            width: 30, height: 30, borderRadius: 8,
-                                            border: '1px solid #cbd5e1', background: 'white',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            cursor: 'pointer'
-                                        }}
+                                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
                                     >
-                                        <MoreVertical size={13} color={C.slate700} strokeWidth={2.2} />
+                                        <MoreVertical size={11} color={C.slate700} strokeWidth={2.2} />
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Row 2: Phone */}
-                            <div style={{ fontSize: '0.76rem', color: C.slate800, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, lineHeight: '20px', marginBottom: 6 }}>
-                                <span>📞</span>
-                                <span>{contact.phone || '—'}</span>
-                            </div>
-
-                            {/* Row 3: Critical Info Chips (Requirement · Created Date · Owner) */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate700, background: 'white', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    🏢 {contact.project || contact.requirement || contact.property_type || '3BHK'}
-                                </span>
-                                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate700, background: 'white', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    📅 {contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '20 Jul 2026'}
-                                </span>
-                                <span style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate700, background: 'white', border: '1px solid #e2e8f0', borderRadius: 6, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    👤 {contact.agent_name || contact.assigned_agent || 'Rohan Mishra'}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Score + Health mini-panel */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                            {/* Score number */}
+                            {/* Score Card */}
                             <div style={{
-                                background: 'white', borderRadius: 12, padding: '5px 8px',
-                                border: `1.5px solid ${score > 80 ? '#bbf7d0' : score > 50 ? '#fde68a' : '#cbd5e1'}`,
-                                boxShadow: '0 3px 10px rgba(15,23,42,0.06)',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 50
+                                width: 76, background: 'white', borderRadius: 8, padding: '3px 6px',
+                                border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
                             }}>
-                                <div style={{ fontSize: '0.55rem', lineHeight: 1, marginBottom: 1 }}>
-                                    {score >= 80 ? '🔥🔥🔥' : score >= 50 ? '⭐⭐⭐' : '⭐'}
+                                <div style={{ fontSize: '0.76rem', fontWeight: 900, color: C.slate950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                                    <span style={{ fontSize: '0.6rem', color: '#f59e0b' }}>⭐</span> {score}
                                 </div>
-                                <span style={{ fontSize: '1.1rem', fontWeight: 900, color: C.slate950, lineHeight: 1 }}>{score}</span>
-                                <span style={{ fontSize: '0.48rem', fontWeight: 900, color: C.slate500, textTransform: 'uppercase', letterSpacing: '0.02em', marginTop: 2, whiteSpace: 'nowrap' }}>Score</span>
+                                <div style={{ fontSize: '0.45rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                    SCORE
+                                </div>
                             </div>
-                            {/* Health badge (WARM / Hot / Cold) */}
+
+                            {/* Warm Badge */}
                             <div style={{
-                                background: health.bg, borderRadius: 7, padding: '2px 6px',
-                                border: `1px solid ${health.color}30`,
-                                display: 'flex', alignItems: 'center', gap: 2
+                                width: 76, background: '#fffbeb', border: '1px solid #fde68a', color: '#d97706',
+                                borderRadius: 8, padding: '2px 0', textAlign: 'center', fontSize: '0.52rem', fontWeight: 900,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3
                             }}>
-                                <health.icon size={9} color={health.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '0.52rem', fontWeight: 900, color: health.color, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{health.label}</span>
+                                <span>🔥</span> WARM
+                            </div>
+
+                            {/* New Lead Pipeline Stage */}
+                            <div style={{
+                                width: 76, background: '#eff6ff', border: '1px solid #bfdbfe', color: C.blue,
+                                borderRadius: 8, padding: '2px 0', textAlign: 'center', fontSize: '0.52rem', fontWeight: 900,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3
+                            }}>
+                                <span>✉</span> {contact.stage || 'New Lead'}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Direct Communication Action Buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                            onClick={() => dialerEvents.call(contact.id, contact.phone, contact.name)}
+                            style={{
+                                flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a',
+                                borderRadius: 8, padding: '5px 8px', fontSize: '0.64rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer'
+                            }}
+                        >
+                            <Phone size={12} color="#16a34a" strokeWidth={2.5} /> Call
+                        </button>
+                        <a
+                            href={`https://wa.me/${(contact.phone || '').replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                                flex: 1, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#16a34a',
+                                borderRadius: 8, padding: '5px 8px', fontSize: '0.64rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none', cursor: 'pointer'
+                            }}
+                        >
+                            <MessageSquare size={12} color="#16a34a" strokeWidth={2.5} /> WhatsApp
+                        </a>
+                        <a
+                            href={`mailto:${contact.email || 'info@mayainfratech.in'}`}
+                            style={{
+                                flex: 1, background: '#eff6ff', border: '1px solid #bfdbfe', color: C.blue,
+                                borderRadius: 8, padding: '5px 8px', fontSize: '0.64rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, textDecoration: 'none', cursor: 'pointer'
+                            }}
+                        >
+                            <Mail size={12} color={C.blue} strokeWidth={2.5} /> Email
+                        </a>
                     </div>
                 </div>
 
-                {/* Tiered Action Hub — 3 layers of priority */}
+                {/* Section Heading: Quick Logs */}
                 <div style={{
-                    marginBottom: 10, padding: '10px 10px 8px', background: 'white',
-                    borderRadius: 16, border: '1px solid #f1f5f9',
-                    boxShadow: '0 2px 6px rgba(10,22,40,0.02)'
+                    fontSize: '0.62rem', fontWeight: 800, color: C.slate800,
+                    letterSpacing: '0.01em', margin: '10px 4px 10px',
+                    display: 'flex', alignItems: 'center', gap: 5
                 }}>
+                    <Zap size={13} color={C.indigo} /> Quick Logs
+                </div>
 
-                    {/* ── Primary row: Call · WhatsApp · Email ── */}
-                    {/* Green = Contact/Success | Green = WhatsApp brand | Blue = Information */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 6 }}>
+                {/* Quick Log Activity Panel */}
+                <div style={{
+                    marginBottom: 14, padding: '6px 6px 4px', background: 'white',
+                    borderRadius: 12, border: '1px solid #f1f5f9',
+                    boxShadow: '0 1px 4px rgba(10,22,40,0.02)'
+                }}>
+                    {/* ── Primary row: Log Call · Log WhatsApp · Log Email ── */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, marginBottom: 3 }}>
                         {([
-                            { icon: Phone,         label: 'Call',     color: '#fff', bg: C.emerald,    shadow: `0 3px 10px ${C.emerald}50`,  action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
-                            { icon: MessageSquare, label: 'WhatsApp', color: '#fff', bg: '#25d366',    shadow: '0 3px 10px #25d36650',        action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Mail,          label: 'Email',    color: '#fff', bg: C.blue,       shadow: `0 3px 10px ${C.blue}50`,     action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Phone,         label: 'Log Call',     color: '#10b981', action: () => { setActivityType('Call'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: MessageSquare, label: 'Log WhatsApp', color: '#25d366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Mail,          label: 'Log Email',    color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
                         ] as const).map(act => (
                             <button
                                 key={act.label}
                                 onClick={act.action}
                                 style={{
-                                    padding: '10px 4px', borderRadius: 12,
-                                    background: act.bg, border: 'none',
+                                    padding: '2.5px 2px', borderRadius: 7,
+                                    background: 'white', border: `1px solid ${act.color}30`,
                                     display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center', gap: 4,
-                                    cursor: 'pointer', boxShadow: act.shadow,
-                                    transition: 'transform 0.1s ease, box-shadow 0.1s ease'
+                                    alignItems: 'center', justifyContent: 'center', gap: 1,
+                                    cursor: 'pointer', transition: 'all 0.15s ease'
                                 }}
                             >
-                                <act.icon size={17} color={act.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '0.58rem', fontWeight: 900, color: act.color, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                <act.icon size={11} color={act.color} strokeWidth={2.2} />
+                                <span style={{ fontSize: '0.47rem', fontWeight: 800, color: C.slate800, textTransform: 'uppercase', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
                                     {act.label}
                                 </span>
                             </button>
                         ))}
                     </div>
 
-                    {/* ── Divider ── */}
-                    <div style={{ height: 1, background: '#f1f5f9', margin: '0 2px 6px' }} />
-
-                    {/* ── Secondary row: Meeting · Note · Task ── */}
-                    {/* Red = Urgent/time-sensitive | Orange = Warning/planning | Blue = Information/trackable */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 6 }}>
+                    {/* ── Secondary row: Log Meeting · Add Note · Create Task ── */}
+                    <div style={{ height: 1, background: '#f1f5f9', margin: '0 2px 3px' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, marginBottom: 3 }}>
                         {([
-                            { icon: CalendarIcon, label: 'Meeting', color: C.rose,    bg: '#fff1f2', border: '#fecdd3', action: () => { setActivityType('Meeting'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Edit2,        label: 'Note',    color: C.amber,   bg: '#fffbeb', border: '#fde68a', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: CheckSquare,  label: 'Task',    color: C.blue,    bg: '#eff6ff', border: '#bfdbfe', action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CalendarIcon, label: 'Log Meeting', color: '#ef4444', action: () => { setActivityType('Meeting'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Edit2,        label: 'Add Note',    color: '#f59e0b', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CheckSquare,  label: 'Create Task', color: '#6366f1', action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); } },
                         ] as const).map(act => (
                             <button
                                 key={act.label}
                                 onClick={act.action}
                                 style={{
-                                    padding: '7px 4px', borderRadius: 10,
-                                    background: act.bg, border: `1.5px solid ${act.border}`,
+                                    padding: '2.5px 2px', borderRadius: 7,
+                                    background: 'white', border: `1px solid ${act.color}30`,
                                     display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center', gap: 3,
-                                    cursor: 'pointer', transition: 'opacity 0.1s ease'
+                                    alignItems: 'center', justifyContent: 'center', gap: 1,
+                                    cursor: 'pointer', transition: 'all 0.15s ease'
                                 }}
                             >
-                                <act.icon size={14} color={act.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '0.57rem', fontWeight: 800, color: act.color, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                <act.icon size={11} color={act.color} strokeWidth={2.2} />
+                                <span style={{ fontSize: '0.47rem', fontWeight: 800, color: C.slate800, textTransform: 'uppercase', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
                                     {act.label}
                                 </span>
                             </button>
                         ))}
                     </div>
 
-                    {/* ── Overflow row: Nurture · Plan Visit · AI Draft (collapsible) ── */}
-                    {/* Blue = status-info | Orange = planning/warning | Purple = AI */}
-                    {showOverflowActions && (
-                        <>
-                            <div style={{ height: 1, background: '#f1f5f9', margin: '0 2px 6px' }} />
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 4 }}>
-                                {([
-                                    { icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: C.blue,       action: () => handleUpdateStatus(contact.status === 'Nurture' ? 'Active' : 'Nurture') },
-                                    { icon: MapPin,     label: 'Plan Visit', color: C.amber,      action: () => setShowSiteVisitScheduler(true) },
-                                    { icon: Sparkles,   label: 'AI Draft',   color: C.violetDark, action: handleGenerateAISuggestion },
-                                ] as const).map(act => (
-                                    <button
-                                        key={act.label}
-                                        onClick={act.action}
-                                        style={{
-                                            padding: '6px 4px', borderRadius: 10,
-                                            background: C.slate50, border: '1px solid #e2e8f0',
-                                            display: 'flex', flexDirection: 'column',
-                                            alignItems: 'center', justifyContent: 'center', gap: 3,
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        <act.icon size={13} color={act.color} strokeWidth={2.5} />
-                                        <span style={{ fontSize: '0.55rem', fontWeight: 800, color: C.slate600, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                                            {act.label}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </>
-                    )}
-
-                    {/* ── More / Less toggle ── */}
-                    <button
-                        onClick={() => setShowOverflowActions(v => !v)}
-                        style={{
-                            width: '100%', padding: '4px 0', background: 'none', border: 'none',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                            cursor: 'pointer', color: C.slate400
-                        }}
-                    >
-                        {showOverflowActions
-                            ? <><ChevronUp size={12} strokeWidth={2.5} /><span style={{ fontSize: '0.56rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Less</span></>
-                            : <><ChevronDown size={12} strokeWidth={2.5} /><span style={{ fontSize: '0.56rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>More</span></>}
-                    </button>
-
+                    {/* ── Tertiary row: Nurture · Plan Visit · Assign Lead ── */}
+                    <div style={{ height: 1, background: '#f1f5f9', margin: '0 2px 3px' }} />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, marginBottom: 2 }}>
+                        {([
+                            { icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: C.blue,       action: () => handleUpdateStatus(contact.status === 'Nurture' ? 'Active' : 'Nurture') },
+                            { icon: MapPin,     label: 'Plan Visit', color: C.amber,      action: () => setShowSiteVisitScheduler(true) },
+                            { icon: UserPlus,   label: 'Assign Lead', color: C.violetDark, action: () => { setActivityType('Assign'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                        ] as const).map(act => (
+                            <button
+                                key={act.label}
+                                onClick={act.action}
+                                style={{
+                                    padding: '2.5px 2px', borderRadius: 7,
+                                    background: 'white', border: `1px solid ${act.color}30`,
+                                    display: 'flex', flexDirection: 'column',
+                                    alignItems: 'center', justifyContent: 'center', gap: 1,
+                                    cursor: 'pointer', transition: 'all 0.15s ease'
+                                }}
+                            >
+                                <act.icon size={11} color={act.color} strokeWidth={2.2} />
+                                <span style={{ fontSize: '0.47rem', fontWeight: 800, color: C.slate800, textTransform: 'uppercase', letterSpacing: '0.01em', whiteSpace: 'nowrap' }}>
+                                    {act.label}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Mobile Segmented Tab Switcher */}
                 <div style={{
-                    display: 'flex', background: 'white', borderRadius: 12,
-                    padding: 3, border: '1px solid #f1f5f9', marginBottom: 10,
+                    display: 'flex', background: 'white', borderRadius: 10,
+                    padding: 2, border: '1px solid #f1f5f9', marginBottom: 6,
                     position: 'relative'
                 }}>
                     {['Overview', 'Activities', 'Intelligence'].map(tab => (
@@ -442,7 +519,104 @@ export default function MobileContactDetailsPage({
 
                 {/* Tab Content */}
                 {activeTab === 'Overview' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+                        {/* AI Recommendation Box */}
+                        <div style={{
+                            background: '#faf5ff', border: '1px solid #e9d5ff', borderRadius: 14,
+                            padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8
+                        }}>
+                            <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <Sparkles size={13} color="#7e22ce" /> AI Recommendation
+                                    </div>
+                                    <span style={{ background: '#f3e8ff', color: '#7e22ce', fontSize: '0.5rem', fontWeight: 900, padding: '2px 8px', borderRadius: 8, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                        HIGH OPPORTUNITY
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.62rem', color: C.slate600, fontWeight: 600, lineHeight: 1.3, marginBottom: 8 }}>
+                                    Customer requested a site visit and showed strong interest.
+                                </div>
+
+                                <div
+                                    onClick={() => setShowSiteVisitScheduler(true)}
+                                    style={{
+                                        background: '#f3e8ff', border: '1px solid #d8b4fe', borderRadius: 10,
+                                        padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                    }}
+                                >
+                                    <div>
+                                        <div style={{ fontSize: '0.68rem', fontWeight: 900, color: '#581c87', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            <span>📅</span> Schedule Site Visit
+                                        </div>
+                                        <div style={{ fontSize: '0.54rem', color: '#7e22ce', fontWeight: 700 }}>
+                                            within 48 hours
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={14} color="#7e22ce" />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: '0.56rem', fontWeight: 800, color: C.slate500, whiteSpace: 'nowrap' }}>Confidence: 92%</span>
+                                <div style={{ flex: 1, height: 5, background: '#e9d5ff', borderRadius: 3, overflow: 'hidden' }}>
+                                    <div style={{ width: '92%', height: '100%', background: 'linear-gradient(90deg, #9333ea, #7e22ce)', borderRadius: 3 }} />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Summary Mini-Panel: Next Step & Open Tasks */}
+                        <div style={{
+                            background: '#f8fafc', borderRadius: 14, padding: '12px 14px',
+                            border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(15,23,42,0.02)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap'
+                        }}>
+                            {/* Next Step */}
+                            <div style={{ flex: 1, minWidth: 150 }}>
+                                <div style={{ fontSize: '0.54rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+                                    NEXT STEP
+                                </div>
+                                <div style={{ fontSize: '0.74rem', fontWeight: 900, color: C.indigo, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <span>🏠</span> Follow-up Call
+                                </div>
+                                <div style={{ fontSize: '0.6rem', fontWeight: 700, color: C.slate500, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                    <span>📅</span> Tomorrow, 4:00 PM
+                                </div>
+                                <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate600, marginTop: 3 }}>
+                                    Assigned to <span style={{ fontWeight: 800, color: C.slate800 }}>👤 {contact.agent_name || contact.assigned_agent || 'Rohan Mishra'}</span>
+                                </div>
+                            </div>
+
+                            {/* Divider */}
+                            <div style={{ width: 1, height: 44, background: '#e2e8f0' }} />
+
+                            {/* Open Tasks */}
+                            <div style={{ flex: 1, minWidth: 150, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.54rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>
+                                        OPEN TASKS
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 900, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span>☑</span> 2 Pending
+                                    </div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#d97706', display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                        <span>🔔</span> 1 Due Today
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setActiveTab('Activities')}
+                                    style={{
+                                        background: '#eff6ff', border: '1px solid #bfdbfe', color: C.blue,
+                                        borderRadius: 16, padding: '5px 12px', fontSize: '0.6rem', fontWeight: 900,
+                                        display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer'
+                                    }}
+                                >
+                                    View Tasks <ChevronRight size={11} color={C.blue} />
+                                </button>
+                            </div>
+                        </div>
 
 
                         {/* Next Follow-up Section (Enlarged Hero Card) */}
@@ -459,13 +633,13 @@ export default function MobileContactDetailsPage({
                                     transition: 'all 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                        <h3 style={{
-                                            fontSize: '0.6rem', fontWeight: 900, color: C.slate500,
-                                            letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
-                                            display: 'flex', alignItems: 'center', gap: 5
+                                        <div style={{
+                                            fontSize: '10px', fontWeight: 700, color: C.slate500,
+                                            letterSpacing: '0.04em', textTransform: 'uppercase', margin: 0,
+                                            display: 'flex', alignItems: 'center', gap: 4
                                         }}>
-                                            <CalendarIcon size={12} color={followupCompleted ? C.emerald : C.indigo} /> NEXT FOLLOW-UP
-                                        </h3>
+                                            <CalendarIcon size={10} color={followupCompleted ? C.emerald : C.indigo} /> NEXT FOLLOW-UP
+                                        </div>
                                         <div style={{
                                             background: followupCompleted ? '#ecfdf5' : '#eff6ff',
                                             color: followupCompleted ? C.emerald : C.indigo,
@@ -480,11 +654,11 @@ export default function MobileContactDetailsPage({
                                     {/* Prominent Details Display */}
                                     <div style={{
                                         background: followupCompleted ? '#f0fdf4' : 'white',
-                                        padding: '14px', borderRadius: 14,
+                                        padding: '12px 14px', borderRadius: 14,
                                         border: `1px solid ${followupCompleted ? '#d1fae5' : '#e2e8f0'}`,
                                         marginBottom: 14
                                     }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.92rem', fontWeight: 900, color: C.slate950 }}>
                                                 <span>📅</span> {followupDate}
                                             </div>
@@ -492,8 +666,25 @@ export default function MobileContactDetailsPage({
                                                 <span>🕥</span> {followupTime}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: followupCompleted ? C.slate500 : C.indigo, textDecoration: followupCompleted ? 'line-through' : 'none' }}>
+                                        <div style={{ fontSize: '0.82rem', fontWeight: 900, color: followupCompleted ? C.slate500 : C.indigo, textDecoration: followupCompleted ? 'line-through' : 'none', marginBottom: 8 }}>
                                             {followupTitle}
+                                        </div>
+
+                                        {/* Subtle Secondary Row: Assigned To + Reminder */}
+                                        <div style={{
+                                            borderTop: `1px solid ${followupCompleted ? '#d1fae5' : '#f1f5f9'}`,
+                                            paddingTop: 8, marginTop: 4,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            fontSize: '0.62rem', fontWeight: 700, color: C.slate500, flexWrap: 'wrap', gap: 6
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <span style={{ color: C.slate400 }}>Assigned to</span>
+                                                <span style={{ fontWeight: 800, color: C.slate800 }}>👤 {contact.agent_name || contact.assigned_agent || 'Rohan Mishra'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                <span style={{ color: C.slate400 }}>Reminder</span>
+                                                <span style={{ fontWeight: 800, color: C.amberDark }}>🔔 30 min before</span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -539,76 +730,76 @@ export default function MobileContactDetailsPage({
                                 onClick={() => setShowLeadInfo(!showLeadInfo)}
                                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
                             >
-                                <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.1px', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <Users size={14} color={C.indigo} /> Lead Information
-                                </h3>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <Users size={13} color={C.indigo} /> Lead Information
+                                </div>
                                 <button style={{ border: 'none', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 2 }}>
                                     {showLeadInfo ? <ChevronUp size={14} color={C.slate500} /> : <ChevronDown size={14} color={C.slate500} />}
                                 </button>
                             </div>
 
                             {showLeadInfo && (
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                                    {/* Left Column: Contact */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+                                    {/* Stacked Sub-Card 1: Contact */}
                                     <div style={{ background: C.slate50, padding: '10px 12px', borderRadius: 12, border: '1px solid #eef2f7' }}>
-                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                                            Contact
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.indigo, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            📇 Contact
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📞 Phone</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.phone || '+91 98100 00004'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>✉️ Email</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.email || 'priya@example.com'}
                                                 </div>
                                             </div>
-                                            <div>
+                                            <div style={{ gridColumn: 'span 2' }}>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📍 Location</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.city || contact.location || 'Mumbai'}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Right Column: Lead Details */}
+                                    {/* Stacked Sub-Card 2: Lead Details */}
                                     <div style={{ background: C.slate50, padding: '10px 12px', borderRadius: 12, border: '1px solid #eef2f7' }}>
-                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>
-                                            Lead Details
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.indigo, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            📋 Lead Details
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>👤 Owner</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.agent_name || contact.assigned_agent || 'Rohan Mishra'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📅 Created</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '20 Jul 2026'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>🎯 Stage</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: stageColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: stageColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.stage || 'Qualified'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📢 Source</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.source || contact.lead_source || 'Facebook Campaign'}
                                                 </div>
                                             </div>
-                                            <div>
+                                            <div style={{ gridColumn: 'span 2' }}>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>🏷️ Industry</div>
-                                                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.industry || 'Real Estate'}
                                                 </div>
                                             </div>
@@ -619,9 +810,9 @@ export default function MobileContactDetailsPage({
                         </div>
                         <div style={{ background: 'white', borderRadius: 16, padding: '14px', border: '1px solid #f1f5f9' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.1px', margin: 0 }}>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: 0 }}>
                                     Latest Note Preview
-                                </h3>
+                                </div>
                                 <Edit2 size={13} color={C.slate400} />
                             </div>
                             <div style={{
@@ -721,17 +912,17 @@ export default function MobileContactDetailsPage({
                                         {/* Right badges: status + priority */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
                                             <span style={{
-                                                fontSize: '0.55rem', fontWeight: 900,
+                                                fontSize: '0.58rem', fontWeight: 900,
                                                 color: ss.color, background: ss.bg,
                                                 border: `1px solid ${ss.border}`,
-                                                borderRadius: 4, padding: '1px 5px',
+                                                borderRadius: 6, padding: '2.5px 7px',
                                                 whiteSpace: 'nowrap'
                                             }}>{done ? 'Completed' : task.status}</span>
                                             <span style={{
-                                                fontSize: '0.55rem', fontWeight: 900,
+                                                fontSize: '0.58rem', fontWeight: 900,
                                                 color: ps.color, background: ps.bg,
                                                 border: `1px solid ${ps.border}`,
-                                                borderRadius: 4, padding: '1px 5px',
+                                                borderRadius: 6, padding: '2.5px 7px',
                                                 whiteSpace: 'nowrap'
                                             }}>{task.priority}</span>
                                         </div>
@@ -742,8 +933,8 @@ export default function MobileContactDetailsPage({
                             return (
                                 <div style={{ background: 'white', borderRadius: 16, padding: '14px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                        <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.1px', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <ListChecks size={14} color={C.indigo} /> Upcoming Tasks
+                                        <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <ListChecks size={13} color={C.indigo} /> Upcoming Tasks
                                             {pendingTasks.length > 0 && (
                                                 <span style={{
                                                     fontSize: '0.55rem', fontWeight: 900,
@@ -751,7 +942,7 @@ export default function MobileContactDetailsPage({
                                                     borderRadius: 20, padding: '1px 6px', lineHeight: 1.4
                                                 }}>{pendingTasks.length}</span>
                                             )}
-                                        </h3>
+                                        </div>
                                         <button
                                             onClick={() => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); }}
                                             style={{ fontSize: '0.62rem', fontWeight: 900, color: C.indigo, background: `${C.indigo}10`, border: `1px solid ${C.indigo}20`, borderRadius: 6, padding: '2px 8px', cursor: 'pointer' }}
@@ -785,9 +976,9 @@ export default function MobileContactDetailsPage({
                         <div style={{ background: 'white', borderRadius: 16, padding: '14px', border: '1px solid #f1f5f9' }}>
                             {/* Header */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                                <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <Brain size={14} color={C.violetDark} /> AI Comm Summary
-                                </h3>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <Brain size={13} color={C.violetDark} /> AI Comm Summary
+                                </div>
                                 <span style={{ fontSize: '0.58rem', fontWeight: 800, color: C.violetDark, background: `${C.violetDark}10`, border: `1px solid ${C.violetDark}20`, borderRadius: 4, padding: '2px 6px' }}>AI Generated</span>
                             </div>
 
@@ -803,65 +994,72 @@ export default function MobileContactDetailsPage({
                                     `Lead has shown consistent engagement across 3 touchpoints. Budget aligns with project pricing. Expressed strong interest in a weekend site visit. Recommend immediate follow-up with a personalised video walkthrough to accelerate conversion.`}
                             </div>
 
-                            {/* Recommended next action */}
+                            {/* Recommended next action — Prominent Primary AI Recommendation */}
                             {(() => {
-                                const nextAction: string = aiInsights?.nextAction || aiInsights?.next_action || (
-                                    score >= 70 ? '📞 Call customer today'
-                                    : score >= 40 ? '💬 Send WhatsApp follow-up'
-                                    : '🏡 Schedule a site visit'
+                                const nextActionLabel: string = aiInsights?.nextAction || aiInsights?.next_action || (
+                                    score >= 70 ? 'Send WhatsApp Follow-up'
+                                    : score >= 40 ? 'Call Customer Today'
+                                    : 'Schedule Site Visit'
                                 );
                                 return (
                                     <div style={{ marginBottom: 12 }}>
-                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
-                                            Recommended next action
+                                        <div style={{ fontSize: '0.58rem', fontWeight: 900, color: C.slate400, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
+                                            Recommended Next Action
                                         </div>
+
+                                        {/* Primary Highlighted Recommendation Banner */}
                                         <div style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: `linear-gradient(90deg, ${C.violetDark}12, ${C.indigo}08)`,
-                                            border: `1px solid ${C.violet}25`,
-                                            borderRadius: 20, padding: '5px 12px',
-                                            fontSize: '0.72rem', fontWeight: 800, color: C.violetDark,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                                            background: `linear-gradient(135deg, ${C.emerald}15, ${C.indigo}08)`,
+                                            border: `1.5px solid ${C.emerald}35`,
+                                            borderRadius: 12, padding: '10px 12px',
+                                            marginBottom: 10
                                         }}>
-                                            {nextAction}
+                                            <div style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <span>🟢</span> {nextActionLabel}
+                                            </div>
+                                            <button
+                                                onClick={handleGenerateAISuggestion}
+                                                style={{
+                                                    padding: '5px 11px', borderRadius: 8,
+                                                    background: C.emerald, border: 'none', color: 'white',
+                                                    fontSize: '0.62rem', fontWeight: 900, cursor: 'pointer',
+                                                    boxShadow: `0 2px 8px ${C.emerald}40`
+                                                }}
+                                            >
+                                                Execute
+                                            </button>
+                                        </div>
+
+                                        {/* Secondary Actions */}
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                            <button
+                                                onClick={() => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); }}
+                                                style={{
+                                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                                                    padding: '6px 8px', borderRadius: 8,
+                                                    background: C.slate50, border: '1px solid #e2e8f0',
+                                                    fontSize: '0.64rem', fontWeight: 800, color: C.slate700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <CheckSquare size={12} color={C.slate500} /> Create Task
+                                            </button>
+                                            <button
+                                                onClick={handleGenerateAISuggestion}
+                                                disabled={generatingAISuggestion}
+                                                style={{
+                                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                                                    padding: '6px 8px', borderRadius: 8,
+                                                    background: C.slate50, border: '1px solid #e2e8f0',
+                                                    fontSize: '0.64rem', fontWeight: 800, color: C.slate700, cursor: 'pointer'
+                                                }}
+                                            >
+                                                <MessageSquare size={12} color={C.slate500} /> Generate WhatsApp Draft
+                                            </button>
                                         </div>
                                     </div>
                                 );
                             })()}
-
-                            {/* Action buttons */}
-                            <div style={{ display: 'flex', gap: 8 }}>
-                                <button
-                                    onClick={() => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); }}
-                                    style={{
-                                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                                        padding: '8px 10px', borderRadius: 10,
-                                        background: `${C.blue}10`, border: `1.5px solid ${C.blue}25`,
-                                        fontSize: '0.68rem', fontWeight: 900, color: C.blue,
-                                        cursor: 'pointer', transition: 'all 0.15s ease'
-                                    }}
-                                >
-                                    <CheckSquare size={13} strokeWidth={2.5} /> Create Task
-                                </button>
-                                <button
-                                    onClick={handleGenerateAISuggestion}
-                                    disabled={generatingAISuggestion}
-                                    style={{
-                                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                                        padding: '8px 10px', borderRadius: 10,
-                                        background: generatingAISuggestion ? `${C.emerald}08` : `${C.emerald}10`,
-                                        border: `1.5px solid ${C.emerald}25`,
-                                        fontSize: '0.68rem', fontWeight: 900,
-                                        color: generatingAISuggestion ? C.slate400 : C.emerald,
-                                        cursor: generatingAISuggestion ? 'default' : 'pointer',
-                                        transition: 'all 0.15s ease'
-                                    }}
-                                >
-                                    {generatingAISuggestion
-                                        ? <><RotateCw size={13} strokeWidth={2.5} style={{ animation: 'spin 1s linear infinite' }} /> Generating…</>
-                                        : <><MessageSquare size={13} strokeWidth={2.5} /> Generate WhatsApp</>
-                                    }
-                                </button>
-                            </div>
                         </div>
 
                         {/* Recent Attachments */}
@@ -885,9 +1083,9 @@ export default function MobileContactDetailsPage({
                             return (
                                 <div style={{ background: 'white', borderRadius: 16, padding: '14px', border: '1px solid #f1f5f9' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                        <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.1px', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                            <Paperclip size={14} color={C.slate600} /> Recent Attachments
-                                        </h3>
+                                        <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <Paperclip size={13} color={C.slate600} /> Recent Attachments
+                                        </div>
                                         <span style={{ fontSize: '0.6rem', fontWeight: 800, color: C.slate400 }}>{attachments.length} files</span>
                                     </div>
 
@@ -923,7 +1121,7 @@ export default function MobileContactDetailsPage({
 
                                                         <div style={{ flex: 1, minWidth: 0 }}>
                                                             <div style={{ fontSize: '0.76rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</div>
-                                                            <div style={{ fontSize: '0.6rem', color: C.slate400, fontWeight: 700, marginTop: 1 }}>{doc.size} · {doc.date}</div>
+                                                            <div style={{ fontSize: '0.62rem', color: C.slate500, fontWeight: 700, marginTop: 2 }}>{doc.ext} • {doc.size} • {doc.date}</div>
                                                         </div>
 
                                                         {/* Chevron / close toggle */}
@@ -1015,26 +1213,39 @@ export default function MobileContactDetailsPage({
 
                         {/* Timeline Section */}
                         <div style={{ background: 'white', borderRadius: 16, padding: '14px', border: '1px solid #f1f5f9' }}>
-                            <h3 style={{ fontSize: '0.74rem', fontWeight: 900, color: C.slate950, letterSpacing: '-0.1px', margin: '0 0 16px' }}>
+                            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: C.slate800, letterSpacing: '0.01em', margin: '0 0 16px' }}>
                                 Timeline Activity Flow
-                            </h3>
+                            </div>
                             <div style={{ position: 'relative', paddingLeft: 24 }}>
                                 {/* Continuous vertical rail */}
                                 <div style={{
-                                    position: 'absolute', left: 7, top: 6, bottom: 6,
+                                    position: 'absolute', left: 7, top: 12, bottom: 6,
                                     width: 2, borderRadius: 2,
                                     background: `linear-gradient(to bottom, ${C.emerald}, ${C.indigo}, ${C.slate300})`
                                 }} />
 
                                 {[
-                                    { status: 'Call Completed', date: 'Today', note: 'Discussed project brochure, verified budget.', color: C.emerald, icon: '📞' },
-                                    { status: 'WhatsApp Sent', date: 'Yesterday', note: 'Shared site visit video and floor plans.', color: C.indigo, icon: '💬' },
-                                    { status: 'Lead Created', date: '20 Jul 2026', note: 'Assigned to Rohan Mishra via Facebook campaign.', color: C.slate400, icon: '✨' }
+                                    { status: 'Call Completed', date: 'TODAY', note: 'Discussed project brochure, verified budget.', color: C.emerald, icon: '📞' },
+                                    { status: 'WhatsApp Sent', date: 'YESTERDAY', note: 'Shared site visit video and floor plans.', color: C.indigo, icon: '💬' },
+                                    { status: 'Lead Created', date: '20 JUL 2026', note: 'Assigned to Rohan Mishra via Facebook campaign.', color: C.slate400, icon: '✨' }
                                 ].map((item, idx, arr) => (
-                                    <div key={idx} style={{ position: 'relative', paddingBottom: idx < arr.length - 1 ? 18 : 0 }}>
+                                    <div key={idx} style={{ position: 'relative', paddingBottom: idx < arr.length - 1 ? 16 : 0 }}>
+                                        {/* Prominent Date Separator */}
+                                        <div style={{
+                                            fontSize: '0.55rem', fontWeight: 900, color: C.slate500,
+                                            textTransform: 'uppercase', letterSpacing: '0.08em',
+                                            marginBottom: 8, marginTop: idx > 0 ? 6 : 0,
+                                            display: 'flex', alignItems: 'center', gap: 6
+                                        }}>
+                                            <span style={{ background: '#f1f5f9', color: C.slate700, padding: '2px 7px', borderRadius: 4, border: '1px solid #e2e8f0' }}>
+                                                📅 {item.date}
+                                            </span>
+                                            <span style={{ flex: 1, height: 1, background: '#f1f5f9' }} />
+                                        </div>
+
                                         {/* Dot with glow ring */}
                                         <div style={{
-                                            position: 'absolute', left: -21, top: 3,
+                                            position: 'absolute', left: -21, top: 22,
                                             width: 14, height: 14, borderRadius: '50%',
                                             background: item.color,
                                             border: '2.5px solid white',
@@ -1044,12 +1255,10 @@ export default function MobileContactDetailsPage({
                                             <span style={{ fontSize: '0.76rem', fontWeight: 900, color: C.slate950, display: 'flex', alignItems: 'center', gap: 5 }}>
                                                 <span>{item.icon}</span> {item.status}
                                             </span>
-                                            <span style={{
-                                                fontSize: '0.58rem', fontWeight: 800, color: item.color,
-                                                background: `${item.color}12`, padding: '1px 6px', borderRadius: 4
-                                            }}>{item.date}</span>
                                         </div>
-                                        <span style={{ fontSize: '0.68rem', color: C.slate500, fontWeight: 600, lineHeight: 1.4, display: 'block' }}>{item.note}</span>
+                                        <div style={{ fontSize: '0.68rem', color: C.slate600, fontWeight: 600, lineHeight: 1.45 }}>
+                                            {item.note}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -1632,64 +1841,7 @@ export default function MobileContactDetailsPage({
                         </div>
                     </div>
                 )}
-            {/* Dynamic Context-Aware FAB */}
-            {(() => {
-                // Determine most relevant action based on lead state & recent activity
-                let fabConfig = {
-                    label: 'Schedule Follow-up',
-                    icon: CalendarIcon,
-                    bg: `linear-gradient(135deg, ${C.blue} 0%, ${C.blueDark} 100%)`,
-                    shadow: `0 6px 20px ${C.blue}50`,
-                    action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); }
-                };
 
-                if (contact?.stage === 'Site Visit Scheduled') {
-                    fabConfig = {
-                        label: 'Log Visit',
-                        icon: MapPin,
-                        bg: `linear-gradient(135deg, ${C.emerald} 0%, ${C.emeraldDark} 100%)`,
-                        shadow: `0 6px 20px ${C.emerald}50`,
-                        action: () => setShowSiteVisitScheduler(true)
-                    };
-                } else if (contact?.stage === 'Qualified') {
-                    fabConfig = {
-                        label: 'Create Proposal',
-                        icon: FileText,
-                        bg: `linear-gradient(135deg, ${C.violet} 0%, ${C.violetDark} 100%)`,
-                        shadow: `0 6px 20px ${C.violet}50`,
-                        action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); }
-                    };
-                } else if (interactions[0]?.type === 'Call') {
-                    fabConfig = {
-                        label: 'Add Call Notes',
-                        icon: Edit2,
-                        bg: `linear-gradient(135deg, ${C.amber} 0%, ${C.amberDark} 100%)`,
-                        shadow: `0 6px 20px ${C.amber}50`,
-                        action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); }
-                    };
-                }
-
-                const FabIcon = fabConfig.icon;
-
-                return (
-                    <button
-                        onClick={fabConfig.action}
-                        style={{
-                            position: 'fixed', bottom: 62, right: 14, zIndex: 45,
-                            background: fabConfig.bg, color: 'white', border: 'none',
-                            borderRadius: 30, padding: '10px 16px',
-                            fontWeight: 900, fontSize: '0.74rem',
-                            display: 'flex', alignItems: 'center', gap: 6,
-                            cursor: 'pointer', boxShadow: fabConfig.shadow,
-                            transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                            letterSpacing: '-0.1px'
-                        }}
-                    >
-                        <FabIcon size={15} strokeWidth={2.5} />
-                        <span>{fabConfig.label}</span>
-                    </button>
-                );
-            })()}
 
             {/* Sticky Mobile Bottom Bar */}
             <div style={{
@@ -1723,6 +1875,191 @@ export default function MobileContactDetailsPage({
                     <MessageSquare size={14} />
                 </button>
             </div>
+
+            {/* ─── Edit Lead Modal ─────────────────────────────────────────────── */}
+            {showEditModal && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                    <div style={{ background: 'white', borderRadius: 20, width: 440, maxWidth: '100%', padding: '20px 24px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: C.slate950 }}>Edit Lead Details</h3>
+                            <button onClick={() => setShowEditModal(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4 }}><X size={18} color={C.slate500} /></button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div>
+                                <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Full Name *</label>
+                                <input value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Phone *</label>
+                                <input value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Email</label>
+                                    <input type="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>City</label>
+                                    <input value={editForm.city} onChange={e => setEditForm(p => ({ ...p, city: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Requirement</label>
+                                    <input value={editForm.requirement} onChange={e => setEditForm(p => ({ ...p, requirement: e.target.value }))} placeholder="e.g. 3BHK" style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Budget</label>
+                                    <input value={editForm.budget} onChange={e => setEditForm(p => ({ ...p, budget: e.target.value }))} placeholder="e.g. 75L" style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }} />
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Status</label>
+                                    <select value={editForm.status} onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }}>
+                                        <option value="Active">Active</option>
+                                        <option value="Nurture">Nurture</option>
+                                        <option value="Won">Won</option>
+                                        <option value="Lost">Lost</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate700, display: 'block', marginBottom: 4 }}>Stage</label>
+                                    <select value={editForm.stage} onChange={e => setEditForm(p => ({ ...p, stage: e.target.value }))} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #cbd5e1', fontSize: '0.85rem', boxSizing: 'border-box' }}>
+                                        {['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'].map(s => (
+                                            <option key={s} value={s}>{s}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                            <button onClick={() => setShowEditModal(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'white', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={handleSaveEdit} disabled={isSavingLead} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: C.indigo, color: 'white', fontWeight: 800, cursor: 'pointer' }}>
+                                {isSavingLead ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── More Options Action Sheet ──────────────────────────────────── */}
+            {showMoreOptions && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                    <div style={{ background: 'white', borderRadius: 20, width: 360, maxWidth: '100%', padding: '16px 20px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                            <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 900, color: C.slate950 }}>Lead Options</h3>
+                            <button onClick={() => setShowMoreOptions(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: 4 }}><X size={16} color={C.slate500} /></button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <button
+                                onClick={() => { setShowMoreOptions(false); setShowEditModal(true); }}
+                                style={{ padding: '12px 14px', borderRadius: 12, background: C.slate50, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: C.slate800 }}
+                            >
+                                <Edit2 size={16} color={C.indigo} /> Edit Lead Details
+                            </button>
+                            <button
+                                onClick={() => { setShowMoreOptions(false); setShowStageMenu(true); }}
+                                style={{ padding: '12px 14px', borderRadius: 12, background: C.slate50, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: C.slate800 }}
+                            >
+                                <Target size={16} color={C.emerald} /> Change Lead Stage
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (contact?.phone) {
+                                        navigator.clipboard.writeText(contact.phone);
+                                        showToast('Phone number copied to clipboard!', 'success');
+                                    }
+                                    setShowMoreOptions(false);
+                                }}
+                                style={{ padding: '12px 14px', borderRadius: 12, background: C.slate50, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: C.slate800 }}
+                            >
+                                <Copy size={16} color={C.blue} /> Copy Phone Number
+                            </button>
+                            <button
+                                onClick={() => {
+                                    dialerEvents.call(contact.id, contact.phone, contact.name);
+                                    setShowMoreOptions(false);
+                                }}
+                                style={{ padding: '12px 14px', borderRadius: 12, background: C.slate50, border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: C.slate800 }}
+                            >
+                                <Phone size={16} color={C.emerald} /> Launch Call Dialer
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowMoreOptions(false);
+                                    setShowDeleteConfirm(true);
+                                }}
+                                style={{ padding: '12px 14px', borderRadius: 12, background: '#fff1f2', border: '1px solid #fecdd3', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontWeight: 800, fontSize: '0.84rem', color: C.rose }}
+                            >
+                                <Trash2 size={16} color={C.rose} /> Delete Lead
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Delete Confirmation Modal ──────────────────────────────────── */}
+            {showDeleteConfirm && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                    <div style={{ background: 'white', borderRadius: 18, width: 380, maxWidth: '100%', padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: '#e11d48' }}>
+                            <Trash2 size={24} />
+                        </div>
+                        <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem', fontWeight: 900, color: C.slate950 }}>Delete Lead?</h3>
+                        <p style={{ margin: '0 0 20px', fontSize: '0.82rem', color: C.slate500 }}>
+                            Are you sure you want to delete <strong>"{contact?.name || 'this lead'}"</strong>? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button onClick={() => setShowDeleteConfirm(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #cbd5e1', background: 'white', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                            <button onClick={handleDeleteLead} style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#e11d48', color: 'white', fontWeight: 800, cursor: 'pointer' }}>Delete</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Move Stage Selector Modal ──────────────────────────────────── */}
+            {showStageMenu && (
+                <div
+                    onClick={() => setShowStageMenu(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(10,22,40,0.5)', backdropFilter: 'blur(10px)', padding: 16 }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{ background: 'white', borderRadius: '24px', padding: '24px', width: 440, maxWidth: '100%', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: C.slate950 }}>Move Lead Stage</h3>
+                                <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: C.slate500, fontWeight: 700 }}>Current: <strong style={{ color: stageColor }}>{contact?.stage}</strong></p>
+                            </div>
+                            <button onClick={() => setShowStageMenu(false)} style={{ width: 32, height: 32, borderRadius: '10px', background: C.slate50, border: '1px solid #f1f5f9', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} color={C.slate500} /></button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, maxHeight: '60vh', overflowY: 'auto' }}>
+                            {['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'].map(s => {
+                                const isActive = contact?.stage === s;
+                                const color = STAGE_DOT_COLORS[s] || C.indigo;
+                                return (
+                                    <button
+                                        key={s}
+                                        onClick={() => { handleUpdateStage(s); setShowStageMenu(false); }}
+                                        style={{
+                                            padding: '12px 10px', borderRadius: '12px', border: '1.5px solid',
+                                            borderColor: isActive ? color : '#f1f5f9',
+                                            background: isActive ? `${color}15` : 'white',
+                                            cursor: 'pointer', textAlign: 'center',
+                                            transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                                        }}
+                                    >
+                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                                        <div style={{ fontSize: '0.72rem', fontWeight: isActive ? 900 : 700, color: isActive ? color : C.slate700 }}>{s}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     </div>
 );

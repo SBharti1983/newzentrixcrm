@@ -183,7 +183,7 @@ const MobileCard = memo(({ lead, isSelected, search, onSelect, onDelete, onEdit,
                 {/* Co-located Lead Action Buttons: Call 📞, Edit ✏️ and Options ⋮ */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                     <button
-                        onClick={() => onCall(lead.id, lead.phone, lead.name)}
+                        onClick={(e) => { e.stopPropagation(); onCall(lead.id, lead.phone, lead.name); }}
                         title="Call Lead"
                         style={{
                             width: 32, height: 32, borderRadius: 8,
@@ -195,7 +195,7 @@ const MobileCard = memo(({ lead, isSelected, search, onSelect, onDelete, onEdit,
                         <Phone size={14} style={{ color: '#059669' }} strokeWidth={2.2} />
                     </button>
                     <button
-                        onClick={() => onEdit(lead)}
+                        onClick={(e) => { e.stopPropagation(); onEdit(lead); }}
                         title="Edit Lead"
                         style={{
                             width: 32, height: 32, borderRadius: 8,
@@ -207,16 +207,16 @@ const MobileCard = memo(({ lead, isSelected, search, onSelect, onDelete, onEdit,
                         <Edit2 size={14} style={{ color: C.slate700 }} strokeWidth={2.2} />
                     </button>
                     <button
-                        onClick={() => onDelete(lead.id)}
-                        title="Delete Lead / Options"
+                        onClick={(e) => { e.stopPropagation(); onDelete(lead); }}
+                        title="Delete Lead"
                         style={{
                             width: 32, height: 32, borderRadius: 8,
-                            border: '1px solid #cbd5e1', background: '#f8fafc',
+                            border: '1px solid #fecdd3', background: '#fff1f2',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             cursor: 'pointer'
                         }}
                     >
-                        <MoreVertical size={14} style={{ color: C.slate700 }} strokeWidth={2.2} />
+                        <Trash2 size={14} style={{ color: '#e11d48' }} strokeWidth={2.2} />
                     </button>
                 </div>
             </div>

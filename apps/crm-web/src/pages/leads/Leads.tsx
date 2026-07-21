@@ -550,6 +550,7 @@ export default function Leads() {
     const [filterAgent, setFilterAgent] = useState('All');
     const [filterNurtureDue, setFilterNurtureDue] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [leadToDelete, setLeadToDelete] = useState<any>(null);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(DEFAULT_FORM);
     const [page, setPage] = useState(1);
@@ -761,15 +762,17 @@ export default function Leads() {
         }
     };
 
-    const deleteLead = async (id) => {
-        if (!window.confirm('Delete this lead?')) return;
-        try {
-            await leadsApi.delete(id);
-            showToast('Lead deleted', 'success');
-            fetchLeads();
-        } catch (err) {
-            showToast(err.error || 'Failed to delete lead', 'error');
+    const confirmDelete = useCallback((leadOrId: any) => {
+        if (typeof leadOrId === 'object' && leadOrId !== null) {
+            setLeadToDelete(leadOrId);
+        } else {
+            const found = (leadsRes?.data || []).find((l: any) => String(l.id) === String(leadOrId));
+            setLeadToDelete(found || { id: leadOrId, name: `Lead #${leadOrId}` });
         }
+    }, [leadsRes]);
+
+    const deleteLead = async (id: any) => {
+        confirmDelete(id);
     };
 
     const toggleSelect = useCallback((id) => {
@@ -885,31 +888,30 @@ export default function Leads() {
         return { total, newToday, todayFollowups, conversionRate, highIntent, aiHealth, pipelineValue };
     }, [leads, leadsRes]);
 
-    if (isMobile) {
-        return (
-            <MobileLeadsPage
-                leads={leads}
-                loading={leadsLoading}
-                search={search}
-                setSearch={setSearch}
-                filterStage={filterStage}
-                setFilterStage={setFilterStage}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                selectedIds={selectedIds}
-                toggleSelect={toggleSelect}
-                deleteLead={deleteLead}
-                openEdit={openEdit}
-                openAdd={openAdd}
-                fetchLeads={fetchLeads}
-                kpiMetrics={kpiMetrics}
-                lastFetchTime={lastFetchTime}
-            />
-        );
-    }
-
     return (
-        <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0', paddingBottom: isMobile ? 100 : 0 }}>
+        <>
+            {isMobile && (
+                <MobileLeadsPage
+                    leads={leads}
+                    loading={leadsLoading}
+                    search={search}
+                    setSearch={setSearch}
+                    filterStage={filterStage}
+                    setFilterStage={setFilterStage}
+                    filterStatus={filterStatus}
+                    setFilterStatus={setFilterStatus}
+                    selectedIds={selectedIds}
+                    toggleSelect={toggleSelect}
+                    deleteLead={confirmDelete}
+                    openEdit={openEdit}
+                    openAdd={openAdd}
+                    fetchLeads={fetchLeads}
+                    kpiMetrics={kpiMetrics}
+                    lastFetchTime={lastFetchTime}
+                />
+            )}
+            {!isMobile && (
+                <div className="animate-fadeIn" style={{ padding: '0', paddingBottom: 0 }}>
             {/* Header */}
             <div className="page-header" style={{ marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: isMobile ? 'column' : 'row', flexWrap: isMobile ? 'wrap' : 'nowrap', gap: isMobile ? 8 : 16 }}>
                 <div className="page-header-left" style={{ flexShrink: 1, minWidth: 0 }}>
@@ -1145,8 +1147,6 @@ export default function Leads() {
                 </div>
             )}
 
-
-        </div>
             <div className="leads-table-card" style={{ background: 'white', borderRadius: 12, border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', position: 'relative' }}>
                 {leadsLoading && (
                     <div style={{
@@ -1387,6 +1387,9 @@ export default function Leads() {
                     </div>
                 </div>
             </div>
+            </div>
+            </div>
+            )}
 
 
 
@@ -1673,7 +1676,70 @@ export default function Leads() {
             {previewLeadId && (
                 <ContactPreviewSidebar contactId={previewLeadId} onClose={() => setPreviewLeadId(null)} />
             )}
-        </div>
+
+            {/* Delete Confirmation Modal */}
+            {leadToDelete && (
+                <div className="modal-overlay" onClick={() => setLeadToDelete(null)} style={{ zIndex: 2100 }}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 420, borderRadius: 16, padding: 0, overflow: 'hidden' }}>
+                        <div style={{ padding: '24px 24px 16px', textAlign: 'center' }}>
+                            <div style={{
+                                width: 56, height: 56, borderRadius: '50%',
+                                background: '#ffe4e6', border: '1px solid #fecdd3',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                margin: '0 auto 16px', color: '#e11d48'
+                            }}>
+                                <Trash2 size={26} />
+                            </div>
+                            <h3 style={{ margin: '0 0 8px', fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                                Delete Lead?
+                            </h3>
+                            <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+                                Are you sure you want to delete <strong style={{ color: '#0f172a' }}>"{leadToDelete.name || 'this lead'}"</strong>?
+                                <br />
+                                This action cannot be undone and all associated data will be removed.
+                            </p>
+                        </div>
+                        <div style={{
+                            display: 'flex', gap: 10, padding: '16px 24px 24px',
+                            borderTop: '1px solid #f1f5f9', background: '#f8fafc'
+                        }}>
+                            <button
+                                onClick={() => setLeadToDelete(null)}
+                                style={{
+                                    flex: 1, padding: '10px 16px', borderRadius: 10,
+                                    border: '1px solid #cbd5e1', background: 'white',
+                                    fontWeight: 700, fontSize: '0.88rem', color: '#334155',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const target = leadToDelete;
+                                    setLeadToDelete(null);
+                                    try {
+                                        await leadsApi.delete(target.id);
+                                        showToast(`Lead "${target.name || ''}" deleted successfully`, 'success');
+                                        fetchLeads();
+                                    } catch (err: any) {
+                                        showToast(err?.error || err?.message || 'Failed to delete lead', 'error');
+                                    }
+                                }}
+                                style={{
+                                    flex: 1, padding: '10px 16px', borderRadius: 10,
+                                    border: 'none', background: '#e11d48',
+                                    fontWeight: 800, fontSize: '0.88rem', color: 'white',
+                                    cursor: 'pointer', boxShadow: '0 3px 10px rgba(225,29,72,0.3)'
+                                }}
+                            >
+                                Delete Lead
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 

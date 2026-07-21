@@ -434,33 +434,39 @@ export default function Dialer() {
 
     const hasCopilot = user && ['agent', 'sales_manager', 'admin', 'superadmin'].includes(user.role) && !isMobile;
 
-    if (!isOpen) return (
-        <button
-            onClick={() => setIsOpen(!isOpen)}
-            style={{
-                position: 'fixed',
-                bottom: isMobile ? 80 : 12,
-                right: isMobile ? 12 : 70,
-                zIndex: 9999,
-                width: 48,
-                height: 48,
-                borderRadius: 14,
-                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 12px 30px rgba(99,102,241,0.55), 0 4px 12px rgba(15,23,42,0.25)',
-                border: '1.5px solid rgba(255,255,255,0.25)',
-                cursor: 'pointer',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 16px 36px rgba(99,102,241,0.65), 0 6px 16px rgba(15,23,42,0.3)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 30px rgba(99,102,241,0.55), 0 4px 12px rgba(15,23,42,0.25)'; }}
-        >
-            <Smartphone size={22} strokeWidth={2.5} />
-        </button>
-    );
+    if (!isOpen) {
+        // On mobile screens, hide the floating dialer button when idle to avoid covering lead details.
+        // Tapping any "Call" action in the UI automatically triggers and opens the dialer when needed.
+        if (isMobile && callState === 'idle') return null;
+
+        return (
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    position: 'fixed',
+                    bottom: isMobile ? 68 : 12,
+                    right: isMobile ? 12 : 70,
+                    zIndex: 9999,
+                    width: isMobile ? 40 : 48,
+                    height: isMobile ? 40 : 48,
+                    borderRadius: isMobile ? 12 : 14,
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 12px 30px rgba(99,102,241,0.55), 0 4px 12px rgba(15,23,42,0.25)',
+                    border: '1.5px solid rgba(255,255,255,0.25)',
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.08)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 16px 36px rgba(99,102,241,0.65), 0 6px 16px rgba(15,23,42,0.3)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 30px rgba(99,102,241,0.55), 0 4px 12px rgba(15,23,42,0.25)'; }}
+            >
+                <Smartphone size={isMobile ? 18 : 22} strokeWidth={2.5} />
+            </button>
+        );
+    }
 
     return (
         <div style={{ 

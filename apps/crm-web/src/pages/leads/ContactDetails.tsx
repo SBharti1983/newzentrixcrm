@@ -899,12 +899,12 @@ export default function ContactDetails() {
                         border: '1px solid #f1f5f9'
                     }}>
                         {[
-                            { icon: Mail, label: 'Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Phone, label: 'Call', color: '#10b981', action: () => dialerEvents.call(contact.id, contact.phone, contact.name) },
-                            { icon: MessageSquare, label: 'WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: Edit2, label: 'Note', color: '#f59e0b', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: CheckSquare, label: 'Task', color: '#6366f1', action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); } },
-                            { icon: CalendarIcon, label: 'Meeting', color: '#ef4444', action: () => { setActivityType('Meeting'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Mail, label: 'Log Email', color: '#3b82f6', action: () => { setActivityType('Email'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Phone, label: 'Log Call', color: '#10b981', action: () => { setActivityType('Call'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: MessageSquare, label: 'Log WhatsApp', color: '#25D366', action: () => { setActivityType('WhatsApp'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: Edit2, label: 'Add Note', color: '#f59e0b', action: () => { setActivityType('Note'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CheckSquare, label: 'Create Task', color: '#6366f1', action: () => { setActivityType('Task'); setActiveTab('Activities'); setShowActivityBox(true); } },
+                            { icon: CalendarIcon, label: 'Log Meeting', color: '#ef4444', action: () => { setActivityType('Meeting'); setActiveTab('Activities'); setShowActivityBox(true); } },
                             {
                                 icon: TrendingUp, label: contact.status === 'Nurture' ? 'Active' : 'Nurture', color: '#7c3aed', action: () => {
                                     if (contact.status === 'Nurture') {
