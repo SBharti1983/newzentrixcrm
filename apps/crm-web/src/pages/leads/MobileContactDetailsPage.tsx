@@ -740,12 +740,12 @@ export default function MobileContactDetailsPage({
 
                             {showLeadInfo && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
-                                    {/* Stacked Sub-Card 1: Contact */}
-                                    <div style={{ background: C.slate50, padding: '10px 12px', borderRadius: 12, border: '1px solid #eef2f7' }}>
-                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.indigo, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            📇 Contact
+                                    {/* Consolidated Sub-Card: Lead Details */}
+                                    <div style={{ background: C.slate50, padding: '12px 14px', borderRadius: 14, border: '1px solid #eef2f7' }}>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.indigo, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                            📋 Lead Details
                                         </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📞 Phone</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -758,21 +758,12 @@ export default function MobileContactDetailsPage({
                                                     {contact.email || 'priya@example.com'}
                                                 </div>
                                             </div>
-                                            <div style={{ gridColumn: 'span 2' }}>
+                                            <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📍 Location</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.city || contact.location || 'Mumbai'}
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Stacked Sub-Card 2: Lead Details */}
-                                    <div style={{ background: C.slate50, padding: '10px 12px', borderRadius: 12, border: '1px solid #eef2f7' }}>
-                                        <div style={{ fontSize: '0.6rem', fontWeight: 900, color: C.indigo, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            📋 Lead Details
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>👤 Owner</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -782,22 +773,22 @@ export default function MobileContactDetailsPage({
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📅 Created</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '20 Jul 2026'}
+                                                    {contact.created_at ? new Date(contact.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '21 Jul 2026'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>🎯 Stage</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: stageColor, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {contact.stage || 'Qualified'}
+                                                    {contact.stage || 'New Lead'}
                                                 </div>
                                             </div>
                                             <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>📢 Source</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {contact.source || contact.lead_source || 'Facebook Campaign'}
+                                                    {contact.source || contact.lead_source || 'Website'}
                                                 </div>
                                             </div>
-                                            <div style={{ gridColumn: 'span 2' }}>
+                                            <div>
                                                 <div style={{ fontSize: '0.58rem', fontWeight: 700, color: C.slate500 }}>🏷️ Industry</div>
                                                 <div style={{ fontSize: '0.72rem', fontWeight: 800, color: C.slate900, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {contact.industry || 'Real Estate'}

@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Bot, User, Maximize2, Minimize2 } from 'lucide-react';
 import { copilotApi } from '../../api/client';
+import { useMobile } from '../../hooks/useMobile';
 
 export default function AgentCopilotWidget() {
+    const isMobile = useMobile();
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [messages, setMessages] = useState([
@@ -115,13 +117,21 @@ export default function AgentCopilotWidget() {
                 onClick={() => setIsOpen(true)}
                 className="hover-lift"
                 style={{
-                    position: 'fixed', bottom: 12, right: 12, zIndex: 9999,
-                    width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                    position: 'fixed',
+                    bottom: isMobile ? 80 : 12,
+                    right: isMobile ? 14 : 12,
+                    zIndex: 9999,
+                    width: isMobile ? 46 : 48,
+                    height: isMobile ? 46 : 48,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, color: 'white',
-                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4)', border: 'none', cursor: 'pointer'
+                    boxShadow: '0 12px 24px rgba(79, 70, 229, 0.4), 0 4px 12px rgba(15,23,42,0.25)',
+                    border: '1.5px solid rgba(255,255,255,0.25)',
+                    cursor: 'pointer'
                 }}
             >
-                <Sparkles size={18} />
+                <Sparkles size={isMobile ? 20 : 22} />
             </button>
         );
     }
