@@ -4,9 +4,25 @@
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-export function useApi(apiFn, deps = []) {
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
+const globalApiCache: Record<string, any> = {};
+
+export function useApi(apiFn, deps = [], options: { cacheKey?: string } = {}) {
+    const { cacheKey } = options;
+
+    const [data, setData] = useState(() => {
+        if (cacheKey && globalApiCache[cacheKey] !== undefined) {
+            return globalApiCache[cacheKey];
+        }
+        return null;
+    });
+
+    const [loading, setLoading] = useState(() => {
+        if (cacheKey && globalApiCache[cacheKey] !== undefined) {
+            return false;
+        }
+        return true;
+    });
+
     const [error, setError] = useState(null);
     const mountedRef = useRef(true);
     // Store apiFn in a ref so refetch() always calls the latest version
@@ -17,10 +33,15 @@ export function useApi(apiFn, deps = []) {
 
     const fetch = useCallback(async () => {
         const requestId = ++lastRequestId.current;
-        setLoading(true);
+        if (!cacheKey || globalApiCache[cacheKey] === undefined) {
+            setLoading(true);
+        }
         setError(null);
         try {
             const result = await apiFnRef.current();
+            if (cacheKey) {
+                globalApiCache[cacheKey] = result;
+            }
             if (mountedRef.current && requestId === lastRequestId.current) {
                 setData(result);
             }

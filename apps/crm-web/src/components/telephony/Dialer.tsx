@@ -149,7 +149,11 @@ export default function Dialer() {
 
     const handleDial = useCallback(async (lead = null, manualPhone = null) => {
         const phoneToDial = manualPhone || lead?.phone || lead?.number;
-        if (!phoneToDial) return showToast('No number', 'error');
+        if (!phoneToDial) {
+            setIsOpen(true);
+            setIsMinimized(false);
+            return;
+        }
         setCallState('dialing');
         setActiveLead(lead);
         setPhoneNumber(phoneToDial);

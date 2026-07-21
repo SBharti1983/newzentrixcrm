@@ -38,12 +38,14 @@ export default function Dashboard() {
             personal: personalMode,
             member_id: selectedMemberId 
         }),
-        [personalMode, selectedMemberId]
+        [personalMode, selectedMemberId],
+        { cacheKey: `dashboard_stats_${user?.id}_${personalMode}_${selectedMemberId}` }
     );
 
     const { data: recentLeads } = useApi(
         () => leadsApi.list({ limit: 5, ...(personalMode ? { assigned_to: user?.id } : {}) }),
-        [personalMode, user?.id]
+        [personalMode, user?.id],
+        { cacheKey: `dashboard_recent_leads_${user?.id}_${personalMode}` }
     );
 
     const { data: telemetryData } = useApi(
