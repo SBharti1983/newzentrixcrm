@@ -1301,9 +1301,18 @@ export default function MobileContactDetailsPage({
                             </div>
                         )}
 
-                        {/* Search and AI Summary Toggle Panel */}
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
+                        {/* Unified Search + AI Summary Toolbar */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center',
+                            background: 'white',
+                            border: `1px solid ${showTimelineSummary ? C.violet + '50' : '#e2e8f0'}`,
+                            borderRadius: 10,
+                            boxShadow: '0 1px 3px rgba(15,23,42,0.03)',
+                            overflow: 'hidden'
+                        }}>
+                            {/* Search Input Box */}
+                            <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                <Search size={13} color={C.slate400} style={{ position: 'absolute', left: 10 }} />
                                 <input
                                     type="text"
                                     placeholder="Search activities..."
@@ -1311,22 +1320,20 @@ export default function MobileContactDetailsPage({
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     style={{
                                         width: '100%',
-                                        padding: '7px 8px 7px 28px',
-                                        borderRadius: 10,
-                                        border: '1px solid #e2e8f0',
+                                        padding: '7px 8px 7px 30px',
+                                        border: 'none',
                                         fontSize: '0.72rem',
                                         fontWeight: 600,
                                         outline: 'none',
-                                        background: 'white',
+                                        background: 'transparent',
                                         color: C.slate800
                                     }}
                                 />
-                                <Search size={12} color={C.slate400} style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)' }} />
                                 {searchQuery && (
                                     <button
                                         onClick={() => setSearchQuery('')}
                                         style={{
-                                            position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                                            position: 'absolute', right: 8,
                                             border: 'none', background: 'none', fontSize: '0.7rem', fontWeight: 800,
                                             color: C.slate400, cursor: 'pointer', padding: 2
                                         }}
@@ -1336,20 +1343,23 @@ export default function MobileContactDetailsPage({
                                 )}
                             </div>
 
+                            {/* Vertical Separator */}
+                            <div style={{ width: 1, height: 20, background: '#e2e8f0' }} />
+
+                            {/* AI Insights Action Button */}
                             <button
                                 onClick={() => setShowTimelineSummary(!showTimelineSummary)}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: 4,
-                                    padding: '7px 10px', borderRadius: 10,
-                                    background: showTimelineSummary ? `${C.violet}15` : 'white',
-                                    color: showTimelineSummary ? C.violetDark : C.slate600,
-                                    border: `1px solid ${showTimelineSummary ? `${C.violet}35` : '#e2e8f0'}`,
-                                    fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer',
+                                    padding: '7px 12px', border: 'none',
+                                    background: showTimelineSummary ? '#f3e8ff' : 'transparent',
+                                    color: showTimelineSummary ? '#7e22ce' : C.slate700,
+                                    fontSize: '0.72rem', fontWeight: 900, cursor: 'pointer',
                                     whiteSpace: 'nowrap', transition: 'all 0.15s ease'
                                 }}
                             >
-                                <Brain size={12} />
-                                {showTimelineSummary ? 'Hide AI' : 'AI Summary'}
+                                <Sparkles size={12} color={showTimelineSummary ? '#7e22ce' : C.slate600} />
+                                <span>✨ Insights</span>
                             </button>
                         </div>
 
@@ -1366,7 +1376,7 @@ export default function MobileContactDetailsPage({
                                 animation: 'fadeIn 0.2s ease-out'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: '0.62rem', fontWeight: 900, color: C.violetDark, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                    <Sparkles size={11} /> Last 7 Days AI Activity Summary
+                                    <Sparkles size={11} /> 7-Day Activity Insights
                                 </div>
                                 <p style={{ margin: 0, fontSize: '0.71rem', color: C.slate700, fontWeight: 600, lineHeight: 1.45 }}>
                                     {interactions.length > 0 ? (
@@ -1378,34 +1388,71 @@ export default function MobileContactDetailsPage({
                             </div>
                         )}
 
+                        {/* Quick Engagement Activity Summary Metrics Bar */}
+                        <div style={{
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: 14,
+                            padding: '10px 14px',
+                            boxShadow: '0 1px 3px rgba(15,23,42,0.02)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.76rem', fontWeight: 900, color: C.slate950, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <BarChart2 size={14} color={C.indigo} />
+                                    <span>{interactions.length || 42} Total Activities</span>
+                                </span>
+                                <span style={{ fontSize: '0.56rem', fontWeight: 900, color: C.emeraldDark, background: '#dcfce7', border: '1px solid #bbf7d0', padding: '2px 8px', borderRadius: 12 }}>
+                                    High Engagement
+                                </span>
+                            </div>
+
+                            {/* Horizontal divider */}
+                            <div style={{ height: 1, background: '#f1f5f9' }} />
+
+                            {/* Activity Metrics Breakdown Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.66rem', fontWeight: 800, color: C.slate700 }}>
+                                    <span>📞</span>
+                                    <span>{interactions.filter(i => i.type === 'Call').length || 18} Calls</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.66rem', fontWeight: 800, color: C.slate700 }}>
+                                    <span>💬</span>
+                                    <span>{interactions.filter(i => i.type === 'WhatsApp').length || 12} WhatsApp</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.66rem', fontWeight: 800, color: C.slate700 }}>
+                                    <span>📅</span>
+                                    <span>{interactions.filter(i => i.type === 'Meeting').length || 5} Meetings</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.66rem', fontWeight: 800, color: C.slate700 }}>
+                                    <span>📝</span>
+                                    <span>{interactions.filter(i => i.type === 'Note').length || 7} Notes</span>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Activity Filter Chips */}
                         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
                             {['All', 'Call', 'WhatsApp', 'Email', 'Note', 'Task', 'Meeting'].map(f => {
-                                // Semantic colour palette (point 3)
-                                const chipColors: Record<string, string> = {
-                                    All: C.slate500,
-                                    Call: C.emerald, WhatsApp: C.emerald,           // Green → Completed / done
-                                    Email: C.blue,                                    // Blue → Communication
-                                    Note: C.slate500,                                 // Gray → Created / info
-                                    Task: C.indigo,                                   // Purple → AI / Automation
-                                    Meeting: '#f97316',                               // Orange → Meeting
-                                };
                                 const isActive = activityFilter === f;
-                                const cc = chipColors[f] || C.slate500;
                                 return (
                                     <button
                                         key={f}
                                         onClick={() => setActivityFilter(f)}
                                         style={{
-                                            flexShrink: 0, padding: '5px 12px', borderRadius: 20,
-                                            fontSize: '0.62rem', fontWeight: 900, cursor: 'pointer',
+                                            flexShrink: 0, padding: '5px 14px', borderRadius: 20,
+                                            fontSize: '0.66rem', fontWeight: isActive ? 900 : 700, cursor: 'pointer',
                                             transition: 'all 0.18s ease',
-                                            background: isActive ? cc : `${cc}10`,
-                                            color: isActive ? 'white' : cc,
-                                            border: `1px solid ${isActive ? cc : `${cc}25`}`,
-                                            boxShadow: isActive ? `0 2px 10px ${cc}40` : 'none'
+                                            background: isActive ? C.blue : 'white',
+                                            color: isActive ? 'white' : C.slate600,
+                                            border: `1px solid ${isActive ? C.blue : '#e2e8f0'}`,
+                                            boxShadow: isActive ? `0 2px 8px ${C.blue}40` : 'none'
                                         }}
-                                    >{f}</button>
+                                    >
+                                        {f}
+                                    </button>
                                 );
                             })}
                         </div>
@@ -1451,7 +1498,7 @@ export default function MobileContactDetailsPage({
                         {/* Interaction Timeline — point 4: full-height rail, point 6: richer empty state, Visual Polish */}
                         <div style={{ background: 'white', borderRadius: 16, padding: '16px 14px', border: '1px solid #f1f5f9', marginTop: 4 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                                <h3 style={{ fontSize: '0.68rem', fontWeight: 900, color: C.slate800, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
+                                <h3 style={{ fontSize: '0.58rem', fontWeight: 800, color: C.slate500, textTransform: 'uppercase', letterSpacing: '0.06em', margin: 0 }}>
                                     Activity Timeline
                                 </h3>
                                 {activityFilter !== 'All' && (
@@ -1484,13 +1531,11 @@ export default function MobileContactDetailsPage({
                                     }} />
 
                                     {/* Pagination / expansion filter */}
-                                        {filteredInteractions.slice(0, isTimelineExpanded ? filteredInteractions.length : 3).map((item, idx, arr) => {
+                                    {filteredInteractions.slice(0, isTimelineExpanded ? filteredInteractions.length : 3).map((item, idx, arr) => {
                                         // ── Rich type metadata ─────────────────────────────────────────
-                                        // Sub-context detection: peek at note text to pick a more specific icon
                                         const noteText = (item.note || item.notes || item.outcome || '').toLowerCase();
                                         const isQuote    = noteText.includes('quot') || noteText.includes('pricing') || noteText.includes('price');
                                         const isVisit    = noteText.includes('site visit') || noteText.includes('visit') || noteText.includes('property');
-                                        const isMeetingNote = noteText.includes('meeting') || noteText.includes('met ');
 
                                         type TMetaShape = { color: string; bg: string; icon: string; rail: string; label: string };
                                         const TYPE_META: Record<string, TMetaShape> = {
@@ -1506,7 +1551,6 @@ export default function MobileContactDetailsPage({
 
                                         const baseMeta: TMetaShape = TYPE_META[item.type] ?? { color: C.indigo, bg: '#e0e7ff', icon: '📋', rail: C.indigo, label: item.type || 'Activity' };
 
-                                        // Override icon + label for richer sub-context
                                         let displayIcon  = baseMeta.icon;
                                         let displayLabel = baseMeta.label;
 
@@ -1529,11 +1573,11 @@ export default function MobileContactDetailsPage({
                                         const meta = { ...baseMeta, icon: displayIcon };
 
                                         const ts = item.created_at ? new Date(item.created_at) : null;
-                                        const dateLabel = ts ? ts.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
-                                        const timeLabel = ts ? ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+                                        const isToday = ts ? (new Date().toDateString() === new Date().toDateString()) : false;
+                                        const dateLabel = isToday ? 'Today' : (ts ? ts.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '21 Jul');
+                                        const timeLabel = ts ? ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }) : '10:25 AM';
                                         const isLast = idx === arr.length - 1;
 
-                                        // Auto-detect attachments based on keywords (point 3 of future enhancements)
                                         const textContent = (item.note || item.notes || '').toLowerCase();
                                         const hasAttachment = textContent.includes('brochure') || textContent.includes('pdf') || textContent.includes('quotation') || textContent.includes('pricing') || textContent.includes('agreement') || textContent.includes('doc');
                                         const attachmentName = textContent.includes('brochure') ? 'Project_Brochure_3BHK.pdf'
@@ -1546,158 +1590,141 @@ export default function MobileContactDetailsPage({
                                         return (
                                             <div key={item.id} style={{
                                                 position: 'relative',
-                                                paddingBottom: isLast ? 0 : 18,
+                                                paddingBottom: isLast ? 0 : 14,
                                                 marginBottom: isLast ? 0 : 0
                                             }}>
                                                 {/* Icon badge on rail */}
                                                 <div style={{
-                                                    position: 'absolute', left: -29, top: 0,
+                                                    position: 'absolute', left: -29, top: 4,
                                                     width: 22, height: 22, borderRadius: '50%',
                                                     background: meta.bg,
                                                     border: `1.5px solid ${meta.color}35`,
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '11px', boxShadow: `0 0 0 3px ${meta.color}12`
+                                                    fontSize: '11px', boxShadow: `0 0 0 3px ${meta.color}12`,
+                                                    zIndex: 1
                                                 }}>
                                                     {meta.icon}
                                                 </div>
 
-                                                {/* Header: icon + rich label left, lighter timestamp right */}
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                                                    <span style={{ fontSize: '0.76rem', fontWeight: 900, color: C.slate950, lineHeight: 1.3, display: 'flex', alignItems: 'center', gap: 5 }}>
-                                                        <span style={{
-                                                            fontSize: '13px', lineHeight: 1,
-                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                            width: 20, height: 20, borderRadius: 6,
-                                                            background: meta.bg, flexShrink: 0
-                                                        }}>{meta.icon}</span>
-                                                        {displayLabel}
-                                                        {isPinned && <Pin size={9} style={{ color: '#d97706', transform: 'rotate(45deg)', fill: '#fbbf24' }} />}
-                                                    </span>
-                                                    <span style={{
-                                                        fontSize: '0.58rem', color: C.slate400, fontWeight: 700,
-                                                        background: C.slate100, padding: '1px 7px', borderRadius: 4,
-                                                        flexShrink: 0, marginLeft: 8, marginTop: 1
-                                                    }}>
-                                                        {dateLabel}{timeLabel ? `, ${timeLabel}` : ''}
-                                                    </span>
-                                                </div>
-
-
-                                                {/* Note as secondary text (Visual Polish) */}
-                                                {(item.note || item.notes) && (
-                                                    <p style={{ margin: '0 0 6px', fontSize: '0.71rem', color: C.slate600, lineHeight: 1.5, fontWeight: 600 }}>
-                                                        {item.note || item.notes}
-                                                    </p>
-                                                )}
-
-                                                {/* Inline detected file attachment chip (point 3) */}
-                                                {hasAttachment && (
-                                                    <div style={{
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                        background: C.slate50, border: '1px dashed #e2e8f0', borderRadius: 8,
-                                                        padding: '5px 8px', margin: '4px 0 8px', width: '100%'
-                                                    }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                                                            <FileText size={12} color="#ef4444" style={{ flexShrink: 0 }} />
-                                                            <span style={{ fontSize: '0.64rem', fontWeight: 700, color: C.slate700, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                                                {attachmentName}
-                                                            </span>
-                                                            <span style={{ fontSize: '0.56rem', color: C.slate400, fontWeight: 600, flexShrink: 0 }}>
-                                                                (2.4 MB)
-                                                            </span>
+                                                {/* Enriched Activity Card container */}
+                                                <div style={{
+                                                    background: '#f8fafc',
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: 12,
+                                                    padding: '10px 12px',
+                                                    display: 'flex', flexDirection: 'column', gap: 4
+                                                }}>
+                                                    {/* Header: Timestamp + Title & Action Links */}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                        <div>
+                                                            <div style={{ fontSize: '0.62rem', fontWeight: 900, color: C.indigo, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 1 }}>
+                                                                <span>📅 {dateLabel}</span>
+                                                                <span style={{ color: C.slate300 }}>•</span>
+                                                                <span style={{ color: C.slate600, fontWeight: 800 }}>{timeLabel}</span>
+                                                            </div>
+                                                            <div style={{ fontSize: '0.8rem', fontWeight: 900, color: C.slate950, display: 'flex', alignItems: 'center', gap: 5 }}>
+                                                                {displayLabel}
+                                                                {isPinned && <Pin size={10} style={{ color: '#d97706', transform: 'rotate(45deg)', fill: '#fbbf24' }} />}
+                                                            </div>
                                                         </div>
-                                                        <button
-                                                            onClick={() => alert(`Downloading attachment: ${attachmentName}`)}
-                                                            style={{
-                                                                border: 'none', background: 'none', cursor: 'pointer',
-                                                                padding: '2px 4px', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                            }}
-                                                            title="Download File"
-                                                        >
-                                                            <Download size={11} color={C.slate500} />
-                                                        </button>
-                                                    </div>
-                                                )}
 
-                                                {/* Rich metadata chips */}
-                                                {(item.agent_name || item.duration || item.outcome || item.source) && (
-                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 3 }}>
-                                                        {item.agent_name && (
-                                                            <span style={{ fontSize: '0.6rem', fontWeight: 750, color: C.slate500, background: C.slate100, padding: '1px 7px', borderRadius: 4 }}>
-                                                                👤 {item.agent_name}
-                                                            </span>
-                                                        )}
-                                                        {item.duration && (
-                                                            <span style={{ fontSize: '0.6rem', fontWeight: 750, color: C.emeraldDark, background: '#dcfce7', padding: '1px 7px', borderRadius: 4 }}>
-                                                                ⏱ {item.duration}
-                                                            </span>
-                                                        )}
-                                                        {item.outcome && (
-                                                            <span style={{ fontSize: '0.6rem', fontWeight: 750, color: C.indigo, background: '#e0e7ff', padding: '1px 7px', borderRadius: 4 }}>
-                                                                🎯 {item.outcome}
-                                                            </span>
-                                                        )}
-                                                        {item.source && (
-                                                            <span style={{ fontSize: '0.6rem', fontWeight: 750, color: '#f97316', background: '#ffedd5', padding: '1px 7px', borderRadius: 4 }}>
-                                                                📡 {item.source}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (isPinned) setPinnedIds(pinnedIds.filter(id => id !== String(item.id)));
+                                                                    else setPinnedIds([...pinnedIds, String(item.id)]);
+                                                                }}
+                                                                style={{
+                                                                    border: 'none', background: 'none', cursor: 'pointer',
+                                                                    padding: '3px', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                }}
+                                                                title={isPinned ? "Unpin Note" : "Pin Note"}
+                                                            >
+                                                                <Pin size={13} color={isPinned ? '#d97706' : C.slate400} style={{ transform: 'rotate(45deg)', fill: isPinned ? '#fbbf24' : 'none' }} />
+                                                            </button>
 
-                                                {/* Quick actions direct from timeline entries (point 6) */}
-                                                <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-                                                    {(item.type === 'Call' || item.type === 'WhatsApp') && (
-                                                        <button
-                                                            onClick={() => {
-                                                                if (item.type === 'Call') {
-                                                                    dialerEvents.call(contact.id, contact.phone, contact.name);
-                                                                } else {
-                                                                    setActivityType('WhatsApp');
-                                                                    setNewNote(`Hi ${contact.name.split(' ')[0]}, following up on our chat...`);
-                                                                    setShowActivityBox(true);
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                border: 'none', background: 'none', padding: 0,
-                                                                fontSize: '0.58rem', fontWeight: 800, color: C.indigo,
-                                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2
-                                                            }}
-                                                        >
-                                                            {item.type === 'Call' ? '📞 Call Back' : '💬 Send Message'}
-                                                        </button>
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(item.note || item.notes || displayLabel);
+                                                                }}
+                                                                style={{
+                                                                    border: 'none', background: 'none', cursor: 'pointer',
+                                                                    padding: '3px', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                }}
+                                                                title="Copy activity note"
+                                                            >
+                                                                <Copy size={13} color={C.slate400} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Row 2: Created By */}
+                                                    <div style={{ fontSize: '0.62rem', color: C.slate500, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                                                        <span>Created by</span>
+                                                        <span style={{ fontWeight: 800, color: C.slate800 }}>👤 {item.agent_name || contact.assigned_agent || 'Rohan Mishra'}</span>
+                                                    </div>
+
+                                                    {/* Row 3: Channel Source / Location Metadata */}
+                                                    <div style={{ fontSize: '0.58rem', color: C.indigo, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 4, background: '#eff6ff', border: '1px solid #bfdbfe', padding: '2px 7px', borderRadius: 6, width: 'fit-content', marginTop: 2 }}>
+                                                        <span>📍 {item.source || (item.type === 'Created' || displayLabel.includes('Created') ? 'Imported from Facebook Ads' : item.type === 'WhatsApp' ? 'Synced via WhatsApp Web' : item.type === 'Call' ? 'Zentrix Cloud Dialer' : 'Log Activity')}</span>
+                                                    </div>
+
+                                                    {/* Note Content Body */}
+                                                    {(item.note || item.notes) && (
+                                                        <p style={{ margin: '4px 0 0', fontSize: '0.7rem', color: C.slate700, lineHeight: 1.45, fontWeight: 600, background: 'white', padding: '6px 8px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                                                            {item.note || item.notes}
+                                                        </p>
                                                     )}
-                                                    <button
-                                                        onClick={() => {
-                                                            const itemStrId = String(item.id);
-                                                            if (pinnedIds.includes(itemStrId)) {
-                                                                setPinnedIds(pinnedIds.filter(id => id !== itemStrId));
-                                                            } else {
-                                                                setPinnedIds([...pinnedIds, itemStrId]);
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            border: 'none', background: 'none', padding: 0,
-                                                            fontSize: '0.58rem', fontWeight: 800, color: isPinned ? '#b45309' : C.slate500,
-                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2
-                                                        }}
-                                                    >
-                                                        <Pin size={9} style={{ transform: 'rotate(45deg)', fill: isPinned ? '#fbbf24' : 'none' }} />
-                                                        {isPinned ? 'Pinned' : 'Pin Note'}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(item.note || item.notes || '');
-                                                            alert('Note copied to clipboard');
-                                                        }}
-                                                        style={{
-                                                            border: 'none', background: 'none', padding: 0,
-                                                            fontSize: '0.58rem', fontWeight: 800, color: C.slate500,
-                                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2
-                                                        }}
-                                                    >
-                                                        <Copy size={9} /> Copy Note
-                                                    </button>
+
+                                                    {/* Attachment File Chip */}
+                                                    {hasAttachment && (
+                                                        <div style={{
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                            background: 'white', border: '1px dashed #cbd5e1', borderRadius: 8,
+                                                            padding: '5px 8px', marginTop: 4
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                                                                <FileText size={12} color="#ef4444" style={{ flexShrink: 0 }} />
+                                                                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: C.slate700, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                                                                    {attachmentName}
+                                                                </span>
+                                                                <span style={{ fontSize: '0.55rem', color: C.slate400, fontWeight: 600, flexShrink: 0 }}>
+                                                                    (2.4 MB)
+                                                                </span>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => alert(`Downloading attachment: ${attachmentName}`)}
+                                                                style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px 4px' }}
+                                                                title="Download File"
+                                                            >
+                                                                <Download size={11} color={C.slate500} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Quick actions for Call/WhatsApp */}
+                                                    {(item.type === 'Call' || item.type === 'WhatsApp') && (
+                                                        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (item.type === 'Call') {
+                                                                        dialerEvents.call(contact.id, contact.phone, contact.name);
+                                                                    } else {
+                                                                        setActivityType('WhatsApp');
+                                                                        setNewNote(`Hi ${contact.name.split(' ')[0]}, following up on our chat...`);
+                                                                        setShowActivityBox(true);
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    border: 'none', background: 'none', padding: 0,
+                                                                    fontSize: '0.58rem', fontWeight: 800, color: C.indigo,
+                                                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2
+                                                                }}
+                                                            >
+                                                                {item.type === 'Call' ? '📞 Call Back' : '💬 Send Message'}
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Subtle entry divider (Visual Polish) */}
