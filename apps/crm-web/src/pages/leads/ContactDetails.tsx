@@ -8,6 +8,7 @@ import { dialerEvents } from '../../constants/events';
 import NotificationComposer from '../../components/notifications/NotificationComposer';
 import FollowupModal from '../../components/modals/FollowupModal';
 import { useMobile } from '../../hooks/useMobile';
+import MobileContactDetailsPage from './MobileContactDetailsPage';
 import SiteVisitScheduler from '../../components/SiteVisitScheduler';
 import * as dateUtils from '../../utils/dateUtils';
 import { usePageInfo } from '../../context/PageContext';
@@ -676,6 +677,39 @@ export default function ContactDetails() {
     const avatarBg = PALETTE[colorIndex];
     const currentStageStyle = LIFECYCLE_COLORS[contact.stage] || LIFECYCLE_COLORS['New Lead'];
 
+    if (isMobile) {
+        return (
+            <MobileContactDetailsPage
+                contact={contact}
+                id={id || ''}
+                avatarBg={avatarBg}
+                initial={initial}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                showStageMenu={showStageMenu}
+                setShowStageMenu={setShowStageMenu}
+                handleUpdateStage={handleUpdateStage}
+                handleUpdateStatus={handleUpdateStatus}
+                handleGenerateAISuggestion={handleGenerateAISuggestion}
+                generatingAISuggestion={generatingAISuggestion}
+                aiSuggestedMessage={aiSuggestedMessage}
+                setAiSuggestedMessage={setAiSuggestedMessage}
+                setNewNote={setNewNote}
+                setActivityType={setActivityType}
+                setShowActivityBox={setShowActivityBox}
+                setShowSiteVisitScheduler={setShowSiteVisitScheduler}
+                aiInsights={aiInsights}
+                handleEnrich={handleEnrich}
+                enriching={enriching}
+                interactions={interactions}
+                newNote={newNote}
+                handleAddNote={handleAddNote}
+                activityType={activityType}
+                showActivityBox={showActivityBox}
+            />
+        );
+    }
+
     return (
         <div className="contact-details-layout" style={{ display: 'flex', width: '100%', height: 'calc(100vh - 56px)', maxWidth: '100vw', backgroundColor: '#f8fafc', fontFamily: 'var(--font-main)', overflow: 'hidden' }}>
             {/* LEFT COLUMN - Profile Summary (Modernized) */}
@@ -714,25 +748,82 @@ export default function ContactDetails() {
                 </div>
 
                 <div style={{ padding: '12px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: 12 }}>
-                        <div style={{
-                            width: 48, height: 48,
-                            background: avatarBg,
-                            color: 'white',
-                            borderRadius: '16px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '18px', fontWeight: 900,
-                            margin: '0 auto 8px',
-                            boxShadow: `0 8px 20px ${avatarBg}20`,
-                            border: '3px solid white',
-                            position: 'relative'
-                        }}>
-                            {initial}
-                            <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, background: '#10b981', border: '2px solid white', borderRadius: '50%' }} />
-                        </div>
-                        <h1 style={{ margin: '0 0 2px', fontSize: '16px', fontWeight: 900, color: 'var(--navy-900)', letterSpacing: '-0.5px' }}>{contact.name}</h1>
-                        <div style={{ fontSize: '11px', color: 'var(--slate-400)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                            <MapPin size={11} /> {contact.city || 'Location Pending'}
+                    {/* Premium Hero Banner */}
+                    <div style={{
+                        background: `linear-gradient(135deg, ${avatarBg}15 0%, ${avatarBg}08 100%)`,
+                        borderRadius: 20,
+                        padding: '20px 16px 16px',
+                        marginBottom: 12,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: `1px solid ${avatarBg}20`
+                    }}>
+                        {/* Decorative blobs */}
+                        <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: `${avatarBg}12` }} />
+                        <div style={{ position: 'absolute', bottom: -15, left: -15, width: 60, height: 60, borderRadius: '50%', background: `${avatarBg}08` }} />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}>
+                            {/* Large Avatar with score ring */}
+                            <div style={{ position: 'relative', width: 68, height: 68, flexShrink: 0 }}>
+                                <svg width="68" height="68" viewBox="0 0 68 68" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+                                    <circle cx="34" cy="34" r="31" fill="none" stroke={`${avatarBg}25`} strokeWidth="3" />
+                                    <circle cx="34" cy="34" r="31" fill="none"
+                                        stroke={avatarBg}
+                                        strokeWidth="3"
+                                        strokeDasharray={`${((contact.score || 0) / 100) * 194.8} 194.8`}
+                                        strokeLinecap="round"
+                                    />
+                                </svg>
+                                <div style={{
+                                    position: 'absolute', inset: 8,
+                                    background: avatarBg,
+                                    color: 'white',
+                                    borderRadius: '16px',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: '22px', fontWeight: 900,
+                                    boxShadow: `0 6px 18px ${avatarBg}50`
+                                }}>
+                                    {initial}
+                                </div>
+                                <div style={{ position: 'absolute', bottom: 4, right: 4, width: 12, height: 12, background: '#10b981', border: '2px solid white', borderRadius: '50%', zIndex: 2 }} />
+                            </div>
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <h1 style={{ margin: '0 0 3px', fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.2 }}>{contact.name}</h1>
+                                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                                    <MapPin size={11} />
+                                    {contact.city || 'Location Pending'}
+                                </div>
+                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                    <span style={{
+                                        padding: '3px 9px', borderRadius: 12, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase',
+                                        background: contact.status === 'Nurture' ? 'rgba(124,58,237,0.12)' : contact.status === 'Won' ? 'rgba(16,185,129,0.12)' : 'rgba(59,130,246,0.12)',
+                                        color: contact.status === 'Nurture' ? '#7c3aed' : contact.status === 'Won' ? '#059669' : '#3b82f6',
+                                        border: `1px solid ${contact.status === 'Nurture' ? '#e9d5ff' : contact.status === 'Won' ? '#bbf7d0' : '#bfdbfe'}`
+                                    }}>{contact.status || 'Active'}</span>
+                                    <span style={{
+                                        padding: '3px 9px', background: currentStageStyle.bg, color: currentStageStyle.text,
+                                        borderRadius: 12, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase',
+                                        border: `1px solid ${currentStageStyle.text}25`
+                                    }}>{contact.stage}</span>
+                                </div>
+                            </div>
+
+                            {/* Score badge */}
+                            <div style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                background: 'white', borderRadius: 12, padding: '8px 10px',
+                                boxShadow: '0 2px 10px rgba(10,22,40,0.06)', flexShrink: 0,
+                                minWidth: 50, border: '1px solid #f1f5f9'
+                            }}>
+                                <span style={{ fontSize: '18px', fontWeight: 900, color: (contact.score || 0) > 80 ? '#059669' : (contact.score || 0) > 50 ? '#b45309' : '#94a3b8', lineHeight: 1 }}>
+                                    {contact.score || 0}
+                                </span>
+                                <span style={{ fontSize: '9px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>Score</span>
+                                <span style={{ fontSize: '14px', marginTop: 2 }}>
+                                    {(contact.score || 0) > 80 ? '🔥' : (contact.score || 0) > 50 ? '⚡' : '❄️'}
+                                </span>
+                            </div>
                         </div>
                     </div>
 

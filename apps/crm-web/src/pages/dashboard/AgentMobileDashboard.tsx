@@ -331,7 +331,7 @@ export default function AgentMobileDashboard({ user, data = {}, recentLeads = []
     const cardStyle = {
         background: C.white,
         borderRadius: 18,
-        padding: '16px 18px',
+        padding: '14px 12px',
         border: '1px solid ' + C.slate100,
         boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
     };
@@ -376,7 +376,7 @@ export default function AgentMobileDashboard({ user, data = {}, recentLeads = []
                 const barColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
                 const barBg = barColor;
                 return (
-                    <div style={{ padding: '8px 16px 0' }}>
+                    <div style={{ padding: '6px 6px 0' }}>
                         <div style={cardStyle}>
 
                             {/* ── Header row ── */}

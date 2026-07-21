@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import ContactPreviewSidebar from '../../components/shared/ContactPreviewSidebar';
 import { dialerEvents } from '../../constants/events';
 import { useMobile } from '../../hooks/useMobile';
+import MobileLeadsPage from './MobileLeadsPage';
 import '../../styles/leads-list.css';
 
 const STAGES = ['New Lead', 'Connected', 'Qualified', 'Site Visit Scheduled', 'Site Visit Done', 'Interested', 'Proposal Shared', 'Negotiation', 'Won', 'Lost'];
@@ -164,91 +165,146 @@ interface MobileLeadCardProps {
     onNavigate: (id: any) => void;
 }
 
-// Mobile Card Component
+// ─── Premium Mobile Lead Card ──────────────────────────────────────────────────
 const MobileLeadCard = memo(({ lead, isSelected, search, onSelect, onDelete, onEdit, onCall, onNavigate }: MobileLeadCardProps) => {
     const leadScore = typeof lead.score === 'number' ? lead.score : 0;
+    const scoreColor = leadScore > 80 ? '#10b981' : leadScore > 50 ? '#f59e0b' : '#94a3b8';
+    const accentBg = leadScore > 80
+        ? 'linear-gradient(90deg, #10b981, #06d6a0)'
+        : leadScore > 50
+        ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+        : 'linear-gradient(90deg, #e2e8f0, #f1f5f9)';
+    const nameSeed = (String(lead.name || '#')).charCodeAt(0);
+    const avatarBg = isSelected ? '#6366f1' : `hsl(${nameSeed * 47 + 180}, 72%, 35%)`;
+    const initials = isSelected ? '✓' : String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2);
+
     return (
-        <div 
+        <div
             onClick={() => onNavigate(lead.id)}
             style={{
-                background: isSelected ? 'var(--navy-50)' : 'white',
-                borderRadius: 16,
-                border: isSelected ? '2px solid var(--navy-400)' : '1px solid var(--border-light)',
-                padding: '14px',
+                background: isSelected ? 'linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%)' : 'white',
+                borderRadius: 18,
+                border: isSelected ? '1.5px solid #a5b4fc' : '1px solid #f1f5f9',
+                padding: '14px 14px 12px',
                 marginBottom: 10,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                transition: 'box-shadow 0.2s, transform 0.15s',
+                boxShadow: isSelected ? '0 4px 20px rgba(99,102,241,0.12)' : '0 2px 10px rgba(10,22,40,0.06)',
+                position: 'relative',
+                overflow: 'hidden'
             }}
         >
-            {/* Top row: Avatar + Name + Stage badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <div onClick={e => { e.stopPropagation(); onSelect(lead.id); }} style={{ flexShrink: 0 }}>
-                    <div style={{ 
-                        background: isSelected ? 'var(--navy-500)' : `hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 32%)`, 
-                        color: 'white', 
-                        width: 32, 
-                        height: 32, 
-                        borderRadius: '6px', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        fontWeight: 800, 
-                        fontSize: '12px',
-                        border: isSelected ? '2px solid var(--navy-300)' : `1px solid hsl(${(String(lead.name || '#')).charCodeAt(0) * 47 + 180}, 80%, 22%)`,
-                        flexShrink: 0,
-                        textTransform: 'uppercase'
+            {/* Accent top bar */}
+            <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+                background: accentBg, borderRadius: '18px 18px 0 0'
+            }} />
+
+            {/* Row 1: Avatar + Name + Stage */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginBottom: 10, marginTop: 3 }}>
+                {/* Score ring avatar */}
+                <div
+                    onClick={e => { e.stopPropagation(); onSelect(lead.id); }}
+                    style={{ position: 'relative', width: 46, height: 46, flexShrink: 0 }}
+                >
+                    <svg width="46" height="46" viewBox="0 0 46 46" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+                        <circle cx="23" cy="23" r="20" fill="none" stroke="#f1f5f9" strokeWidth="2.5" />
+                        <circle cx="23" cy="23" r="20" fill="none"
+                            stroke={scoreColor}
+                            strokeWidth="2.5"
+                            strokeDasharray={`${(leadScore / 100) * 125.7} 125.7`}
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                    <div style={{
+                        position: 'absolute', inset: 6,
+                        background: avatarBg,
+                        borderRadius: '9px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 900, fontSize: '12px',
+                        textTransform: 'uppercase',
+                        boxShadow: `0 2px 8px ${avatarBg}66`
                     }}>
-                        {isSelected ? '✓' : String(lead.name || '?').split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2)}
+                        {initials}
                     </div>
                 </div>
+
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--navy-900)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{highlightText(lead.name || '—', search)}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 1 }}>{lead.property_type || '—'} · {lead.project_name?.split(' ')[0] || 'Any'}</div>
-                </div>
-                <span className={`badge ${STAGE_COLORS[normalizeStage(lead.stage)] || 'badge-slate'}`} style={{ fontSize: '0.65rem', padding: '2px 8px', flexShrink: 0 }}>{normalizeStage(lead.stage) || '—'}</span>
-            </div>
-
-            {/* Contact row */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 10, fontSize: '0.75rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Phone size={11} style={{ color: 'var(--text-muted)' }} />
-                    <span>{lead.phone || '—'}</span>
-                </div>
-                {lead.email && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflow: 'hidden' }}>
-                        <Mail size={11} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lead.email}</span>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {highlightText(lead.name || '—', search)}
                     </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-                    <Calendar size={11} style={{ color: 'var(--text-muted)' }} />
-                    <span style={{ fontWeight: 600 }}>{lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}</span>
-                </div>
-            </div>
-
-            {/* Bottom row: Status + Score + Source + Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
-                    <span style={{ 
-                        fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, 
-                        background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9', 
-                        color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#475569' 
-                    }}>{lead.status || 'Active'}</span>
-                    <span className={`badge ${SOURCE_COLORS[lead.source] || 'badge-slate'}`} style={{ fontSize: '0.62rem', padding: '1px 6px' }}>{lead.source || '—'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
-                        <div className="progress-bar" style={{ width: 30, height: 3 }}>
-                            <div className="progress-fill" style={{ width: `${leadScore}%`, background: leadScore > 80 ? '#10b981' : leadScore > 60 ? '#f59e0b' : '#f43f5e' }} />
-                        </div>
-                        <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--navy-700)' }}>{leadScore}</span>
+                    <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <span>{lead.property_type || 'Any'}</span>
+                        {lead.project_name && <><span style={{ color: '#e2e8f0' }}>·</span><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 90 }}>{lead.project_name.split(' ')[0]}</span></>}
                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4, marginLeft: 8, flexShrink: 0 }}>
-                    <button className="btn btn-ghost" onClick={() => onCall(lead.id, lead.phone, lead.name)} style={{ width: 30, height: 30, padding: 0, borderRadius: 8 }}><Phone size={13} style={{ color: '#00a38d' }} /></button>
-                    <button className="btn btn-ghost" onClick={() => onEdit(lead)} style={{ width: 30, height: 30, padding: 0, borderRadius: 8 }}><Edit2 size={13} /></button>
-                    <button className="btn btn-ghost" onClick={() => onDelete(lead.id)} style={{ color: 'var(--accent-rose)', width: 30, height: 30, padding: 0, borderRadius: 8 }}><Trash2 size={13} /></button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                    <span className={`badge ${STAGE_COLORS[normalizeStage(lead.stage)] || 'badge-slate'}`} style={{ fontSize: '0.6rem', padding: '2px 7px', fontWeight: 800, letterSpacing: '0.03em' }}>
+                        {normalizeStage(lead.stage) || '—'}
+                    </span>
+                    <span style={{ fontSize: '0.66rem', fontWeight: 800, color: scoreColor }}>
+                        {leadScore > 80 ? '🔥' : leadScore > 50 ? '⚡' : '❄️'} {leadScore}
+                    </span>
+                </div>
+            </div>
+
+            {/* Row 2: Contact Info pill */}
+            <div style={{
+                display: 'flex', marginBottom: 10,
+                background: '#f8fafc', borderRadius: 10,
+                border: '1px solid #f1f5f9', overflow: 'hidden'
+            }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, padding: '7px 10px', borderRight: '1px solid #f1f5f9' }}>
+                    <Phone size={11} style={{ color: '#10b981', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.72rem', color: '#334155', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {lead.phone || '—'}
+                    </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 10px', flexShrink: 0 }}>
+                    <Calendar size={11} style={{ color: '#6366f1', flexShrink: 0 }} />
+                    <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                        {lead.last_contact_at ? new Date(lead.last_contact_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Never'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Row 3: Status + Source + Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flex: 1, flexWrap: 'wrap', minWidth: 0 }}>
+                    <span style={{
+                        fontSize: '0.64rem', fontWeight: 800, padding: '2px 8px', borderRadius: 7,
+                        background: lead.status === 'Won' ? '#dcfce7' : lead.status === 'Lost' ? '#ffe4e6' : lead.status === 'Nurture' ? '#f3e8ff' : '#f1f5f9',
+                        color: lead.status === 'Won' ? '#166534' : lead.status === 'Lost' ? '#9f1239' : lead.status === 'Nurture' ? '#6b21a8' : '#64748b',
+                        border: `1px solid ${lead.status === 'Won' ? '#bbf7d0' : lead.status === 'Lost' ? '#fecdd3' : lead.status === 'Nurture' ? '#e9d5ff' : '#e2e8f0'}`
+                    }}>
+                        {lead.status || 'Active'}
+                    </span>
+                    {lead.source && (
+                        <span style={{
+                            fontSize: '0.62rem', fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                            background: 'white', border: '1px solid #e2e8f0', color: '#64748b',
+                            maxWidth: 85, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        }}>
+                            {lead.source.replace('Facebook Ads', 'FB').replace('Channel Partner', 'Partner').replace('Instagram Ads', 'Insta')}
+                        </span>
+                    )}
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
+                    <button onClick={() => onCall(lead.id, lead.phone, lead.name)}
+                        style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid #bbf7d0', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <Phone size={13} style={{ color: '#059669' }} />
+                    </button>
+                    <button onClick={() => onEdit(lead)}
+                        style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid #e0e7ff', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <Edit2 size={13} style={{ color: '#6366f1' }} />
+                    </button>
+                    <button onClick={() => onDelete(lead.id)}
+                        style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid #fecdd3', background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                        <Trash2 size={13} style={{ color: '#e11d48' }} />
+                    </button>
                 </div>
             </div>
         </div>
@@ -829,6 +885,29 @@ export default function Leads() {
         return { total, newToday, todayFollowups, conversionRate, highIntent, aiHealth, pipelineValue };
     }, [leads, leadsRes]);
 
+    if (isMobile) {
+        return (
+            <MobileLeadsPage
+                leads={leads}
+                loading={leadsLoading}
+                search={search}
+                setSearch={setSearch}
+                filterStage={filterStage}
+                setFilterStage={setFilterStage}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                selectedIds={selectedIds}
+                toggleSelect={toggleSelect}
+                deleteLead={deleteLead}
+                openEdit={openEdit}
+                openAdd={openAdd}
+                fetchLeads={fetchLeads}
+                kpiMetrics={kpiMetrics}
+                lastFetchTime={lastFetchTime}
+            />
+        );
+    }
+
     return (
         <div className="animate-fadeIn" style={{ padding: isMobile ? '8px' : '0', paddingBottom: isMobile ? 100 : 0 }}>
             {/* Header */}
@@ -1110,8 +1189,55 @@ export default function Leads() {
                             <button className="ll-empty-cta" onClick={openAdd}><Plus size={16} /> Add New Lead</button>
                         </div>
                     ) : isMobile ? (
-                        /* ═══ MOBILE CARD VIEW ═══ */
-                        <div style={{ padding: '8px 0' }}>
+                        /* ═══ PREMIUM MOBILE CARD VIEW ═══ */
+                        <div>
+                            {/* Stage quick-filter pills */}
+                            <div style={{
+                                display: 'flex', gap: 6, overflowX: 'auto', padding: '4px 2px 10px',
+                                scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch'
+                            }}>
+                                {['All', ...STAGES].map(stage => {
+                                    const isActive = filterStage === stage;
+                                    const dotColor = STAGE_DOT_COLORS[stage] || '#94a3b8';
+                                    return (
+                                        <button
+                                            key={stage}
+                                            onClick={() => { setFilterStage(stage); setPage(1); }}
+                                            style={{
+                                                flexShrink: 0,
+                                                padding: '5px 12px',
+                                                borderRadius: 20,
+                                                border: isActive ? `1.5px solid ${dotColor}` : '1px solid #e2e8f0',
+                                                background: isActive ? `${dotColor}15` : 'white',
+                                                color: isActive ? dotColor : '#64748b',
+                                                fontSize: '0.7rem',
+                                                fontWeight: isActive ? 900 : 600,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.18s',
+                                                whiteSpace: 'nowrap',
+                                                display: 'flex', alignItems: 'center', gap: 4
+                                            }}
+                                        >
+                                            {stage !== 'All' && <span style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor, flexShrink: 0, display: 'inline-block' }} />}
+                                            {stage}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Lead count summary */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 2px' }}>
+                                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
+                                    {leads.length} leads {filterStage !== 'All' ? `· ${filterStage}` : ''}
+                                </span>
+                                {lastFetchTime && (
+                                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+                                        {freshnessTxt}
+                                    </span>
+                                )}
+                            </div>
+
                             {leads.map(lead => (
                                 <MobileLeadCard
                                     key={lead.id}

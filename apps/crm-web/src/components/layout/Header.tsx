@@ -12,7 +12,7 @@ import { usePageInfo } from '../../context/PageContext';
 
 const PAGE_TITLES = {
     '/': { title: 'Dashboard', subtitle: 'Welcome back!' },
-    '/leads': { title: 'Lead Management', subtitle: 'Track and manage your sales leads' },
+    '/leads': { title: 'Lead Management', subtitle: 'Manage your sales leads' },
     '/pipeline': { title: 'Sales Pipeline', subtitle: 'Visualize your lead funnel stages' },
     '/projects': { title: 'Project Inventory', subtitle: 'Manage all property projects' },
     '/inventory': { title: 'Unit Inventory', subtitle: 'Track unit availability and status' },
@@ -85,7 +85,8 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
         return 'Good Evening';
     };
 
-    const page = PAGE_TITLES[location.pathname] || { title: branding?.company_name || 'Zentrix CRM', subtitle: '' };
+    const isLeadDetail = location.pathname.startsWith('/leads/') && location.pathname !== '/leads';
+    const page = PAGE_TITLES[location.pathname] || (isLeadDetail ? { title: 'Lead Profile', subtitle: 'View lead details & interactions' } : { title: branding?.company_name || 'Zentrix CRM', subtitle: '' });
 
     const headerClass = [
         'header',
@@ -186,12 +187,28 @@ export default function Header({ collapsed, isMobile, onToggle }: HeaderProps) {
                 >
                     <Menu size={isMobile ? 22 : 18} />
                 </button>
-                <div style={{ marginLeft: 8 }}>
-                    <div className="header-title" style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1, fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
-                        {isMobile ? (branding?.company_name || 'Mayaa Infratech') : (pageInfo.title || page.title)}
-                    </div>
-                    <div className={isMobile ? '' : 'header-breadcrumb hide-mobile'} style={{ fontSize: isMobile ? '0.72rem' : '0.8rem', fontWeight: 600, color: isMobile ? '#64748b' : '#475569', marginTop: isMobile ? 3 : 2 }}>
-                        {isMobile ? `${getGreeting()}, ${user?.name?.split(' ')[0] || 'Rohan'}! 👋` : (pageInfo.subtitle || page.subtitle)}
+                <div style={{ marginLeft: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isLeadDetail && (
+                        <button
+                            onClick={() => navigate('/leads')}
+                            aria-label="Back to leads"
+                            style={{
+                                border: 'none', background: '#f1f5f9', borderRadius: 8,
+                                width: 28, height: 28, display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', cursor: 'pointer', color: '#0f172a', padding: 0,
+                                flexShrink: 0
+                            }}
+                        >
+                            <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} />
+                        </button>
+                    )}
+                    <div>
+                        <div className="header-title" style={{ fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', lineHeight: 1.1, fontSize: isMobile ? '0.95rem' : '1.1rem' }}>
+                            {pageInfo.title || page.title || branding?.company_name || 'Maya Infratech'}
+                        </div>
+                        <div className="header-breadcrumb" style={{ fontSize: isMobile ? '0.72rem' : '0.8rem', fontWeight: 600, color: isMobile ? '#64748b' : '#475569', marginTop: isMobile ? 3 : 2 }}>
+                            {pageInfo.subtitle || page.subtitle || `${getGreeting()}, ${user?.name?.split(' ')[0] || 'Rohan'}! 👋`}
+                        </div>
                     </div>
                 </div>
             </div>

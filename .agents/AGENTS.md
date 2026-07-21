@@ -91,5 +91,10 @@ graph TD
 
 ## 🔑 Pinned Testing Credentials
 Always use these credentials for local testing, browser simulations, and database logins:
-* **Username/Email**: `admin@mayainfratech.in`
-* **Password**: `Maya@2026`
+* **Primary Admin Credential:**
+  * **Username/Email**: `admin@mayainfratech.in`
+  * **Password**: `Maya@2026`
+* **Agent Testing Credential:**
+  * **Username/Email**: `rohan.mishra39@gmail.com`
+  * **Password**: `rohanmishra@mayainfra`
+
