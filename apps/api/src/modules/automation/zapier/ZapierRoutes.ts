@@ -184,7 +184,7 @@ router.post('/summarize-call', async (req: any, res: Response) => {
         `;
 
         const result = await generateAIResponse(prompt);
-        res.json(result);
+        res.json(result?.__text || result);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'AI failed to summarize call' });
@@ -219,7 +219,7 @@ router.post('/generate-content', async (req: any, res: Response) => {
         const tenantKey = tenantRows[0]?.settings?.gemini_api_key || null;
 
         const content = await generateAIResponse(prompt, true, tenantKey);
-        res.json(content);
+        res.json(content?.__text || content);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Zapier AI failed to generate content' });
@@ -259,7 +259,7 @@ router.get('/smart-recommendations', async (req: any, res: Response) => {
         `;
 
         const recs = await generateAIResponse(prompt);
-        res.json(recs);
+        res.json(recs?.__text || recs);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Zapier AI failed to fetch recommendations' });

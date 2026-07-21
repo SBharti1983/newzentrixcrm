@@ -5,10 +5,10 @@ import {
     Calendar as CalendarIcon, TrendingUp, Sparkles, Wand2, ShieldCheck,
     ArrowRight, RefreshCw, RotateCw, ExternalLink, Brain, UserPlus, Users, Home, Target, Zap,
     Flame, Thermometer, Snowflake, BarChart2, FileText, Paperclip, ListChecks, Filter,
-    Search, Pin, ChevronUp, ChevronDown, Download, Copy, Share2, Eye, X
+    Search, Pin, ChevronUp, ChevronDown, Download, Copy, Share2, Eye, X, Mic
 } from 'lucide-react';
 import { dialerEvents } from '../../constants/events';
-import { leadsApi } from '../../api/client';
+import { leadsApi, zapierApi } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
 import * as dateUtils from '../../utils/dateUtils';
 
@@ -86,6 +86,10 @@ interface MobileContactDetailsPageProps {
     handleAddNote: () => void;
     activityType: string;
     showActivityBox: boolean;
+    isListening?: boolean;
+    handleVoice?: () => void;
+    summarizing?: boolean;
+    handleSummarize?: () => void;
 }
 
 export default function MobileContactDetailsPage({
@@ -114,7 +118,11 @@ export default function MobileContactDetailsPage({
     newNote,
     handleAddNote,
     activityType,
-    showActivityBox
+    showActivityBox,
+    isListening: externalIsListening,
+    handleVoice: externalHandleVoice,
+    summarizing: externalSummarizing,
+    handleSummarize: externalHandleSummarize
 }: MobileContactDetailsPageProps) {
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -123,6 +131,56 @@ export default function MobileContactDetailsPage({
     const [activityFilter, setActivityFilter] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+    const [internalIsListening, setInternalIsListening] = useState<boolean>(false);
+    const [internalSummarizing, setInternalSummarizing] = useState<boolean>(false);
+
+    const isListening = externalIsListening ?? internalIsListening;
+    const summarizing = externalSummarizing ?? internalSummarizing;
+
+    const handleVoice = externalHandleVoice || (() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            showToast('Voice input not supported in this browser', 'error');
+            return;
+        }
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.onstart = () => setInternalIsListening(true);
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setNewNote(newNote ? newNote + ' ' + transcript : transcript);
+            };
+            recognition.onend = () => setInternalIsListening(false);
+            recognition.onerror = () => setInternalIsListening(false);
+            recognition.start();
+        } catch (err: any) {
+            console.error('Speech recognition error:', err);
+            showToast('Failed to start voice recognition', 'error');
+            setInternalIsListening(false);
+        }
+    });
+
+    const handleSummarize = externalHandleSummarize || (async () => {
+        if (!newNote.trim()) {
+            showToast('No content to summarize', 'warning');
+            return;
+        }
+        setInternalSummarizing(true);
+        try {
+            const rawResult = await zapierApi.summarizeCall({ transcript: newNote });
+            const result = rawResult?.__text || rawResult;
+            if (!result || !result.summary) throw new Error('Empty summary returned');
+            const summaryText = `\n\n--- AI SUMMARY ---\n${result.summary}\n\nKey Points:\n${(result.keyPoints || []).map((p: string) => `• ${p}`).join('\n')}\n\nAction Items:\n${(result.actionItems || []).map((a: string) => `• ${a}`).join('\n')}\nSentiment: ${result.sentiment || 'Neutral'}`;
+            setNewNote(newNote + summaryText);
+            showToast('AI Summary generated!', 'success');
+        } catch (err: any) {
+            showToast(err?.message || 'Failed to generate summary', 'error');
+        } finally {
+            setInternalSummarizing(false);
+        }
+    });
     const [isTimelineExpanded, setIsTimelineExpanded] = useState<boolean>(false);
     const [showTimelineSummary, setShowTimelineSummary] = useState<boolean>(false);
     const [showOverflowActions, setShowOverflowActions] = useState<boolean>(false);
@@ -305,23 +363,31 @@ export default function MobileContactDetailsPage({
                                 {/* Edit & More Buttons Container */}
                                 <div style={{
                                     display: 'flex', alignItems: 'center',
-                                    background: 'white', border: '1px solid #e2e8f0', borderRadius: 8,
-                                    padding: '2px 4px', gap: 2
+                                    background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8,
+                                    padding: '3px 6px', gap: 4, boxShadow: '0 1px 2px rgba(15,23,42,0.03)'
                                 }}>
                                     <button
                                         onClick={() => setShowEditModal(true)}
                                         title="Edit Lead Details"
-                                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                                        style={{
+                                            border: 'none', background: 'white', cursor: 'pointer',
+                                            padding: '3px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', transition: 'all 0.15s ease'
+                                        }}
                                     >
-                                        <Edit2 size={11} color={C.slate700} strokeWidth={2.2} />
+                                        <Edit2 size={12} color={C.slate800} strokeWidth={2} />
                                     </button>
-                                    <div style={{ width: 1, height: 12, background: '#e2e8f0' }} />
+                                    <div style={{ width: 1, height: 14, background: '#cbd5e1' }} />
                                     <button
                                         onClick={() => setShowMoreOptions(true)}
                                         title="More Options"
-                                        style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}
+                                        style={{
+                                            border: 'none', background: 'white', cursor: 'pointer',
+                                            padding: '3px 10px', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)', transition: 'all 0.15s ease'
+                                        }}
                                     >
-                                        <MoreVertical size={11} color={C.slate700} strokeWidth={2.2} />
+                                        <MoreVertical size={12} color={C.slate800} strokeWidth={2} />
                                     </button>
                                 </div>
                             </div>
@@ -1261,30 +1327,89 @@ export default function MobileContactDetailsPage({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {/* Quick Activity Box */}
                         {showActivityBox && (
-                            <div style={{ background: 'white', borderRadius: 16, padding: '12px', border: `1.5px solid ${C.indigo}` }}>
-                                <div style={{ fontSize: '0.68rem', fontWeight: 900, color: C.slate900, textTransform: 'uppercase', marginBottom: 6 }}>
-                                    Log {activityType}
+                            <div style={{ background: 'white', borderRadius: 16, padding: '12px 14px 14px', border: `1.5px solid ${C.indigo}`, boxShadow: '0 4px 14px rgba(99, 102, 241, 0.1)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 900, color: C.slate900, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                        Log {activityType}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                        {/* Voice Input Button */}
+                                        <button
+                                            onClick={handleVoice}
+                                            type="button"
+                                            title="Voice Input"
+                                            style={{
+                                                height: 28,
+                                                padding: '0 8px',
+                                                borderRadius: 8,
+                                                background: isListening ? '#fee2e2' : '#f8fafc',
+                                                border: `1px solid ${isListening ? '#ef4444' : '#e2e8f0'}`,
+                                                color: isListening ? '#ef4444' : C.slate800,
+                                                fontWeight: 800,
+                                                fontSize: '0.62rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                transition: 'all 0.15s ease'
+                                            }}
+                                        >
+                                            <Mic size={13} color={isListening ? '#ef4444' : '#1e3a8a'} className={isListening ? 'animate-pulse' : ''} />
+                                            <span>{isListening ? 'Listening...' : 'Voice'}</span>
+                                        </button>
+
+                                        {/* AI Summarize Button */}
+                                        <button
+                                            onClick={handleSummarize}
+                                            disabled={summarizing}
+                                            type="button"
+                                            title="Summarize with AI"
+                                            style={{
+                                                height: 28,
+                                                padding: '0 8px',
+                                                borderRadius: 8,
+                                                background: 'white',
+                                                border: '1px solid #e2e8f0',
+                                                color: C.slate800,
+                                                fontWeight: 800,
+                                                fontSize: '0.62rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                                            }}
+                                        >
+                                            {summarizing ? (
+                                                <RefreshCw size={11} className="animate-spin" color="#8b5cf6" />
+                                            ) : (
+                                                <Sparkles size={11} color="#8b5cf6" />
+                                            )}
+                                            <span>Summarize</span>
+                                        </button>
+                                    </div>
                                 </div>
                                 <textarea
                                     value={newNote}
                                     onChange={e => setNewNote(e.target.value)}
                                     placeholder={`Type your ${activityType} note here...`}
                                     style={{
-                                        width: '100%', height: 60, borderRadius: 8, padding: '8px',
+                                        width: '100%', height: 75, borderRadius: 10, padding: '10px',
                                         border: '1px solid #e2e8f0', fontSize: '0.78rem', outline: 'none',
-                                        marginBottom: 8, resize: 'none'
+                                        marginBottom: 10, resize: 'none', fontFamily: 'inherit',
+                                        color: C.slate900, background: '#fcfdfe'
                                     }}
                                 />
                                 <div style={{ display: 'flex', gap: 6 }}>
                                     <button
                                         onClick={handleAddNote}
-                                        style={{ flex: 1, padding: '6px', borderRadius: 8, background: C.indigo, color: 'white', border: 'none', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+                                        style={{ flex: 1, padding: '7px', borderRadius: 8, background: C.indigo, color: 'white', border: 'none', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
                                     >
                                         Save Activity
                                     </button>
                                     <button
                                         onClick={() => setShowActivityBox(false)}
-                                        style={{ padding: '6px 12px', borderRadius: 8, background: C.slate100, color: C.slate600, border: 'none', fontWeight: 800, fontSize: '0.72rem', cursor: 'pointer' }}
+                                        style={{ padding: '7px 12px', borderRadius: 8, background: C.slate100, color: C.slate600, border: 'none', fontWeight: 800, fontSize: '0.74rem', cursor: 'pointer' }}
                                     >
                                         Cancel
                                     </button>

@@ -334,7 +334,8 @@ export default function ContactDetails() {
         }
         setSummarizing(true);
         try {
-            const result = await zapierApi.summarizeCall({ transcript: newNote });
+            const rawResult = await zapierApi.summarizeCall({ transcript: newNote });
+            const result = rawResult?.__text || rawResult;
             if (!result || !result.summary) throw new Error('Empty summary returned');
             const summaryText = `\n\n--- AI SUMMARY ---\n${result.summary}\n\nKey Points:\n${(result.keyPoints || []).map(p => `• ${p}`).join('\n')}\n\nAction Items:\n${(result.actionItems || []).map(a => `• ${a}`).join('\n')}\nSentiment: ${result.sentiment || 'Neutral'}`;
             setNewNote(prev => prev + summaryText);
@@ -706,6 +707,10 @@ export default function ContactDetails() {
                 handleAddNote={handleAddNote}
                 activityType={activityType}
                 showActivityBox={showActivityBox}
+                isListening={isListening}
+                handleVoice={handleVoice}
+                summarizing={summarizing}
+                handleSummarize={handleSummarize}
             />
         );
     }
