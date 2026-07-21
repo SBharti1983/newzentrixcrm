@@ -126,6 +126,7 @@ export default function MobileContactDetailsPage({
     const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
     const [expandedAttachIdx, setExpandedAttachIdx] = useState<number | null>(null);
     const [showLeadInfo, setShowLeadInfo] = useState<boolean>(true);
+    const [followupCompleted, setFollowupCompleted] = useState<boolean>(false);
 
     const toggleTaskComplete = (taskId: string) => {
         setCompletedTaskIds(prev => {
@@ -274,7 +275,8 @@ export default function MobileContactDetailsPage({
                         </div>
 
                         {/* Score + Health mini-panel */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                            {/* Score number */}
                             <div style={{
                                 background: 'white', borderRadius: 12, padding: '5px 8px',
                                 border: `1.5px solid ${score > 80 ? '#bbf7d0' : score > 50 ? '#fde68a' : '#cbd5e1'}`,
@@ -287,21 +289,14 @@ export default function MobileContactDetailsPage({
                                 <span style={{ fontSize: '1.1rem', fontWeight: 900, color: C.slate950, lineHeight: 1 }}>{score}</span>
                                 <span style={{ fontSize: '0.48rem', fontWeight: 900, color: C.slate500, textTransform: 'uppercase', letterSpacing: '0.02em', marginTop: 2, whiteSpace: 'nowrap' }}>Score</span>
                             </div>
+                            {/* Health badge (WARM / Hot / Cold) */}
                             <div style={{
-                                background: health.bg, borderRadius: 8, padding: '2px 7px',
+                                background: health.bg, borderRadius: 7, padding: '2px 6px',
                                 border: `1px solid ${health.color}30`,
-                                display: 'flex', alignItems: 'center', gap: 3
+                                display: 'flex', alignItems: 'center', gap: 2
                             }}>
-                                <health.icon size={10} color={health.color} strokeWidth={2.5} />
-                                <span style={{ fontSize: '0.56rem', fontWeight: 900, color: health.color, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{health.label}</span>
-                            </div>
-                            <div style={{
-                                background: `${C.indigo}10`, borderRadius: 8, padding: '2px 7px',
-                                border: `1px solid ${C.indigo}20`,
-                                display: 'flex', alignItems: 'center', gap: 3
-                            }}>
-                                <BarChart2 size={10} color={C.indigo} strokeWidth={2.5} />
-                                <span style={{ fontSize: '0.56rem', fontWeight: 900, color: C.indigo }}>{convProb}%</span>
+                                <health.icon size={9} color={health.color} strokeWidth={2.5} />
+                                <span style={{ fontSize: '0.52rem', fontWeight: 900, color: health.color, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{health.label}</span>
                             </div>
                         </div>
                     </div>
@@ -452,43 +447,41 @@ export default function MobileContactDetailsPage({
 
                         {/* Next Follow-up Section (Enlarged Hero Card) */}
                         {(() => {
-                            const [completed, setCompleted] = useState(false);
                             const followupDate = contact?.next_followup || '24 Jul 2026';
                             const followupTime = contact?.next_followup_time || '10:30 AM';
                             const followupTitle = contact?.next_followup_title || 'Follow-up Call';
-
                             return (
                                 <div style={{
                                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                                     borderRadius: 20, padding: '16px',
-                                    border: `1.5px solid ${completed ? C.emerald + '40' : C.indigo + '30'}`,
-                                    boxShadow: `0 4px 20px ${completed ? C.emerald + '15' : C.indigo + '15'}`,
+                                    border: `1.5px solid ${followupCompleted ? C.emerald + '40' : C.indigo + '30'}`,
+                                    boxShadow: `0 4px 20px ${followupCompleted ? C.emerald + '15' : C.indigo + '15'}`,
                                     transition: 'all 0.2s ease'
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                                         <h3 style={{
-                                            fontSize: '0.72rem', fontWeight: 900, color: C.slate500,
+                                            fontSize: '0.6rem', fontWeight: 900, color: C.slate500,
                                             letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0,
-                                            display: 'flex', alignItems: 'center', gap: 6
+                                            display: 'flex', alignItems: 'center', gap: 5
                                         }}>
-                                            <CalendarIcon size={14} color={completed ? C.emerald : C.indigo} /> NEXT FOLLOW-UP
+                                            <CalendarIcon size={12} color={followupCompleted ? C.emerald : C.indigo} /> NEXT FOLLOW-UP
                                         </h3>
                                         <div style={{
-                                            background: completed ? '#ecfdf5' : '#eff6ff',
-                                            color: completed ? C.emerald : C.indigo,
+                                            background: followupCompleted ? '#ecfdf5' : '#eff6ff',
+                                            color: followupCompleted ? C.emerald : C.indigo,
                                             padding: '3px 10px', borderRadius: 20,
                                             fontSize: '0.64rem', fontWeight: 900,
-                                            border: `1px solid ${completed ? '#a7f3d0' : '#bfdbfe'}`
+                                            border: `1px solid ${followupCompleted ? '#a7f3d0' : '#bfdbfe'}`
                                         }}>
-                                            {completed ? 'Completed' : 'Scheduled'}
+                                            {followupCompleted ? 'Completed' : 'Scheduled'}
                                         </div>
                                     </div>
 
                                     {/* Prominent Details Display */}
                                     <div style={{
-                                        background: completed ? '#f0fdf4' : 'white',
+                                        background: followupCompleted ? '#f0fdf4' : 'white',
                                         padding: '14px', borderRadius: 14,
-                                        border: `1px solid ${completed ? '#d1fae5' : '#e2e8f0'}`,
+                                        border: `1px solid ${followupCompleted ? '#d1fae5' : '#e2e8f0'}`,
                                         marginBottom: 14
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
@@ -499,7 +492,7 @@ export default function MobileContactDetailsPage({
                                                 <span>🕥</span> {followupTime}
                                             </div>
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: completed ? C.slate500 : C.indigo, textDecoration: completed ? 'line-through' : 'none' }}>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 800, color: followupCompleted ? C.slate500 : C.indigo, textDecoration: followupCompleted ? 'line-through' : 'none' }}>
                                             {followupTitle}
                                         </div>
                                     </div>
@@ -524,16 +517,16 @@ export default function MobileContactDetailsPage({
                                         </button>
 
                                         <button
-                                            onClick={() => setCompleted(!completed)}
+                                            onClick={() => setFollowupCompleted(!followupCompleted)}
                                             style={{
                                                 flex: 1, padding: '9px 12px', borderRadius: 10,
-                                                background: completed ? C.emerald : `linear-gradient(135deg, ${C.indigo} 0%, ${C.blueDark} 100%)`,
+                                                background: followupCompleted ? C.emerald : `linear-gradient(135deg, ${C.indigo} 0%, ${C.blueDark} 100%)`,
                                                 border: 'none', color: 'white', fontWeight: 900, fontSize: '0.72rem',
                                                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                                boxShadow: completed ? `0 2px 8px ${C.emerald}40` : `0 2px 8px ${C.indigo}40`
+                                                boxShadow: followupCompleted ? `0 2px 8px ${C.emerald}40` : `0 2px 8px ${C.indigo}40`
                                             }}
                                         >
-                                            <CheckSquare size={13} color="white" /> {completed ? 'Done ✓' : 'Complete'}
+                                            <CheckSquare size={13} color="white" /> {followupCompleted ? 'Done ✓' : 'Complete'}
                                         </button>
                                     </div>
                                 </div>
